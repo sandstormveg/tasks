@@ -46,9 +46,94 @@ function taskKey(task) {
   return `${task._repo}::${task.id}`;
 }
 
+// ---------- category combobox ----------
+// A real dropdown rather than a native <datalist>: browsers render datalists
+// inconsistently and most won't show the full list on focus, which is the whole
+// point here — seeing which categories already exist before inventing a new one.
+let comboActiveIndex = -1;
+
+function allCategories() {
+  return [...new Set(state.tasks.map((t) => t.category).concat(state.history.map((h) => h.category)))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+}
+
 function renderCategoryOptions() {
-  const cats = [...new Set(state.tasks.map((t) => t.category))].sort();
-  el("#category-options").innerHTML = cats.map((c) => `<option value="${c}"></option>`).join("");
+  const input = el("#add-category");
+  const menu = el("#category-menu");
+  const typed = input.value.trim();
+  const matches = allCategories().filter((c) => c.toLowerCase().includes(typed.toLowerCase()));
+  const isNew = typed && !allCategories().some((c) => c.toLowerCase() === typed.toLowerCase());
+
+  const options = matches.map((c) => ({ label: c, value: c, isNew: false }));
+  if (isNew) options.push({ label: `Add new category “${typed}”`, value: typed, isNew: true });
+
+  if (options.length === 0) {
+    menu.innerHTML = `<div class="combo-option is-new">Type to create your first category</div>`;
+    return;
+  }
+  if (comboActiveIndex >= options.length) comboActiveIndex = options.length - 1;
+
+  menu.innerHTML = options
+    .map((o, i) => `<div class="combo-option${o.isNew ? " is-new" : ""}${i === comboActiveIndex ? " active" : ""}" data-value="${o.value.replace(/"/g, "&quot;")}">${o.label}</div>`)
+    .join("");
+
+  menu.querySelectorAll(".combo-option[data-value]").forEach((optEl) => {
+    optEl.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      input.value = optEl.dataset.value;
+      closeCategoryMenu();
+    });
+  });
+}
+
+function openCategoryMenu() {
+  comboActiveIndex = -1;
+  renderCategoryOptions();
+  el("#category-menu").classList.remove("hidden");
+}
+
+function closeCategoryMenu() {
+  el("#category-menu").classList.add("hidden");
+  comboActiveIndex = -1;
+}
+
+function setupCategoryCombo() {
+  const input = el("#add-category");
+  const menu = el("#category-menu");
+
+  input.addEventListener("focus", openCategoryMenu);
+  input.addEventListener("input", () => {
+    comboActiveIndex = -1;
+    renderCategoryOptions();
+    menu.classList.remove("hidden");
+  });
+  input.addEventListener("blur", () => setTimeout(closeCategoryMenu, 120));
+
+  input.addEventListener("keydown", (e) => {
+    const options = [...menu.querySelectorAll(".combo-option[data-value]")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (menu.classList.contains("hidden")) openCategoryMenu();
+      if (options.length === 0) return;
+      comboActiveIndex = e.key === "ArrowDown"
+        ? (comboActiveIndex + 1) % options.length
+        : (comboActiveIndex - 1 + options.length) % options.length;
+      renderCategoryOptions();
+    } else if (e.key === "Enter") {
+      // Enter commits the category (picking the highlighted one, or keeping what
+      // was typed as a brand-new category) instead of submitting the form outright,
+      // so you never accidentally add a task while still choosing a category.
+      if (!menu.classList.contains("hidden")) {
+        e.preventDefault();
+        const active = options[comboActiveIndex];
+        if (active) input.value = active.dataset.value;
+        closeCategoryMenu();
+      }
+    } else if (e.key === "Escape") {
+      closeCategoryMenu();
+    }
+  });
 }
 
 // ---------- GitHub write-back ----------
@@ -265,12 +350,13 @@ el("#add-visibility").addEventListener("click", () => {
 });
 function renderVisibilityToggle() {
   const isPublic = state.newTaskVisibility === "public";
-  el("#add-visibility").textContent = isPublic ? "🌐 Public" : "🔒 Private";
+  el("#add-visibility").textContent = isPublic ? "🌐" : "🔒";
   el("#add-visibility").title = isPublic
-    ? "Visible to anyone who finds the site — click to make this task private"
-    : "Stored in your private repo, needs your token to view — click to make it public";
+    ? "New task will be public — click to make it private"
+    : "New task will be private — click to make it public";
 }
 renderVisibilityToggle();
+setupCategoryCombo();
 
 el("#add-form").addEventListener("submit", async (e) => {
   e.preventDefault();

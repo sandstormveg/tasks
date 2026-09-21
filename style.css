@@ -274,35 +274,80 @@ main.view.wide { max-width: 980px; }
 
 .add-form {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 24px;
+}
+.add-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
 }
 .add-form input {
   background: var(--panel);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 10px 12px;
+  padding: 11px 13px;
   border-radius: 10px;
   font-size: 14px;
+  width: 100%;
 }
-#add-title { flex: 2; }
-#add-category { flex: 1; }
-.add-form button {
+.add-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.add-submit {
   background: var(--accent);
   border: none;
   color: #0f1117;
   font-weight: 600;
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 10px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 .visibility-toggle {
-  background: var(--panel-2) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  font-weight: 500 !important;
-  white-space: nowrap;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 44px;
+  flex-shrink: 0;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
+.visibility-toggle:hover { transform: scale(1.06); background: #262b3c; }
+
+/* category combobox */
+.combo { position: relative; flex: 1; min-width: 0; }
+.combo-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+.combo-menu.hidden { display: none; }
+.combo-option {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combo-option:hover, .combo-option.active { background: var(--accent); color: #0f1117; }
+.combo-option.is-new { color: var(--muted); font-style: italic; }
+.combo-option.is-new:hover, .combo-option.is-new.active { color: #0f1117; font-style: normal; }
 
 /* Tree view */
 .tree-branch {
@@ -398,3 +443,13 @@ dialog textarea { min-height: 70px; resize: vertical; }
 }
 
 .empty-state { color: var(--muted); text-align: center; padding: 40px 0; }
+
+@media (max-width: 760px) {
+  .topbar { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 17px; }
+  .tab-btn { padding: 7px 11px; font-size: 13px; }
+  main.view { padding: 22px 14px 70px; }
+  .assist-layout { grid-template-columns: 1fr; }
+  .assist-list { max-height: 260px; }
+  .assist-detail { padding: 18px; }
+}

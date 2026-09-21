@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tasks</title>
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <canvas id="fx-canvas"></canvas>
@@ -23,10 +23,14 @@
     <div id="task-groups"></div>
     <form id="add-form" class="add-form">
       <input id="add-title" type="text" placeholder="New task…" required />
-      <input id="add-category" type="text" placeholder="Category" list="category-options" autocomplete="off" required />
-      <datalist id="category-options"></datalist>
-      <button type="button" id="add-visibility" class="visibility-toggle"></button>
-      <button type="submit">Add</button>
+      <div class="add-row">
+        <div class="combo" id="category-combo">
+          <input id="add-category" type="text" placeholder="Category" autocomplete="off" required />
+          <div class="combo-menu hidden" id="category-menu"></div>
+        </div>
+        <button type="button" id="add-visibility" class="visibility-toggle" aria-label="Toggle public or private"></button>
+        <button type="submit" class="add-submit">Add</button>
+      </div>
     </form>
   </main>
 
@@ -70,6 +74,6 @@
     </form>
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
