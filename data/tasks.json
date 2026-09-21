@@ -124,6 +124,13 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": ""
+    },
+    {
+      "id": "make-tasks-in-history-still-able-to-be-opened-toggled-open-muavklsy",
+      "title": "make tasks in history still able to be opened/toggled open",
+      "category": "Meta",
+      "created": "2026-09-21",
+      "notes": ""
     }
   ]
 }
