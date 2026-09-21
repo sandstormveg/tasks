@@ -46,7 +46,9 @@
       "category": "Meta",
       "completedDate": "2026-09-21",
       "note": "i'll test if images can be saved here. old image",
-      "images": [],
+      "images": [
+        "images/meta/make-tasks-in-history-still-able-to-be-opened-toggled-open-muavklsy.jpg"
+      ],
       "noteItems": [
         {
           "id": "n-mub0o0yb3348",
