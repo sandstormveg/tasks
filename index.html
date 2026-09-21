@@ -14,6 +14,7 @@
     <nav class="tabs">
       <button class="tab-btn active" data-tab="active">Active</button>
       <button class="tab-btn" data-tab="tree">Level Up Tree</button>
+      <button class="tab-btn" data-tab="assist">Assistance</button>
     </nav>
     <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
   </header>
@@ -22,7 +23,8 @@
     <div id="task-groups"></div>
     <form id="add-form" class="add-form">
       <input id="add-title" type="text" placeholder="New task…" required />
-      <input id="add-category" type="text" placeholder="Category" required />
+      <input id="add-category" type="text" placeholder="Category" list="category-options" autocomplete="off" required />
+      <datalist id="category-options"></datalist>
       <button type="button" id="add-visibility" class="visibility-toggle"></button>
       <button type="submit">Add</button>
     </form>
@@ -30,6 +32,13 @@
 
   <main id="tree-view" class="view hidden">
     <div id="tree-groups"></div>
+  </main>
+
+  <main id="assist-view" class="view hidden wide">
+    <div class="assist-layout">
+      <div id="assist-list" class="assist-list"></div>
+      <div id="assist-detail" class="assist-detail"></div>
+    </div>
   </main>
 
   <dialog id="complete-dialog">

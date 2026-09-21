@@ -5,7 +5,7 @@ const PUBLIC_REPO = "sandstormveg/tasks";
 const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public" };
+const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public", selectedAssistKey: null };
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
@@ -37,6 +37,18 @@ async function loadData() {
   state.history = history;
   renderActive();
   renderTree();
+  renderCategoryOptions();
+  renderAssistList();
+  renderAssistDetail();
+}
+
+function taskKey(task) {
+  return `${task._repo}::${task.id}`;
+}
+
+function renderCategoryOptions() {
+  const cats = [...new Set(state.tasks.map((t) => t.category))].sort();
+  el("#category-options").innerHTML = cats.map((c) => `<option value="${c}"></option>`).join("");
 }
 
 // ---------- GitHub write-back ----------
@@ -131,19 +143,43 @@ function renderActive() {
 function taskCard(task) {
   const card = document.createElement("div");
   card.className = "task-card";
-  const visIcon = task._repo === "private" ? "🔒" : "🌐";
   card.innerHTML = `
     <button class="check" aria-label="Complete task">
       <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
     </button>
-    <div>
-      <div class="task-title">${visIcon} ${task.title}</div>
+    <div class="task-body">
+      <div class="task-title">${task.title}</div>
       ${task.notes ? `<div class="task-meta">${task.notes}</div>` : ""}
     </div>
+    <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
   `;
-  const btn = card.querySelector(".check");
-  btn.addEventListener("click", (e) => openCompleteDialog(task, card, e));
+  card.querySelector(".check").addEventListener("click", (e) => openCompleteDialog(task, card, e));
+  card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   return card;
+}
+
+const stripRepo = ({ _repo, ...rest }) => rest;
+
+async function toggleVisibility(task, btnEl) {
+  if (!requireToken()) return;
+  const fromVisibility = task._repo;
+  const toVisibility = fromVisibility === "private" ? "public" : "private";
+  btnEl.disabled = true;
+  btnEl.textContent = "…";
+  try {
+    const remainingInFrom = state.tasks.filter((t) => t._repo === fromVisibility && t.id !== task.id).map(stripRepo);
+    const existingInTo = state.tasks.filter((t) => t._repo === toVisibility).map(stripRepo);
+    const movedTask = stripRepo(task);
+
+    await saveTasks(repoFor(fromVisibility), remainingInFrom, `Make private: ${task.title}`);
+    await saveTasks(repoFor(toVisibility), [...existingInTo, movedTask], `Make ${toVisibility}: ${task.title}`);
+
+    await loadData();
+  } catch (err) {
+    alert(`Couldn't move task: ${err.message}`);
+    btnEl.disabled = false;
+    btnEl.textContent = fromVisibility === "private" ? "🔒" : "🌐";
+  }
 }
 
 // ---------- completing a task ----------
@@ -200,8 +236,12 @@ el("#complete-form").addEventListener("submit", async (e) => {
     state.history = state.history.filter((h) => h._repo !== task._repo).concat(
       historyInRepo.map((h) => ({ ...h, _repo: task._repo }))
     );
+    if (state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
     setTimeout(() => renderActive(), 350);
     renderTree();
+    renderCategoryOptions();
+    renderAssistList();
+    renderAssistDetail();
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
     card.classList.remove("completing");
@@ -250,6 +290,8 @@ el("#add-form").addEventListener("submit", async (e) => {
     await saveTasks(repo, newTasksInRepo, `Add task: ${title}`);
     state.tasks = [...state.tasks, { ...task, _repo: visibility }];
     renderActive();
+    renderCategoryOptions();
+    renderAssistList();
     el("#add-form").reset();
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
@@ -287,13 +329,98 @@ function renderTree() {
   });
 }
 
+// ---------- assistance tab: suggestions + scratchpad per task ----------
+function renderAssistList() {
+  const container = el("#assist-list");
+  container.innerHTML = "";
+  if (state.tasks.length === 0) {
+    container.innerHTML = `<div class="empty-state">No active tasks.</div>`;
+    return;
+  }
+  const groups = groupBy(state.tasks, "category");
+  Object.keys(groups).sort().forEach((cat) => {
+    const catEl = document.createElement("div");
+    catEl.className = "assist-cat";
+    catEl.textContent = cat;
+    container.appendChild(catEl);
+    groups[cat].forEach((task) => {
+      const btn = document.createElement("button");
+      btn.className = "assist-item" + (taskKey(task) === state.selectedAssistKey ? " selected" : "");
+      btn.textContent = `${task._repo === "private" ? "🔒" : "🌐"} ${task.title}`;
+      btn.addEventListener("click", () => {
+        state.selectedAssistKey = taskKey(task);
+        renderAssistList();
+        renderAssistDetail();
+      });
+      container.appendChild(btn);
+    });
+  });
+}
+
+function renderAssistDetail() {
+  const container = el("#assist-detail");
+  const task = state.tasks.find((t) => taskKey(t) === state.selectedAssistKey);
+  if (!task) {
+    container.innerHTML = `<div class="empty-state">Select a task on the left to see suggestions and jot down notes.</div>`;
+    return;
+  }
+  const suggestions = task.suggestions || [];
+  container.innerHTML = `
+    <h2>${task.title}</h2>
+    <div class="assist-meta">${task.category} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"}</div>
+    <div class="assist-section">
+      <h3>Suggested actions</h3>
+      ${suggestions.length
+        ? `<ul class="suggestion-list">${suggestions.map((s) => `<li>${s}</li>`).join("")}</ul>`
+        : `<div class="empty-state" style="padding:16px 0;">Ask Claude about this task — it can leave suggested next steps or subtasks here.</div>`}
+    </div>
+    <div class="assist-section">
+      <h3>Notes &amp; thinking</h3>
+      <textarea id="assist-scratchpad" placeholder="Ideas, plans, links, references — anything you (or Claude) want to remember about this task.">${task.scratchpad || ""}</textarea>
+      <div class="assist-save-row">
+        <span class="assist-saved-hint" id="assist-saved-hint">Saved</span>
+        <button id="assist-save-btn" type="button">Save notes</button>
+      </div>
+    </div>
+  `;
+  el("#assist-save-btn").addEventListener("click", () => saveScratchpad(task));
+}
+
+async function saveScratchpad(task) {
+  if (!requireToken()) return;
+  const btn = el("#assist-save-btn");
+  const hint = el("#assist-saved-hint");
+  const value = el("#assist-scratchpad").value;
+  btn.disabled = true;
+  try {
+    const repo = repoFor(task._repo);
+    const updated = state.tasks
+      .filter((t) => t._repo === task._repo)
+      .map((t) => stripRepo(t.id === task.id ? { ...t, scratchpad: value } : t));
+    await saveTasks(repo, updated, `Update notes: ${task.title}`);
+    task.scratchpad = value;
+    hint.classList.add("show");
+    setTimeout(() => hint.classList.remove("show"), 1500);
+  } catch (err) {
+    alert(`Couldn't save notes: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ---------- tabs ----------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    el("#active-view").classList.toggle("hidden", btn.dataset.tab !== "active");
-    el("#tree-view").classList.toggle("hidden", btn.dataset.tab !== "tree");
+    const tab = btn.dataset.tab;
+    el("#active-view").classList.toggle("hidden", tab !== "active");
+    el("#tree-view").classList.toggle("hidden", tab !== "tree");
+    el("#assist-view").classList.toggle("hidden", tab !== "assist");
+    if (tab === "assist") {
+      renderAssistList();
+      renderAssistDetail();
+    }
   });
 });
 
