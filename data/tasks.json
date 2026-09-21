@@ -13,7 +13,9 @@
       "category": "Meta",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "scratchpad": "if this has been tested. move the task to done/level up tree. also make a task for changing the level up tree name to history. also make a task for implementing a way to delete tasks",
+      "scratchpadUpdated": "2026-09-21T04:03:00.966Z"
     }
   ]
 }
