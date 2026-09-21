@@ -344,6 +344,28 @@ main.view.wide { max-width: 980px; }
 .vis-toggle:hover { transform: scale(1.08); background: #262b3c; }
 .vis-toggle:disabled { opacity: 0.5; cursor: default; }
 
+.assist-toggle {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.assist-toggle.off { color: #4b5264; }
+.assist-toggle.off:hover { color: var(--accent-2); transform: scale(1.08); }
+.assist-toggle.on {
+  color: #0f1117;
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(255, 184, 107, 0.15);
+}
+.assist-toggle.on:hover { transform: scale(1.08); }
+.assist-toggle:disabled { opacity: 0.5; cursor: default; }
+
 .add-form {
   display: flex;
   flex-direction: column;

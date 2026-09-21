@@ -40,6 +40,7 @@ async function loadData() {
   renderCategoryOptions();
   renderAssistList();
   renderAssistDetail();
+  renderAssistTabCount();
 }
 
 function taskKey(task) {
@@ -236,11 +237,52 @@ function taskCard(task) {
       <div class="task-title">${esc(task.title)}</div>
       ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
     </div>
+    <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
     <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
   `;
   card.querySelector(".check").addEventListener("click", (e) => openCompleteDialog(task, card, e));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
+  const assistBtn = card.querySelector(".assist-toggle");
+  assistBtn.title = task.assist
+    ? "Claude is helping with this one — click to stop"
+    : "Click to have Claude work on this task in the Assistance tab";
+  assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
   return card;
+}
+
+// Only tasks explicitly opted in show up in Assistance (and get worked on by the
+// morning routine) — otherwise every passing errand would pull research effort.
+function assistTasks() {
+  return state.tasks.filter((t) => t.assist);
+}
+
+async function toggleAssist(task, btnEl) {
+  if (!requireToken()) return;
+  const next = !task.assist;
+  btnEl.disabled = true;
+  try {
+    const repo = repoFor(task._repo);
+    const updated = state.tasks
+      .filter((t) => t._repo === task._repo)
+      .map((t) => stripRepo(t.id === task.id ? { ...t, assist: next } : t));
+    await saveTasks(repo, updated, `${next ? "Enable" : "Disable"} assistance: ${task.title}`);
+    task.assist = next;
+    if (!next && state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
+    renderActive();
+    renderAssistList();
+    renderAssistDetail();
+    renderAssistTabCount();
+  } catch (err) {
+    alert(`Couldn't update assistance setting: ${err.message}`);
+    btnEl.disabled = false;
+  }
+}
+
+function renderAssistTabCount() {
+  const tabBtn = document.querySelector('.tab-btn[data-tab="assist"]');
+  if (!tabBtn) return;
+  const n = assistTasks().length;
+  tabBtn.textContent = n ? `Assistance (${n})` : "Assistance";
 }
 
 const stripRepo = ({ _repo, ...rest }) => rest;
@@ -419,11 +461,12 @@ function renderTree() {
 function renderAssistList() {
   const container = el("#assist-list");
   container.innerHTML = "";
-  if (state.tasks.length === 0) {
-    container.innerHTML = `<div class="empty-state">No active tasks.</div>`;
+  const tasks = assistTasks();
+  if (tasks.length === 0) {
+    container.innerHTML = `<div class="empty-state">No tasks opted in yet. Tap the ✦ on any task in the Active tab to have Claude work on it.</div>`;
     return;
   }
-  const groups = groupBy(state.tasks, "category");
+  const groups = groupBy(tasks, "category");
   Object.keys(groups).sort().forEach((cat) => {
     const catEl = document.createElement("div");
     catEl.className = "assist-cat";
@@ -460,9 +503,11 @@ let assistDirty = false;
 
 function renderAssistDetail() {
   const container = el("#assist-detail");
-  const task = state.tasks.find((t) => taskKey(t) === state.selectedAssistKey);
+  const task = assistTasks().find((t) => taskKey(t) === state.selectedAssistKey);
   if (!task) {
-    container.innerHTML = `<div class="empty-state">Pick a task on the left to see what Claude has worked out and to jot down your own thinking.</div>`;
+    container.innerHTML = assistTasks().length
+      ? `<div class="empty-state">Pick a task on the left to see what Claude has worked out and to jot down your own thinking.</div>`
+      : `<div class="empty-state">Nothing here yet. Go to the Active tab and tap ✦ on a task you want help with — it'll show up here with Claude's findings.</div>`;
     return;
   }
   const suggestions = task.suggestions || [];
