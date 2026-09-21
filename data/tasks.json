@@ -133,6 +133,9 @@
           "created": "2026-09-21T09:02:09.107Z",
           "updated": "2026-09-21T09:07:17.780Z"
         }
+      ],
+      "suggestions": [
+        "✅ Done (2026-09-21): completing a task now carries its notes and Claude's suggestions into the history entry (as noteItems/suggestions), instead of discarding them. Each History entry with content is collapsed by default with small badges (📝 note, 🖼 photos, ✎ notes, ✦ suggestions) — click the row to expand and see everything, all links clickable. Entries completed before this change can't be backfilled, since that data was already discarded at completion time. Mark this done yourself if it looks right on the site."
       ]
     }
   ]
