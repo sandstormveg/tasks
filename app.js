@@ -943,7 +943,7 @@ function renderAssistList() {
       // ✦ = Claude left suggestions, ✎ = you've written notes.
       const badges = [];
       if ((task.suggestions || []).length) badges.push(`<span class="badge badge-sug" title="${task.suggestions.length} suggestion(s) from Claude">✦ ${task.suggestions.length}</span>`);
-      if ((task.scratchpad || "").trim()) badges.push(`<span class="badge badge-note" title="You have notes on this task">✎</span>`);
+      if (noteItems(task).length) badges.push(`<span class="badge badge-note" title="${noteItems(task).length} note(s)">✎ ${noteItems(task).length}</span>`);
       btn.innerHTML = `
         <span class="assist-item-icon">${task._repo === "private" ? "🔒" : "🌐"}</span>
         <span class="assist-item-title">${esc(task.title)}</span>
@@ -956,14 +956,47 @@ function renderAssistList() {
 }
 
 function selectAssistTask(task) {
-  if (assistDirty && !confirm("You have unsaved notes on the current task. Discard them?")) return;
-  assistDirty = false;
   state.selectedAssistKey = taskKey(task);
   renderAssistList();
   renderAssistDetail();
 }
 
-let assistDirty = false;
+// Notes used to be one big scratchpad string. They're now a list of individually
+// addable/editable/completable items, like the suggestions list next to them —
+// this reads any task, migrated or not, so old data keeps working until it's touched.
+function noteItems(task) {
+  if (task.noteItems) return task.noteItems;
+  if (task.scratchpad && task.scratchpad.trim()) {
+    return [{
+      id: "legacy", text: task.scratchpad, done: false,
+      created: task.scratchpadUpdated || task.created, updated: task.scratchpadUpdated || task.created,
+    }];
+  }
+  return [];
+}
+
+function newNoteId() {
+  return "n-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// Every note write also drops the legacy scratchpad fields, so a task migrates to the
+// new shape the first time anyone touches its notes — no separate migration step needed.
+async function saveNoteItems(task, newItems, message) {
+  assertLoaded(task._repo);
+  const repo = repoFor(task._repo);
+  const updated = state.tasks
+    .filter((t) => t._repo === task._repo)
+    .map((t) => {
+      const stripped = stripRepo(t);
+      if (t.id !== task.id) return stripped;
+      const { scratchpad, scratchpadUpdated, ...rest } = stripped;
+      return { ...rest, noteItems: newItems };
+    });
+  await saveTasks(repo, updated, message);
+  task.noteItems = newItems;
+  delete task.scratchpad;
+  delete task.scratchpadUpdated;
+}
 
 function renderAssistDetail() {
   const container = el("#assist-detail");
@@ -975,9 +1008,7 @@ function renderAssistDetail() {
     return;
   }
   const suggestions = task.suggestions || [];
-  const savedAt = task.scratchpadUpdated
-    ? `Last saved ${formatWhen(task.scratchpadUpdated)}`
-    : "Not saved yet";
+  const items = noteItems(task);
 
   container.innerHTML = `
     <div class="assist-head">
@@ -991,54 +1022,177 @@ function renderAssistDetail() {
         ? `<ul class="suggestion-list">${suggestions.map((s, i) => `
             <li>
               <div class="suggestion-text">${linkify(s)}</div>
-              <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes">→ notes</button>
+              <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes as its own item">→ notes</button>
             </li>`).join("")}</ul>`
         : `<div class="assist-hint">Nothing yet. Mention this task to Claude in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
     </div>
 
     <div class="assist-section">
-      <h3>✎ Your notes &amp; thinking</h3>
-      <textarea id="assist-scratchpad" placeholder="Ideas, plans, links, references — anything you (or Claude) should remember about this task.">${esc(task.scratchpad || "")}</textarea>
-      <div class="assist-save-row">
-        <span class="assist-status" id="assist-status">${savedAt}</span>
-        <button id="assist-save-btn" class="assist-save-btn" type="button" disabled>Saved</button>
-      </div>
+      <h3>✎ Your notes${items.length ? ` <span class="count">${items.length}</span>` : ""}</h3>
+      ${items.length ? `<ul class="note-list" id="note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
+      ${items.length === 0 ? `<div class="assist-hint">No notes yet — add one below. Ideas, plans, links, anything you want to remember about this task.</div>` : ""}
+      <form id="add-note-form" class="add-note-form">
+        <input id="add-note-input" type="text" placeholder="Add a note…" autocomplete="off" />
+        <button type="submit">Add</button>
+      </form>
+      <span class="assist-status" id="assist-status"></span>
     </div>
   `;
 
-  const textarea = el("#assist-scratchpad");
-  const btn = el("#assist-save-btn");
+  const noteList = el("#note-list");
+  if (noteList) {
+    noteList.addEventListener("click", (e) => {
+      const li = e.target.closest(".note-item");
+      if (!li) return;
+      const id = li.dataset.id;
+      const note = noteItems(task).find((n) => n.id === id);
+      if (!note) return;
+      if (e.target.closest(".note-check")) toggleNoteDone(task, id);
+      else if (e.target.closest(".note-edit")) enterNoteEditMode(task, li, note);
+      else if (e.target.closest(".note-delete")) deleteNoteItem(task, id, li);
+    });
+  }
 
-  const markDirty = () => {
-    assistDirty = true;
-    btn.disabled = false;
-    btn.textContent = "Save notes";
-    btn.classList.remove("is-saved");
-    setAssistStatus("Unsaved changes", "warn");
-  };
-
-  textarea.addEventListener("input", markDirty);
-  // Autosave when you click away — the most common way notes got lost was
-  // typing something and navigating off without noticing the Save button.
-  textarea.addEventListener("blur", () => { if (assistDirty) saveScratchpad(task); });
-  textarea.addEventListener("keydown", (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-      e.preventDefault();
-      saveScratchpad(task);
+  el("#add-note-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = el("#add-note-input");
+    const text = input.value.trim();
+    if (!text || !requireToken()) return;
+    const now = new Date().toISOString();
+    const newItems = [...noteItems(task), { id: newNoteId(), text, done: false, created: now, updated: now }];
+    setAssistStatus("Saving…", "");
+    try {
+      await saveNoteItems(task, newItems, `Add note: ${task.title}`);
+      input.value = "";
+      renderAssistList();
+      renderAssistDetail();
+    } catch (err) {
+      setAssistStatus(`Couldn't save: ${err.message}`, "error");
     }
   });
-  btn.addEventListener("click", () => saveScratchpad(task));
 
   container.querySelectorAll(".suggestion-add").forEach((addBtn) => {
-    addBtn.addEventListener("click", () => {
+    addBtn.addEventListener("click", async () => {
+      if (!requireToken()) return;
       const text = suggestions[Number(addBtn.dataset.i)];
-      const existing = textarea.value.trim();
-      textarea.value = (existing ? existing + "\n\n" : "") + "- " + text;
-      markDirty();
-      textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      const now = new Date().toISOString();
+      const newItems = [...noteItems(task), { id: newNoteId(), text, done: false, created: now, updated: now }];
+      try {
+        await saveNoteItems(task, newItems, `Add note from suggestion: ${task.title}`);
+        renderAssistList();
+        renderAssistDetail();
+      } catch (err) {
+        alert(`Couldn't save note: ${err.message}`);
+      }
     });
   });
+}
+
+function noteItemHtml(n) {
+  return `
+    <li class="note-item${n.done ? " done" : ""}" data-id="${esc(n.id)}">
+      <button class="note-check" aria-label="${n.done ? "Mark not done" : "Mark done"}" title="${n.done ? "Mark not done" : "Mark done"}">${n.done ? "✓" : ""}</button>
+      <div class="note-body">
+        <div class="note-text">${linkify(n.text)}</div>
+        <div class="note-time">${formatWhen(n.updated || n.created)}</div>
+      </div>
+      <div class="note-actions">
+        <button class="note-edit" aria-label="Edit note" title="Edit">✎</button>
+        <button class="note-delete" aria-label="Delete note" title="Delete">🗑</button>
+      </div>
+    </li>`;
+}
+
+function enterNoteEditMode(task, li, note) {
+  li.innerHTML = `
+    <div class="note-edit-row">
+      <textarea class="note-edit-input">${esc(note.text)}</textarea>
+      <div class="note-edit-actions">
+        <button type="button" class="note-cancel">Cancel</button>
+        <button type="button" class="note-save">Save</button>
+      </div>
+    </div>
+  `;
+  const textarea = li.querySelector(".note-edit-input");
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  const save = () => editNoteItem(task, note.id, textarea.value);
+  li.querySelector(".note-cancel").addEventListener("click", () => renderAssistDetail());
+  li.querySelector(".note-save").addEventListener("click", save);
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); save(); }
+    if (e.key === "Escape") { e.preventDefault(); renderAssistDetail(); }
+  });
+}
+
+async function editNoteItem(task, id, newText) {
+  if (!requireToken()) return;
+  const trimmed = newText.trim();
+  if (!trimmed) return;
+  const now = new Date().toISOString();
+  const items = noteItems(task).map((n) => (n.id === id ? { ...n, text: trimmed, updated: now } : n));
+  try {
+    await saveNoteItems(task, items, `Edit note: ${task.title}`);
+    renderAssistList();
+    renderAssistDetail();
+  } catch (err) {
+    alert(`Couldn't save note: ${err.message}`);
+    renderAssistDetail();
+  }
+}
+
+async function toggleNoteDone(task, id) {
+  if (!requireToken()) return;
+  const now = new Date().toISOString();
+  const items = noteItems(task).map((n) => (n.id === id ? { ...n, done: !n.done, updated: now } : n));
+  try {
+    await saveNoteItems(task, items, `Update note: ${task.title}`);
+    renderAssistDetail();
+  } catch (err) {
+    alert(`Couldn't update note: ${err.message}`);
+  }
+}
+
+// Same instant + undo pattern as everywhere else deletion happens in this app.
+async function deleteNoteItem(task, id, liEl) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(task._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+  const prevItems = noteItems(task);
+  liEl.classList.add("completing");
+  const optimistic = prevItems.filter((n) => n.id !== id);
+  task.noteItems = optimistic;
+  renderAssistList();
+  setTimeout(() => liEl.remove(), 300);
+
+  let undone = false;
+  showToast({
+    message: "Deleted note",
+    actionLabel: "Undo",
+    duration: DELETE_UNDO_MS,
+    onAction: () => {
+      undone = true;
+      task.noteItems = prevItems;
+      renderAssistList();
+      renderAssistDetail();
+    },
+  });
+
+  setTimeout(async () => {
+    if (undone) return;
+    try {
+      await saveNoteItems(task, optimistic, `Delete note: ${task.title}`);
+    } catch (err) {
+      task.noteItems = prevItems;
+      renderAssistList();
+      renderAssistDetail();
+      alert(`Couldn't delete note: ${err.message}. It's back.`);
+    }
+  }, DELETE_UNDO_MS + 300);
 }
 
 function setAssistStatus(text, kind) {
@@ -1056,38 +1210,6 @@ function formatWhen(iso) {
   if (mins < 60) return `${mins} min ago`;
   if (mins < 60 * 24) return `${Math.round(mins / 60)}h ago`;
   return then.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-}
-
-async function saveScratchpad(task) {
-  if (!requireToken()) return;
-  const btn = el("#assist-save-btn");
-  const textarea = el("#assist-scratchpad");
-  if (!btn || !textarea) return;
-  const value = textarea.value;
-
-  btn.disabled = true;
-  btn.textContent = "Saving…";
-  setAssistStatus("Saving…", "");
-  try {
-    assertLoaded(task._repo);
-    const repo = repoFor(task._repo);
-    const savedAt = new Date().toISOString();
-    const updated = state.tasks
-      .filter((t) => t._repo === task._repo)
-      .map((t) => stripRepo(t.id === task.id ? { ...t, scratchpad: value, scratchpadUpdated: savedAt } : t));
-    await saveTasks(repo, updated, `Update notes: ${task.title}`);
-    task.scratchpad = value;
-    task.scratchpadUpdated = savedAt;
-    assistDirty = false;
-    btn.textContent = "Saved ✓";
-    btn.classList.add("is-saved");
-    setAssistStatus(`Last saved ${formatWhen(savedAt)}`, "ok");
-    renderAssistList();
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = "Retry save";
-    setAssistStatus(`Couldn't save: ${err.message}`, "error");
-  }
 }
 
 // ---------- small helpers ----------
