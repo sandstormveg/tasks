@@ -111,7 +111,8 @@
       "title": "book in deep water solo trips 14th & 19th",
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
-      "notes": ""
+      "notes": "",
+      "assist": true
     },
     {
       "id": "finding-a-tardigrade-muasrecb",
