@@ -8,23 +8,6 @@
       "notes": ""
     },
     {
-      "id": "test-cowork-scheduler-muapwtzw",
-      "title": "test cowork scheduler",
-      "category": "Meta",
-      "created": "2026-09-21",
-      "notes": "",
-      "assist": true,
-      "scratchpad": "test if this can work in code and cowork. \ncode is a yes. cowork is still pending. \nalso with these notes we need to probably have a bit more functionality like clickable hyperlinks: https://catbaexpress.com/ (this isn't clickable or hyperlinked)\nand maybe for the notes themselves to be marked as done or not as a subtask within this task. \n\nalso i need to consider whether i allow claude to mark sub tasks as completed or not. might be enough to allow editing of notes. but I'm not sure yet. i also like how claude suggestions get there own list but my note just stays in this text box. i think i like how if i wanted to edit claudes i can click notes and edit it. maybe that's how this should be when i click save so i can add multiple notes instead of one big one",
-      "scratchpadUpdated": "2026-09-21T07:17:09.407Z",
-      "suggestions": [
-        "This routine only researches and appends suggestions — it can't verify the cowork scheduler was tested or move this task to history for you. If you've confirmed the scheduler works, mark this complete yourself and it'll log to history automatically.",
-        "If “tested” means end-to-end (create/edit/complete/delete a task, toggle categories, public/private move), the recent commit history already shows a lot of that flow being exercised — categories, instant-complete with undo, and history-delete all landed recently.",
-        "Clickable links: run scratchpad/notes text through a URL-matching regex (e.g. /(https?://[^s]+)/g) at render time and wrap matches in <a href=... target=\"_blank\" rel=\"noopener\"> — no schema change needed, just a render-layer fix.",
-        "Per-note subtasks: add a small array field (e.g. task.noteItems: [{id, text, done, created}]) alongside the existing free-text scratchpad, rendered as its own checkbox list — keeps the current scratchpad intact for freeform notes while giving completable sub-items.",
-        "Multiple notes: if you want notes to behave like suggestions (their own list, individually editable/removable), model them the same way — an array of {id, text, updated} objects instead of one big scratchpad string — so each note can be clicked and edited in isolation rather than reopening one large textbox."
-      ]
-    },
-    {
       "id": "book-hanoi-accommodation-for-10th-and-11th-of-oct-muakyoki",
       "title": "book Hanoi accommodation for 10th and 11th of Oct",
       "category": "Hanoi Climbing trip",
