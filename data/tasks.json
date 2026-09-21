@@ -1,0 +1,11 @@
+{
+  "tasks": [
+    {
+      "id": "set-up-tracker",
+      "title": "Set up the cross-session task tracker",
+      "category": "Meta",
+      "created": "2026-09-21",
+      "notes": "The repo, skill, and website all came online today."
+    }
+  ]
+}

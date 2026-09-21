@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tasks</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="fx-canvas"></canvas>
+
+  <header class="topbar">
+    <h1>Tasks</h1>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="active">Active</button>
+      <button class="tab-btn" data-tab="tree">Level Up Tree</button>
+    </nav>
+    <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+  </header>
+
+  <main id="active-view" class="view">
+    <div id="task-groups"></div>
+    <form id="add-form" class="add-form">
+      <input id="add-title" type="text" placeholder="New task…" required />
+      <input id="add-category" type="text" placeholder="Category" required />
+      <button type="submit">Add</button>
+    </form>
+  </main>
+
+  <main id="tree-view" class="view hidden">
+    <div id="tree-groups"></div>
+  </main>
+
+  <dialog id="complete-dialog">
+    <form method="dialog" id="complete-form">
+      <h3>Nice work — anything to remember?</h3>
+      <textarea id="complete-note" placeholder="What you learned / did (optional)"></textarea>
+      <input id="complete-image" type="file" accept="image/*" />
+      <div class="dialog-actions">
+        <button type="button" id="complete-cancel">Cancel</button>
+        <button type="submit" id="complete-confirm">Log it</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form method="dialog" id="settings-form">
+      <h3>Settings</h3>
+      <p class="hint">
+        Paste a GitHub fine-grained personal access token with <strong>Contents: Read and write</strong>
+        on <code>sandstormveg/tasks</code> to let this page save changes back to the repo.
+        It's stored only in your browser (localStorage), never sent anywhere except GitHub's API.
+      </p>
+      <input id="settings-token" type="password" placeholder="github_pat_…" />
+      <div class="dialog-actions">
+        <button type="button" id="settings-clear">Clear</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
