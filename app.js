@@ -1,4 +1,4 @@
-const REPO = "sandstormveg/tasks";
+const REPO = "sandstormveg/tasks-data";
 const API = `https://api.github.com/repos/${REPO}/contents`;
 
 const state = { tasks: [], history: [], pendingCompletion: null };
@@ -8,15 +8,31 @@ const tokenKey = "tasks_gh_token";
 const getToken = () => localStorage.getItem(tokenKey) || "";
 
 // ---------- data loading ----------
+// Task data lives in a private repo, so it can only be read with a token —
+// there's no public fallback fetch here on purpose.
 async function loadData() {
-  const [tasksRes, historyRes] = await Promise.all([
-    fetch(`data/tasks.json?t=${Date.now()}`),
-    fetch(`data/history.json?t=${Date.now()}`),
-  ]);
-  state.tasks = (await tasksRes.json()).tasks || [];
-  state.history = (await historyRes.json()).entries || [];
-  renderActive();
-  renderTree();
+  if (!getToken()) {
+    showNeedsToken();
+    return;
+  }
+  try {
+    const [tasksFile, historyFile] = await Promise.all([
+      ghGetFile("data/tasks.json"),
+      ghGetFile("data/history.json"),
+    ]);
+    state.tasks = (JSON.parse(tasksFile.content)).tasks || [];
+    state.history = (JSON.parse(historyFile.content)).entries || [];
+    renderActive();
+    renderTree();
+  } catch (err) {
+    showNeedsToken(`Couldn't load your tasks: ${err.message}`);
+  }
+}
+
+function showNeedsToken(message) {
+  const msg = message || "Add a GitHub token in Settings (⚙) to view and edit your tasks — they're stored in a private repo.";
+  el("#task-groups").innerHTML = `<div class="empty-state">${msg}</div>`;
+  el("#tree-groups").innerHTML = `<div class="empty-state">${msg}</div>`;
 }
 
 // ---------- GitHub write-back ----------
@@ -260,6 +276,7 @@ el("#settings-clear").addEventListener("click", () => {
 });
 el("#settings-form").addEventListener("submit", () => {
   localStorage.setItem(tokenKey, el("#settings-token").value.trim());
+  loadData();
 });
 
 // ---------- satisfying fx: confetti burst + pop sound ----------
