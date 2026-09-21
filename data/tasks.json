@@ -130,7 +130,8 @@
       "title": "make tasks in history still able to be opened/toggled open",
       "category": "Meta",
       "created": "2026-09-21",
-      "notes": ""
+      "notes": "",
+      "assist": true
     }
   ]
 }
