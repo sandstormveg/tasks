@@ -39,6 +39,26 @@
         "Per-note subtasks: add a small array field (e.g. task.noteItems: [{id, text, done, created}]) alongside the existing free-text scratchpad, rendered as its own checkbox list — keeps the current scratchpad intact for freeform notes while giving completable sub-items.",
         "Multiple notes: if you want notes to behave like suggestions (their own list, individually editable/removable), model them the same way — an array of {id, text, updated} objects instead of one big scratchpad string — so each note can be clicked and edited in isolation rather than reopening one large textbox."
       ]
+    },
+    {
+      "id": "make-tasks-in-history-still-able-to-be-opened-toggled-open-muavklsy",
+      "title": "make tasks in history still able to be opened/toggled open",
+      "category": "Meta",
+      "completedDate": "2026-09-21",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mub0o0yb3348",
+          "text": "please action. i want to be able to see the notes and pictures and hyperlinks and potentially all the work that was done in these tasks. including claudes notes.",
+          "done": false,
+          "created": "2026-09-21T09:02:09.107Z",
+          "updated": "2026-09-21T09:07:17.780Z"
+        }
+      ],
+      "suggestions": [
+        "✅ Done (2026-09-21): completing a task now carries its notes and Claude's suggestions into the history entry (as noteItems/suggestions), instead of discarding them. Each History entry with content is collapsed by default with small badges (📝 note, 🖼 photos, ✎ notes, ✦ suggestions) — click the row to expand and see everything, all links clickable. Entries completed before this change can't be backfilled, since that data was already discarded at completion time. Mark this done yourself if it looks right on the site."
+      ]
     }
   ]
 }
