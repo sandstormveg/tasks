@@ -103,7 +103,8 @@
       "title": "book/confirm transport from Hanoi to Cat Ba",
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
-      "notes": ""
+      "notes": "",
+      "assist": true
     },
     {
       "id": "book-in-deep-water-solo-trips-14th-19th-muaspgwt",
