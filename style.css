@@ -169,6 +169,13 @@ main.view { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
   border-radius: 10px;
   cursor: pointer;
 }
+.visibility-toggle {
+  background: var(--panel-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+}
 
 /* Tree view */
 .tree-branch {

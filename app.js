@@ -1,43 +1,47 @@
-const REPO = "sandstormveg/tasks-data";
-const API = `https://api.github.com/repos/${REPO}/contents`;
+// Public tasks live in this same repo (readable with no auth — works anywhere,
+// including embeds like Notion, since it never touches localStorage to read).
+// Private tasks live in a separate repo and always need a token, to view or edit.
+const PUBLIC_REPO = "sandstormveg/tasks";
+const PRIVATE_REPO = "sandstormveg/tasks-data";
+const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], pendingCompletion: null };
+const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public" };
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
 const getToken = () => localStorage.getItem(tokenKey) || "";
 
 // ---------- data loading ----------
-// Task data lives in a private repo, so it can only be read with a token —
-// there's no public fallback fetch here on purpose.
 async function loadData() {
-  if (!getToken()) {
-    showNeedsToken();
-    return;
-  }
-  try {
-    const [tasksFile, historyFile] = await Promise.all([
-      ghGetFile("data/tasks.json"),
-      ghGetFile("data/history.json"),
-    ]);
-    state.tasks = (JSON.parse(tasksFile.content)).tasks || [];
-    state.history = (JSON.parse(historyFile.content)).entries || [];
-    renderActive();
-    renderTree();
-  } catch (err) {
-    showNeedsToken(`Couldn't load your tasks: ${err.message}`);
-  }
-}
+  const publicTasks = fetch(`data/tasks.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ tasks: [] }));
+  const publicHistory = fetch(`data/history.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ entries: [] }));
 
-function showNeedsToken(message) {
-  const msg = message || "Add a GitHub token in Settings (⚙) to view and edit your tasks — they're stored in a private repo.";
-  el("#task-groups").innerHTML = `<div class="empty-state">${msg}</div>`;
-  el("#tree-groups").innerHTML = `<div class="empty-state">${msg}</div>`;
+  const [pubT, pubH] = await Promise.all([publicTasks, publicHistory]);
+  let tasks = (pubT.tasks || []).map((t) => ({ ...t, _repo: "public" }));
+  let history = (pubH.entries || []).map((e) => ({ ...e, _repo: "public" }));
+
+  if (getToken()) {
+    try {
+      const [privT, privH] = await Promise.all([
+        ghGetFile(PRIVATE_REPO, "data/tasks.json"),
+        ghGetFile(PRIVATE_REPO, "data/history.json"),
+      ]);
+      tasks = tasks.concat((JSON.parse(privT.content).tasks || []).map((t) => ({ ...t, _repo: "private" })));
+      history = history.concat((JSON.parse(privH.content).entries || []).map((e) => ({ ...e, _repo: "private" })));
+    } catch (err) {
+      console.warn("Couldn't load private tasks:", err.message);
+    }
+  }
+
+  state.tasks = tasks;
+  state.history = history;
+  renderActive();
+  renderTree();
 }
 
 // ---------- GitHub write-back ----------
-async function ghGetFile(path) {
-  const res = await fetch(`${API}/${path}`, {
+async function ghGetFile(repo, path) {
+  const res = await fetch(`${apiBase(repo)}/${path}`, {
     headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github+json" },
   });
   if (!res.ok) throw new Error(`Failed to read ${path}: ${res.status}`);
@@ -46,13 +50,13 @@ async function ghGetFile(path) {
   return { sha: json.sha, content };
 }
 
-async function ghPutFile(path, contentObj, sha, message) {
+async function ghPutFile(repo, path, contentObj, sha, message) {
   const body = {
     message,
     content: btoa(unescape(encodeURIComponent(JSON.stringify(contentObj, null, 2) + "\n"))),
     sha,
   };
-  const res = await fetch(`${API}/${path}`, {
+  const res = await fetch(`${apiBase(repo)}/${path}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${getToken()}`,
@@ -64,8 +68,8 @@ async function ghPutFile(path, contentObj, sha, message) {
   if (!res.ok) throw new Error(`Failed to write ${path}: ${res.status} ${await res.text()}`);
 }
 
-async function ghPutImage(path, base64Data, message) {
-  const res = await fetch(`${API}/${path}`, {
+async function ghPutImage(repo, path, base64Data, message) {
+  const res = await fetch(`${apiBase(repo)}/${path}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${getToken()}`,
@@ -77,14 +81,18 @@ async function ghPutImage(path, base64Data, message) {
   if (!res.ok) throw new Error(`Failed to upload image: ${res.status} ${await res.text()}`);
 }
 
-async function saveTasks(newTasks, message) {
-  const current = await ghGetFile("data/tasks.json");
-  await ghPutFile("data/tasks.json", { tasks: newTasks }, current.sha, message);
+async function saveTasks(repo, newTasks, message) {
+  const current = await ghGetFile(repo, "data/tasks.json");
+  await ghPutFile(repo, "data/tasks.json", { tasks: newTasks }, current.sha, message);
 }
 
-async function saveHistory(newEntries, message) {
-  const current = await ghGetFile("data/history.json");
-  await ghPutFile("data/history.json", { entries: newEntries }, current.sha, message);
+async function saveHistory(repo, newEntries, message) {
+  const current = await ghGetFile(repo, "data/history.json");
+  await ghPutFile(repo, "data/history.json", { entries: newEntries }, current.sha, message);
+}
+
+function repoFor(visibility) {
+  return visibility === "private" ? PRIVATE_REPO : PUBLIC_REPO;
 }
 
 function requireToken() {
@@ -123,12 +131,13 @@ function renderActive() {
 function taskCard(task) {
   const card = document.createElement("div");
   card.className = "task-card";
+  const visIcon = task._repo === "private" ? "🔒" : "🌐";
   card.innerHTML = `
     <button class="check" aria-label="Complete task">
       <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
     </button>
     <div>
-      <div class="task-title">${task.title}</div>
+      <div class="task-title">${visIcon} ${task.title}</div>
       ${task.notes ? `<div class="task-meta">${task.notes}</div>` : ""}
     </div>
   `;
@@ -150,6 +159,7 @@ el("#complete-cancel").addEventListener("click", () => el("#complete-dialog").cl
 
 el("#complete-form").addEventListener("submit", async (e) => {
   const { task, card } = state.pendingCompletion;
+  const repo = task._repo === "private" ? PRIVATE_REPO : PUBLIC_REPO;
   const note = el("#complete-note").value.trim();
   const file = el("#complete-image").files[0];
   el("#complete-dialog").close();
@@ -166,10 +176,11 @@ el("#complete-form").addEventListener("submit", async (e) => {
       const base64 = await fileToBase64(file);
       const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       imagePath = `images/${safeCat}/${task.id}.png`;
-      await ghPutImage(imagePath, base64, `Add image for ${task.title}`);
+      await ghPutImage(repo, imagePath, base64, `Add image for ${task.title}`);
     }
 
-    const newTasks = state.tasks.filter((t) => t.id !== task.id);
+    const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id)
+      .map(({ _repo, ...rest }) => rest);
     const entry = {
       id: task.id,
       title: task.title,
@@ -178,13 +189,17 @@ el("#complete-form").addEventListener("submit", async (e) => {
       note,
       images: imagePath ? [imagePath] : [],
     };
-    const newHistory = [...state.history, entry];
+    const historyInRepo = state.history.filter((h) => h._repo === task._repo)
+      .map(({ _repo, ...rest }) => rest)
+      .concat(entry);
 
-    await saveTasks(newTasks, `Complete task: ${task.title}`);
-    await saveHistory(newHistory, `Log history: ${task.title}`);
+    await saveTasks(repo, remainingInRepo, `Complete task: ${task.title}`);
+    await saveHistory(repo, historyInRepo, `Log history: ${task.title}`);
 
-    state.tasks = newTasks;
-    state.history = newHistory;
+    state.tasks = state.tasks.filter((t) => t.id !== task.id || t._repo !== task._repo);
+    state.history = state.history.filter((h) => h._repo !== task._repo).concat(
+      historyInRepo.map((h) => ({ ...h, _repo: task._repo }))
+    );
     setTimeout(() => renderActive(), 350);
     renderTree();
   } catch (err) {
@@ -204,6 +219,19 @@ function fileToBase64(file) {
 }
 
 // ---------- adding a task ----------
+el("#add-visibility").addEventListener("click", () => {
+  state.newTaskVisibility = state.newTaskVisibility === "public" ? "private" : "public";
+  renderVisibilityToggle();
+});
+function renderVisibilityToggle() {
+  const isPublic = state.newTaskVisibility === "public";
+  el("#add-visibility").textContent = isPublic ? "🌐 Public" : "🔒 Private";
+  el("#add-visibility").title = isPublic
+    ? "Visible to anyone who finds the site — click to make this task private"
+    : "Stored in your private repo, needs your token to view — click to make it public";
+}
+renderVisibilityToggle();
+
 el("#add-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!requireToken()) return;
@@ -211,13 +239,16 @@ el("#add-form").addEventListener("submit", async (e) => {
   const category = el("#add-category").value.trim();
   if (!title || !category) return;
 
+  const visibility = state.newTaskVisibility;
+  const repo = repoFor(visibility);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "" };
-  const newTasks = [...state.tasks, task];
+  const existingInRepo = state.tasks.filter((t) => t._repo === visibility).map(({ _repo, ...rest }) => rest);
+  const newTasksInRepo = [...existingInRepo, task];
 
   try {
-    await saveTasks(newTasks, `Add task: ${title}`);
-    state.tasks = newTasks;
+    await saveTasks(repo, newTasksInRepo, `Add task: ${title}`);
+    state.tasks = [...state.tasks, { ...task, _repo: visibility }];
     renderActive();
     el("#add-form").reset();
   } catch (err) {
@@ -243,8 +274,9 @@ function renderTree() {
     entries.slice().reverse().forEach((entry) => {
       const node = document.createElement("div");
       node.className = "tree-node";
+      const visIcon = entry._repo === "private" ? "🔒" : "🌐";
       node.innerHTML = `
-        <span class="node-title">${entry.title}</span>
+        <span class="node-title">${visIcon} ${entry.title}</span>
         <span class="node-date">${entry.completedDate}</span>
         ${entry.note ? `<div class="node-note">${entry.note}</div>` : ""}
         ${(entry.images || []).map((img) => `<img src="${img}" alt="">`).join("")}
