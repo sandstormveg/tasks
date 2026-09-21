@@ -124,7 +124,16 @@
       "category": "Meta",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mub0o0yb3348",
+          "text": "please action.",
+          "done": false,
+          "created": "2026-09-21T09:02:09.107Z",
+          "updated": "2026-09-21T09:02:09.107Z"
+        }
+      ]
     }
   ]
 }
