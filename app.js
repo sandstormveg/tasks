@@ -5,7 +5,7 @@ const PUBLIC_REPO = "sandstormveg/tasks";
 const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], pendingNoteEdit: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
+const state = { tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
@@ -17,33 +17,41 @@ const getToken = () => localStorage.getItem(tokenKey) || "";
 // while the API returns the repo's actual current state. Reading public from Pages
 // while reading private from the API made moved tasks briefly vanish from the UI,
 // so prefer the API whenever we have a token and keep Pages as the no-token path.
+// Categories (and their parent/child nesting) live only in the public repo — which
+// category a task sits in isn't sensitive even when the task itself is private, and
+// keeping one shared hierarchy means a private task's category can still nest under a
+// public one without needing to duplicate the structure across both repos.
 async function loadPublicData() {
   if (getToken()) {
     try {
-      const [t, h] = await Promise.all([
+      const [t, h, c] = await Promise.all([
         ghGetFile(PUBLIC_REPO, "data/tasks.json"),
         ghGetFile(PUBLIC_REPO, "data/history.json"),
+        ghGetFile(PUBLIC_REPO, "data/categories.json").catch(() => ({ content: '{"categories":{}}' })),
       ]);
       return {
         tasks: JSON.parse(t.content).tasks || [],
         history: JSON.parse(h.content).entries || [],
+        categories: JSON.parse(c.content).categories || {},
         authoritative: true,
       };
     } catch (err) {
       console.warn("Public API read failed, falling back to published files:", err.message);
     }
   }
-  const [t, h] = await Promise.all([
+  const [t, h, c] = await Promise.all([
     fetch(`data/tasks.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ tasks: [] })),
     fetch(`data/history.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ entries: [] })),
+    fetch(`data/categories.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ categories: {} })),
   ]);
-  return { tasks: t.tasks || [], history: h.entries || [], authoritative: false };
+  return { tasks: t.tasks || [], history: h.entries || [], categories: c.categories || {}, authoritative: false };
 }
 
 async function loadData() {
   const pub = await loadPublicData();
   let tasks = pub.tasks.map((t) => ({ ...t, _repo: "public" }));
   let history = pub.history.map((e) => ({ ...e, _repo: "public" }));
+  state.categories = pub.categories;
   state.publicLoaded = pub.authoritative;
   state.privateLoaded = false;
 
@@ -217,6 +225,82 @@ async function saveHistory(repo, newEntries, message) {
   await ghPutFile(repo, "data/history.json", { entries: newEntries }, current.sha, message);
 }
 
+// categories.json only exists once someone nests a category, so its absence isn't an
+// error — treat a failed read as "no hierarchy yet" rather than surfacing a 404.
+async function saveCategories(newMap, message) {
+  let sha;
+  try {
+    sha = (await ghGetFile(PUBLIC_REPO, "data/categories.json")).sha;
+  } catch (err) {
+    sha = undefined; // file doesn't exist yet — PUT without a sha creates it
+  }
+  await ghPutFile(PUBLIC_REPO, "data/categories.json", { categories: newMap }, sha, message);
+}
+
+// ---------- category hierarchy ----------
+// state.categories maps a category name to its parent's name (root categories are
+// simply absent from the map, not present with a null value — keeps the file empty
+// until someone actually nests something).
+function categoryParent(name) {
+  return state.categories[name] || null;
+}
+
+function categoryChildren(name) {
+  return Object.keys(state.categories)
+    .filter((c) => state.categories[c] === name)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+// Would nesting `name` under `underName` create a cycle — i.e. is `underName` already
+// inside `name`'s own subtree? Walking up from `underName` and hitting `name` means yes.
+function isDescendantOf(underName, name) {
+  let cur = categoryParent(underName);
+  while (cur) {
+    if (cur === name) return true;
+    cur = categoryParent(cur);
+  }
+  return false;
+}
+
+function rootCategories(namesInUse) {
+  const all = new Set(namesInUse);
+  Object.keys(state.categories).forEach((k) => all.add(k));
+  Object.values(state.categories).forEach((v) => v && all.add(v));
+  return [...all].filter((c) => !categoryParent(c)).sort((a, b) => a.localeCompare(b));
+}
+
+async function nestCategory(child, parent) {
+  if (!requireToken()) return;
+  if (child === parent) return;
+  if (isDescendantOf(parent, child)) {
+    alert(`Can't move "${parent}" under "${child}" — "${child}" is already nested inside "${parent}".`);
+    return;
+  }
+  const newMap = { ...state.categories, [child]: parent };
+  try {
+    await saveCategories(newMap, `Nest "${child}" under "${parent}"`);
+    state.categories = newMap;
+    renderActive();
+    renderTree();
+  } catch (err) {
+    alert(`Couldn't update categories: ${err.message}`);
+  }
+}
+
+async function unnestCategory(child) {
+  if (!requireToken()) return;
+  const newMap = { ...state.categories };
+  delete newMap[child];
+  try {
+    await saveCategories(newMap, `Un-nest "${child}"`);
+    state.categories = newMap;
+    renderActive();
+    renderTree();
+  } catch (err) {
+    alert(`Couldn't update categories: ${err.message}`);
+  }
+}
+
 function repoFor(visibility) {
   return visibility === "private" ? PRIVATE_REPO : PUBLIC_REPO;
 }
@@ -256,13 +340,152 @@ function renderActive() {
     return;
   }
   const groups = groupBy(state.tasks, "category");
-  Object.keys(groups).sort().forEach((cat) => {
-    const section = document.createElement("div");
-    section.className = "category-group";
-    section.innerHTML = `<h2>${cat}</h2>`;
-    groups[cat].forEach((task) => section.appendChild(taskCard(task)));
-    container.appendChild(section);
+  rootCategories(Object.keys(groups)).forEach((rootName) => renderCategoryBranch(container, rootName, groups, 0));
+}
+
+// Recurses through the category hierarchy so a parent category's section is followed
+// immediately by its children's sections, indented — drag one category's header onto
+// another to nest it (see the drag handlers below); a purely organizational category
+// (no tasks of its own, just grouping subcategories) still gets a header so it stays
+// draggable and visible, rather than disappearing until you happen to nest something under it.
+function renderCategoryBranch(container, name, groups, depth) {
+  const children = categoryChildren(name);
+  const tasks = groups[name] || [];
+  if (tasks.length === 0 && children.length === 0) return;
+
+  const section = document.createElement("div");
+  section.className = "category-group" + (depth > 0 ? " nested" : "");
+  section.appendChild(categoryHeader(name, depth));
+  tasks.forEach((task) => section.appendChild(taskCard(task)));
+  container.appendChild(section);
+
+  children.forEach((childName) => renderCategoryBranch(container, childName, groups, depth + 1));
+}
+
+function categoryHeader(name, depth) {
+  const header = document.createElement("h2");
+  header.textContent = name;
+  header.className = "category-header";
+  header.draggable = true;
+  header.dataset.category = name;
+  header.title = "Drag onto another category to nest this one under it";
+  header.addEventListener("dragstart", onCategoryDragStart);
+  header.addEventListener("dragover", onCategoryDragOver);
+  header.addEventListener("dragleave", onCategoryDragLeave);
+  header.addEventListener("drop", onCategoryDrop);
+  header.addEventListener("dragend", onCategoryDragEnd);
+
+  // Drag only works with a mouse — this button is the touch-friendly equivalent, since
+  // the assistants using this on their phones can't drag a header at all.
+  const moveBtn = document.createElement("button");
+  moveBtn.className = "category-move-btn";
+  moveBtn.type = "button";
+  moveBtn.textContent = "⇅";
+  moveBtn.title = "Move this category under another one";
+  moveBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openCategoryMoveMenu(name, header);
   });
+  header.appendChild(moveBtn);
+
+  if (depth > 0) {
+    const detach = document.createElement("button");
+    detach.className = "category-detach";
+    detach.type = "button";
+    detach.textContent = "✕";
+    detach.title = `Remove from "${categoryParent(name)}"`;
+    detach.addEventListener("click", (e) => {
+      e.stopPropagation();
+      unnestCategory(name);
+    });
+    header.appendChild(detach);
+  }
+  return header;
+}
+
+function openCategoryMoveMenu(name, anchorEl) {
+  closeCategoryMoveMenu();
+  const menu = document.createElement("div");
+  menu.className = "category-move-menu";
+  menu.id = "category-move-menu";
+
+  const allNames = new Set([
+    ...state.tasks.map((t) => t.category),
+    ...state.history.map((h) => h.category),
+    ...Object.keys(state.categories),
+    ...Object.values(state.categories).filter(Boolean),
+  ]);
+
+  const options = [];
+  if (categoryParent(name)) options.push({ label: "↑ Move to top level", value: null });
+  [...allNames].sort((a, b) => a.localeCompare(b)).forEach((n) => {
+    if (n === name || n === categoryParent(name)) return;
+    if (isDescendantOf(n, name)) return; // would create a cycle
+    options.push({ label: n, value: n });
+  });
+
+  menu.innerHTML = options.length
+    ? options
+        .map((o, i) => `<div class="combo-option" data-i="${i}">${esc(o.label)}</div>`)
+        .join("")
+    : `<div class="combo-option is-new">No other categories to move under yet</div>`;
+
+  menu.querySelectorAll(".combo-option[data-i]").forEach((optEl) => {
+    optEl.addEventListener("click", () => {
+      const opt = options[Number(optEl.dataset.i)];
+      closeCategoryMoveMenu();
+      if (opt.value === null) unnestCategory(name);
+      else nestCategory(name, opt.value);
+    });
+  });
+
+  anchorEl.appendChild(menu);
+  setTimeout(() => document.addEventListener("click", onDocClickCloseMoveMenu, { capture: true }), 0);
+}
+
+function closeCategoryMoveMenu() {
+  const existing = document.getElementById("category-move-menu");
+  if (existing) existing.remove();
+  document.removeEventListener("click", onDocClickCloseMoveMenu, { capture: true });
+}
+
+function onDocClickCloseMoveMenu(e) {
+  const menu = document.getElementById("category-move-menu");
+  if (menu && !menu.contains(e.target)) closeCategoryMoveMenu();
+}
+
+// ---------- category drag-and-drop ----------
+let draggedCategory = null;
+
+function onCategoryDragStart(e) {
+  draggedCategory = e.currentTarget.dataset.category;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", draggedCategory);
+}
+
+function onCategoryDragOver(e) {
+  if (!draggedCategory || draggedCategory === e.currentTarget.dataset.category) return;
+  e.preventDefault();
+  e.currentTarget.classList.add("drag-over");
+}
+
+function onCategoryDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function onCategoryDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  const target = e.currentTarget.dataset.category;
+  if (draggedCategory && draggedCategory !== target) nestCategory(draggedCategory, target);
+  draggedCategory = null;
+}
+
+function onCategoryDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".category-header.drag-over").forEach((el) => el.classList.remove("drag-over"));
+  draggedCategory = null;
 }
 
 function taskCard(task) {
@@ -617,30 +840,85 @@ function renderTree() {
   const container = el("#tree-groups");
   container.innerHTML = "";
   if (state.history.length === 0) {
-    container.innerHTML = `<div class="empty-state">Complete a task to start growing your tree.</div>`;
+    container.innerHTML = `<div class="empty-state">Complete a task to start building your history.</div>`;
     return;
   }
   const groups = groupBy(state.history, "category");
-  Object.keys(groups).sort().forEach((cat) => {
-    const entries = groups[cat].slice().sort((a, b) => a.completedDate.localeCompare(b.completedDate));
-    const level = Math.floor(entries.length / 3) + 1;
-    const branch = document.createElement("div");
-    branch.className = "tree-branch";
-    branch.innerHTML = `<h2>${cat} <span class="level-badge">Level ${level} · ${entries.length} done</span></h2>`;
-    entries.slice().reverse().forEach((entry) => {
-      const node = document.createElement("div");
-      node.className = "tree-node";
-      const visIcon = entry._repo === "private" ? "🔒" : "🌐";
-      node.innerHTML = `
+  rootCategories(Object.keys(groups)).forEach((rootName) => renderHistoryBranch(container, rootName, groups, 0));
+}
+
+// Same hierarchy as the Active tab (categories are shared across both), so nesting a
+// category once reorganizes it everywhere — no separate drag-and-drop needed here.
+function renderHistoryBranch(container, name, groups, depth) {
+  const children = categoryChildren(name);
+  const entries = (groups[name] || []).slice().sort((a, b) => a.completedDate.localeCompare(b.completedDate));
+  if (entries.length === 0 && children.length === 0) return;
+
+  const branch = document.createElement("div");
+  branch.className = "tree-branch" + (depth > 0 ? " nested" : "");
+  branch.innerHTML = `<h2>${esc(name)}${entries.length ? ` <span class="count-badge">${entries.length} completed</span>` : ""}</h2>`;
+
+  entries.slice().reverse().forEach((entry) => {
+    const node = document.createElement("div");
+    node.className = "tree-node";
+    const visIcon = entry._repo === "private" ? "🔒" : "🌐";
+    node.innerHTML = `
+      <div class="node-row">
         <span class="node-title">${visIcon} ${esc(entry.title)}</span>
         <span class="node-date">${esc(entry.completedDate)}</span>
-        ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
-        ${(entry.images || []).map((img) => `<img src="${esc(img)}" alt="">`).join("")}
-      `;
-      branch.appendChild(node);
-    });
-    container.appendChild(branch);
+        <button class="node-delete" aria-label="Delete from history">🗑</button>
+      </div>
+      ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
+      ${(entry.images || []).map((img) => `<img src="${esc(img)}" alt="">`).join("")}
+    `;
+    node.querySelector(".node-delete").addEventListener("click", () => deleteHistoryEntry(entry, node));
+    branch.appendChild(node);
   });
+
+  container.appendChild(branch);
+  children.forEach((childName) => renderHistoryBranch(container, childName, groups, depth + 1));
+}
+
+// Same instant + undo pattern as deleting an active task (see deleteTask) — no confirm
+// dialog, the write is deferred behind the undo window.
+async function deleteHistoryEntry(entry, nodeEl) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(entry._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+
+  const prevHistory = state.history;
+  nodeEl.classList.add("completing");
+  state.history = state.history.filter((h) => !(h.id === entry.id && h._repo === entry._repo));
+  setTimeout(() => nodeEl.remove(), 300);
+
+  let undone = false;
+  showToast({
+    message: `Deleted "${entry.title}" from history`,
+    actionLabel: "Undo",
+    duration: DELETE_UNDO_MS,
+    onAction: () => {
+      undone = true;
+      state.history = prevHistory;
+      renderTree();
+    },
+  });
+
+  setTimeout(async () => {
+    if (undone) return;
+    try {
+      const repo = repoFor(entry._repo);
+      const remaining = prevHistory.filter((h) => h._repo === entry._repo && h.id !== entry.id).map(stripRepo);
+      await saveHistory(repo, remaining, `Delete history entry: ${entry.title}`);
+    } catch (err) {
+      state.history = prevHistory;
+      renderTree();
+      alert(`Couldn't delete "${entry.title}" from history: ${err.message}. It's back.`);
+    }
+  }, DELETE_UNDO_MS + 300);
 }
 
 // ---------- assistance tab: suggestions + scratchpad per task ----------
