@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tasks</title>
-<link rel="stylesheet" href="style.css?v=9" />
+<link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
   <canvas id="fx-canvas"></canvas>
@@ -47,10 +47,11 @@
   </main>
 
   <dialog id="complete-dialog">
-    <form method="dialog" id="complete-form">
+    <form id="complete-form">
       <h3>Add a note</h3>
       <textarea id="complete-note" placeholder="What you learned / did (optional)"></textarea>
       <input id="complete-image" type="file" accept="image/*" />
+      <div class="dialog-error" id="complete-dialog-error"></div>
       <div class="dialog-actions">
         <button type="button" id="complete-cancel">Cancel</button>
         <button type="submit" id="complete-confirm">Save note</button>
@@ -75,6 +76,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

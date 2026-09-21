@@ -742,6 +742,13 @@ dialog textarea, dialog input[type="password"] {
 }
 dialog textarea { min-height: 70px; resize: vertical; }
 .hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.dialog-error {
+  color: #ff6b9d;
+  font-size: 12.5px;
+  margin-top: 8px;
+  min-height: 1em;
+}
+.dialog-actions button:disabled { opacity: 0.6; cursor: default; }
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

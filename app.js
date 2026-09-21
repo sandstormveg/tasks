@@ -648,29 +648,47 @@ function openNoteDialog(entry) {
   state.pendingNoteEdit = entry;
   el("#complete-note").value = entry.note || "";
   el("#complete-image").value = "";
+  el("#complete-dialog-error").textContent = "";
+  const saveBtn = el("#complete-confirm");
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Save note";
+  el("#complete-cancel").disabled = false;
   el("#complete-dialog").showModal();
 }
 
 el("#complete-cancel").addEventListener("click", () => el("#complete-dialog").close());
 
+function setDialogError(msg) {
+  const box = el("#complete-dialog-error");
+  if (box) box.textContent = msg || "";
+}
+
 el("#complete-form").addEventListener("submit", async (e) => {
+  // No method="dialog" on this form anymore, and preventDefault here, on purpose: that
+  // markup used to close the dialog the instant you hit submit, before any async save
+  // ran — so a failed save (e.g. an oversized image) still lost the note you'd just
+  // typed, because the textarea was already gone. Now the dialog only closes once we
+  // actually know the note saved.
+  e.preventDefault();
   const entry = state.pendingNoteEdit;
   if (!entry) return;
   const repo = repoFor(entry._repo);
   const note = el("#complete-note").value.trim();
   const file = el("#complete-image").files[0];
-  el("#complete-dialog").close();
+  const saveBtn = el("#complete-confirm");
+  const cancelBtn = el("#complete-cancel");
+
+  setDialogError("");
+  saveBtn.disabled = true;
+  cancelBtn.disabled = true;
+  saveBtn.textContent = "Saving…";
 
   try {
     assertLoaded(entry._repo);
+
+    // Save the note text first and independently of any image — a failed photo upload
+    // should never be able to cost you the words you already wrote.
     let images = entry.images || [];
-    if (file) {
-      const base64 = await fileToBase64(file);
-      const safeCat = entry.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const imagePath = `images/${safeCat}/${entry.id}.png`;
-      await ghPutImage(repo, imagePath, base64, `Add image for ${entry.title}`);
-      images = [imagePath];
-    }
     const updatedHistory = state.history
       .filter((h) => h._repo === entry._repo)
       .map(stripRepo)
@@ -680,8 +698,34 @@ el("#complete-form").addEventListener("submit", async (e) => {
       h.id === entry.id && h._repo === entry._repo ? { ...h, note, images } : h
     );
     renderTree();
+    el("#complete-dialog").close();
+
+    if (file) {
+      try {
+        const compressed = await compressImage(file);
+        const base64 = await blobToBase64(compressed);
+        const safeCat = entry.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const imagePath = `images/${safeCat}/${entry.id}.jpg`;
+        await ghPutImage(repo, imagePath, base64, `Add image for ${entry.title}`);
+        images = [imagePath];
+        const withImage = state.history
+          .filter((h) => h._repo === entry._repo)
+          .map(stripRepo)
+          .map((h) => (h.id === entry.id ? { ...h, images } : h));
+        await saveHistory(repo, withImage, `Add image: ${entry.title}`);
+        state.history = state.history.map((h) =>
+          h.id === entry.id && h._repo === entry._repo ? { ...h, images } : h
+        );
+        renderTree();
+      } catch (imgErr) {
+        alert(`Your note saved, but the photo didn't upload: ${imgErr.message}\n\nThe note itself is safe — you can try attaching the photo again from the History tab later.`);
+      }
+    }
   } catch (err) {
-    alert(`Couldn't save note: ${err.message}`);
+    saveBtn.disabled = false;
+    cancelBtn.disabled = false;
+    saveBtn.textContent = "Save note";
+    setDialogError(`Couldn't save: ${err.message}`);
   }
 });
 
@@ -784,12 +828,41 @@ function showToast({ message, actionLabel, onAction, duration = 5000 }) {
   setTimeout(remove, duration);
 }
 
-function fileToBase64(file) {
+// Phone screenshots routinely land at 1-5MB, well past GitHub's practical ~1MB limit for
+// a single Contents-API PUT — that mismatch is what silently failed uploads before. Scale
+// down and re-encode as JPEG so a typical screenshot comes in well under the limit.
+function compressImage(file, maxDim = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not process image"))), "image/jpeg", quality);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not load image"));
+    };
+    img.src = url;
+  });
+}
+
+function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result.split(",")[1]);
     reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
 }
 
