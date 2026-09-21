@@ -366,6 +366,84 @@ main.view.wide { max-width: 980px; }
 .assist-toggle.on:hover { transform: scale(1.08); }
 .assist-toggle:disabled { opacity: 0.5; cursor: default; }
 
+.delete-toggle {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: #4b5264;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.delete-toggle:hover { color: #ff6b9d; border-color: #ff6b9d; transform: scale(1.08); }
+.delete-toggle:disabled { opacity: 0.5; cursor: default; }
+
+/* toasts */
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  max-width: 420px;
+  animation: toast-in 0.2s ease;
+}
+.toast.toast-out { animation: toast-out 0.2s ease forwards; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(8px); }
+}
+.toast-msg { flex: 1; }
+.toast-action {
+  background: var(--accent);
+  border: none;
+  color: #0f1117;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  flex-shrink: 0;
+}
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 2px;
+  line-height: 1;
+}
+.toast-close:hover { color: var(--text); }
+
 .add-form {
   display: flex;
   flex-direction: column;
@@ -546,4 +624,10 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .assist-layout { grid-template-columns: 1fr; }
   .assist-list { max-height: 260px; }
   .assist-detail { padding: 18px; }
+
+  /* five buttons per card (check, assist, vis, delete) needs tighter spacing to
+     leave room for the title on narrow screens */
+  .task-card { gap: 8px; padding: 12px; }
+  .assist-toggle, .vis-toggle, .delete-toggle { width: 30px; height: 30px; font-size: 13px; }
+  .check { --size: 24px; }
 }

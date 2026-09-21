@@ -4,10 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tasks</title>
-<link rel="stylesheet" href="style.css?v=6" />
+<link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <canvas id="fx-canvas"></canvas>
+  <div id="toast-container" class="toast-container"></div>
 
   <header class="topbar">
     <h1>Tasks</h1>
@@ -47,12 +48,12 @@
 
   <dialog id="complete-dialog">
     <form method="dialog" id="complete-form">
-      <h3>Nice work — anything to remember?</h3>
+      <h3>Add a note</h3>
       <textarea id="complete-note" placeholder="What you learned / did (optional)"></textarea>
       <input id="complete-image" type="file" accept="image/*" />
       <div class="dialog-actions">
         <button type="button" id="complete-cancel">Cancel</button>
-        <button type="submit" id="complete-confirm">Log it</button>
+        <button type="submit" id="complete-confirm">Save note</button>
       </div>
     </form>
   </dialog>
@@ -74,6 +75,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

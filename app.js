@@ -5,7 +5,7 @@ const PUBLIC_REPO = "sandstormveg/tasks";
 const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
+const state = { tasks: [], history: [], pendingNoteEdit: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
@@ -278,9 +278,11 @@ function taskCard(task) {
     </div>
     <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
     <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+    <button class="delete-toggle" aria-label="Delete task">🗑</button>
   `;
-  card.querySelector(".check").addEventListener("click", (e) => openCompleteDialog(task, card, e));
+  card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
+  card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
   const assistBtn = card.querySelector(".assist-toggle");
   assistBtn.title = task.assist
     ? "Claude is helping with this one — click to stop"
@@ -363,23 +365,11 @@ async function toggleVisibility(task, btnEl) {
 }
 
 // ---------- completing a task ----------
-function openCompleteDialog(task, card, clickEvent) {
+// Ticking a box completes it immediately — no modal in the way. A note/photo is
+// optional and offered afterward via the toast, so adding one is a choice, not a toll.
+async function completeTask(task, card) {
   if (!requireToken()) return;
-  state.pendingCompletion = { task, card };
-  el("#complete-note").value = "";
-  el("#complete-image").value = "";
-  el("#complete-dialog").showModal();
-}
-
-el("#complete-cancel").addEventListener("click", () => el("#complete-dialog").close());
-
-el("#complete-form").addEventListener("submit", async (e) => {
-  const { task, card } = state.pendingCompletion;
-  const repo = task._repo === "private" ? PRIVATE_REPO : PUBLIC_REPO;
-  const note = el("#complete-note").value.trim();
-  const file = el("#complete-image").files[0];
-  el("#complete-dialog").close();
-
+  const repo = repoFor(task._repo);
   const checkBtn = card.querySelector(".check");
   checkBtn.classList.add("checked");
   burst(checkBtn);
@@ -387,31 +377,20 @@ el("#complete-form").addEventListener("submit", async (e) => {
   card.classList.add("completing");
 
   try {
-    let imagePath = null;
-    if (file) {
-      const base64 = await fileToBase64(file);
-      const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      imagePath = `images/${safeCat}/${task.id}.png`;
-      await ghPutImage(repo, imagePath, base64, `Add image for ${task.title}`);
-    }
-
-    const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id)
-      .map(({ _repo, ...rest }) => rest);
+    assertLoaded(task._repo);
+    const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
     const entry = {
       id: task.id,
       title: task.title,
       category: task.category,
       completedDate: new Date().toISOString().slice(0, 10),
-      note,
-      images: imagePath ? [imagePath] : [],
+      note: "",
+      images: [],
     };
-    const historyInRepo = state.history.filter((h) => h._repo === task._repo)
-      .map(({ _repo, ...rest }) => rest)
-      .concat(entry);
+    const historyInRepo = state.history.filter((h) => h._repo === task._repo).map(stripRepo).concat(entry);
 
     // History first, then removal — if the second write fails the task is still on the
     // list and can be ticked again, rather than erased with no record of completion.
-    assertLoaded(task._repo);
     await saveHistory(repo, historyInRepo, `Log history: ${task.title}`);
     await saveTasks(repo, remainingInRepo, `Complete task: ${task.title}`);
 
@@ -425,12 +404,162 @@ el("#complete-form").addEventListener("submit", async (e) => {
     renderCategoryOptions();
     renderAssistList();
     renderAssistDetail();
+    renderAssistTabCount();
+
+    showToast({
+      message: `✓ Completed "${task.title}"`,
+      actionLabel: "Add note",
+      onAction: () => openNoteDialog({ ...entry, _repo: task._repo }),
+      duration: 7000,
+    });
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
     card.classList.remove("completing");
     checkBtn.classList.remove("checked");
   }
+}
+
+// Editing a note on an already-completed task, reached only from the toast above —
+// this dialog is opt-in follow-up, never a gate on completing the task itself.
+function openNoteDialog(entry) {
+  state.pendingNoteEdit = entry;
+  el("#complete-note").value = entry.note || "";
+  el("#complete-image").value = "";
+  el("#complete-dialog").showModal();
+}
+
+el("#complete-cancel").addEventListener("click", () => el("#complete-dialog").close());
+
+el("#complete-form").addEventListener("submit", async (e) => {
+  const entry = state.pendingNoteEdit;
+  if (!entry) return;
+  const repo = repoFor(entry._repo);
+  const note = el("#complete-note").value.trim();
+  const file = el("#complete-image").files[0];
+  el("#complete-dialog").close();
+
+  try {
+    assertLoaded(entry._repo);
+    let images = entry.images || [];
+    if (file) {
+      const base64 = await fileToBase64(file);
+      const safeCat = entry.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const imagePath = `images/${safeCat}/${entry.id}.png`;
+      await ghPutImage(repo, imagePath, base64, `Add image for ${entry.title}`);
+      images = [imagePath];
+    }
+    const updatedHistory = state.history
+      .filter((h) => h._repo === entry._repo)
+      .map(stripRepo)
+      .map((h) => (h.id === entry.id ? { ...h, note, images } : h));
+    await saveHistory(repo, updatedHistory, `Update note: ${entry.title}`);
+    state.history = state.history.map((h) =>
+      h.id === entry.id && h._repo === entry._repo ? { ...h, note, images } : h
+    );
+    renderTree();
+  } catch (err) {
+    alert(`Couldn't save note: ${err.message}`);
+  }
 });
+
+// ---------- deleting a task ----------
+// No confirm dialog — delete happens immediately and can be undone from the toast for
+// a few seconds, which is faster for the common case (no popup) without making a
+// mis-tap unrecoverable. The actual GitHub write is deferred until the undo window
+// closes, so hitting Undo never needs a second network round trip to "un-delete".
+const DELETE_UNDO_MS = 6000;
+
+async function deleteTask(task, card) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(task._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+
+  const prevTasks = state.tasks;
+  card.classList.add("completing");
+  state.tasks = state.tasks.filter((t) => !(t.id === task.id && t._repo === task._repo));
+  renderCategoryOptions();
+  renderAssistList();
+  renderAssistTabCount();
+  if (state.selectedAssistKey === taskKey(task)) {
+    state.selectedAssistKey = null;
+    renderAssistDetail();
+  }
+  setTimeout(() => card.remove(), 300);
+
+  let undone = false;
+  showToast({
+    message: `Deleted "${task.title}"`,
+    actionLabel: "Undo",
+    duration: DELETE_UNDO_MS,
+    onAction: () => {
+      undone = true;
+      state.tasks = prevTasks;
+      renderActive();
+      renderCategoryOptions();
+      renderAssistList();
+      renderAssistTabCount();
+    },
+  });
+
+  setTimeout(async () => {
+    if (undone) return;
+    try {
+      const repo = repoFor(task._repo);
+      const remaining = prevTasks.filter((t) => !(t.id === task.id && t._repo === task._repo)).map(stripRepo);
+      await saveTasks(repo, remaining, `Delete task: ${task.title}`);
+    } catch (err) {
+      state.tasks = prevTasks;
+      renderActive();
+      renderCategoryOptions();
+      renderAssistList();
+      renderAssistTabCount();
+      alert(`Couldn't delete "${task.title}": ${err.message}. It's back on your list.`);
+    }
+  }, DELETE_UNDO_MS + 300);
+}
+
+// ---------- toasts ----------
+function showToast({ message, actionLabel, onAction, duration = 5000 }) {
+  const container = el("#toast-container");
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  const msg = document.createElement("span");
+  msg.className = "toast-msg";
+  msg.textContent = message;
+  toast.appendChild(msg);
+
+  const remove = () => {
+    toast.classList.add("toast-out");
+    setTimeout(() => toast.remove(), 200);
+  };
+
+  if (actionLabel && onAction) {
+    const btn = document.createElement("button");
+    btn.className = "toast-action";
+    btn.type = "button";
+    btn.textContent = actionLabel;
+    btn.addEventListener("click", () => {
+      onAction();
+      remove();
+    });
+    toast.appendChild(btn);
+  }
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "toast-close";
+  closeBtn.type = "button";
+  closeBtn.setAttribute("aria-label", "Dismiss");
+  closeBtn.textContent = "×";
+  closeBtn.addEventListener("click", remove);
+  toast.appendChild(closeBtn);
+
+  container.appendChild(toast);
+  setTimeout(remove, duration);
+}
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
