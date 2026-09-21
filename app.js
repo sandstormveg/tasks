@@ -602,6 +602,9 @@ async function completeTask(task, card) {
   try {
     assertLoaded(task._repo);
     const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
+    // Carry the task's own notes and Claude's suggestions into history — otherwise
+    // completing a task silently threw away everything that had been built up on it.
+    const carriedNotes = noteItems(task);
     const entry = {
       id: task.id,
       title: task.title,
@@ -609,6 +612,8 @@ async function completeTask(task, card) {
       completedDate: new Date().toISOString().slice(0, 10),
       note: "",
       images: [],
+      ...(carriedNotes.length ? { noteItems: carriedNotes } : {}),
+      ...((task.suggestions || []).length ? { suggestions: task.suggestions } : {}),
     };
     const historyInRepo = state.history.filter((h) => h._repo === task._repo).map(stripRepo).concat(entry);
 
@@ -931,25 +936,84 @@ function renderHistoryBranch(container, name, groups, depth) {
   branch.className = "tree-branch" + (depth > 0 ? " nested" : "");
   branch.innerHTML = `<h2>${esc(name)}${entries.length ? ` <span class="count-badge">${entries.length} completed</span>` : ""}</h2>`;
 
-  entries.slice().reverse().forEach((entry) => {
-    const node = document.createElement("div");
-    node.className = "tree-node";
-    const visIcon = entry._repo === "private" ? "🔒" : "🌐";
-    node.innerHTML = `
-      <div class="node-row">
-        <span class="node-title">${visIcon} ${esc(entry.title)}</span>
-        <span class="node-date">${esc(entry.completedDate)}</span>
-        <button class="node-delete" aria-label="Delete from history">🗑</button>
-      </div>
-      ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
-      ${(entry.images || []).map((img) => `<img src="${esc(img)}" alt="">`).join("")}
-    `;
-    node.querySelector(".node-delete").addEventListener("click", () => deleteHistoryEntry(entry, node));
-    branch.appendChild(node);
-  });
+  entries.slice().reverse().forEach((entry) => branch.appendChild(historyNodeEl(entry)));
 
   container.appendChild(branch);
   children.forEach((childName) => renderHistoryBranch(container, childName, groups, depth + 1));
+}
+
+// Which history entries are expanded, keyed like taskKey() — a plain Set survives
+// re-renders (triggered by e.g. deleting a sibling entry) so toggling stays put.
+const expandedHistoryNodes = new Set();
+const historyNodeKey = (entry) => `${entry._repo}::${entry.id}`;
+
+function historyNodeEl(entry) {
+  const key = historyNodeKey(entry);
+  const expanded = expandedHistoryNodes.has(key);
+  const visIcon = entry._repo === "private" ? "🔒" : "🌐";
+  const items = entry.noteItems || [];
+  const suggestions = entry.suggestions || [];
+  const images = entry.images || [];
+
+  const badges = [];
+  if (entry.note) badges.push(`<span class="badge badge-note" title="Completion note">📝</span>`);
+  if (images.length) badges.push(`<span class="badge badge-note" title="${images.length} photo(s)">🖼 ${images.length}</span>`);
+  if (items.length) badges.push(`<span class="badge badge-note" title="${items.length} note(s)">✎ ${items.length}</span>`);
+  if (suggestions.length) badges.push(`<span class="badge badge-sug" title="${suggestions.length} suggestion(s)">✦ ${suggestions.length}</span>`);
+  const hasDetail = badges.length > 0;
+
+  const node = document.createElement("div");
+  node.className = "tree-node";
+  node.dataset.key = key;
+  node.innerHTML = `
+    <div class="node-row${hasDetail ? " node-row-toggle" : ""}">
+      ${hasDetail ? `<button class="node-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : `<span class="node-toggle-spacer"></span>`}
+      <span class="node-title">${visIcon} ${esc(entry.title)}</span>
+      <span class="node-date">${esc(entry.completedDate)}</span>
+      ${badges.join("")}
+      <button class="node-delete" aria-label="Delete from history">🗑</button>
+    </div>
+    ${expanded ? historyNodeDetailHtml(entry) : ""}
+  `;
+
+  node.querySelector(".node-delete").addEventListener("click", (e) => {
+    e.stopPropagation();
+    deleteHistoryEntry(entry, node);
+  });
+  if (hasDetail) {
+    node.querySelector(".node-row-toggle").addEventListener("click", () => {
+      if (expandedHistoryNodes.has(key)) expandedHistoryNodes.delete(key);
+      else expandedHistoryNodes.add(key);
+      renderTree();
+    });
+  }
+  return node;
+}
+
+function historyNodeDetailHtml(entry) {
+  const items = entry.noteItems || [];
+  const suggestions = entry.suggestions || [];
+  const images = entry.images || [];
+  return `
+    <div class="node-detail">
+      ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
+      ${images.map((img) => `<img src="${esc(img)}" alt="">`).join("")}
+      ${suggestions.length ? `
+        <div class="node-detail-section">
+          <h4>✦ Claude's suggestions</h4>
+          <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(s)}</div></li>`).join("")}</ul>
+        </div>` : ""}
+      ${items.length ? `
+        <div class="node-detail-section">
+          <h4>✎ Notes</h4>
+          <ul class="note-list note-list-static">${items.map((n) => `
+            <li class="note-item${n.done ? " done" : ""}">
+              <span class="note-check-static">${n.done ? "✓" : ""}</span>
+              <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
+            </li>`).join("")}</ul>
+        </div>` : ""}
+    </div>
+  `;
 }
 
 // Same instant + undo pattern as deleting an active task (see deleteTask) — no confirm

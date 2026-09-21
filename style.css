@@ -685,6 +685,50 @@ main.view.wide { max-width: 980px; }
   gap: 4px;
 }
 .node-row .node-title { flex: 1; min-width: 0; }
+.node-row-toggle { cursor: pointer; }
+.node-toggle {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  width: 16px;
+  padding: 0;
+}
+.node-toggle-spacer { flex-shrink: 0; width: 16px; display: inline-block; }
+.node-row .badge { flex-shrink: 0; }
+.node-detail {
+  margin-top: 8px;
+  margin-left: 22px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.node-detail-section { margin-top: 12px; }
+.node-detail-section:first-child { margin-top: 0; }
+.node-detail-section h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.note-list-static .note-item { background: var(--panel); }
+.note-check-static {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 6px;
+  border: 2px solid var(--muted);
+  color: var(--good);
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+.note-item.done .note-check-static { background: var(--good); border-color: var(--good); color: #0f1117; }
 .node-delete {
   flex-shrink: 0;
   background: transparent;
