@@ -14,8 +14,8 @@
       "created": "2026-09-21",
       "notes": "",
       "assist": true,
-      "scratchpad": "if this has been tested. move the task to done/history.",
-      "scratchpadUpdated": "2026-09-21T06:38:32.966Z",
+      "scratchpad": "test if this can work in code and cowork. \ncode is a yes. cowork is still pending. \nalso with these notes ",
+      "scratchpadUpdated": "2026-09-21T07:11:42.758Z",
       "suggestions": [
         "This routine only researches and appends suggestions — it can't verify the cowork scheduler was tested or move this task to history for you. If you've confirmed the scheduler works, mark this complete yourself and it'll log to history automatically.",
         "If “tested” means end-to-end (create/edit/complete/delete a task, toggle categories, public/private move), the recent commit history already shows a lot of that flow being exercised — categories, instant-complete with undo, and history-delete all landed recently."
