@@ -5,20 +5,47 @@ const PUBLIC_REPO = "sandstormveg/tasks";
 const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public", selectedAssistKey: null };
+const state = { tasks: [], history: [], pendingCompletion: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
 const getToken = () => localStorage.getItem(tokenKey) || "";
 
 // ---------- data loading ----------
-async function loadData() {
-  const publicTasks = fetch(`data/tasks.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ tasks: [] }));
-  const publicHistory = fetch(`data/history.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ entries: [] }));
+// Public data has two possible sources and they are NOT equally fresh:
+// the files served by GitHub Pages lag a push by a minute or two (rebuild + CDN),
+// while the API returns the repo's actual current state. Reading public from Pages
+// while reading private from the API made moved tasks briefly vanish from the UI,
+// so prefer the API whenever we have a token and keep Pages as the no-token path.
+async function loadPublicData() {
+  if (getToken()) {
+    try {
+      const [t, h] = await Promise.all([
+        ghGetFile(PUBLIC_REPO, "data/tasks.json"),
+        ghGetFile(PUBLIC_REPO, "data/history.json"),
+      ]);
+      return {
+        tasks: JSON.parse(t.content).tasks || [],
+        history: JSON.parse(h.content).entries || [],
+        authoritative: true,
+      };
+    } catch (err) {
+      console.warn("Public API read failed, falling back to published files:", err.message);
+    }
+  }
+  const [t, h] = await Promise.all([
+    fetch(`data/tasks.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ tasks: [] })),
+    fetch(`data/history.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ entries: [] })),
+  ]);
+  return { tasks: t.tasks || [], history: h.entries || [], authoritative: false };
+}
 
-  const [pubT, pubH] = await Promise.all([publicTasks, publicHistory]);
-  let tasks = (pubT.tasks || []).map((t) => ({ ...t, _repo: "public" }));
-  let history = (pubH.entries || []).map((e) => ({ ...e, _repo: "public" }));
+async function loadData() {
+  const pub = await loadPublicData();
+  let tasks = pub.tasks.map((t) => ({ ...t, _repo: "public" }));
+  let history = pub.history.map((e) => ({ ...e, _repo: "public" }));
+  state.publicLoaded = pub.authoritative;
+  state.privateLoaded = false;
 
   if (getToken()) {
     try {
@@ -28,6 +55,7 @@ async function loadData() {
       ]);
       tasks = tasks.concat((JSON.parse(privT.content).tasks || []).map((t) => ({ ...t, _repo: "private" })));
       history = history.concat((JSON.parse(privH.content).entries || []).map((e) => ({ ...e, _repo: "private" })));
+      state.privateLoaded = true;
     } catch (err) {
       console.warn("Couldn't load private tasks:", err.message);
     }
@@ -193,6 +221,17 @@ function repoFor(visibility) {
   return visibility === "private" ? PRIVATE_REPO : PUBLIC_REPO;
 }
 
+// Every write rebuilds a repo's whole task list from what's in memory, so writing a
+// repo we failed to fully read would silently delete the tasks we never saw. Refuse.
+function assertLoaded(visibility) {
+  const ok = visibility === "private" ? state.privateLoaded : state.publicLoaded;
+  if (!ok) {
+    throw new Error(
+      `Your ${visibility} tasks didn't load, so saving now could overwrite them. Reload the page and try again.`
+    );
+  }
+}
+
 function requireToken() {
   if (!getToken()) {
     alert("Add a GitHub token in Settings (⚙) first so changes can be saved to the repo.");
@@ -261,6 +300,7 @@ async function toggleAssist(task, btnEl) {
   const next = !task.assist;
   btnEl.disabled = true;
   try {
+    assertLoaded(task._repo);
     const repo = repoFor(task._repo);
     const updated = state.tasks
       .filter((t) => t._repo === task._repo)
@@ -293,19 +333,32 @@ async function toggleVisibility(task, btnEl) {
   const toVisibility = fromVisibility === "private" ? "public" : "private";
   btnEl.disabled = true;
   btnEl.textContent = "…";
+  let addedToDestination = false;
   try {
+    assertLoaded(fromVisibility);
+    assertLoaded(toVisibility);
+
     const remainingInFrom = state.tasks.filter((t) => t._repo === fromVisibility && t.id !== task.id).map(stripRepo);
     const existingInTo = state.tasks.filter((t) => t._repo === toVisibility).map(stripRepo);
     const movedTask = stripRepo(task);
 
-    await saveTasks(repoFor(fromVisibility), remainingInFrom, `Make private: ${task.title}`);
+    // Add to the destination BEFORE removing from the source. There's no way to make
+    // two repo writes atomic, so pick the failure that's recoverable: a task briefly in
+    // both places is visible and fixable, a task deleted before it landed is just gone.
     await saveTasks(repoFor(toVisibility), [...existingInTo, movedTask], `Make ${toVisibility}: ${task.title}`);
+    addedToDestination = true;
+    await saveTasks(repoFor(fromVisibility), remainingInFrom, `Remove from ${fromVisibility}: ${task.title}`);
 
     await loadData();
   } catch (err) {
-    alert(`Couldn't move task: ${err.message}`);
+    alert(
+      addedToDestination
+        ? `Half-finished move: "${task.title}" was copied to ${toVisibility} but couldn't be removed from ${fromVisibility}, so it now appears twice. Reload and toggle it again to clean up.\n\n${err.message}`
+        : `Couldn't move task: ${err.message}`
+    );
     btnEl.disabled = false;
     btnEl.textContent = fromVisibility === "private" ? "🔒" : "🌐";
+    if (addedToDestination) await loadData();
   }
 }
 
@@ -356,8 +409,11 @@ el("#complete-form").addEventListener("submit", async (e) => {
       .map(({ _repo, ...rest }) => rest)
       .concat(entry);
 
-    await saveTasks(repo, remainingInRepo, `Complete task: ${task.title}`);
+    // History first, then removal — if the second write fails the task is still on the
+    // list and can be ticked again, rather than erased with no record of completion.
+    assertLoaded(task._repo);
     await saveHistory(repo, historyInRepo, `Log history: ${task.title}`);
+    await saveTasks(repo, remainingInRepo, `Complete task: ${task.title}`);
 
     state.tasks = state.tasks.filter((t) => t.id !== task.id || t._repo !== task._repo);
     state.history = state.history.filter((h) => h._repo !== task._repo).concat(
@@ -415,6 +471,7 @@ el("#add-form").addEventListener("submit", async (e) => {
   const newTasksInRepo = [...existingInRepo, task];
 
   try {
+    assertLoaded(visibility);
     await saveTasks(repo, newTasksInRepo, `Add task: ${title}`);
     state.tasks = [...state.tasks, { ...task, _repo: visibility }];
     renderActive();
@@ -605,6 +662,7 @@ async function saveScratchpad(task) {
   btn.textContent = "Saving…";
   setAssistStatus("Saving…", "");
   try {
+    assertLoaded(task._repo);
     const repo = repoFor(task._repo);
     const savedAt = new Date().toISOString();
     const updated = state.tasks
