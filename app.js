@@ -233,8 +233,8 @@ function taskCard(task) {
       <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
     </button>
     <div class="task-body">
-      <div class="task-title">${task.title}</div>
-      ${task.notes ? `<div class="task-meta">${task.notes}</div>` : ""}
+      <div class="task-title">${esc(task.title)}</div>
+      ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
     </div>
     <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
   `;
@@ -404,10 +404,10 @@ function renderTree() {
       node.className = "tree-node";
       const visIcon = entry._repo === "private" ? "🔒" : "🌐";
       node.innerHTML = `
-        <span class="node-title">${visIcon} ${entry.title}</span>
-        <span class="node-date">${entry.completedDate}</span>
-        ${entry.note ? `<div class="node-note">${entry.note}</div>` : ""}
-        ${(entry.images || []).map((img) => `<img src="${img}" alt="">`).join("")}
+        <span class="node-title">${visIcon} ${esc(entry.title)}</span>
+        <span class="node-date">${esc(entry.completedDate)}</span>
+        ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
+        ${(entry.images || []).map((img) => `<img src="${esc(img)}" alt="">`).join("")}
       `;
       branch.appendChild(node);
     });
@@ -432,66 +432,163 @@ function renderAssistList() {
     groups[cat].forEach((task) => {
       const btn = document.createElement("button");
       btn.className = "assist-item" + (taskKey(task) === state.selectedAssistKey ? " selected" : "");
-      btn.textContent = `${task._repo === "private" ? "🔒" : "🌐"} ${task.title}`;
-      btn.addEventListener("click", () => {
-        state.selectedAssistKey = taskKey(task);
-        renderAssistList();
-        renderAssistDetail();
-      });
+      // Badges make it obvious at a glance where there's already work to pick up:
+      // ✦ = Claude left suggestions, ✎ = you've written notes.
+      const badges = [];
+      if ((task.suggestions || []).length) badges.push(`<span class="badge badge-sug" title="${task.suggestions.length} suggestion(s) from Claude">✦ ${task.suggestions.length}</span>`);
+      if ((task.scratchpad || "").trim()) badges.push(`<span class="badge badge-note" title="You have notes on this task">✎</span>`);
+      btn.innerHTML = `
+        <span class="assist-item-icon">${task._repo === "private" ? "🔒" : "🌐"}</span>
+        <span class="assist-item-title">${esc(task.title)}</span>
+        ${badges.join("")}
+      `;
+      btn.addEventListener("click", () => selectAssistTask(task));
       container.appendChild(btn);
     });
   });
 }
 
+function selectAssistTask(task) {
+  if (assistDirty && !confirm("You have unsaved notes on the current task. Discard them?")) return;
+  assistDirty = false;
+  state.selectedAssistKey = taskKey(task);
+  renderAssistList();
+  renderAssistDetail();
+}
+
+let assistDirty = false;
+
 function renderAssistDetail() {
   const container = el("#assist-detail");
   const task = state.tasks.find((t) => taskKey(t) === state.selectedAssistKey);
   if (!task) {
-    container.innerHTML = `<div class="empty-state">Select a task on the left to see suggestions and jot down notes.</div>`;
+    container.innerHTML = `<div class="empty-state">Pick a task on the left to see what Claude has worked out and to jot down your own thinking.</div>`;
     return;
   }
   const suggestions = task.suggestions || [];
+  const savedAt = task.scratchpadUpdated
+    ? `Last saved ${formatWhen(task.scratchpadUpdated)}`
+    : "Not saved yet";
+
   container.innerHTML = `
-    <h2>${task.title}</h2>
-    <div class="assist-meta">${task.category} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"}</div>
-    <div class="assist-section">
-      <h3>Suggested actions</h3>
-      ${suggestions.length
-        ? `<ul class="suggestion-list">${suggestions.map((s) => `<li>${s}</li>`).join("")}</ul>`
-        : `<div class="empty-state" style="padding:16px 0;">Ask Claude about this task — it can leave suggested next steps or subtasks here.</div>`}
+    <div class="assist-head">
+      <h2>${esc(task.title)}</h2>
+      <div class="assist-meta">${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}</div>
     </div>
+
     <div class="assist-section">
-      <h3>Notes &amp; thinking</h3>
-      <textarea id="assist-scratchpad" placeholder="Ideas, plans, links, references — anything you (or Claude) want to remember about this task.">${task.scratchpad || ""}</textarea>
+      <h3>✦ Suggestions from Claude${suggestions.length ? ` <span class="count">${suggestions.length}</span>` : ""}</h3>
+      ${suggestions.length
+        ? `<ul class="suggestion-list">${suggestions.map((s, i) => `
+            <li>
+              <div class="suggestion-text">${linkify(s)}</div>
+              <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes">→ notes</button>
+            </li>`).join("")}</ul>`
+        : `<div class="assist-hint">Nothing yet. Mention this task to Claude in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
+    </div>
+
+    <div class="assist-section">
+      <h3>✎ Your notes &amp; thinking</h3>
+      <textarea id="assist-scratchpad" placeholder="Ideas, plans, links, references — anything you (or Claude) should remember about this task.">${esc(task.scratchpad || "")}</textarea>
       <div class="assist-save-row">
-        <span class="assist-saved-hint" id="assist-saved-hint">Saved</span>
-        <button id="assist-save-btn" type="button">Save notes</button>
+        <span class="assist-status" id="assist-status">${savedAt}</span>
+        <button id="assist-save-btn" class="assist-save-btn" type="button" disabled>Saved</button>
       </div>
     </div>
   `;
-  el("#assist-save-btn").addEventListener("click", () => saveScratchpad(task));
+
+  const textarea = el("#assist-scratchpad");
+  const btn = el("#assist-save-btn");
+
+  const markDirty = () => {
+    assistDirty = true;
+    btn.disabled = false;
+    btn.textContent = "Save notes";
+    btn.classList.remove("is-saved");
+    setAssistStatus("Unsaved changes", "warn");
+  };
+
+  textarea.addEventListener("input", markDirty);
+  // Autosave when you click away — the most common way notes got lost was
+  // typing something and navigating off without noticing the Save button.
+  textarea.addEventListener("blur", () => { if (assistDirty) saveScratchpad(task); });
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      saveScratchpad(task);
+    }
+  });
+  btn.addEventListener("click", () => saveScratchpad(task));
+
+  container.querySelectorAll(".suggestion-add").forEach((addBtn) => {
+    addBtn.addEventListener("click", () => {
+      const text = suggestions[Number(addBtn.dataset.i)];
+      const existing = textarea.value.trim();
+      textarea.value = (existing ? existing + "\n\n" : "") + "- " + text;
+      markDirty();
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    });
+  });
+}
+
+function setAssistStatus(text, kind) {
+  const statusEl = el("#assist-status");
+  if (!statusEl) return;
+  statusEl.textContent = text;
+  statusEl.className = "assist-status" + (kind ? ` ${kind}` : "");
+}
+
+function formatWhen(iso) {
+  const then = new Date(iso);
+  if (isNaN(then)) return iso;
+  const mins = Math.round((Date.now() - then.getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (mins < 60 * 24) return `${Math.round(mins / 60)}h ago`;
+  return then.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
 async function saveScratchpad(task) {
   if (!requireToken()) return;
   const btn = el("#assist-save-btn");
-  const hint = el("#assist-saved-hint");
-  const value = el("#assist-scratchpad").value;
+  const textarea = el("#assist-scratchpad");
+  if (!btn || !textarea) return;
+  const value = textarea.value;
+
   btn.disabled = true;
+  btn.textContent = "Saving…";
+  setAssistStatus("Saving…", "");
   try {
     const repo = repoFor(task._repo);
+    const savedAt = new Date().toISOString();
     const updated = state.tasks
       .filter((t) => t._repo === task._repo)
-      .map((t) => stripRepo(t.id === task.id ? { ...t, scratchpad: value } : t));
+      .map((t) => stripRepo(t.id === task.id ? { ...t, scratchpad: value, scratchpadUpdated: savedAt } : t));
     await saveTasks(repo, updated, `Update notes: ${task.title}`);
     task.scratchpad = value;
-    hint.classList.add("show");
-    setTimeout(() => hint.classList.remove("show"), 1500);
+    task.scratchpadUpdated = savedAt;
+    assistDirty = false;
+    btn.textContent = "Saved ✓";
+    btn.classList.add("is-saved");
+    setAssistStatus(`Last saved ${formatWhen(savedAt)}`, "ok");
+    renderAssistList();
   } catch (err) {
-    alert(`Couldn't save notes: ${err.message}`);
-  } finally {
     btn.disabled = false;
+    btn.textContent = "Retry save";
+    setAssistStatus(`Couldn't save: ${err.message}`, "error");
   }
+}
+
+// ---------- small helpers ----------
+function esc(str) {
+  return String(str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function linkify(str) {
+  return esc(str).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
 // ---------- tabs ----------
