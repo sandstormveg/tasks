@@ -224,9 +224,9 @@
         {
           "id": "n-agent-1790041738997",
           "text": "✓ Actioned 2026-09-22: fixed the layout per your phone screenshot — check/assist/visibility/delete buttons now sit in a header row with the title, and the expanded detail panel spans the full card width below it instead of being squeezed into the narrow middle column.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T01:48:58.997Z",
-          "updated": "2026-09-22T01:48:58.997Z"
+          "updated": "2026-09-22T01:57:05.299Z"
         }
       ]
     }
