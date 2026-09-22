@@ -127,6 +127,14 @@
         "Concrete approach: give every active task-card the same expand/collapse affordance as history nodes — a chevron button, an `expandedTaskNodes` Set keyed by taskKey(task), and a detail block rendered under the title showing noteItems (read-only ✓/plain list, since editing already happens via double-click and the Assistance tab) plus suggestions if any. Only show the chevron when the task actually has notes or suggestions, same as `hasDetail` does for history.",
         "⚠ Heads-up: while implementing this I found a real bug worth fixing — the site loads task data once into memory and every save (add/edit/delete a note) rewrites the whole tasks.json from that in-memory snapshot instead of refetching first. If two edits happen close together (e.g. a stale tab + a fresh one, or you and an automated routine), the second write can silently clobber the first — which is exactly what just happened to my note on this task. A fix would be to refetch the file's current sha/content right before each write and merge, or at least warn when the sha on disk has moved since load."
       ]
+    },
+    {
+      "id": "testing-subtask-hierarchy-muc122qs",
+      "title": "Testing subtask hierarchy",
+      "category": "Meta",
+      "completedDate": "2026-09-22",
+      "note": "",
+      "images": []
     }
   ]
 }
