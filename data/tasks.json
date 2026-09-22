@@ -14,7 +14,8 @@
         "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
         "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
       ],
-      "noteItems": [
+      "noteItems": [],
+      "claudeNotes": [
         {
           "id": "n-agent-179003704582897",
           "text": "✓ Actioned 2026-09-22: researched Cat Ba Express and alternative operators, pricing, and departure times — see suggestions.",
@@ -46,8 +47,7 @@
         "When you book, confirm the exact pickup address with the transfer operator and aim for the 07:30 departure on 12 Oct (other slots: 10:30, 12:00, 14:00) — it gets you climbing that afternoon. Check the hotel does early breakfast or at least has 24h reception.",
         "You also have 'Book cat ba accom for 12th to 17th' and 'Book Cat Ba accommodation 18th–20th' open — if the 18–20 stay is a return leg, ask the Hanoi place to hold your bags across the whole Cat Ba stretch rather than booking storage separately.",
         "Specific listings to check for your 10-11 Oct dates (2BR, Old Quarter): Phen Art House, Old Quarter Lake House, IL DIVO Hotel & Spa Hanoi Old Quarter, and IL Divo Luxury Homestay & Spa — all show up under Booking.com aparthotels for Hoan Kiem district: https://www.booking.com/aparthotels/city/vn/hanoi.html",
-        "Also check this specific 2BR Old Quarter Airbnb with gym/terrace/daily service as a benchmark for price and layout: https://www.airbnb.com/rooms/43924167",
-        "✅ Done (2026-09-22): added real listing names/links above, and created a new task ‘Review Hanoi accommodation options (10-11 Oct)’ so you can compare them side by side."
+        "Also check this specific 2BR Old Quarter Airbnb with gym/terrace/daily service as a benchmark for price and layout: https://www.airbnb.com/rooms/43924167"
       ],
       "noteItems": [
         {
@@ -63,7 +63,9 @@
           "done": false,
           "created": "2026-09-21T12:08:17.219Z",
           "updated": "2026-09-21T12:09:07.480Z"
-        },
+        }
+      ],
+      "claudeNotes": [
         {
           "id": "n-agent-1790037045827791",
           "text": "✓ Actioned 2026-09-22: looked up specific 2BR Old Quarter listings and created a new task with the hyperlinked options for you to review, as requested.",
@@ -151,7 +153,8 @@
       "created": "2026-09-22",
       "notes": "",
       "assist": false,
-      "noteItems": [
+      "noteItems": [],
+      "claudeNotes": [
         {
           "id": "n-agent-init",
           "text": "Created by Claude from your request on the Hanoi accommodation task. Shortlist of 2-bedroom Old Quarter options to compare for 10-11 Oct: Phen Art House, Old Quarter Lake House, IL DIVO Hotel & Spa Hanoi Old Quarter, IL Divo Luxury Homestay & Spa (all on https://www.booking.com/aparthotels/city/vn/hanoi.html), plus this 2BR Airbnb benchmark: https://www.airbnb.com/rooms/43924167. Check live pricing/availability for your exact dates since search results don’t show real-time rates.",
@@ -184,13 +187,6 @@
           "updated": "2026-09-22T01:23:33.088Z"
         },
         {
-          "id": "n-agent-1790039786268",
-          "text": "✓ Actioned 2026-09-22: answered your notes-visibility UX question in suggestions (recommend reusing the History-style inline expand pattern), and flagged a real stale-write bug I hit while checking this — see suggestions for details.",
-          "done": true,
-          "created": "2026-09-22T01:16:26.268Z",
-          "updated": "2026-09-22T01:20:26.545Z"
-        },
-        {
           "id": "n-mubzqi4ihkrb",
           "text": "On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
           "done": false,
@@ -202,6 +198,22 @@
         "On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
         "Concrete approach: give every active task-card the same expand/collapse affordance as history nodes — a chevron button, an `expandedTaskNodes` Set keyed by taskKey(task), and a detail block rendered under the title showing noteItems (read-only ✓/plain list, since editing already happens via double-click and the Assistance tab) plus suggestions if any. Only show the chevron when the task actually has notes or suggestions, same as `hasDetail` does for history.",
         "⚠ Heads-up: while implementing this I found a real bug worth fixing — the site loads task data once into memory and every save (add/edit/delete a note) rewrites the whole tasks.json from that in-memory snapshot instead of refetching first. If two edits happen close together (e.g. a stale tab + a fresh one, or you and an automated routine), the second write can silently clobber the first — which is exactly what just happened to my note on this task. A fix would be to refetch the file's current sha/content right before each write and merge, or at least warn when the sha on disk has moved since load."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790039786268",
+          "text": "✓ Actioned 2026-09-22: answered your notes-visibility UX question in suggestions (recommend reusing the History-style inline expand pattern), and flagged a real stale-write bug I hit while checking this — see suggestions for details.",
+          "done": true,
+          "created": "2026-09-22T01:16:26.268Z",
+          "updated": "2026-09-22T01:20:26.545Z"
+        },
+        {
+          "id": "n-agent-1790040530370",
+          "text": "✓ Actioned 2026-09-22: built a separate \"Claude's notes\" section (own checkbox, own list) so my action confirmations no longer land in your notes. I also moved the old ✓/✅ agent entries that were sitting in noteItems/suggestions on this task, the two Hanoi tasks, and the Review-accommodation task into this new section, everywhere they applied.",
+          "done": false,
+          "created": "2026-09-22T01:28:50.370Z",
+          "updated": "2026-09-22T01:28:50.370Z"
+        }
       ]
     }
   ]

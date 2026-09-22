@@ -759,6 +759,7 @@ async function completeTask(task, card) {
     // Carry the task's own notes and Claude's suggestions into history — otherwise
     // completing a task silently threw away everything that had been built up on it.
     const carriedNotes = noteItems(task);
+    const carriedClaudeNotes = claudeNoteItems(task);
     const entry = {
       id: task.id,
       title: task.title,
@@ -767,6 +768,7 @@ async function completeTask(task, card) {
       note: "",
       images: [],
       ...(carriedNotes.length ? { noteItems: carriedNotes } : {}),
+      ...(carriedClaudeNotes.length ? { claudeNotes: carriedClaudeNotes } : {}),
       ...((task.suggestions || []).length ? { suggestions: task.suggestions } : {}),
     };
     const historyInRepo = state.history.filter((h) => h._repo === task._repo).map(stripRepo).concat(entry);
@@ -1106,6 +1108,7 @@ function historyNodeEl(entry) {
   const expanded = expandedHistoryNodes.has(key);
   const visIcon = entry._repo === "private" ? "🔒" : "🌐";
   const items = entry.noteItems || [];
+  const claudeNotes = entry.claudeNotes || [];
   const suggestions = entry.suggestions || [];
   const images = entry.images || [];
 
@@ -1113,6 +1116,7 @@ function historyNodeEl(entry) {
   if (entry.note) badges.push(`<span class="badge badge-note" title="Completion note">📝</span>`);
   if (images.length) badges.push(`<span class="badge badge-note" title="${images.length} photo(s)">🖼 ${images.length}</span>`);
   if (items.length) badges.push(`<span class="badge badge-note" title="${items.length} note(s)">✎ ${items.length}</span>`);
+  if (claudeNotes.length) badges.push(`<span class="badge badge-note" title="${claudeNotes.length} of Claude's notes">🤖 ${claudeNotes.length}</span>`);
   if (suggestions.length) badges.push(`<span class="badge badge-sug" title="${suggestions.length} suggestion(s)">✦ ${suggestions.length}</span>`);
   const hasDetail = badges.length > 0;
 
@@ -1146,6 +1150,7 @@ function historyNodeEl(entry) {
 
 function historyNodeDetailHtml(entry) {
   const items = entry.noteItems || [];
+  const claudeNotes = entry.claudeNotes || [];
   const suggestions = entry.suggestions || [];
   const images = entry.images || [];
   return `
@@ -1156,6 +1161,15 @@ function historyNodeDetailHtml(entry) {
         <div class="node-detail-section">
           <h4>✦ Claude's suggestions</h4>
           <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(s)}</div></li>`).join("")}</ul>
+        </div>` : ""}
+      ${claudeNotes.length ? `
+        <div class="node-detail-section">
+          <h4>🤖 Claude's notes</h4>
+          <ul class="note-list note-list-static">${claudeNotes.map((n) => `
+            <li class="note-item${n.done ? " done" : ""}">
+              <span class="note-check-static">${n.done ? "✓" : ""}</span>
+              <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
+            </li>`).join("")}</ul>
         </div>` : ""}
       ${items.length ? `
         <div class="node-detail-section">
@@ -1231,9 +1245,10 @@ function renderAssistList() {
       const btn = document.createElement("button");
       btn.className = "assist-item" + (taskKey(task) === state.selectedAssistKey ? " selected" : "");
       // Badges make it obvious at a glance where there's already work to pick up:
-      // ✦ = Claude left suggestions, ✎ = you've written notes.
+      // ✦ = Claude left suggestions, 🤖 = Claude actually did something, ✎ = you've written notes.
       const badges = [];
       if ((task.suggestions || []).length) badges.push(`<span class="badge badge-sug" title="${task.suggestions.length} suggestion(s) from Claude">✦ ${task.suggestions.length}</span>`);
+      if (claudeNoteItems(task).some((n) => !n.done)) badges.push(`<span class="badge badge-note" title="Claude did something here you haven't checked off yet">🤖</span>`);
       if (noteItems(task).length) badges.push(`<span class="badge badge-note" title="${noteItems(task).length} note(s)">✎ ${noteItems(task).length}</span>`);
       btn.innerHTML = `
         <span class="assist-item-icon">${task._repo === "private" ? "🔒" : "🌐"}</span>
@@ -1300,6 +1315,7 @@ function renderAssistDetail() {
   }
   const suggestions = task.suggestions || [];
   const items = noteItems(task);
+  const cNotes = claudeNoteItems(task);
 
   container.innerHTML = `
     <div class="assist-head">
@@ -1316,6 +1332,13 @@ function renderAssistDetail() {
               <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes as its own item">→ notes</button>
             </li>`).join("")}</ul>`
         : `<div class="assist-hint">Nothing yet. Mention this task to Claude in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
+    </div>
+
+    <div class="assist-section">
+      <h3>🤖 Claude's notes${cNotes.length ? ` <span class="count">${cNotes.length}</span>` : ""}</h3>
+      ${cNotes.length
+        ? `<ul class="note-list" id="claude-note-list">${cNotes.map(claudeNoteItemHtml).join("")}</ul>`
+        : `<div class="assist-hint">Nothing here yet. When Claude actually does something on this task (not just research), it records it here — tick the box once you've seen it.</div>`}
     </div>
 
     <div class="assist-section">
@@ -1341,6 +1364,17 @@ function renderAssistDetail() {
       if (e.target.closest(".note-check")) toggleNoteDone(task, id);
       else if (e.target.closest(".note-edit")) enterNoteEditMode(task, li, note);
       else if (e.target.closest(".note-delete")) deleteNoteItem(task, id, li);
+    });
+  }
+
+  const claudeNoteList = el("#claude-note-list");
+  if (claudeNoteList) {
+    claudeNoteList.addEventListener("click", (e) => {
+      const li = e.target.closest(".note-item");
+      if (!li) return;
+      const id = li.dataset.id;
+      if (e.target.closest(".note-check")) toggleClaudeNoteDone(task, id);
+      else if (e.target.closest(".note-delete")) deleteClaudeNoteItem(task, id, li);
     });
   }
 
@@ -1377,6 +1411,88 @@ function renderAssistDetail() {
       }
     });
   });
+}
+
+// Claude's own record of what it actually did on a task (as opposed to research
+// findings in `suggestions`, or the user's own thinking in `noteItems`) — a separate
+// checkable list so ticking "seen this" never gets mixed up with the user's own
+// to-do checkboxes. Claude only ever adds here; the user is the only one who ticks.
+function claudeNoteItems(task) {
+  return task.claudeNotes || [];
+}
+
+async function saveClaudeNotes(task, newItems, message) {
+  assertLoaded(task._repo);
+  const repo = repoFor(task._repo);
+  const updated = state.tasks
+    .filter((t) => t._repo === task._repo)
+    .map((t) => (t.id === task.id ? { ...stripRepo(t), claudeNotes: newItems } : stripRepo(t)));
+  await saveTasks(repo, updated, message);
+  task.claudeNotes = newItems;
+}
+
+function claudeNoteItemHtml(n) {
+  return `
+    <li class="note-item${n.done ? " done" : ""}" data-id="${esc(n.id)}">
+      <button class="note-check" aria-label="${n.done ? "Mark not seen" : "Mark seen"}" title="${n.done ? "Mark not seen" : "Mark seen"}">${n.done ? "✓" : ""}</button>
+      <div class="note-body">
+        <div class="note-text">${linkify(n.text)}</div>
+        <div class="note-time">${formatWhen(n.updated || n.created)}</div>
+      </div>
+      <div class="note-actions">
+        <button class="note-delete" aria-label="Delete note" title="Delete">🗑</button>
+      </div>
+    </li>`;
+}
+
+async function toggleClaudeNoteDone(task, id) {
+  if (!requireToken()) return;
+  const now = new Date().toISOString();
+  const items = claudeNoteItems(task).map((n) => (n.id === id ? { ...n, done: !n.done, updated: now } : n));
+  try {
+    await saveClaudeNotes(task, items, `Check off Claude's note: ${task.title}`);
+    renderAssistDetail();
+  } catch (err) {
+    alert(`Couldn't update note: ${err.message}`);
+  }
+}
+
+async function deleteClaudeNoteItem(task, id, liEl) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(task._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+  const prevItems = claudeNoteItems(task);
+  liEl.classList.add("completing");
+  const optimistic = prevItems.filter((n) => n.id !== id);
+  task.claudeNotes = optimistic;
+  setTimeout(() => liEl.remove(), 300);
+
+  let undone = false;
+  showToast({
+    message: "Deleted Claude's note",
+    actionLabel: "Undo",
+    duration: DELETE_UNDO_MS,
+    onAction: () => {
+      undone = true;
+      task.claudeNotes = prevItems;
+      renderAssistDetail();
+    },
+  });
+
+  setTimeout(async () => {
+    if (undone) return;
+    try {
+      await saveClaudeNotes(task, optimistic, `Delete Claude's note: ${task.title}`);
+    } catch (err) {
+      task.claudeNotes = prevItems;
+      renderAssistDetail();
+      alert(`Couldn't delete note: ${err.message}. It's back.`);
+    }
+  }, DELETE_UNDO_MS + 300);
 }
 
 function noteItemHtml(n) {
