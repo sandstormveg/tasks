@@ -186,9 +186,9 @@
         {
           "id": "n-agent-1790039786268",
           "text": "✓ Actioned 2026-09-22: answered your notes-visibility UX question in suggestions (recommend reusing the History-style inline expand pattern), and flagged a real stale-write bug I hit while checking this — see suggestions for details.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T01:16:26.268Z",
-          "updated": "2026-09-22T01:16:26.268Z"
+          "updated": "2026-09-22T01:20:26.545Z"
         }
       ],
       "suggestions": [
