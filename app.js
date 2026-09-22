@@ -506,20 +506,22 @@ function taskCard(task) {
   const hasDetail = noteItems(task).length > 0 || claudeNoteItems(task).length > 0 || (task.suggestions || []).length > 0;
 
   card.innerHTML = `
-    <button class="check" aria-label="Complete task">
-      <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-    </button>
-    <div class="task-body">
-      <div class="task-title-row">
-        ${hasDetail ? `<button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : ""}
-        <div class="task-title">${esc(task.title)}</div>
+    <div class="task-card-header">
+      <button class="check" aria-label="Complete task">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </button>
+      <div class="task-body">
+        <div class="task-title-row">
+          ${hasDetail ? `<button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : ""}
+          <div class="task-title">${esc(task.title)}</div>
+        </div>
+        ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
       </div>
-      ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
-      ${expanded ? taskDetailHtml(task) : ""}
+      <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
+      <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+      <button class="delete-toggle" aria-label="Delete task">🗑</button>
     </div>
-    <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
-    <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
-    <button class="delete-toggle" aria-label="Delete task">🗑</button>
+    ${expanded ? taskDetailHtml(task) : ""}
   `;
   if (hasDetail) {
     card.querySelector(".task-detail-toggle").addEventListener("click", (e) => {

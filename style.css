@@ -401,9 +401,6 @@ main.view.wide { max-width: 980px; }
 }
 
 .task-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -412,6 +409,8 @@ main.view.wide { max-width: 980px; }
   transition: transform 0.15s ease, opacity 0.3s ease, background 0.2s ease;
 }
 .task-card:hover { background: var(--panel-2); }
+.task-card-header { display: flex; align-items: center; gap: 14px; }
+.task-card .node-detail { margin-left: 0; }
 .task-card.completing {
   opacity: 0;
   transform: scale(0.9) translateX(20px);
