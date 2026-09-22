@@ -491,6 +491,9 @@ function onCategoryDragEnd(e) {
 function taskCard(task) {
   const card = document.createElement("div");
   card.className = "task-card";
+  card.draggable = true;
+  card.dataset.taskKey = taskKey(task);
+  card.title = "Double-click (or press and hold) the title to rename. Drag to reorder.";
   card.innerHTML = `
     <button class="check" aria-label="Complete task">
       <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
@@ -511,7 +514,158 @@ function taskCard(task) {
     ? "Claude is helping with this one — click to stop"
     : "Click to have Claude work on this task in the Assistance tab";
   assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
+
+  setupTaskTitleEditing(task, card);
+
+  card.addEventListener("dragstart", onTaskDragStart);
+  card.addEventListener("dragover", onTaskDragOver);
+  card.addEventListener("dragleave", onTaskDragLeave);
+  card.addEventListener("drop", onTaskDrop);
+  card.addEventListener("dragend", onTaskDragEnd);
   return card;
+}
+
+// ---------- task drag-and-drop (reordering) ----------
+// Mirrors the category header drag pattern above. Order only has meaning within a
+// single repo's tasks.json (that's what gets written back), so dragging a task onto
+// one from the other repo (public vs private) is a no-op rather than a silent merge.
+let draggedTaskKey = null;
+
+function onTaskDragStart(e) {
+  draggedTaskKey = e.currentTarget.dataset.taskKey;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", draggedTaskKey);
+}
+
+function onTaskDragOver(e) {
+  if (!draggedTaskKey || draggedTaskKey === e.currentTarget.dataset.taskKey) return;
+  e.preventDefault();
+  e.currentTarget.classList.add("drag-over");
+}
+
+function onTaskDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+async function onTaskDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  const targetKey = e.currentTarget.dataset.taskKey;
+  const sourceKey = draggedTaskKey;
+  draggedTaskKey = null;
+  if (!sourceKey || sourceKey === targetKey) return;
+
+  const draggedTask = state.tasks.find((t) => taskKey(t) === sourceKey);
+  const targetTask = state.tasks.find((t) => taskKey(t) === targetKey);
+  if (!draggedTask || !targetTask) return;
+  if (draggedTask._repo !== targetTask._repo) {
+    alert("Can't reorder between public and private tasks — only within the same list.");
+    return;
+  }
+  await reorderTask(draggedTask, targetTask);
+}
+
+function onTaskDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".task-card.drag-over").forEach((c) => c.classList.remove("drag-over"));
+  draggedTaskKey = null;
+}
+
+async function reorderTask(draggedTask, targetTask) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(draggedTask._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+  const otherRepoTasks = state.tasks.filter((t) => t._repo !== draggedTask._repo);
+  const repoTasks = state.tasks.filter((t) => t._repo === draggedTask._repo && t.id !== draggedTask.id);
+  const targetIndex = repoTasks.findIndex((t) => t.id === targetTask.id);
+  repoTasks.splice(targetIndex, 0, draggedTask);
+
+  try {
+    await saveTasks(repoFor(draggedTask._repo), repoTasks.map(stripRepo), `Reorder: ${draggedTask.title}`);
+    state.tasks = [...otherRepoTasks, ...repoTasks];
+    renderActive();
+  } catch (err) {
+    alert(`Couldn't save new order: ${err.message}`);
+  }
+}
+
+// ---------- task title editing (double-click, or press-and-hold on touch) ----------
+function setupTaskTitleEditing(task, card) {
+  const titleEl = card.querySelector(".task-title");
+  titleEl.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    enterTaskTitleEditMode(task, card);
+  });
+
+  // Double-click doesn't fire reliably on touch, so a long-press does the same thing.
+  // Guarded against drags: any real pointer movement cancels the hold timer.
+  let holdTimer = null;
+  let moved = false;
+  titleEl.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    moved = false;
+    holdTimer = setTimeout(() => {
+      if (!moved) enterTaskTitleEditMode(task, card);
+    }, 550);
+  });
+  titleEl.addEventListener("pointermove", () => { moved = true; });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
+    titleEl.addEventListener(ev, () => clearTimeout(holdTimer))
+  );
+}
+
+function enterTaskTitleEditMode(task, card) {
+  if (card.classList.contains("editing")) return;
+  card.classList.add("editing");
+  card.draggable = false;
+
+  const titleEl = card.querySelector(".task-title");
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "task-title-edit";
+  input.value = task.title;
+  titleEl.replaceWith(input);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+
+  let settled = false;
+  const finish = async (commit) => {
+    if (settled) return;
+    settled = true;
+    const newTitle = input.value.trim();
+    if (!commit || !newTitle || newTitle === task.title) {
+      renderActive();
+      return;
+    }
+    if (!requireToken()) {
+      renderActive();
+      return;
+    }
+    try {
+      assertLoaded(task._repo);
+      const repo = repoFor(task._repo);
+      const updated = state.tasks
+        .filter((t) => t._repo === task._repo)
+        .map((t) => stripRepo(t.id === task.id ? { ...t, title: newTitle } : t));
+      await saveTasks(repo, updated, `Rename task: ${task.title} → ${newTitle}`);
+      task.title = newTitle;
+      renderActive();
+    } catch (err) {
+      alert(`Couldn't save: ${err.message}`);
+      renderActive();
+    }
+  };
+
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
 }
 
 // Only tasks explicitly opted in show up in Assistance (and get worked on by the
