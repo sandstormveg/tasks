@@ -179,9 +179,9 @@
         {
           "id": "n-mubzdlxed7pe",
           "text": "also i should still be able to see notes when the tasks are not in assistance. perhaps when i click in them they go in to their own page (not sure what the best ux is,.please advise. is a dropdown or popup or sidebar better?) ?",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T01:13:49.634Z",
-          "updated": "2026-09-22T01:13:49.634Z"
+          "updated": "2026-09-22T01:23:33.088Z"
         },
         {
           "id": "n-agent-1790039786268",
