@@ -61,6 +61,72 @@
       "suggestions": [
         "✅ Done (2026-09-21): completing a task now carries its notes and Claude's suggestions into the history entry (as noteItems/suggestions), instead of discarding them. Each History entry with content is collapsed by default with small badges (📝 note, 🖼 photos, ✎ notes, ✦ suggestions) — click the row to expand and see everything, all links clickable. Entries completed before this change can't be backfilled, since that data was already discarded at completion time. Mark this done yourself if it looks right on the site."
       ]
+    },
+    {
+      "id": "make-tasks-editable-when-held-down-double-clicked-mubz5bqu",
+      "title": "make tasks editable when held down/double clicked.",
+      "category": "Development",
+      "completedDate": "2026-09-22",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mubz7gcy94tc",
+          "text": "also make them able to be dragged up and down",
+          "done": true,
+          "created": "2026-09-22T01:09:02.482Z",
+          "updated": "2026-09-22T01:23:14.816Z"
+        },
+        {
+          "id": "n-mubzdlxed7pe",
+          "text": "also i should still be able to see notes when the tasks are not in assistance. perhaps when i click in them they go in to their own page (not sure what the best ux is,.please advise. is a dropdown or popup or sidebar better?) ?",
+          "done": true,
+          "created": "2026-09-22T01:13:49.634Z",
+          "updated": "2026-09-22T01:23:33.088Z"
+        },
+        {
+          "id": "n-mubzqi4ihkrb",
+          "text": "please implement: On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
+          "done": true,
+          "created": "2026-09-22T01:23:51.234Z",
+          "updated": "2026-09-22T01:57:14.766Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790039786268",
+          "text": "✓ Actioned 2026-09-22: answered your notes-visibility UX question in suggestions (recommend reusing the History-style inline expand pattern), and flagged a real stale-write bug I hit while checking this — see suggestions for details.",
+          "done": true,
+          "created": "2026-09-22T01:16:26.268Z",
+          "updated": "2026-09-22T01:20:26.545Z"
+        },
+        {
+          "id": "n-agent-1790040530370",
+          "text": "✓ Actioned 2026-09-22: built a separate \"Claude's notes\" section (own checkbox, own list) so my action confirmations no longer land in your notes. I also moved the old ✓/✅ agent entries that were sitting in noteItems/suggestions on this task, the two Hanoi tasks, and the Review-accommodation task into this new section, everywhere they applied.",
+          "done": true,
+          "created": "2026-09-22T01:28:50.370Z",
+          "updated": "2026-09-22T01:33:50.241Z"
+        },
+        {
+          "id": "n-agent-1790041124526",
+          "text": "✓ Actioned 2026-09-22: implemented the inline expand pattern on the Active tab — a chevron next to the title expands a read-only panel (same style as History) showing suggestions, Claude notes, and your notes. Only appears on tasks that actually have any of that; editing still happens via double-click (title) or the Assistance tab (notes/checkboxes). This keeps notes visible even after turning assist off.",
+          "done": true,
+          "created": "2026-09-22T01:38:44.526Z",
+          "updated": "2026-09-22T01:57:07.256Z"
+        },
+        {
+          "id": "n-agent-1790041738997",
+          "text": "✓ Actioned 2026-09-22: fixed the layout per your phone screenshot — check/assist/visibility/delete buttons now sit in a header row with the title, and the expanded detail panel spans the full card width below it instead of being squeezed into the narrow middle column.",
+          "done": true,
+          "created": "2026-09-22T01:48:58.997Z",
+          "updated": "2026-09-22T01:57:05.299Z"
+        }
+      ],
+      "suggestions": [
+        "On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
+        "Concrete approach: give every active task-card the same expand/collapse affordance as history nodes — a chevron button, an `expandedTaskNodes` Set keyed by taskKey(task), and a detail block rendered under the title showing noteItems (read-only ✓/plain list, since editing already happens via double-click and the Assistance tab) plus suggestions if any. Only show the chevron when the task actually has notes or suggestions, same as `hasDetail` does for history.",
+        "⚠ Heads-up: while implementing this I found a real bug worth fixing — the site loads task data once into memory and every save (add/edit/delete a note) rewrites the whole tasks.json from that in-memory snapshot instead of refetching first. If two edits happen close together (e.g. a stale tab + a fresh one, or you and an automated routine), the second write can silently clobber the first — which is exactly what just happened to my note on this task. A fix would be to refetch the file's current sha/content right before each write and merge, or at least warn when the sha on disk has moved since load."
+      ]
     }
   ]
 }
