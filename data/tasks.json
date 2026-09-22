@@ -182,7 +182,19 @@
           "done": false,
           "created": "2026-09-22T01:13:49.634Z",
           "updated": "2026-09-22T01:13:49.634Z"
+        },
+        {
+          "id": "n-agent-1790039786268",
+          "text": "✓ Actioned 2026-09-22: answered your notes-visibility UX question in suggestions (recommend reusing the History-style inline expand pattern), and flagged a real stale-write bug I hit while checking this — see suggestions for details.",
+          "done": false,
+          "created": "2026-09-22T01:16:26.268Z",
+          "updated": "2026-09-22T01:16:26.268Z"
         }
+      ],
+      "suggestions": [
+        "On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
+        "Concrete approach: give every active task-card the same expand/collapse affordance as history nodes — a chevron button, an `expandedTaskNodes` Set keyed by taskKey(task), and a detail block rendered under the title showing noteItems (read-only ✓/plain list, since editing already happens via double-click and the Assistance tab) plus suggestions if any. Only show the chevron when the task actually has notes or suggestions, same as `hasDetail` does for history.",
+        "⚠ Heads-up: while implementing this I found a real bug worth fixing — the site loads task data once into memory and every save (add/edit/delete a note) rewrites the whole tasks.json from that in-memory snapshot instead of refetching first. If two edits happen close together (e.g. a stale tab + a fresh one, or you and an automated routine), the second write can silently clobber the first — which is exactly what just happened to my note on this task. A fix would be to refetch the file's current sha/content right before each write and merge, or at least warn when the sha on disk has moved since load."
       ]
     }
   ]
