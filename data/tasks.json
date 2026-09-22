@@ -71,9 +71,9 @@
         {
           "id": "n-agent-1790037045827791",
           "text": "✓ Actioned 2026-09-22: looked up specific 2BR Old Quarter listings and created a new task with the hyperlinked options for you to review, as requested.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T00:30:45.826Z",
-          "updated": "2026-09-22T00:30:45.826Z"
+          "updated": "2026-09-22T08:13:21.234Z"
         }
       ]
     },
