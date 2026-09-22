@@ -135,6 +135,37 @@
       "completedDate": "2026-09-22",
       "note": "",
       "images": []
+    },
+    {
+      "id": "download-grab-taxi-app-if-leaving-singapore-airport-muas9wft",
+      "title": "download grab taxi app (if leaving Singapore airport)",
+      "category": "Hanoi Climbing trip",
+      "completedDate": "2026-09-22",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-muc4ev55typt",
+          "text": "find link and I'll then test if the hyperlink works",
+          "done": true,
+          "created": "2026-09-22T03:34:46.313Z",
+          "updated": "2026-09-22T03:39:25.668Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790048174589w5d",
+          "text": "✓ Actioned 2026-09-22: found the official iOS and Android download links for the Grab passenger app — see suggestions, both are real https:// links to test the hyperlink rendering with.",
+          "done": true,
+          "created": "2026-09-22T03:36:14.589Z",
+          "updated": "2026-09-22T03:39:27.429Z"
+        }
+      ],
+      "suggestions": [
+        "iOS: https://apps.apple.com/us/app/grab-taxi-ride-food-delivery/id647268330 (Grab: Taxi Ride, Food Delivery, by Grab.com).",
+        "Android: https://play.google.com/store/apps/details?id=com.grabtaxi.passenger (Grab - Taxi & Food Delivery).",
+        "Both are the official passenger apps (not the Grab Driver app, which is a separate listing) — good link to test the hyperlink rendering on, since both are real https:// URLs that should linkify."
+      ]
     }
   ]
 }
