@@ -167,7 +167,16 @@
       "category": "Development",
       "created": "2026-09-22",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mubz7gcy94tc",
+          "text": "also make them able to be dragged up and down",
+          "done": false,
+          "created": "2026-09-22T01:09:02.482Z",
+          "updated": "2026-09-22T01:09:02.482Z"
+        }
+      ]
     }
   ]
 }
