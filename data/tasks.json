@@ -123,7 +123,11 @@
         "⚠ Nippori Fabric Town for your partner's solo shopping days — flagging this came from general knowledge, not a web search I actually ran, so treat it as unverified until I (or you) confirm it's still the right spot and check current opening hours/access before relying on it.",
         "Main accommodation (1-2BR, affordable-luxury): MIMARU Tokyo Ueno North or Ueno East — genuine apartment-style rooms with a full kitchen, dining table, deep soaking tub, consistently 4-5 star reviews, roughly $200-280/night depending on dates/room size. Not vegan-specific, but the kitchen means you can self-cater a vegan breakfast, and Ueno/Ameyoko has plenty of grocery options. If you want to be walking distance from your top vegan picks instead, Hotel Pulitzer Jiyugaoka (~$75-105/night) is 2 min from Jiyugaoka Station and 3-4 min from T's Restaurant Jiyugaoka (the T's Tantan flagship) plus Plus Veganique 8 min away — but it's a standard double room, not a 1-2BR apartment, so it's a location-over-space tradeoff. Sources: https://mimaruhotels.com/en/hotel/ueno-north/ and https://ordinarypatrons.com/2025/12/22/ts-restaurant-jiyugaoka-tokyo-review/",
         "Second capsule hotel — gender question answered: virtually all Japanese capsule hotels separate men and women by floor with keycard-restricted access, even at hotels that accept both genders overall; true mixed pods are rare. So a normal capsule-hotel night means you and your partner would sleep on separate floors, not side by side.",
-        "If sleeping separately for a night is fine: 9h (nine hours) is the famous minimalist white-pod design chain — closest thing to an S-tier classic capsule experience, several Tokyo locations. If you specifically want to stay together as a couple in one pod, a handful of places build for exactly that instead of the usual layout: Tokyo Kiba Hotel (wider couple pods, novelty vending-machine amenities), Book And Bed Tokyo Shinjuku (double-bed capsule, ~130x200cm), and First Cabin Ichigaya (premium couple cabin, more like a small posh room than a stacked capsule). Worth deciding which matters more — the classic solo-pod aesthetic vs actually sharing a bed. Source: https://www.erikastravelventures.com/capsule-hotels-for-couples-in-japan/"
+        "If sleeping separately for a night is fine: 9h (nine hours) is the famous minimalist white-pod design chain — closest thing to an S-tier classic capsule experience, several Tokyo locations. If you specifically want to stay together as a couple in one pod, a handful of places build for exactly that instead of the usual layout: Tokyo Kiba Hotel (wider couple pods, novelty vending-machine amenities), Book And Bed Tokyo Shinjuku (double-bed capsule, ~130x200cm), and First Cabin Ichigaya (premium couple cabin, more like a small posh room than a stacked capsule). Worth deciding which matters more — the classic solo-pod aesthetic vs actually sharing a bed. Source: https://www.erikastravelventures.com/capsule-hotels-for-couples-in-japan/",
+        "Clarification on the robot cafe item: DAWN (suggestion #1 above) is actually human-piloted robot avatars for accessibility, not automated cooking — probably not what you meant. What you're after is genuine automated food production, and Tokyo has real examples:",
+        "E.VINO SPAGHETTI (Marunouchi Building B1F, 2-4-1 Marunouchi, Chiyoda-ku, open 11:00-22:30) — a pasta robot called P-Robo does the whole cook: boiling/thawing, cooking, and cleaning its own pan, across 8 pasta dishes, ready in 45-75 seconds. Run by Pronto Corporation, this one is confirmed currently operating. Source: https://www.marunouchi.com/en/tenants/10277/",
+        "CHEFFY at GURUNAVI FOODHALL WYE (Haneda Innovation City, Tenkubashi) — an autonomous cooking robot that serves ramen recipes licensed from famous/Michelin-affiliated restaurants in about 90 seconds. Also appears at Pepper PARLOR in Shibuya. Still listed as operating as of late 2025. Source: https://livejapan.com/en/in-tokyo/in-pref-tokyo/in-haneda/article-a0005312/",
+        "⚠ Heads up: Oh My Dot, a robotic-arm ramen restaurant that was in Shibuya (also by TechMagic, the same company behind P-Robo), actually closed December 2022 — it comes up a lot in searches but don't plan around it, it no longer exists."
       ],
       "claudeNotes": [
         {
@@ -146,6 +150,13 @@
           "done": false,
           "created": "2026-09-22T09:07:29.977Z",
           "updated": "2026-09-22T09:07:29.977Z"
+        },
+        {
+          "id": "n-agent-1790068696570",
+          "text": "✓ Actioned 2026-09-22: you clarified you wanted actual automated food production, not a human-piloted robot cafe like DAWN — found two real ones: E.VINO SPAGHETTI in Marunouchi (robot cooks pasta start to finish, confirmed currently open) and CHEFFY at Gurunavi Foodhall WYE near Haneda (autonomous ramen robot). Also flagged that Oh My Dot (Shibuya robot ramen) closed in Dec 2022, since it kept coming up in searches. No PDF update per your request — this is chat + task only.",
+          "done": false,
+          "created": "2026-09-22T09:18:16.570Z",
+          "updated": "2026-09-22T09:18:16.570Z"
         }
       ]
     },
