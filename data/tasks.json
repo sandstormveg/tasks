@@ -121,9 +121,9 @@
         {
           "id": "n-agent-1790061901277",
           "text": "✓ Actioned 2026-09-22: added the actual source links to each researched item (you flagged I'd dropped most of them despite the search tool telling me to cite sources), and marked the Nippori Fabric Town mention as unverified since it wasn't actually from a web search.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T07:25:01.277Z",
-          "updated": "2026-09-22T07:25:01.277Z"
+          "updated": "2026-09-22T08:31:47.010Z"
         }
       ]
     },
