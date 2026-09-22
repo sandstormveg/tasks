@@ -189,6 +189,13 @@
           "done": true,
           "created": "2026-09-22T01:16:26.268Z",
           "updated": "2026-09-22T01:20:26.545Z"
+        },
+        {
+          "id": "n-mubzqi4ihkrb",
+          "text": "On the dropdown/popup/sidebar question: recommend reusing the same inline expand pattern already built for History entries (the ▸/▾ toggle) rather than a new sidebar or popup. Click a task card (or a small chevron) to expand a details panel in place showing notes + suggestions, no navigation away. Reasons: (1) it is already built and proven in historyNodeEl/historyNodeDetailHtml, so it is mostly copy-adapt, not new UX; (2) it works the same on mobile and desktop with no extra responsive layout to design, unlike a sidebar; (3) a popup/modal interrupts the flow of scanning a list, an inline expand does not.",
+          "done": false,
+          "created": "2026-09-22T01:23:51.234Z",
+          "updated": "2026-09-22T01:23:51.234Z"
         }
       ],
       "suggestions": [
