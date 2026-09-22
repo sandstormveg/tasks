@@ -168,9 +168,6 @@
       "created": "2026-09-22",
       "notes": "",
       "assist": true,
-      "suggestions": [
-        "✅ Done (2026-09-22): task titles now edit inline — double-click a title on desktop, or press-and-hold on touch — with Enter to save and Escape to cancel. Task cards are also draggable to reorder within the same list (public or private); dragging between public and private is blocked since order is only stored per-repo. Shipped in app.js/style.css, live on the site now — try it and let me know if the timing/feel needs adjusting."
-      ],
       "noteItems": [
         {
           "id": "n-mubz7gcy94tc",
@@ -180,11 +177,11 @@
           "updated": "2026-09-22T01:09:02.482Z"
         },
         {
-          "id": "n-agent-1790039400000",
-          "text": "✓ Actioned 2026-09-22: implemented double-click/long-press title editing and drag-to-reorder task cards, pushed to the live site.",
+          "id": "n-mubzdlxed7pe",
+          "text": "also i should still be able to see notes when the tasks are not in assistance. perhaps when i click in them they go in to their own page (not sure what the best ux is,.please advise. is a dropdown or popup or sidebar better?) ?",
           "done": false,
-          "created": "2026-09-22T01:30:00.000Z",
-          "updated": "2026-09-22T01:30:00.000Z"
+          "created": "2026-09-22T01:13:49.634Z",
+          "updated": "2026-09-22T01:13:49.634Z"
         }
       ]
     }
