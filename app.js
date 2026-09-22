@@ -1219,6 +1219,21 @@ el("#add-form").addEventListener("submit", async (e) => {
 });
 
 // ---------- rendering: level-up tree ----------
+// A fixed palette, hashed by category name, gives each category a consistent color
+// across the app's lifetime without having to store a color choice anywhere — same
+// category always lands on the same color. Reuses the confetti palette for a
+// consistent visual language with the rest of the app.
+const CATEGORY_PALETTE = ["#5fe3a1", "#7c9bff", "#ffb86b", "#ff6b9d", "#ffe66b", "#b388ff", "#4dd0e1"];
+function categoryColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
+}
+
+// One chronological spine across every category, instead of a separate branch per
+// category — each entry's dot is colored by its category (see categoryColor), so
+// the timeline reads like a simple git-log graph: one line, colored "lanes" by
+// category, without the layout complexity of dots actually diverging/merging.
 function renderTree() {
   const container = el("#tree-groups");
   container.innerHTML = "";
@@ -1226,25 +1241,13 @@ function renderTree() {
     container.innerHTML = `<div class="empty-state">Complete a task to start building your history.</div>`;
     return;
   }
-  const groups = groupBy(state.history, "category");
-  rootCategories(Object.keys(groups)).forEach((rootName) => renderHistoryBranch(container, rootName, groups, 0));
-}
-
-// Same hierarchy as the Active tab (categories are shared across both), so nesting a
-// category once reorganizes it everywhere — no separate drag-and-drop needed here.
-function renderHistoryBranch(container, name, groups, depth) {
-  const children = categoryChildren(name);
-  const entries = (groups[name] || []).slice().sort((a, b) => a.completedDate.localeCompare(b.completedDate));
-  if (entries.length === 0 && children.length === 0) return;
-
-  const branch = document.createElement("div");
-  branch.className = "tree-branch" + (depth > 0 ? " nested" : "");
-  branch.innerHTML = `<h2>${esc(name)}${entries.length ? ` <span class="count-badge">${entries.length} completed</span>` : ""}</h2>`;
-
-  entries.slice().reverse().forEach((entry) => branch.appendChild(historyNodeEl(entry)));
-
-  container.appendChild(branch);
-  children.forEach((childName) => renderHistoryBranch(container, childName, groups, depth + 1));
+  const rail = document.createElement("div");
+  rail.className = "tree-rail";
+  state.history
+    .slice()
+    .sort((a, b) => b.completedDate.localeCompare(a.completedDate))
+    .forEach((entry) => rail.appendChild(historyNodeEl(entry)));
+  container.appendChild(rail);
 }
 
 // Which history entries are expanded, keyed like taskKey() — a plain Set survives
@@ -1269,13 +1272,16 @@ function historyNodeEl(entry) {
   if (suggestions.length) badges.push(`<span class="badge badge-sug" title="${suggestions.length} suggestion(s)">✦ ${suggestions.length}</span>`);
   const hasDetail = badges.length > 0;
 
+  const color = categoryColor(entry.category);
   const node = document.createElement("div");
   node.className = "tree-node";
   node.dataset.key = key;
+  node.style.setProperty("--lane-color", color);
   node.innerHTML = `
     <div class="node-row${hasDetail ? " node-row-toggle" : ""}">
       ${hasDetail ? `<button class="node-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : `<span class="node-toggle-spacer"></span>`}
       <span class="node-title">${visIcon} ${esc(entry.title)}</span>
+      <span class="history-cat-badge" style="color: ${color}; border-color: ${color};">${esc(entry.category)}</span>
       <span class="node-date">${esc(entry.completedDate)}</span>
       ${badges.join("")}
       <button class="node-delete" aria-label="Delete from history">🗑</button>

@@ -715,30 +715,17 @@ main.view.wide { max-width: 980px; }
 .combo-option.is-new:hover, .combo-option.is-new.active { color: #0f1117; font-style: normal; }
 
 /* History view */
-.tree-branch {
+.tree-rail {
   border-left: 2px solid var(--border);
   padding-left: 20px;
-  margin-bottom: 36px;
   position: relative;
 }
-.tree-branch.nested {
-  margin-left: 12px;
-  border-left-style: dashed;
-}
-.tree-branch h2 {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 18px;
-  margin-bottom: 16px;
-}
-.tree-branch .count-badge {
-  font-size: 11px;
-  background: var(--accent);
-  color: #0f1117;
-  padding: 2px 9px;
+.history-cat-badge {
+  font-size: 10.5px;
+  padding: 1px 8px;
   border-radius: 999px;
-  font-weight: 700;
+  border: 1px solid;
+  flex-shrink: 0;
 }
 .tree-node {
   position: relative;
@@ -815,8 +802,8 @@ main.view.wide { max-width: 980px; }
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent-2);
-  box-shadow: 0 0 0 4px rgba(255, 184, 107, 0.15);
+  background: var(--lane-color, var(--accent-2));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lane-color, var(--accent-2)) 20%, transparent);
 }
 .tree-node .node-title { font-weight: 600; font-size: 14.5px; }
 .tree-node .node-date { color: var(--muted); font-size: 12px; margin-left: 8px; }
