@@ -510,6 +510,27 @@ async function setTaskParent(task, parentId) {
   }
 }
 
+async function setTaskCategory(task, category) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(task._repo);
+    const repo = repoFor(task._repo);
+    const updated = state.tasks
+      .filter((t) => t._repo === task._repo)
+      .map((t) => stripRepo(t.id === task.id ? { ...t, category } : t));
+    await saveTasks(repo, updated, `Move to category "${category}": ${task.title}`);
+    task.category = category;
+    renderActive();
+    renderCategoryOptions();
+  } catch (err) {
+    alert(`Couldn't update: ${err.message}`);
+  }
+}
+
+// One menu covers both jobs that used to want separate drag gestures: nesting a
+// task under another, and moving it to a different category. Keeping both here
+// (rather than adding drag-to-change-category) avoids a single drop meaning three
+// different things at once — reorder, nest, or recategorize.
 function openSubtaskMenu(task, anchorEl) {
   closeSubtaskMenu();
   const menu = document.createElement("div");
@@ -518,21 +539,39 @@ function openSubtaskMenu(task, anchorEl) {
 
   const repoTasks = state.tasks.filter((t) => t._repo === task._repo);
   const blocked = new Set([task.id, ...taskDescendantIds(task)]);
-  const candidates = repoTasks.filter((t) => !blocked.has(t.id)).sort((a, b) => a.title.localeCompare(b.title));
+  // Nest candidates are limited to the task's own category — keeps the list short
+  // and matches how nesting is actually used (a subtask of something in the same
+  // area of the list), rather than scrolling through every task in the tracker.
+  const nestCandidates = repoTasks
+    .filter((t) => !blocked.has(t.id) && t.category === task.category)
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const otherCategories = allCategories().filter((c) => c !== task.category);
 
   const options = [];
-  if (task.parentId) options.push({ label: "↑ Remove as subtask", value: null });
-  candidates.forEach((t) => options.push({ label: t.title, value: t.id }));
+  if (task.parentId) options.push({ kind: "unnest", label: "↑ Remove as subtask" });
+  nestCandidates.forEach((t) => options.push({ kind: "nest", label: t.title, value: t.id }));
+  if (otherCategories.length) {
+    options.push({ kind: "header", label: "Move to category" });
+    otherCategories.forEach((c) => options.push({ kind: "category", label: c, value: c }));
+  }
 
   menu.innerHTML = options.length
-    ? options.map((o, i) => `<div class="combo-option" data-i="${i}">${esc(o.label)}</div>`).join("")
-    : `<div class="combo-option is-new">No other tasks to nest under yet</div>`;
+    ? options
+        .map((o, i) =>
+          o.kind === "header"
+            ? `<div class="combo-option-header">${esc(o.label)}</div>`
+            : `<div class="combo-option" data-i="${i}">${esc(o.label)}</div>`
+        )
+        .join("")
+    : `<div class="combo-option is-new">No other tasks or categories yet</div>`;
 
   menu.querySelectorAll(".combo-option[data-i]").forEach((optEl) => {
     optEl.addEventListener("click", () => {
       const opt = options[Number(optEl.dataset.i)];
       closeSubtaskMenu();
-      setTaskParent(task, opt.value);
+      if (opt.kind === "unnest") setTaskParent(task, null);
+      else if (opt.kind === "nest") setTaskParent(task, opt.value);
+      else if (opt.kind === "category") setTaskCategory(task, opt.value);
     });
   });
 
@@ -616,7 +655,7 @@ function taskCard(task, depth = 0) {
         </div>
         ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
       </div>
-      <button class="subtask-btn" aria-label="Make this a subtask" title="Nest this under another task">↳</button>
+      <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
       <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
       <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
       <button class="delete-toggle" aria-label="Delete task">🗑</button>
