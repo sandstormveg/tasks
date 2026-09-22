@@ -1,6 +1,30 @@
 {
   "tasks": [
     {
+      "id": "book-confirm-transport-from-hanoi-to-cat-ba-muasoh19",
+      "title": "book/confirm transport from Hanoi to Cat Ba",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-09-21",
+      "notes": "",
+      "assist": false,
+      "suggestions": [
+        "Cat Ba Express is the standard option: bus + speedboat combo from Hanoi to Cat Ba town, $11-15 one-way, ~3h15-3h30 total travel time. Book at https://catbaexpress.com/bus-hanoi-to-cat-ba.html or their office at 214 Tran Quang Khai St, Hoan Kiem (hotline/WhatsApp +84 84 824 4999).",
+        "Daily departures from Hanoi at 07:30, 10:45, and 14:00 — the 07:30 slot gets you to Cat Ba town by early-mid afternoon, matching your Old Quarter accommodation notes about the 12 Oct transfer.",
+        "Free hotel pickup is included ONLY for hotels inside the Old Quarter — confirms the same constraint noted on your Hanoi accommodation task, so book that hotel first and give its address when booking this transfer.",
+        "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
+        "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
+      ],
+      "noteItems": [
+        {
+          "id": "n-agent-179003704582897",
+          "text": "✓ Actioned 2026-09-22: researched Cat Ba Express and alternative operators, pricing, and departure times — see suggestions.",
+          "done": false,
+          "created": "2026-09-22T00:30:45.826Z",
+          "updated": "2026-09-22T00:30:45.826Z"
+        }
+      ]
+    },
+    {
       "id": "book-cat-ba-accom-for-12th-to-17th-muamqwbm",
       "title": "Book cat ba accom for 12th to 17th",
       "category": "Hanoi Climbing trip",
@@ -90,30 +114,6 @@
       "category": "Life Admin",
       "created": "2026-09-21",
       "notes": ""
-    },
-    {
-      "id": "book-confirm-transport-from-hanoi-to-cat-ba-muasoh19",
-      "title": "book/confirm transport from Hanoi to Cat Ba",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-09-21",
-      "notes": "",
-      "assist": false,
-      "suggestions": [
-        "Cat Ba Express is the standard option: bus + speedboat combo from Hanoi to Cat Ba town, $11-15 one-way, ~3h15-3h30 total travel time. Book at https://catbaexpress.com/bus-hanoi-to-cat-ba.html or their office at 214 Tran Quang Khai St, Hoan Kiem (hotline/WhatsApp +84 84 824 4999).",
-        "Daily departures from Hanoi at 07:30, 10:45, and 14:00 — the 07:30 slot gets you to Cat Ba town by early-mid afternoon, matching your Old Quarter accommodation notes about the 12 Oct transfer.",
-        "Free hotel pickup is included ONLY for hotels inside the Old Quarter — confirms the same constraint noted on your Hanoi accommodation task, so book that hotel first and give its address when booking this transfer.",
-        "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
-        "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
-      ],
-      "noteItems": [
-        {
-          "id": "n-agent-179003704582897",
-          "text": "✓ Actioned 2026-09-22: researched Cat Ba Express and alternative operators, pricing, and departure times — see suggestions.",
-          "done": false,
-          "created": "2026-09-22T00:30:45.826Z",
-          "updated": "2026-09-22T00:30:45.826Z"
-        }
-      ]
     },
     {
       "id": "book-in-deep-water-solo-trips-14th-19th-muaspgwt",
