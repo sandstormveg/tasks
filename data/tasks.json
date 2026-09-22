@@ -210,9 +210,9 @@
         {
           "id": "n-agent-1790040530370",
           "text": "✓ Actioned 2026-09-22: built a separate \"Claude's notes\" section (own checkbox, own list) so my action confirmations no longer land in your notes. I also moved the old ✓/✅ agent entries that were sitting in noteItems/suggestions on this task, the two Hanoi tasks, and the Review-accommodation task into this new section, everywhere they applied.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T01:28:50.370Z",
-          "updated": "2026-09-22T01:28:50.370Z"
+          "updated": "2026-09-22T01:33:50.241Z"
         }
       ]
     }
