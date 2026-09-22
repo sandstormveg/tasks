@@ -152,15 +152,48 @@ main.view.wide { max-width: 980px; }
   padding-bottom: 16px;
   margin-bottom: 20px;
 }
+.assist-head-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .assist-detail h2 {
   margin: 0 0 6px;
   font-size: 20px;
   line-height: 1.3;
 }
+.assist-head-row .assist-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  cursor: text;
+}
+.assist-title-edit {
+  flex: 1;
+  min-width: 0;
+  font-size: 20px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
 .assist-detail .assist-meta {
   color: var(--muted);
   font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+.assist-stop-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.assist-stop-btn:hover { color: #ff6b9d; border-color: #ff6b9d; }
 .assist-section { margin-bottom: 26px; }
 .assist-section:last-child { margin-bottom: 0; }
 .assist-section h3 {

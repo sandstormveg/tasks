@@ -749,15 +749,14 @@ function setupTaskTitleEditing(task, card) {
   );
 }
 
-function enterTaskTitleEditMode(task, card) {
-  if (card.classList.contains("editing")) return;
-  card.classList.add("editing");
-  card.draggable = false;
+// Both places a title can be renamed from (an Active-tab card, or the Assistance
+// detail header) share this — only the DOM cleanup around the swap differs.
+function renameTaskInline(task, titleEl, { onBeforeEdit, onDone, inputClassName = "task-title-edit" } = {}) {
+  if (onBeforeEdit) onBeforeEdit();
 
-  const titleEl = card.querySelector(".task-title");
   const input = document.createElement("input");
   input.type = "text";
-  input.className = "task-title-edit";
+  input.className = inputClassName;
   input.value = task.title;
   titleEl.replaceWith(input);
   input.focus();
@@ -769,11 +768,11 @@ function enterTaskTitleEditMode(task, card) {
     settled = true;
     const newTitle = input.value.trim();
     if (!commit || !newTitle || newTitle === task.title) {
-      renderActive();
+      onDone();
       return;
     }
     if (!requireToken()) {
-      renderActive();
+      onDone();
       return;
     }
     try {
@@ -784,10 +783,10 @@ function enterTaskTitleEditMode(task, card) {
         .map((t) => stripRepo(t.id === task.id ? { ...t, title: newTitle } : t));
       await saveTasks(repo, updated, `Rename task: ${task.title} → ${newTitle}`);
       task.title = newTitle;
-      renderActive();
+      onDone();
     } catch (err) {
       alert(`Couldn't save: ${err.message}`);
-      renderActive();
+      onDone();
     }
   };
 
@@ -795,6 +794,22 @@ function enterTaskTitleEditMode(task, card) {
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); finish(true); }
     if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
+}
+
+function enterTaskTitleEditMode(task, card) {
+  if (card.classList.contains("editing")) return;
+  const titleEl = card.querySelector(".task-title");
+  renameTaskInline(task, titleEl, {
+    onBeforeEdit: () => {
+      card.classList.add("editing");
+      card.draggable = false;
+    },
+    onDone: () => {
+      renderActive();
+      renderAssistList();
+      renderAssistDetail();
+    },
   });
 }
 
@@ -877,11 +892,13 @@ async function toggleVisibility(task, btnEl) {
 async function completeTask(task, card) {
   if (!requireToken()) return;
   const repo = repoFor(task._repo);
-  const checkBtn = card.querySelector(".check");
-  checkBtn.classList.add("checked");
-  burst(checkBtn);
-  playPop();
-  card.classList.add("completing");
+  const checkBtn = card ? card.querySelector(".check") : null;
+  if (checkBtn) {
+    checkBtn.classList.add("checked");
+    burst(checkBtn);
+    playPop();
+    card.classList.add("completing");
+  }
 
   try {
     assertLoaded(task._repo);
@@ -913,7 +930,8 @@ async function completeTask(task, card) {
       historyInRepo.map((h) => ({ ...h, _repo: task._repo }))
     );
     if (state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
-    setTimeout(() => renderActive(), 350);
+    if (card) setTimeout(() => renderActive(), 350);
+    else renderActive();
     renderTree();
     renderCategoryOptions();
     renderAssistList();
@@ -928,8 +946,8 @@ async function completeTask(task, card) {
     });
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
-    card.classList.remove("completing");
-    checkBtn.classList.remove("checked");
+    if (card) card.classList.remove("completing");
+    if (checkBtn) checkBtn.classList.remove("checked");
   }
 }
 
@@ -1037,7 +1055,7 @@ async function deleteTask(task, card) {
   }
 
   const prevTasks = state.tasks;
-  card.classList.add("completing");
+  if (card) card.classList.add("completing");
   state.tasks = state.tasks.filter((t) => !(t.id === task.id && t._repo === task._repo));
   renderCategoryOptions();
   renderAssistList();
@@ -1046,7 +1064,8 @@ async function deleteTask(task, card) {
     state.selectedAssistKey = null;
     renderAssistDetail();
   }
-  setTimeout(() => card.remove(), 300);
+  if (card) setTimeout(() => card.remove(), 300);
+  else renderActive();
 
   let undone = false;
   showToast({
@@ -1484,8 +1503,18 @@ function renderAssistDetail() {
 
   container.innerHTML = `
     <div class="assist-head">
-      <h2>${esc(task.title)}</h2>
-      <div class="assist-meta">${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}</div>
+      <div class="assist-head-row">
+        <button class="check" aria-label="Complete task">
+          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        </button>
+        <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
+        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        <button class="delete-toggle" aria-label="Delete task">🗑</button>
+      </div>
+      <div class="assist-meta">
+        ${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}
+        <button class="assist-stop-btn" type="button">Stop assistance</button>
+      </div>
     </div>
 
     <div class="assist-section">
@@ -1517,6 +1546,22 @@ function renderAssistDetail() {
       <span class="assist-status" id="assist-status"></span>
     </div>
   `;
+
+  container.querySelector(".check").addEventListener("click", () => completeTask(task));
+  container.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
+  container.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task));
+  container.querySelector(".assist-stop-btn").addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
+  const assistTitleEl = container.querySelector(".assist-title");
+  assistTitleEl.addEventListener("dblclick", () => {
+    renameTaskInline(task, assistTitleEl, {
+      inputClassName: "assist-title-edit",
+      onDone: () => {
+        renderAssistList();
+        renderAssistDetail();
+        renderActive();
+      },
+    });
+  });
 
   const noteList = el("#note-list");
   if (noteList) {
