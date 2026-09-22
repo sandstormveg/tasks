@@ -82,7 +82,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muc528mvain4",
+          "text": "thinking of doing 22nd Oct to 29th of Oct trip from Hanoi to Tokyo.",
+          "done": false,
+          "created": "2026-09-22T03:52:56.886Z",
+          "updated": "2026-09-22T03:52:56.886Z"
+        }
+      ]
     },
     {
       "id": "tax-return-muasc35s",
