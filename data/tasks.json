@@ -103,7 +103,16 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muc4dzclntun",
+          "text": "what do i need/what are the main steps to finding micrometeorites on my balcony?",
+          "done": false,
+          "created": "2026-09-22T03:34:05.108Z",
+          "updated": "2026-09-22T03:34:05.108Z"
+        }
+      ]
     },
     {
       "id": "print-the-meta-jigsaw-of-the-death-star-photo-muasfrp0",
