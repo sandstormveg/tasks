@@ -20,7 +20,10 @@
         "For only 2 nights, Old Quarter serviced aparthotels often beat Airbnb: two real bedrooms, daily cleaning, 24h reception, and — important for you — free luggage storage while you're over on Cat Ba 12–17 Oct, so you don't drag everything to the island.",
         "Book something refundable. You're heading to Cat Ba for climbing on the 12th and October can bring storms up there; a flexible rate on the Hanoi bookends costs little and saves rebooking pain.",
         "When you book, confirm the exact pickup address with the transfer operator and aim for the 07:30 departure on 12 Oct (other slots: 10:30, 12:00, 14:00) — it gets you climbing that afternoon. Check the hotel does early breakfast or at least has 24h reception.",
-        "You also have 'Book cat ba accom for 12th to 17th' and 'Book Cat Ba accommodation 18th–20th' open — if the 18–20 stay is a return leg, ask the Hanoi place to hold your bags across the whole Cat Ba stretch rather than booking storage separately."
+        "You also have 'Book cat ba accom for 12th to 17th' and 'Book Cat Ba accommodation 18th–20th' open — if the 18–20 stay is a return leg, ask the Hanoi place to hold your bags across the whole Cat Ba stretch rather than booking storage separately.",
+        "Specific listings to check for your 10-11 Oct dates (2BR, Old Quarter): Phen Art House, Old Quarter Lake House, IL DIVO Hotel & Spa Hanoi Old Quarter, and IL Divo Luxury Homestay & Spa — all show up under Booking.com aparthotels for Hoan Kiem district: https://www.booking.com/aparthotels/city/vn/hanoi.html",
+        "Also check this specific 2BR Old Quarter Airbnb with gym/terrace/daily service as a benchmark for price and layout: https://www.airbnb.com/rooms/43924167",
+        "✅ Done (2026-09-22): added real listing names/links above, and created a new task ‘Review Hanoi accommodation options (10-11 Oct)’ so you can compare them side by side."
       ],
       "noteItems": [
         {
@@ -36,6 +39,13 @@
           "done": false,
           "created": "2026-09-21T12:08:17.219Z",
           "updated": "2026-09-21T12:09:07.480Z"
+        },
+        {
+          "id": "n-agent-1790037045827791",
+          "text": "✓ Actioned 2026-09-22: looked up specific 2BR Old Quarter listings and created a new task with the hyperlinked options for you to review, as requested.",
+          "done": false,
+          "created": "2026-09-22T00:30:45.826Z",
+          "updated": "2026-09-22T00:30:45.826Z"
         }
       ]
     },
@@ -87,7 +97,23 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "Cat Ba Express is the standard option: bus + speedboat combo from Hanoi to Cat Ba town, $11-15 one-way, ~3h15-3h30 total travel time. Book at https://catbaexpress.com/bus-hanoi-to-cat-ba.html or their office at 214 Tran Quang Khai St, Hoan Kiem (hotline/WhatsApp +84 84 824 4999).",
+        "Daily departures from Hanoi at 07:30, 10:45, and 14:00 — the 07:30 slot gets you to Cat Ba town by early-mid afternoon, matching your Old Quarter accommodation notes about the 12 Oct transfer.",
+        "Free hotel pickup is included ONLY for hotels inside the Old Quarter — confirms the same constraint noted on your Hanoi accommodation task, so book that hotel first and give its address when booking this transfer.",
+        "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
+        "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
+      ],
+      "noteItems": [
+        {
+          "id": "n-agent-179003704582897",
+          "text": "✓ Actioned 2026-09-22: researched Cat Ba Express and alternative operators, pricing, and departure times — see suggestions.",
+          "done": false,
+          "created": "2026-09-22T00:30:45.826Z",
+          "updated": "2026-09-22T00:30:45.826Z"
+        }
+      ]
     },
     {
       "id": "book-in-deep-water-solo-trips-14th-19th-muaspgwt",
@@ -117,6 +143,23 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": ""
+    },
+    {
+      "id": "review-hanoi-accommodation-options-10-11-oct-mubmubxu890",
+      "title": "Review Hanoi accommodation options (10-11 Oct)",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-09-22",
+      "notes": "",
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-agent-init",
+          "text": "Created by Claude from your request on the Hanoi accommodation task. Shortlist of 2-bedroom Old Quarter options to compare for 10-11 Oct: Phen Art House, Old Quarter Lake House, IL DIVO Hotel & Spa Hanoi Old Quarter, IL Divo Luxury Homestay & Spa (all on https://www.booking.com/aparthotels/city/vn/hanoi.html), plus this 2BR Airbnb benchmark: https://www.airbnb.com/rooms/43924167. Check live pricing/availability for your exact dates since search results don’t show real-time rates.",
+          "done": false,
+          "created": "2026-09-22T00:30:45.826Z",
+          "updated": "2026-09-22T00:30:45.826Z"
+        }
+      ]
     }
   ]
 }
