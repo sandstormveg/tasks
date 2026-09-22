@@ -421,6 +421,23 @@ main.view.wide { max-width: 980px; }
   background: rgba(124, 155, 255, 0.1);
 }
 .task-card.editing { background: var(--panel-2); }
+.task-card.subtask {
+  border-left: 2px dashed var(--border);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.subtask-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.subtask-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
 
 .check {
   --size: 26px;

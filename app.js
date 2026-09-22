@@ -350,16 +350,36 @@ function renderActive() {
 // draggable and visible, rather than disappearing until you happen to nest something under it.
 function renderCategoryBranch(container, name, groups, depth) {
   const children = categoryChildren(name);
-  const tasks = groups[name] || [];
+  // Subtasks render nested under their parent task (wherever that parent's category
+  // puts it), not as their own top-level entry in whatever category they carry —
+  // so a category whose only task just became somebody's subtask can legitimately
+  // have nothing left to show here.
+  const tasks = (groups[name] || []).filter((t) => !isSubtask(t));
   if (tasks.length === 0 && children.length === 0) return;
 
   const section = document.createElement("div");
   section.className = "category-group" + (depth > 0 ? " nested" : "");
   section.appendChild(categoryHeader(name, depth));
-  tasks.forEach((task) => section.appendChild(taskCard(task)));
+  tasks.forEach((task) => appendTaskWithSubtasks(section, task, 0));
   container.appendChild(section);
 
   children.forEach((childName) => renderCategoryBranch(container, childName, groups, depth + 1));
+}
+
+// A task is a subtask if its parentId points at another task that actually exists
+// in the same repo — a dangling parentId (parent deleted/completed) falls back to
+// showing it at top level rather than silently disappearing.
+function isSubtask(t) {
+  return !!t.parentId && state.tasks.some((x) => x._repo === t._repo && x.id === t.parentId);
+}
+
+function subtasksOf(task) {
+  return state.tasks.filter((t) => t._repo === task._repo && t.parentId === task.id);
+}
+
+function appendTaskWithSubtasks(container, task, depth) {
+  container.appendChild(taskCard(task, depth));
+  subtasksOf(task).forEach((child) => appendTaskWithSubtasks(container, child, depth + 1));
 }
 
 function categoryHeader(name, depth) {
@@ -454,6 +474,84 @@ function onDocClickCloseMoveMenu(e) {
   if (menu && !menu.contains(e.target)) closeCategoryMoveMenu();
 }
 
+// ---------- subtasks ----------
+// Nesting is menu-driven rather than drag-driven, on purpose: the drag gesture on a
+// task card already means "reorder this among its siblings" (see task drag-and-drop
+// below), and overloading the same drag with "drop onto a card to nest under it"
+// needs fiddly drop-zone geometry (top/bottom edge = reorder, middle = nest) that
+// doesn't even help on touch devices. A menu is one code path that works everywhere,
+// same tradeoff already made for category nesting above.
+function taskDescendantIds(task) {
+  const ids = [];
+  const stack = [task.id];
+  while (stack.length) {
+    const cur = stack.pop();
+    subtasksOf({ id: cur, _repo: task._repo }).forEach((t) => {
+      ids.push(t.id);
+      stack.push(t.id);
+    });
+  }
+  return ids;
+}
+
+async function setTaskParent(task, parentId) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(task._repo);
+    const repo = repoFor(task._repo);
+    const updated = state.tasks
+      .filter((t) => t._repo === task._repo)
+      .map((t) => stripRepo(t.id === task.id ? { ...t, parentId: parentId || undefined } : t));
+    await saveTasks(repo, updated, parentId ? `Make subtask: ${task.title}` : `Un-nest: ${task.title}`);
+    task.parentId = parentId || undefined;
+    renderActive();
+  } catch (err) {
+    alert(`Couldn't update: ${err.message}`);
+  }
+}
+
+function openSubtaskMenu(task, anchorEl) {
+  closeSubtaskMenu();
+  const menu = document.createElement("div");
+  menu.className = "category-move-menu";
+  menu.id = "subtask-menu";
+
+  const repoTasks = state.tasks.filter((t) => t._repo === task._repo);
+  const blocked = new Set([task.id, ...taskDescendantIds(task)]);
+  const candidates = repoTasks.filter((t) => !blocked.has(t.id)).sort((a, b) => a.title.localeCompare(b.title));
+
+  const options = [];
+  if (task.parentId) options.push({ label: "↑ Remove as subtask", value: null });
+  candidates.forEach((t) => options.push({ label: t.title, value: t.id }));
+
+  menu.innerHTML = options.length
+    ? options.map((o, i) => `<div class="combo-option" data-i="${i}">${esc(o.label)}</div>`).join("")
+    : `<div class="combo-option is-new">No other tasks to nest under yet</div>`;
+
+  menu.querySelectorAll(".combo-option[data-i]").forEach((optEl) => {
+    optEl.addEventListener("click", () => {
+      const opt = options[Number(optEl.dataset.i)];
+      closeSubtaskMenu();
+      setTaskParent(task, opt.value);
+    });
+  });
+
+  anchorEl.style.position = "relative";
+  anchorEl.appendChild(menu);
+  setTimeout(() => document.addEventListener("click", onDocClickCloseSubtaskMenu, { capture: true }), 0);
+}
+
+function closeSubtaskMenu() {
+  const existing = document.getElementById("subtask-menu");
+  if (existing) existing.remove();
+  document.removeEventListener("click", onDocClickCloseSubtaskMenu, { capture: true });
+}
+
+function onDocClickCloseSubtaskMenu(e) {
+  const menu = document.getElementById("subtask-menu");
+  if (menu && !menu.contains(e.target)) closeSubtaskMenu();
+}
+
 // ---------- category drag-and-drop ----------
 let draggedCategory = null;
 
@@ -494,9 +592,10 @@ function onCategoryDragEnd(e) {
 // removes it from the Assistance tab, but shouldn't make its history disappear).
 const expandedTaskNodes = new Set();
 
-function taskCard(task) {
+function taskCard(task, depth = 0) {
   const card = document.createElement("div");
-  card.className = "task-card";
+  card.className = "task-card" + (depth > 0 ? " subtask" : "");
+  if (depth > 0) card.style.marginLeft = `${depth * 22}px`;
   card.draggable = true;
   card.dataset.taskKey = taskKey(task);
   card.title = "Double-click (or press and hold) the title to rename. Drag to reorder.";
@@ -517,6 +616,7 @@ function taskCard(task) {
         </div>
         ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
       </div>
+      <button class="subtask-btn" aria-label="Make this a subtask" title="Nest this under another task">↳</button>
       <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
       <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
       <button class="delete-toggle" aria-label="Delete task">🗑</button>
@@ -534,6 +634,11 @@ function taskCard(task) {
   card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
+  const subtaskBtn = card.querySelector(".subtask-btn");
+  subtaskBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openSubtaskMenu(task, subtaskBtn);
+  });
   const assistBtn = card.querySelector(".assist-toggle");
   assistBtn.title = task.assist
     ? "Claude is helping with this one — click to stop"
