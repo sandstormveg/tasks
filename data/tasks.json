@@ -98,6 +98,25 @@
           "created": "2026-09-22T03:53:15.503Z",
           "updated": "2026-09-22T03:56:55.266Z"
         }
+      ],
+      "suggestions": [
+        "Robot Restaurant/robot cafe: the original Shinjuku Robot Restaurant has been closed since COVID and repeated reopening attempts have stalled (still closed as of 2026) — drop it from the itinerary. Closest substitute is Avatar Robot Cafe DAWN (https://dawn2021.orylab.com/en/), staffed by robot avatars remotely operated by people with disabilities — different vibe (more meaningful than spectacle) but worth checking if it still appeals.",
+        "Capsule hotel: The Millennials Shibuya is the standout for a genuine high-tech capsule experience (reclining pod, personal projector, tablet controls, free coffee/tea 24h) — central Shibuya location. If you want something cheaper and more traditional-feeling, Anshin Oyado Shimbashi (right by Shimbashi Station) is a well-reviewed classic capsule option. Budget roughly ¥2,500-9,000/night depending on style.",
+        "B-Pump Ogikubo bouldering: open Mon-Fri 12:00-23:00, weekends/holidays 10:00-22:00 (closed only New Year), 30 seconds from Ogikubo Station. Day pass ¥2,530 + a one-time ¥2,200 registration fee for first-timers (~¥4,730 total your first visit). Popular with foreign climbers and has English support, so no language barrier issue. https://english.pump-climbing.com/bpump/",
+        "Half-day hike: Mount Takao (599m) is the easiest fit — ~50 min from Shinjuku via Keio Line to Takaosanguchi. October is actually peak season there (Takao Momiji Festival starts late October), so expect crowds on Trail 1 (paved, cable car option, ¥490 one-way/¥950 return). For a quieter walk with the same autumn colours, take Trail 3 (Katsura Grove) instead — about 1hr up, less crowded.",
+        "Onsen: since it is a day trip not an overnight, Hakone is the practical choice (Kusatsu is 2.5hrs each way, too far for a day). Hakone Yuryo is a dedicated day-use onsen facility (no overnight rooms, built for exactly this). Get there via the Odakyu Romancecar from Shinjuku (~85 min) — the Hakone Free Pass (¥6,100) covers transport around the area if you want to combine it with sightseeing (Owakudani, the pirate ship on Lake Ashi) rather than just the bath.",
+        "Vegan food: T's Tantan (vegan tantan ramen, one location right at JR Tokyo Station B1F, super convenient) is the easiest one to just drop into. For a sit-down proper meal, the vegan restaurant in Jiyugaoka (Japanese vegan cuisine — katsu, soba, vegan eel, bento) is well reviewed. Komeda IS in Ginza is a good option if you want an all-vegan breakfast/brunch spot.",
+        "Anime spots/shopping: not researched yet in detail, but the two obvious anchors are Akihabara (electronics + anime/manga stores, figures, maid cafes) and Nakano Broadway (more curated/vintage collectibles, less touristy than Akihabara) — worth deciding which vibe you want since they are quite different; happy to dig into specific stores if you tell me what you are actually shopping for (figures, manga, retro games, cosplay, etc).",
+        "Fabric shopping for your partner: Nippori Fabric Town (Nippori Textile Town) near Nippori Station is the standard answer — dozens of fabric shops clustered together, well known even outside Japan. Worth flagging to her as the go-to if she has not already got a spot in mind."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790049681136",
+          "text": "✓ Actioned 2026-09-22: researched every item from your notes for the 22-29 Oct Hanoi→Tokyo trip — robot cafe status (original one is closed, found an alternative), capsule hotel picks, B-Pump Ogikubo hours/pricing, a half-day hike (Mt Takao), a day-trip onsen option (Hakone, since Kusatsu is too far for a day), vegan restaurants, and a starting point for anime shopping + your partner's fabric shopping (Nippori Fabric Town) — see suggestions.",
+          "done": false,
+          "created": "2026-09-22T04:01:21.136Z",
+          "updated": "2026-09-22T04:01:21.136Z"
+        }
       ]
     },
     {
