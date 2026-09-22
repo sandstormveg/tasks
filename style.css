@@ -727,6 +727,15 @@ main.view.wide { max-width: 980px; }
   border: 1px solid;
   flex-shrink: 0;
 }
+.tree-day-divider {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 22px 0 10px;
+}
+.tree-day-divider:first-child { margin-top: 0; }
 .tree-node {
   position: relative;
   margin-bottom: 18px;
@@ -739,6 +748,15 @@ main.view.wide { max-width: 980px; }
 }
 .node-row .node-title { flex: 1; min-width: 0; }
 .node-row-toggle { cursor: pointer; }
+.node-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  margin-left: 20px;
+}
+.node-meta-row .node-delete { margin-left: auto; }
 .node-toggle {
   flex-shrink: 0;
   background: transparent;
@@ -750,7 +768,7 @@ main.view.wide { max-width: 980px; }
   padding: 0;
 }
 .node-toggle-spacer { flex-shrink: 0; width: 16px; display: inline-block; }
-.node-row .badge { flex-shrink: 0; }
+.node-meta-row .badge { flex-shrink: 0; }
 .node-detail {
   margin-top: 8px;
   margin-left: 22px;
@@ -806,7 +824,6 @@ main.view.wide { max-width: 980px; }
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--lane-color, var(--accent-2)) 20%, transparent);
 }
 .tree-node .node-title { font-weight: 600; font-size: 14.5px; }
-.tree-node .node-date { color: var(--muted); font-size: 12px; margin-left: 8px; }
 .tree-node .node-note { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
 .tree-node img {
   margin-top: 8px;

@@ -1243,11 +1243,31 @@ function renderTree() {
   }
   const rail = document.createElement("div");
   rail.className = "tree-rail";
+  let lastDate = null;
   state.history
     .slice()
     .sort((a, b) => b.completedDate.localeCompare(a.completedDate))
-    .forEach((entry) => rail.appendChild(historyNodeEl(entry)));
+    .forEach((entry) => {
+      if (entry.completedDate !== lastDate) {
+        lastDate = entry.completedDate;
+        rail.appendChild(dayDividerEl(entry.completedDate));
+      }
+      rail.appendChild(historyNodeEl(entry));
+    });
   container.appendChild(rail);
+}
+
+// A day only needs to be labelled once — every entry under it already carries no
+// date of its own (see historyNodeEl), which is also what fixed the mobile layout
+// where date + badges + delete used to fight the title for space on one line.
+function dayDividerEl(dateStr) {
+  const div = document.createElement("div");
+  div.className = "tree-day-divider";
+  const d = new Date(dateStr + "T00:00:00");
+  div.textContent = isNaN(d)
+    ? dateStr
+    : d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  return div;
 }
 
 // Which history entries are expanded, keyed like taskKey() — a plain Set survives
@@ -1281,8 +1301,9 @@ function historyNodeEl(entry) {
     <div class="node-row${hasDetail ? " node-row-toggle" : ""}">
       ${hasDetail ? `<button class="node-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : `<span class="node-toggle-spacer"></span>`}
       <span class="node-title">${visIcon} ${esc(entry.title)}</span>
+    </div>
+    <div class="node-meta-row">
       <span class="history-cat-badge" style="color: ${color}; border-color: ${color};">${esc(entry.category)}</span>
-      <span class="node-date">${esc(entry.completedDate)}</span>
       ${badges.join("")}
       <button class="node-delete" aria-label="Delete from history">🗑</button>
     </div>
