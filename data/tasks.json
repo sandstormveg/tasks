@@ -91,6 +91,20 @@
           "created": "2026-09-22T03:34:46.313Z",
           "updated": "2026-09-22T03:34:46.313Z"
         }
+      ],
+      "suggestions": [
+        "iOS: https://apps.apple.com/us/app/grab-taxi-ride-food-delivery/id647268330 (Grab: Taxi Ride, Food Delivery, by Grab.com).",
+        "Android: https://play.google.com/store/apps/details?id=com.grabtaxi.passenger (Grab - Taxi & Food Delivery).",
+        "Both are the official passenger apps (not the Grab Driver app, which is a separate listing) — good link to test the hyperlink rendering on, since both are real https:// URLs that should linkify."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790048174589w5d",
+          "text": "✓ Actioned 2026-09-22: found the official iOS and Android download links for the Grab passenger app — see suggestions, both are real https:// links to test the hyperlink rendering with.",
+          "done": false,
+          "created": "2026-09-22T03:36:14.589Z",
+          "updated": "2026-09-22T03:36:14.589Z"
+        }
       ]
     },
     {
@@ -121,6 +135,24 @@
           "done": false,
           "created": "2026-09-22T03:34:05.108Z",
           "updated": "2026-09-22T03:34:05.108Z"
+        }
+      ],
+      "suggestions": [
+        "What you need: a strong neodymium magnet wrapped in plastic wrap or a sandwich bag (so debris doesn't stick directly to it), a fine-mesh sieve (or two — coarse then fine), a magnifying glass or your compound microscope, and a white sheet of paper or tray to sort onto.",
+        "Method: drag the plastic-wrapped magnet slowly over your balcony surface, especially gutters, drain spouts, or anywhere rainwater collects and evaporates — that's where windblown dust concentrates. Many micrometeorites are magnetic due to iron content, so they'll cling to the magnet through the plastic.",
+        "Collect over a labelled bag: hold the magnet over the bag and peel the plastic away — the stuck material falls off cleanly into the bag without needing to touch it.",
+        "Sieve the catch through a coarse mesh then a fine mesh to separate by size — genuine micrometeorites are typically only 0.2-0.4mm, so you're filtering out larger debris (rust flakes, sand) at both ends.",
+        "Final check under magnification: spread the finest fraction on a slide or white paper and examine with your microscope (see your \"getting a compound microscope\" task/subtask — worth getting that sorted first, it's the last step here). Genuine micrometeorites look like tiny spherical, glassy, or metallic beads, distinct from angular rock/rust fragments.",
+        "Good reference with photos for comparison: https://www.sciencefriday.com/articles/up-on-the-roof-a-handful-of-urban-stardust/ and https://www.popsci.com/hunt-micrometeorites/ — both cover the same magnet-and-sieve method in more detail.",
+        "Heads up: false positives are common — most magnetic \"finds\" on a balcony turn out to be industrial/rust particles, not space dust. Confirming a real micrometeorite usually needs a proper microscope + comparison to known reference images, not just the naked eye."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790048174589ov4",
+          "text": "✓ Actioned 2026-09-22: researched the magnet + sieve method for finding micrometeorites on your balcony, what you need, and how to tell a real one from rust/dust — see suggestions. This pairs with your compound-microscope task since you'll need magnification for the final ID step.",
+          "done": false,
+          "created": "2026-09-22T03:36:14.589Z",
+          "updated": "2026-09-22T03:36:14.589Z"
         }
       ]
     },
