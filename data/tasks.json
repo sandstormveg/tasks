@@ -166,7 +166,8 @@
       "title": "make tasks editable when held down/double clicked.",
       "category": "Development",
       "created": "2026-09-22",
-      "notes": ""
+      "notes": "",
+      "assist": true
     }
   ]
 }
