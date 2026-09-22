@@ -488,24 +488,47 @@ function onCategoryDragEnd(e) {
   draggedCategory = null;
 }
 
+// Which active tasks have their notes/suggestions detail expanded, keyed like
+// taskKey() — mirrors expandedHistoryNodes so it survives re-renders. This is what
+// lets you still see a task's notes/suggestions after turning assist off (which
+// removes it from the Assistance tab, but shouldn't make its history disappear).
+const expandedTaskNodes = new Set();
+
 function taskCard(task) {
   const card = document.createElement("div");
   card.className = "task-card";
   card.draggable = true;
   card.dataset.taskKey = taskKey(task);
   card.title = "Double-click (or press and hold) the title to rename. Drag to reorder.";
+
+  const key = taskKey(task);
+  const expanded = expandedTaskNodes.has(key);
+  const hasDetail = noteItems(task).length > 0 || claudeNoteItems(task).length > 0 || (task.suggestions || []).length > 0;
+
   card.innerHTML = `
     <button class="check" aria-label="Complete task">
       <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
     </button>
     <div class="task-body">
-      <div class="task-title">${esc(task.title)}</div>
+      <div class="task-title-row">
+        ${hasDetail ? `<button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : ""}
+        <div class="task-title">${esc(task.title)}</div>
+      </div>
       ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
+      ${expanded ? taskDetailHtml(task) : ""}
     </div>
     <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
     <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
     <button class="delete-toggle" aria-label="Delete task">🗑</button>
   `;
+  if (hasDetail) {
+    card.querySelector(".task-detail-toggle").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (expandedTaskNodes.has(key)) expandedTaskNodes.delete(key);
+      else expandedTaskNodes.add(key);
+      renderActive();
+    });
+  }
   card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
@@ -1148,6 +1171,44 @@ function historyNodeEl(entry) {
   return node;
 }
 
+// Shared by the History detail panel and the Active-tab task detail panel below —
+// same read-only rendering either way (editing happens via double-click for the
+// title and the Assistance tab for notes, never here).
+function staticNoteListHtml(items) {
+  return `<ul class="note-list note-list-static">${items.map((n) => `
+    <li class="note-item${n.done ? " done" : ""}">
+      <span class="note-check-static">${n.done ? "✓" : ""}</span>
+      <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
+    </li>`).join("")}</ul>`;
+}
+
+function suggestionsSectionHtml(suggestions) {
+  return suggestions.length
+    ? `<div class="node-detail-section">
+        <h4>✦ Claude's suggestions</h4>
+        <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(s)}</div></li>`).join("")}</ul>
+      </div>`
+    : "";
+}
+
+function claudeNotesSectionHtml(claudeNotes) {
+  return claudeNotes.length
+    ? `<div class="node-detail-section">
+        <h4>🤖 Claude's notes</h4>
+        ${staticNoteListHtml(claudeNotes)}
+      </div>`
+    : "";
+}
+
+function notesSectionHtml(items) {
+  return items.length
+    ? `<div class="node-detail-section">
+        <h4>✎ Notes</h4>
+        ${staticNoteListHtml(items)}
+      </div>`
+    : "";
+}
+
 function historyNodeDetailHtml(entry) {
   const items = entry.noteItems || [];
   const claudeNotes = entry.claudeNotes || [];
@@ -1157,29 +1218,26 @@ function historyNodeDetailHtml(entry) {
     <div class="node-detail">
       ${entry.note ? `<div class="node-note">${linkify(entry.note)}</div>` : ""}
       ${images.map((img) => `<img src="${esc(img)}" alt="">`).join("")}
-      ${suggestions.length ? `
-        <div class="node-detail-section">
-          <h4>✦ Claude's suggestions</h4>
-          <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(s)}</div></li>`).join("")}</ul>
-        </div>` : ""}
-      ${claudeNotes.length ? `
-        <div class="node-detail-section">
-          <h4>🤖 Claude's notes</h4>
-          <ul class="note-list note-list-static">${claudeNotes.map((n) => `
-            <li class="note-item${n.done ? " done" : ""}">
-              <span class="note-check-static">${n.done ? "✓" : ""}</span>
-              <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
-            </li>`).join("")}</ul>
-        </div>` : ""}
-      ${items.length ? `
-        <div class="node-detail-section">
-          <h4>✎ Notes</h4>
-          <ul class="note-list note-list-static">${items.map((n) => `
-            <li class="note-item${n.done ? " done" : ""}">
-              <span class="note-check-static">${n.done ? "✓" : ""}</span>
-              <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
-            </li>`).join("")}</ul>
-        </div>` : ""}
+      ${suggestionsSectionHtml(suggestions)}
+      ${claudeNotesSectionHtml(claudeNotes)}
+      ${notesSectionHtml(items)}
+    </div>
+  `;
+}
+
+// Active-tab equivalent of historyNodeDetailHtml — same read-only sections (no
+// completion note or images, since the task isn't completed yet). This is what
+// keeps a task's suggestions/notes visible after turning assist off, which removes
+// it from the Assistance tab but shouldn't erase what Claude already found.
+function taskDetailHtml(task) {
+  const items = noteItems(task);
+  const claudeNotes = claudeNoteItems(task);
+  const suggestions = task.suggestions || [];
+  return `
+    <div class="node-detail">
+      ${suggestionsSectionHtml(suggestions)}
+      ${claudeNotesSectionHtml(claudeNotes)}
+      ${notesSectionHtml(items)}
     </div>
   `;
 }

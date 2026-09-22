@@ -460,7 +460,8 @@ main.view.wide { max-width: 980px; }
 .check.checked svg path { stroke-dashoffset: 0; }
 
 .task-body { flex: 1; min-width: 0; }
-.task-title { font-size: 15px; cursor: text; }
+.task-title-row { display: flex; align-items: center; gap: 4px; }
+.task-title { font-size: 15px; cursor: text; flex: 1; min-width: 0; }
 .task-meta { font-size: 12px; color: var(--muted); }
 .task-title-edit {
   width: 100%;

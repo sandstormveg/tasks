@@ -213,6 +213,13 @@
           "done": true,
           "created": "2026-09-22T01:28:50.370Z",
           "updated": "2026-09-22T01:33:50.241Z"
+        },
+        {
+          "id": "n-agent-1790041124526",
+          "text": "✓ Actioned 2026-09-22: implemented the inline expand pattern on the Active tab — a chevron next to the title expands a read-only panel (same style as History) showing suggestions, Claude notes, and your notes. Only appears on tasks that actually have any of that; editing still happens via double-click (title) or the Assistance tab (notes/checkboxes). This keeps notes visible even after turning assist off.",
+          "done": false,
+          "created": "2026-09-22T01:38:44.526Z",
+          "updated": "2026-09-22T01:38:44.526Z"
         }
       ]
     }
