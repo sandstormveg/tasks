@@ -336,7 +336,22 @@
       "category": "Life Admin",
       "created": "2026-09-23",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "Drafted a trial-period housemate agreement below — the key clause for your concern is #4 (no automatic continuation past the test period without both of you confirming in writing). This is a plain mutual-understanding document, not a legal lease, but it is the kind of thing Australian share-house arrangements commonly use to set expectations and it gives you a clean, agreed exit point if it does not work out.",
+        "--- DRAFT: Housemate Trial Period Agreement ---\n\n1. Parties & dates: [Your name] and [housemate's name], trial period from [start date] to [end date] (recommend 4-6 weeks — long enough to know if it works, short enough that a bad fit does not drag on).\n\n2. Rent & bond during trial: [amount] per week, due [day]. Bond of [amount] held by [you / a bond authority] — specify whether it is refundable in full if either party ends the trial early through no fault of the other.\n\n3. House rules reference: trial is conditional on following the existing house rules (chores, guests, noise, shared costs) — attach or list them so there is no ambiguity about what \"working out\" means.\n\n4. End of trial — THE KEY CLAUSE: the trial period ends automatically on [end date]. Continuing to live in the property after that date requires a NEW, separate written agreement signed by both parties. Silence, continued rent payment, or having moved belongings in does not extend the trial or create an ongoing tenancy — this is the line that stops someone just staying on by default.\n\n5. Early exit: either party may end the trial early with [7-14] days written notice (text/email counts), no reason required. Bond handling on early exit specified in clause 2.\n\n6. Not a substitute for a lease: if you decide to continue after the trial, you will both sign a proper share-house agreement or add them to the lease/bond at that point — this document only covers the test period.",
+        "One thing worth deciding before you finalize: what specifically counts as bond-forfeiting behaviour vs. a no-fault early exit (e.g. property damage vs. just personalities not clicking) — spelling that out in clause 2 avoids a dispute later if the trial ends badly.",
+        "⚠ Not legal advice — for actual bond handling and tenancy-law specifics in your state, a quick check against your state's residential tenancies authority (e.g. Fair Trading / Consumer Affairs) is worth doing before you both sign, especially around bond lodgement rules if any money changes hands formally."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790128259130",
+          "text": "✓ Actioned 2026-09-23: drafted a full trial-period housemate agreement (dates, rent/bond, house rules reference, early-exit terms, and the key clause that stops the trial silently becoming permanent) — see suggestions. Flagged that it is not legal advice and to sanity-check bond rules against your state's tenancy authority before signing.",
+          "done": false,
+          "created": "2026-09-23T01:50:59.130Z",
+          "updated": "2026-09-23T01:50:59.130Z"
+        }
+      ]
     }
   ]
 }
