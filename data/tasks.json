@@ -317,7 +317,8 @@
       "suggestions": [
         "On the AOOSTAR AG03 you photographed: reviews are mixed specifically on the quiet requirement. The manufacturer claims 38-45dB, but real owner reports (egpu.io forum review) describe an audible whine/hum under load that varies with GPU power draw — not silent. If quiet operation is a hard requirement, reviewers point to the AOOSTAR EG02 as a quieter alternative worth comparing before buying. Sources: https://egpu.io/forums/thunderbolt-enclosures/my-review-for-the-aoostar-ag03-thunderbolt-5-egpu-dock/ and https://vortexgaming.io/en/postdetail/913708",
         "What else you need: (1) the GPU card itself — NOT included, AG03 is dock+PSU only; (2) a Thunderbolt 4/5 or USB4 certified cable — usually included with the dock, but if buying separately make sure it says \"Thunderbolt-certified\", not just USB-C, since a generic cable will bottleneck or fail to work; (3) confirm your laptop actually has a Thunderbolt/USB4 port that supports eGPUs (not all USB-C ports do, check your laptop's spec sheet); (4) GPU drivers from Nvidia/AMD once connected. Good news: since the AG03 has a built-in 800W PSU, you skip all the DIY power-cable wiring (24-pin, 8-pin PCIe) that a bare enclosure+separate-PSU build needs — it's much closer to plug-and-play.",
-        "✅ Also fixed the two bugs you flagged: the Add button was overflowing off-screen at narrower widths (form now wraps properly), and file uploads now accept PDFs too (not just images) with an actual preview + remove button instead of the cramped native \"No file chosen\" text."
+        "✅ Also fixed the two bugs you flagged: the Add button was overflowing off-screen at narrower widths (form now wraps properly), and file uploads now accept PDFs too (not just images) with an actual preview + remove button instead of the cramped native \"No file chosen\" text.",
+        "Links for the additional items: (1) GPU card — the AG03 dock does not include one, you pick any desktop card up to 500W; for a quiet pick, the ASRock Intel Arc A580 Challenger has the lowest measured noise under $200 (soundproofgeek.com/quietest-graphics-card-silent-gpu-video-card), or for higher-end quiet performance look at Noctua-edition RTX 5080 cards or a GIGABYTE RX 9060 XT Gaming OC ICE 16G. (2) Thunderbolt cable — AG03 ships with one, but if you need a spare/longer certified one: Silkland 80Gbps Intel-Certified Thunderbolt 5 Cable, 5ft, https://www.amazon.com/Silkland-80Gbps-Intel-Certified-Thunderbolt-Passive/dp/B0HF7MPW13 (look for the \"Intel-Certified\" wording specifically, not just \"USB4\"). (3) GPU drivers — grab these only after the dock is connected and Windows detects the card: Nvidia at https://www.nvidia.com/en-us/drivers/ or AMD at https://www.amd.com/en/support. (4) Confirm your laptop's port supports eGPU: check its exact spec sheet for \"Thunderbolt 4\", \"Thunderbolt 5\", or \"USB4\" (a plain USB-C port without one of those labels will not work)."
       ],
       "claudeNotes": [
         {
@@ -326,6 +327,13 @@
           "done": true,
           "created": "2026-09-23T11:24:47.683Z",
           "updated": "2026-09-23T12:16:00.264Z"
+        },
+        {
+          "id": "n-agent-1790186639116",
+          "text": "✓ Actioned 2026-09-24: added links for the additional eGPU items you asked about — GPU card options, a certified Thunderbolt 5 cable, driver pages, and how to check your laptop's port supports eGPU. See suggestions.",
+          "done": false,
+          "created": "2026-09-23T18:03:59.116Z",
+          "updated": "2026-09-23T18:03:59.116Z"
         }
       ]
     }
