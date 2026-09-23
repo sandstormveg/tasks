@@ -204,24 +204,6 @@
       ]
     },
     {
-      "id": "review-hanoi-accommodation-options-10-11-oct-mubmubxu890",
-      "title": "Review Hanoi accommodation options (10-11 Oct)",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-09-22",
-      "notes": "",
-      "assist": false,
-      "noteItems": [],
-      "claudeNotes": [
-        {
-          "id": "n-agent-init",
-          "text": "Created by Claude from your request on the Hanoi accommodation task. Shortlist of 2-bedroom Old Quarter options to compare for 10-11 Oct: Phen Art House, Old Quarter Lake House, IL DIVO Hotel & Spa Hanoi Old Quarter, IL Divo Luxury Homestay & Spa (all on https://www.booking.com/aparthotels/city/vn/hanoi.html), plus this 2BR Airbnb benchmark: https://www.airbnb.com/rooms/43924167. Check live pricing/availability for your exact dates since search results don’t show real-time rates.",
-          "done": false,
-          "created": "2026-09-22T00:30:45.826Z",
-          "updated": "2026-09-22T00:30:45.826Z"
-        }
-      ]
-    },
-    {
       "id": "plan-what-to-take-in-backpack-mucb24b0",
       "title": "Plan what to take in backpack",
       "category": "Hanoi Climbing trip",
