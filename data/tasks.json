@@ -378,7 +378,16 @@
       "category": "Interested in",
       "created": "2026-09-23",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mueqr2fd7s5l",
+          "text": "is this a good option for sequencing? are there better ones",
+          "done": false,
+          "created": "2026-09-23T23:35:39.529Z",
+          "updated": "2026-09-23T23:35:39.529Z"
+        }
+      ]
     }
   ]
 }
