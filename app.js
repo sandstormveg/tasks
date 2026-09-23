@@ -11,6 +11,32 @@ const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
 const getToken = () => localStorage.getItem(tokenKey) || "";
 
+// A Set that persists to localStorage on every change — drop-in for the plain Sets
+// that track collapsed/expanded UI state (categories, subtasks, note details), so
+// tidying things up survives a page reload instead of resetting every time. Scoped
+// to this browser/device on purpose (it's a display preference, not shared task
+// data) — only .has/.add/.delete are implemented since that's all callers use.
+function persistentSet(storageKey) {
+  let items;
+  try {
+    items = new Set(JSON.parse(localStorage.getItem(storageKey) || "[]"));
+  } catch {
+    items = new Set();
+  }
+  const persist = () => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify([...items]));
+    } catch {
+      // localStorage unavailable/full — collapse state just won't survive reload.
+    }
+  };
+  return {
+    has: (v) => items.has(v),
+    add: (v) => { items.add(v); persist(); },
+    delete: (v) => { items.delete(v); persist(); },
+  };
+}
+
 // ---------- data loading ----------
 // Public data has two possible sources and they are NOT equally fresh:
 // the files served by GitHub Pages lag a push by a minute or two (rebuild + CDN),
@@ -350,7 +376,7 @@ function renderActive() {
 // draggable and visible, rather than disappearing until you happen to nest something under it.
 // Categories collapsed by the user (by name) — collapsing hides everything under that
 // header, including nested child categories, so one click tidies a whole branch away.
-const collapsedCategories = new Set();
+const collapsedCategories = persistentSet("tasks_collapsed_categories");
 
 function renderCategoryBranch(container, name, groups, depth) {
   const children = categoryChildren(name);
@@ -391,7 +417,7 @@ function subtasksOf(task) {
 
 // Tasks whose subtasks are collapsed, keyed like taskKey() — independent of
 // expandedTaskNodes (that's the notes/suggestions detail panel, a different thing).
-const collapsedSubtaskParents = new Set();
+const collapsedSubtaskParents = persistentSet("tasks_collapsed_subtasks");
 
 function appendTaskWithSubtasks(container, task, depth) {
   const kids = subtasksOf(task);
@@ -670,7 +696,7 @@ function onCategoryDragEnd(e) {
 // taskKey() — mirrors expandedHistoryNodes so it survives re-renders. This is what
 // lets you still see a task's notes/suggestions after turning assist off (which
 // removes it from the Assistance tab, but shouldn't make its history disappear).
-const expandedTaskNodes = new Set();
+const expandedTaskNodes = persistentSet("tasks_expanded_task_nodes");
 
 function taskCard(task, depth = 0, subtaskCount = 0) {
   const card = document.createElement("div");
@@ -1431,7 +1457,7 @@ function dayDividerEl(dateStr) {
 
 // Which history entries are expanded, keyed like taskKey() — a plain Set survives
 // re-renders (triggered by e.g. deleting a sibling entry) so toggling stays put.
-const expandedHistoryNodes = new Set();
+const expandedHistoryNodes = persistentSet("tasks_expanded_history_nodes");
 const historyNodeKey = (entry) => `${entry._repo}::${entry.id}`;
 
 function historyNodeEl(entry) {
