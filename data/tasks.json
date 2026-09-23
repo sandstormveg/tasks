@@ -264,6 +264,13 @@
       "category": "Life Admin",
       "created": "2026-09-23",
       "notes": ""
+    },
+    {
+      "id": "look-into-home-server-setup-like-how-to-use-egpu-muddesfm",
+      "title": "look into home server setup, like how to use eGPU",
+      "category": "R&D",
+      "created": "2026-09-23",
+      "notes": ""
     }
   ]
 }
