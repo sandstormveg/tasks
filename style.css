@@ -405,6 +405,17 @@ main.view.wide { max-width: 980px; }
 }
 .category-detach:hover { color: #ff6b9d; background: rgba(255, 107, 157, 0.1); }
 
+.category-collapse-toggle { width: auto; font-size: 12px; }
+
+.count-badge {
+  font-size: 10.5px;
+  background: var(--accent-2);
+  color: #0f1117;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
 .category-move-btn {
   background: transparent;
   border: none;
@@ -511,6 +522,17 @@ main.view.wide { max-width: 980px; }
 .task-body { flex: 1; min-width: 0; }
 .task-title-row { display: flex; align-items: center; gap: 4px; }
 .task-title { font-size: 15px; cursor: text; flex: 1; min-width: 0; }
+.subtask-collapse-toggle {
+  flex-shrink: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.subtask-collapse-toggle:hover { color: var(--text); border-color: var(--accent); }
 .task-meta { font-size: 12px; color: var(--muted); }
 .task-title-edit {
   width: 100%;
