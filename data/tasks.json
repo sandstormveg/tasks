@@ -146,14 +146,29 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "assist": false,
+      "assist": true,
       "noteItems": [
         {
           "id": "n-muc4dzclntun",
           "text": "what do i need/what are the main steps to finding micrometeorites on my balcony?",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T03:34:05.108Z",
-          "updated": "2026-09-22T03:34:05.108Z"
+          "updated": "2026-09-23T01:46:12.498Z"
+        },
+        {
+          "id": "n-mudg0n6k0jqw",
+          "text": "let's give it a go. I'm going to attach an image from above. question can claude not add images in their notes above?",
+          "done": false,
+          "created": "2026-09-23T01:47:24.380Z",
+          "updated": "2026-09-23T01:47:37.846Z",
+          "image": "images/interested-in/search-for-meteorites-muascxpm-n-mudg0n6k0jqw.jpg"
+        },
+        {
+          "id": "n-mudi8tj282b2",
+          "text": "find my neodymium magnet in wardrobe",
+          "done": true,
+          "created": "2026-09-23T02:49:45.085Z",
+          "updated": "2026-09-23T04:21:17.315Z"
         }
       ],
       "suggestions": [
@@ -169,9 +184,9 @@
         {
           "id": "n-agent-1790048174589ov4",
           "text": "✓ Actioned 2026-09-22: researched the magnet + sieve method for finding micrometeorites on your balcony, what you need, and how to tell a real one from rust/dust — see suggestions. This pairs with your compound-microscope task since you'll need magnification for the final ID step.",
-          "done": false,
+          "done": true,
           "created": "2026-09-22T03:36:14.589Z",
-          "updated": "2026-09-22T03:36:14.589Z"
+          "updated": "2026-09-23T01:46:23.624Z"
         }
       ]
     },
@@ -203,8 +218,7 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "parentId": "finding-a-tardigrade-muasrecb",
-      "assist": true
+      "parentId": "finding-a-tardigrade-muasrecb"
     },
     {
       "id": "finding-a-tardigrade-muasrecb",
@@ -243,13 +257,107 @@
       "title": "Plan what to take in backpack",
       "category": "Hanoi Climbing trip",
       "created": "2026-09-22",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mudfrjf3nl34",
+          "text": "make a checklist here",
+          "done": false,
+          "created": "2026-09-23T01:40:19.597Z",
+          "updated": "2026-09-23T01:40:19.597Z"
+        }
+      ]
+    },
+    {
+      "id": "sell-guitar-muddbl79",
+      "title": "sell guitar",
+      "category": "Life Admin",
+      "created": "2026-09-23",
       "notes": ""
     },
     {
-      "id": "get-new-backpack-for-climbing-gym-mudbxew8",
-      "title": "get new backpack for climbing gym",
+      "id": "organise-second-computer-and-desk-for-remote-claude-access-muddc6mj",
+      "title": "organise second computer and desk for remote claude access",
+      "category": "Life Admin",
+      "created": "2026-09-23",
+      "notes": ""
+    },
+    {
+      "id": "look-into-home-server-setup-like-how-to-use-egpu-muddesfm",
+      "title": "look into home server setup, like how to use eGPU",
+      "category": "R&D",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muddfsey5pv2",
+          "text": "I'd like to be able to add pictures here. implement this feature please",
+          "done": true,
+          "created": "2026-09-23T00:35:12.154Z",
+          "updated": "2026-09-23T00:44:57.039Z"
+        },
+        {
+          "id": "n-muddtj3f5t0n",
+          "text": "added attachment of eGPU. let's see if it works",
+          "done": true,
+          "created": "2026-09-23T00:45:53.259Z",
+          "updated": "2026-09-23T03:16:04.544Z",
+          "image": "images/r-d/look-into-home-server-setup-like-how-to-use-egpu-muddesfm-n-muddtj3f5t0n.jpg"
+        },
+        {
+          "id": "n-mudj6eodajnv",
+          "text": "see if i have a powerboard for the server setup",
+          "done": false,
+          "created": "2026-09-23T03:15:52.141Z",
+          "updated": "2026-09-23T03:15:52.141Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790123854036",
+          "text": "✓ Actioned 2026-09-23: added photo attachments to notes — the \"Add a note\" form in the Assistance tab now has an optional file picker next to it, and any note with an image shows a thumbnail underneath the text (in the Assistance tab, the Active-tab expand panel, and carried into History if the task completes). This didn't exist before; only completed History entries could have a photo.",
+          "done": true,
+          "created": "2026-09-23T00:37:34.036Z",
+          "updated": "2026-09-23T00:46:46.960Z"
+        }
+      ]
+    },
+    {
+      "id": "put-out-reception-for-new-housemates-mudg1tz2",
+      "title": "put out reception for new housemates",
+      "category": "Life Admin",
+      "created": "2026-09-23",
+      "notes": ""
+    },
+    {
+      "id": "think-up-contract-for-new-housemate-so-they-can-t-stay-over-the-test-period-mudg2n4i",
+      "title": "think up contract for new housemate so they can't stay over the test period",
+      "category": "Life Admin",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "suggestions": [
+        "Drafted a trial-period housemate agreement below — the key clause for your concern is #4 (no automatic continuation past the test period without both of you confirming in writing). This is a plain mutual-understanding document, not a legal lease, but it is the kind of thing Australian share-house arrangements commonly use to set expectations and it gives you a clean, agreed exit point if it does not work out.",
+        "--- DRAFT: Housemate Trial Period Agreement ---\n\n1. Parties & dates: [Your name] and [housemate's name], trial period from [start date] to [end date] (recommend 4-6 weeks — long enough to know if it works, short enough that a bad fit does not drag on).\n\n2. Rent & bond during trial: [amount] per week, due [day]. Bond of [amount] held by [you / a bond authority] — specify whether it is refundable in full if either party ends the trial early through no fault of the other.\n\n3. House rules reference: trial is conditional on following the existing house rules (chores, guests, noise, shared costs) — attach or list them so there is no ambiguity about what \"working out\" means.\n\n4. End of trial — THE KEY CLAUSE: the trial period ends automatically on [end date]. Continuing to live in the property after that date requires a NEW, separate written agreement signed by both parties. Silence, continued rent payment, or having moved belongings in does not extend the trial or create an ongoing tenancy — this is the line that stops someone just staying on by default.\n\n5. Early exit: either party may end the trial early with [7-14] days written notice (text/email counts), no reason required. Bond handling on early exit specified in clause 2.\n\n6. Not a substitute for a lease: if you decide to continue after the trial, you will both sign a proper share-house agreement or add them to the lease/bond at that point — this document only covers the test period.",
+        "One thing worth deciding before you finalize: what specifically counts as bond-forfeiting behaviour vs. a no-fault early exit (e.g. property damage vs. just personalities not clicking) — spelling that out in clause 2 avoids a dispute later if the trial ends badly.",
+        "⚠ Not legal advice — for actual bond handling and tenancy-law specifics in your state, a quick check against your state's residential tenancies authority (e.g. Fair Trading / Consumer Affairs) is worth doing before you both sign, especially around bond lodgement rules if any money changes hands formally."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790128259130",
+          "text": "✓ Actioned 2026-09-23: drafted a full trial-period housemate agreement (dates, rent/bond, house rules reference, early-exit terms, and the key clause that stops the trial silently becoming permanent) — see suggestions. Flagged that it is not legal advice and to sanity-check bond rules against your state's tenancy authority before signing.",
+          "done": false,
+          "created": "2026-09-23T01:50:59.130Z",
+          "updated": "2026-09-23T01:50:59.130Z"
+        }
+      ]
+    },
+    {
+      "id": "get-more-creatine-from-bulk-nutrients-mudj4wu2",
+      "title": "get more creatine from bulk nutrients",
       "category": "Shopping",
-      "created": "2026-09-22",
+      "created": "2026-09-23",
       "notes": ""
     }
   ]
