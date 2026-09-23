@@ -387,6 +387,22 @@
           "created": "2026-09-23T23:35:39.529Z",
           "updated": "2026-09-23T23:35:39.529Z"
         }
+      ],
+      "suggestions": [
+        "Short answer: yes, it's a legitimate, reasonable option — not a scam. It's clinical-grade 30x whole genome sequencing (cheek swab, no blood draw) run at a US-based CLIA-certified/CAP-accredited lab, and delivers standard files (BAM/VCF, FASTQ on some tiers) that any bioinformatics pipeline can read. Independent review score: 83/100 (genomereviews.com) — strong on value (90/100) and reports (92/100), weaker on privacy (70/100, its lowest category).",
+        "The kitspecials page bundles: Rare Disease & Carrier Screen ($399, was $539, 7-8wk turnaround), Comprehensive Health Screen ($599, was $859, 4-6wk), Professional Health Screen ($999, was $1,699, 2-3wk + 1-on-1 coaching), or a Build-Your-Own from $399 with 40+ selectable health areas. All include 15,000+ condition analysis, AI health reports, and their 'Privacy Forever' data-ownership pledge.",
+        "Where it's weaker: Sequencing.com's real product is more of an app marketplace than a single report — 100+ third-party analysis apps of varying quality with no editorial curation, and privacy risk grows with each app you install from an unvetted developer. Budget for that too: meaningful analysis beyond the base kit usually means $5-99 per paid app, so a realistic first-year total if you run 3-5 apps is more like $450-700, not just the $399-599 sticker price.",
+        "Direct alternatives if you want to compare: Dante Labs is cheaper on flash sales (as low as €169, ~$185, vs €399 standard) with the same 30x depth and free FASTQ/BAM/VCF — but it's an Italian lab with an 8-12 week turnaround AND a BBB 'F' rating, which is a real red flag on customer service/fulfillment reliability, so the lower price comes with more risk. Nucleus is positioned as having the cleanest UI of the mainstream options if user experience matters more than price/speed to you (no clear public sequencing price found, would need to check directly). SelfDecode is NOT a sequencing provider — it's an analysis tool you upload existing raw WGS data to (from Sequencing.com, Dante Labs, etc.), with the strongest ACMG-based variant reporting (imputes up to 80M variants at 99.7% accuracy) — worth considering as a second step after sequencing rather than as an alternative to it.",
+        "Bottom line: for your first WGS kit, Sequencing.com's discounted bundles (especially the $399 Rare Disease/Carrier Screen or $599 Comprehensive) are a solid, low-risk pick given the US lab accreditation and 90/100 value score — just be deliberate about which third-party apps you install afterward given the privacy score. If raw price is the only thing that matters and you're comfortable with a longer wait and a lab with a poor service rating, Dante Labs' flash-sale price is cheaper for the same 30x depth."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790240000000seq",
+          "text": "✓ Actioned 2026-09-24: researched Sequencing.com's kitspecials bundles (legit, 83/100 independent review score, pricing/turnaround per tier) and compared against Dante Labs, Nucleus, and SelfDecode — see suggestions for the recommendation and trade-offs.",
+          "done": false,
+          "created": "2026-09-24T00:00:00.000Z",
+          "updated": "2026-09-24T00:00:00.000Z"
+        }
       ]
     }
   ]
