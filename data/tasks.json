@@ -242,7 +242,16 @@
       "title": "Plan what to take in backpack",
       "category": "Hanoi Climbing trip",
       "created": "2026-09-22",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mudfrjf3nl34",
+          "text": "make a checklist here",
+          "done": false,
+          "created": "2026-09-23T01:40:19.597Z",
+          "updated": "2026-09-23T01:40:19.597Z"
+        }
+      ]
     },
     {
       "id": "get-new-backpack-for-climbing-gym-mudbxew8",
