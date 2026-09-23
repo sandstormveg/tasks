@@ -854,6 +854,22 @@ main.view.wide { max-width: 980px; }
   border: 1px solid var(--border);
   display: block;
 }
+.note-image {
+  margin-top: 6px;
+  max-width: 180px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+.add-note-form input[type="file"] {
+  flex: 0 0 auto;
+  max-width: 130px;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 6px 4px;
+  background: transparent;
+  border: 1px dashed var(--border);
+}
 
 dialog {
   background: var(--panel);

@@ -1375,7 +1375,10 @@ function staticNoteListHtml(items) {
   return `<ul class="note-list note-list-static">${items.map((n) => `
     <li class="note-item${n.done ? " done" : ""}">
       <span class="note-check-static">${n.done ? "✓" : ""}</span>
-      <div class="note-body"><div class="note-text">${linkify(n.text)}</div></div>
+      <div class="note-body">
+        <div class="note-text">${linkify(n.text)}</div>
+        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
+      </div>
     </li>`).join("")}</ul>`;
 }
 
@@ -1612,6 +1615,7 @@ function renderAssistDetail() {
       ${items.length === 0 ? `<div class="assist-hint">No notes yet — add one below. Ideas, plans, links, anything you want to remember about this task.</div>` : ""}
       <form id="add-note-form" class="add-note-form">
         <input id="add-note-input" type="text" placeholder="Add a note…" autocomplete="off" />
+        <input id="add-note-image" type="file" accept="image/*" title="Attach a photo (optional)" />
         <button type="submit">Add</button>
       </form>
       <span class="assist-status" id="assist-status"></span>
@@ -1662,16 +1666,39 @@ function renderAssistDetail() {
   el("#add-note-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = el("#add-note-input");
+    const imageInput = el("#add-note-image");
     const text = input.value.trim();
+    const file = imageInput.files[0];
     if (!text || !requireToken()) return;
     const now = new Date().toISOString();
-    const newItems = [...noteItems(task), { id: newNoteId(), text, done: false, created: now, updated: now }];
+    const noteId = newNoteId();
+    const newItems = [...noteItems(task), { id: noteId, text, done: false, created: now, updated: now }];
     setAssistStatus("Saving…", "");
     try {
+      // Note text saves independently of the photo — a failed image upload should
+      // never be able to cost you the words you already wrote (same reasoning as
+      // the completion-note dialog's image handling).
       await saveNoteItems(task, newItems, `Add note: ${task.title}`);
       input.value = "";
+      imageInput.value = "";
       renderAssistList();
       renderAssistDetail();
+
+      if (file) {
+        try {
+          const compressed = await compressImage(file);
+          const base64 = await blobToBase64(compressed);
+          const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          const imagePath = `images/${safeCat}/${task.id}-${noteId}.jpg`;
+          await ghPutImage(repoFor(task._repo), imagePath, base64, `Add image for note: ${task.title}`);
+          const withImage = noteItems(task).map((n) => (n.id === noteId ? { ...n, image: imagePath } : n));
+          await saveNoteItems(task, withImage, `Add image for note: ${task.title}`);
+          renderAssistList();
+          renderAssistDetail();
+        } catch (imgErr) {
+          alert(`Your note saved, but the photo didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
+        }
+      }
     } catch (err) {
       setAssistStatus(`Couldn't save: ${err.message}`, "error");
     }
@@ -1718,6 +1745,7 @@ function claudeNoteItemHtml(n) {
       <button class="note-check" aria-label="${n.done ? "Mark not seen" : "Mark seen"}" title="${n.done ? "Mark not seen" : "Mark seen"}">${n.done ? "✓" : ""}</button>
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
+        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
         <div class="note-time">${formatWhen(n.updated || n.created)}</div>
       </div>
       <div class="note-actions">
@@ -1782,6 +1810,7 @@ function noteItemHtml(n) {
       <button class="note-check" aria-label="${n.done ? "Mark not done" : "Mark done"}" title="${n.done ? "Mark not done" : "Mark done"}">${n.done ? "✓" : ""}</button>
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
+        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
         <div class="note-time">${formatWhen(n.updated || n.created)}</div>
       </div>
       <div class="note-actions">
