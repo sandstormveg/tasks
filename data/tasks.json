@@ -187,6 +187,13 @@
           "done": true,
           "created": "2026-09-22T03:36:14.589Z",
           "updated": "2026-09-23T01:46:23.624Z"
+        },
+        {
+          "id": "n-agent-1790140760961",
+          "text": "✓ Actioned 2026-09-23: on your question — yes, I can attach images to my own notes, I just do it by writing the image file straight into the repo and setting the note's image field, same mechanism your upload uses, there just isn't a browser button for it since I work through files/git rather than the note form. Your reference grid photo is a nice ID chart to compare against once you actually collect something — good luck finding the magnet in the wardrobe!",
+          "done": false,
+          "created": "2026-09-23T05:19:20.961Z",
+          "updated": "2026-09-23T05:19:20.961Z"
         }
       ]
     },
