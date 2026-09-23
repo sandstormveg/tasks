@@ -1204,6 +1204,29 @@ function compressImage(file, maxDim = 1600, quality = 0.82) {
   });
 }
 
+// Lets a screenshot (Ctrl+V, or right-click "Copy Image") land straight in the note's
+// file input via a synthetic DataTransfer — the submit handler then treats it exactly
+// like a picked file, no separate code path needed. Bound to the text input rather
+// than the whole form since that's where focus naturally is when you go to paste.
+function setupPasteImage(textInput, fileInput, statusEl) {
+  textInput.addEventListener("paste", (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (!file) continue;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        if (statusEl) statusEl.textContent = "Image pasted — will attach when you add the note.";
+        e.preventDefault();
+        break;
+      }
+    }
+  });
+}
+
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1455,8 +1478,8 @@ function taskDetailHtml(task) {
         <h4>✎ Notes${items.length ? ` <span class="count">${items.length}</span>` : ""}</h4>
         ${items.length ? `<ul class="note-list task-note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
         <form class="add-note-form task-add-note-form">
-          <input type="text" class="task-add-note-input" placeholder="Add a note…" autocomplete="off" />
-          <input type="file" accept="image/*" class="task-add-note-image" title="Attach a photo (optional)" />
+          <input type="text" class="task-add-note-input" placeholder="Add a note… (paste an image too)" autocomplete="off" />
+          <input type="file" accept="image/*" class="task-add-note-image" title="Attach a photo (optional) — or just paste one into the text field" />
           <button type="submit">Add</button>
         </form>
         <span class="assist-status task-note-status"></span>
@@ -1495,6 +1518,7 @@ function wireTaskDetailInteractivity(task, card) {
 
   const form = card.querySelector(".task-add-note-form");
   const statusEl = card.querySelector(".task-note-status");
+  setupPasteImage(card.querySelector(".task-add-note-input"), card.querySelector(".task-add-note-image"), statusEl);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = card.querySelector(".task-add-note-input");
@@ -1708,13 +1732,15 @@ function renderAssistDetail() {
       ${items.length ? `<ul class="note-list" id="note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
       ${items.length === 0 ? `<div class="assist-hint">No notes yet — add one below. Ideas, plans, links, anything you want to remember about this task.</div>` : ""}
       <form id="add-note-form" class="add-note-form">
-        <input id="add-note-input" type="text" placeholder="Add a note…" autocomplete="off" />
-        <input id="add-note-image" type="file" accept="image/*" title="Attach a photo (optional)" />
+        <input id="add-note-input" type="text" placeholder="Add a note… (paste an image too)" autocomplete="off" />
+        <input id="add-note-image" type="file" accept="image/*" title="Attach a photo (optional) — or just paste one into the text field" />
         <button type="submit">Add</button>
       </form>
       <span class="assist-status" id="assist-status"></span>
     </div>
   `;
+
+  setupPasteImage(el("#add-note-input"), el("#add-note-image"), el("#assist-status"));
 
   container.querySelector(".check").addEventListener("click", () => completeTask(task));
   container.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
