@@ -403,9 +403,9 @@
         {
           "id": "n-agent-1790144200001",
           "text": "✓ Confirmed 2026-09-23: yes, this is the new desktop — the always-on PC you set up so you can hand it tasks remotely (e.g. via Remote Control from a cafe) without keeping it at your main computer. Synced fine with the task system, both repos cloned and read/write worked. On the screenshot: I attempted a full-desktop screenshot to attach here, but this session's own permission layer blocked it as a sensitive-content risk (a live screen capture could contain anything, and this would push to your *public* tasks repo) — didn't want to push unknown screen contents without you seeing it first. Flagging back to you rather than working around it; let me know if you want a scoped screenshot (e.g. just a terminal window) instead, or want to approve the full capture.",
-          "done": false,
+          "done": true,
           "created": "2026-09-23T06:10:00.001Z",
-          "updated": "2026-09-23T06:10:00.001Z"
+          "updated": "2026-09-23T06:10:09.651Z"
         }
       ]
     }
