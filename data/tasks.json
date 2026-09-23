@@ -279,13 +279,6 @@
           "done": true,
           "created": "2026-09-23T00:35:12.154Z",
           "updated": "2026-09-23T00:44:57.039Z"
-        },
-        {
-          "id": "n-muddspvmclow",
-          "text": "added attachment of eGPU",
-          "done": false,
-          "created": "2026-09-23T00:45:15.394Z",
-          "updated": "2026-09-23T00:45:15.394Z"
         }
       ],
       "claudeNotes": [
