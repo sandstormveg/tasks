@@ -146,7 +146,7 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "assist": false,
+      "assist": true,
       "noteItems": [
         {
           "id": "n-muc4dzclntun",
