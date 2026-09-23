@@ -1376,8 +1376,18 @@ function staticNoteListHtml(items) {
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
         ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
+        <div class="note-time">${formatExact(n.updated || n.created)}</div>
       </div>
     </li>`).join("")}</ul>`;
+}
+
+// Static (History) context uses an absolute date+time rather than formatWhen's
+// relative-then-decaying text — a history entry might be read months later, when
+// "2h ago" would be meaningless anyway.
+function formatExact(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function suggestionsSectionHtml(suggestions) {
