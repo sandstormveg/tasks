@@ -822,6 +822,18 @@ main.view.wide { max-width: 980px; }
   transition: color 0.15s ease, background 0.15s ease;
 }
 .node-delete:hover { color: #ff6b9d; background: rgba(255, 107, 157, 0.1); }
+.node-edit-note {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.node-edit-note:hover { color: var(--accent); background: rgba(124, 155, 255, 0.1); }
 .tree-node::before {
   content: "";
   position: absolute;

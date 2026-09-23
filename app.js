@@ -1344,11 +1344,16 @@ function historyNodeEl(entry) {
     <div class="node-meta-row">
       <span class="history-cat-badge" style="color: ${color}; border-color: ${color};">${esc(entry.category)}</span>
       ${badges.join("")}
+      <button class="node-edit-note" aria-label="Add or edit note and photo" title="Add or edit note and photo">✎ Note</button>
       <button class="node-delete" aria-label="Delete from history">🗑</button>
     </div>
     ${expanded ? historyNodeDetailHtml(entry) : ""}
   `;
 
+  node.querySelector(".node-edit-note").addEventListener("click", (e) => {
+    e.stopPropagation();
+    openNoteDialog(entry);
+  });
   node.querySelector(".node-delete").addEventListener("click", (e) => {
     e.stopPropagation();
     deleteHistoryEntry(entry, node);
