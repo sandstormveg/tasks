@@ -108,7 +108,16 @@
       "title": "get some new glasses (preference for hexagonal shaped, thin metal like the last ones from specsavers)",
       "category": "Shopping",
       "created": "2026-09-21",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mueq1tn0q663",
+          "text": "don't know if actually need these.",
+          "done": false,
+          "created": "2026-09-23T23:16:01.740Z",
+          "updated": "2026-09-23T23:16:01.740Z"
+        }
+      ]
     },
     {
       "id": "print-the-meta-jigsaw-of-the-death-star-photo-muasfrp0",
