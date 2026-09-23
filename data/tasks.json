@@ -14,7 +14,15 @@
         "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
         "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
       ],
-      "noteItems": [],
+      "noteItems": [
+        {
+          "id": "n-mudvsv7kr224",
+          "text": "okay, so i talked to my friends and we are going to do 10:45 bus from Hanoi and then cable car. i need to know when the cable car leaves so i can tell me friend if they can book a ticked for when it leaves as they fly in that day too",
+          "done": false,
+          "created": "2026-09-23T09:09:15.391Z",
+          "updated": "2026-09-23T09:09:15.391Z"
+        }
+      ],
       "claudeNotes": [
         {
           "id": "n-agent-179003704582897",
