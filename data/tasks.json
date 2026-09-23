@@ -257,7 +257,16 @@
       "title": "put out reception for new housemates",
       "category": "Life Admin",
       "created": "2026-09-23",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muepzggml5b1",
+          "text": "i first need to come up with a plan to contact and a find housemates who are vegan",
+          "done": false,
+          "created": "2026-09-23T23:14:11.350Z",
+          "updated": "2026-09-23T23:14:11.350Z"
+        }
+      ]
     },
     {
       "id": "think-up-contract-for-new-housemate-so-they-can-t-stay-over-the-test-period-mudg2n4i",
