@@ -68,63 +68,6 @@
       "notes": ""
     },
     {
-      "id": "revisit-japan-question-muasam47",
-      "title": "Japan after Hanoi",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-09-21",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-muc528mvain4",
-          "text": "thinking of doing 22nd Oct to 29th of Oct trip from Hanoi to Tokyo.",
-          "done": true,
-          "created": "2026-09-22T03:52:56.886Z",
-          "updated": "2026-09-22T09:23:53.411Z"
-        },
-        {
-          "id": "n-muc52mzzxm7e",
-          "text": "Things I want to do: onsen, ramen robot cafe, half day nice walks/hikes, one or two nights in the best capsule hotel, find the best vegan places to eat, anime spots to visit/shop, nice affordable airbnb/place to stay for the rest of the nights, bouldering at b-pump ogikubo. some days I'll be travelling with my Japanese partner, some days she might go fabric shopping by herself or visit friends",
-          "done": true,
-          "created": "2026-09-22T03:53:15.503Z",
-          "updated": "2026-09-22T09:23:54.890Z"
-        },
-        {
-          "id": "n-mucgx08f87lf",
-          "text": "E.VINO SPAGHETTI — Marunouchi Building B1F, 2-4-1 Marunouchi, Chiyoda-ku (11:00-22:30). A robot called P-Robo does the entire cook — boils/thaws, cooks, and even cleans its own pan — across 8 pasta dishes, ready in 45-75 seconds. Confirmed currently operating, run by Pronto Corp. CHEFFY at Gurunavi Foodhall WYE, Haneda Innovation City (Tenkubashi) — an autonomous robot serving ramen recipes licensed from famous/Michelin-affiliated restaurants in ~90 seconds. Also shows up at Pepper Parlor in Shibuya.",
-          "done": false,
-          "created": "2026-09-22T09:24:48.111Z",
-          "updated": "2026-09-22T09:24:48.111Z"
-        }
-      ],
-      "suggestions": [
-        "Robot Restaurant/robot cafe: the original Shinjuku Robot Restaurant has been closed since COVID and repeated reopening attempts have stalled (still closed as of 2026) — drop it from the itinerary. Source: https://www.travelcaffeine.com/robot-restaurant-review/. Closest substitute is Avatar Robot Cafe DAWN (https://dawn2021.orylab.com/en/), staffed by robot avatars remotely operated by people with disabilities — different vibe (more meaningful than spectacle) but worth checking if it still appeals.",
-        "Capsule hotel: The Millennials Shibuya is the standout for a genuine high-tech capsule experience (reclining pod, personal projector, tablet controls, free coffee/tea 24h) — central Shibuya location. If you want something cheaper and more traditional-feeling, Anshin Oyado Shimbashi (right by Shimbashi Station) is a well-reviewed classic capsule option. Budget roughly ¥2,500-9,000/night depending on style. Source: https://trulytokyo.com/best-capsule-hotels-in-tokyo/",
-        "B-Pump Ogikubo bouldering: open Mon-Fri 12:00-23:00, weekends/holidays 10:00-22:00 (closed only New Year), 30 seconds from Ogikubo Station. Day pass ¥2,530 + a one-time ¥2,200 registration fee for first-timers (~¥4,730 total your first visit). Popular with foreign climbers and has English support, so no language barrier issue. https://english.pump-climbing.com/bpump/",
-        "Half-day hike: Mount Takao (599m) is the easiest fit — ~50 min from Shinjuku via Keio Line to Takaosanguchi. October is actually peak season there (Takao Momiji Festival starts late October), so expect crowds on Trail 1 (paved, cable car option, ¥490 one-way/¥950 return). For a quieter walk with the same autumn colours, take Trail 3 (Katsura Grove) instead — about 1hr up, less crowded. Source: https://tokyocheapo.com/entertainment/outdoors/mount-takao-day-trip-tokyo/",
-        "Onsen: since it is a day trip not an overnight, Hakone is the practical choice (Kusatsu is 2.5hrs each way, too far for a day). Hakone Yuryo is a dedicated day-use onsen facility (no overnight rooms, built for exactly this) — see options and prices at https://www.erikastravelventures.com/hakone-day-use-onsen/. Get there via the Odakyu Romancecar from Shinjuku (~85 min) — the Hakone Free Pass (¥6,100) covers transport around the area if you want to combine it with sightseeing (Owakudani, the pirate ship on Lake Ashi) rather than just the bath.",
-        "Vegan food: T's Tantan (vegan tantan ramen, one location right at JR Tokyo Station B1F, super convenient) is the easiest one to just drop into. For a sit-down proper meal, the vegan restaurant in Jiyugaoka (Japanese vegan cuisine — katsu, soba, vegan eel, bento) is well reviewed. Komeda IS in Ginza is a good option if you want an all-vegan breakfast/brunch spot. Full list: https://www.happycow.net/best-vegan-restaurants/tokyo-japan",
-        "Anime spots/shopping: not researched in detail yet (no source to cite), but the two obvious anchors are Akihabara (electronics + anime/manga stores, figures, maid cafes) and Nakano Broadway (more curated/vintage collectibles, less touristy than Akihabara) — worth deciding which vibe you want since they are quite different; happy to dig into specific stores if you tell me what you are actually shopping for (figures, manga, retro games, cosplay, etc).",
-        "⚠ Nippori Fabric Town for your partner's solo shopping days — flagging this came from general knowledge, not a web search I actually ran, so treat it as unverified until I (or you) confirm it's still the right spot and check current opening hours/access before relying on it."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-1790049681136",
-          "text": "✓ Actioned 2026-09-22: researched every item from your notes for the 22-29 Oct Hanoi→Tokyo trip — robot cafe status (original one is closed, found an alternative), capsule hotel picks, B-Pump Ogikubo hours/pricing, a half-day hike (Mt Takao), a day-trip onsen option (Hakone, since Kusatsu is too far for a day), vegan restaurants, and a starting point for anime shopping + your partner's fabric shopping (Nippori Fabric Town) — see suggestions.",
-          "done": true,
-          "created": "2026-09-22T04:01:21.136Z",
-          "updated": "2026-09-22T04:05:28.305Z"
-        },
-        {
-          "id": "n-agent-1790061901277",
-          "text": "✓ Actioned 2026-09-22: added the actual source links to each researched item (you flagged I'd dropped most of them despite the search tool telling me to cite sources), and marked the Nippori Fabric Town mention as unverified since it wasn't actually from a web search.",
-          "done": true,
-          "created": "2026-09-22T07:25:01.277Z",
-          "updated": "2026-09-22T09:23:43.366Z"
-        }
-      ]
-    },
-    {
       "id": "tax-return-muasc35s",
       "title": "tax return",
       "category": "Life Admin",
@@ -202,6 +145,63 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": ""
+    },
+    {
+      "id": "revisit-japan-question-muasam47",
+      "title": "Japan after Hanoi",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-09-21",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muc528mvain4",
+          "text": "thinking of doing 22nd Oct to 29th of Oct trip from Hanoi to Tokyo.",
+          "done": true,
+          "created": "2026-09-22T03:52:56.886Z",
+          "updated": "2026-09-22T09:23:53.411Z"
+        },
+        {
+          "id": "n-muc52mzzxm7e",
+          "text": "Things I want to do: onsen, ramen robot cafe, half day nice walks/hikes, one or two nights in the best capsule hotel, find the best vegan places to eat, anime spots to visit/shop, nice affordable airbnb/place to stay for the rest of the nights, bouldering at b-pump ogikubo. some days I'll be travelling with my Japanese partner, some days she might go fabric shopping by herself or visit friends",
+          "done": true,
+          "created": "2026-09-22T03:53:15.503Z",
+          "updated": "2026-09-22T09:23:54.890Z"
+        },
+        {
+          "id": "n-mucgx08f87lf",
+          "text": "E.VINO SPAGHETTI — Marunouchi Building B1F, 2-4-1 Marunouchi, Chiyoda-ku (11:00-22:30). A robot called P-Robo does the entire cook — boils/thaws, cooks, and even cleans its own pan — across 8 pasta dishes, ready in 45-75 seconds. Confirmed currently operating, run by Pronto Corp. CHEFFY at Gurunavi Foodhall WYE, Haneda Innovation City (Tenkubashi) — an autonomous robot serving ramen recipes licensed from famous/Michelin-affiliated restaurants in ~90 seconds. Also shows up at Pepper Parlor in Shibuya.",
+          "done": false,
+          "created": "2026-09-22T09:24:48.111Z",
+          "updated": "2026-09-22T09:24:48.111Z"
+        }
+      ],
+      "suggestions": [
+        "Robot Restaurant/robot cafe: the original Shinjuku Robot Restaurant has been closed since COVID and repeated reopening attempts have stalled (still closed as of 2026) — drop it from the itinerary. Source: https://www.travelcaffeine.com/robot-restaurant-review/. Closest substitute is Avatar Robot Cafe DAWN (https://dawn2021.orylab.com/en/), staffed by robot avatars remotely operated by people with disabilities — different vibe (more meaningful than spectacle) but worth checking if it still appeals.",
+        "Capsule hotel: The Millennials Shibuya is the standout for a genuine high-tech capsule experience (reclining pod, personal projector, tablet controls, free coffee/tea 24h) — central Shibuya location. If you want something cheaper and more traditional-feeling, Anshin Oyado Shimbashi (right by Shimbashi Station) is a well-reviewed classic capsule option. Budget roughly ¥2,500-9,000/night depending on style. Source: https://trulytokyo.com/best-capsule-hotels-in-tokyo/",
+        "B-Pump Ogikubo bouldering: open Mon-Fri 12:00-23:00, weekends/holidays 10:00-22:00 (closed only New Year), 30 seconds from Ogikubo Station. Day pass ¥2,530 + a one-time ¥2,200 registration fee for first-timers (~¥4,730 total your first visit). Popular with foreign climbers and has English support, so no language barrier issue. https://english.pump-climbing.com/bpump/",
+        "Half-day hike: Mount Takao (599m) is the easiest fit — ~50 min from Shinjuku via Keio Line to Takaosanguchi. October is actually peak season there (Takao Momiji Festival starts late October), so expect crowds on Trail 1 (paved, cable car option, ¥490 one-way/¥950 return). For a quieter walk with the same autumn colours, take Trail 3 (Katsura Grove) instead — about 1hr up, less crowded. Source: https://tokyocheapo.com/entertainment/outdoors/mount-takao-day-trip-tokyo/",
+        "Onsen: since it is a day trip not an overnight, Hakone is the practical choice (Kusatsu is 2.5hrs each way, too far for a day). Hakone Yuryo is a dedicated day-use onsen facility (no overnight rooms, built for exactly this) — see options and prices at https://www.erikastravelventures.com/hakone-day-use-onsen/. Get there via the Odakyu Romancecar from Shinjuku (~85 min) — the Hakone Free Pass (¥6,100) covers transport around the area if you want to combine it with sightseeing (Owakudani, the pirate ship on Lake Ashi) rather than just the bath.",
+        "Vegan food: T's Tantan (vegan tantan ramen, one location right at JR Tokyo Station B1F, super convenient) is the easiest one to just drop into. For a sit-down proper meal, the vegan restaurant in Jiyugaoka (Japanese vegan cuisine — katsu, soba, vegan eel, bento) is well reviewed. Komeda IS in Ginza is a good option if you want an all-vegan breakfast/brunch spot. Full list: https://www.happycow.net/best-vegan-restaurants/tokyo-japan",
+        "Anime spots/shopping: not researched in detail yet (no source to cite), but the two obvious anchors are Akihabara (electronics + anime/manga stores, figures, maid cafes) and Nakano Broadway (more curated/vintage collectibles, less touristy than Akihabara) — worth deciding which vibe you want since they are quite different; happy to dig into specific stores if you tell me what you are actually shopping for (figures, manga, retro games, cosplay, etc).",
+        "⚠ Nippori Fabric Town for your partner's solo shopping days — flagging this came from general knowledge, not a web search I actually ran, so treat it as unverified until I (or you) confirm it's still the right spot and check current opening hours/access before relying on it."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790049681136",
+          "text": "✓ Actioned 2026-09-22: researched every item from your notes for the 22-29 Oct Hanoi→Tokyo trip — robot cafe status (original one is closed, found an alternative), capsule hotel picks, B-Pump Ogikubo hours/pricing, a half-day hike (Mt Takao), a day-trip onsen option (Hakone, since Kusatsu is too far for a day), vegan restaurants, and a starting point for anime shopping + your partner's fabric shopping (Nippori Fabric Town) — see suggestions.",
+          "done": true,
+          "created": "2026-09-22T04:01:21.136Z",
+          "updated": "2026-09-22T04:05:28.305Z"
+        },
+        {
+          "id": "n-agent-1790061901277",
+          "text": "✓ Actioned 2026-09-22: added the actual source links to each researched item (you flagged I'd dropped most of them despite the search tool telling me to cite sources), and marked the Nippori Fabric Town mention as unverified since it wasn't actually from a web search.",
+          "done": true,
+          "created": "2026-09-22T07:25:01.277Z",
+          "updated": "2026-09-22T09:23:43.366Z"
+        }
+      ]
     },
     {
       "id": "get-a-climbing-bag-from-the-op-shop-muast5p2",
