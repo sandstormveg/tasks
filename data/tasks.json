@@ -141,63 +141,6 @@
       "notes": ""
     },
     {
-      "id": "search-for-meteorites-muascxpm",
-      "title": "search for meteorites",
-      "category": "Interested in",
-      "created": "2026-09-21",
-      "notes": "",
-      "assist": true,
-      "noteItems": [
-        {
-          "id": "n-muc4dzclntun",
-          "text": "what do i need/what are the main steps to finding micrometeorites on my balcony?",
-          "done": true,
-          "created": "2026-09-22T03:34:05.108Z",
-          "updated": "2026-09-23T01:46:12.498Z"
-        },
-        {
-          "id": "n-mudg0n6k0jqw",
-          "text": "let's give it a go. I'm going to attach an image from above. question can claude not add images in their notes above?",
-          "done": true,
-          "created": "2026-09-23T01:47:24.380Z",
-          "updated": "2026-09-23T04:21:19.771Z",
-          "image": "images/interested-in/search-for-meteorites-muascxpm-n-mudg0n6k0jqw.jpg"
-        },
-        {
-          "id": "n-mudi8tj282b2",
-          "text": "find my neodymium magnet in wardrobe",
-          "done": true,
-          "created": "2026-09-23T02:49:45.085Z",
-          "updated": "2026-09-23T04:21:17.315Z"
-        }
-      ],
-      "suggestions": [
-        "What you need: a strong neodymium magnet wrapped in plastic wrap or a sandwich bag (so debris doesn't stick directly to it), a fine-mesh sieve (or two — coarse then fine), a magnifying glass or your compound microscope, and a white sheet of paper or tray to sort onto.",
-        "Method: drag the plastic-wrapped magnet slowly over your balcony surface, especially gutters, drain spouts, or anywhere rainwater collects and evaporates — that's where windblown dust concentrates. Many micrometeorites are magnetic due to iron content, so they'll cling to the magnet through the plastic.",
-        "Collect over a labelled bag: hold the magnet over the bag and peel the plastic away — the stuck material falls off cleanly into the bag without needing to touch it.",
-        "Sieve the catch through a coarse mesh then a fine mesh to separate by size — genuine micrometeorites are typically only 0.2-0.4mm, so you're filtering out larger debris (rust flakes, sand) at both ends.",
-        "Final check under magnification: spread the finest fraction on a slide or white paper and examine with your microscope (see your \"getting a compound microscope\" task/subtask — worth getting that sorted first, it's the last step here). Genuine micrometeorites look like tiny spherical, glassy, or metallic beads, distinct from angular rock/rust fragments.",
-        "Good reference with photos for comparison: https://www.sciencefriday.com/articles/up-on-the-roof-a-handful-of-urban-stardust/ and https://www.popsci.com/hunt-micrometeorites/ — both cover the same magnet-and-sieve method in more detail.",
-        "Heads up: false positives are common — most magnetic \"finds\" on a balcony turn out to be industrial/rust particles, not space dust. Confirming a real micrometeorite usually needs a proper microscope + comparison to known reference images, not just the naked eye."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-1790048174589ov4",
-          "text": "✓ Actioned 2026-09-22: researched the magnet + sieve method for finding micrometeorites on your balcony, what you need, and how to tell a real one from rust/dust — see suggestions. This pairs with your compound-microscope task since you'll need magnification for the final ID step.",
-          "done": true,
-          "created": "2026-09-22T03:36:14.589Z",
-          "updated": "2026-09-23T01:46:23.624Z"
-        },
-        {
-          "id": "n-agent-1790140760961",
-          "text": "✓ Actioned 2026-09-23: on your question — yes, I can attach images to my own notes, I just do it by writing the image file straight into the repo and setting the note's image field, same mechanism your upload uses, there just isn't a browser button for it since I work through files/git rather than the note form. Your reference grid photo is a nice ID chart to compare against once you actually collect something — good luck finding the magnet in the wardrobe!",
-          "done": true,
-          "created": "2026-09-23T05:19:20.961Z",
-          "updated": "2026-09-23T06:05:03.584Z"
-        }
-      ]
-    },
-    {
       "id": "get-some-new-glasses-preference-for-hexagonal-shaped-thin-metal-like-the-last-ones-from-specsavers-muasgyx7",
       "title": "get some new glasses (preference for hexagonal shaped, thin metal like the last ones from specsavers)",
       "category": "Shopping",
