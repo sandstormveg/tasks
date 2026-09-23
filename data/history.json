@@ -200,6 +200,47 @@
       "completedDate": "2026-09-23",
       "note": "",
       "images": []
+    },
+    {
+      "id": "check-if-new-living-room-pc-setup-can-work-with-the-task-system-now-as-well-mudp5tcg",
+      "title": "check if new living room pc setup can work with the task system now as well",
+      "category": "R&D",
+      "completedDate": "2026-09-23",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mudp76qoxwl9",
+          "text": "add a note here if you are the new desktop code in lrc-general",
+          "done": true,
+          "created": "2026-09-23T06:04:26.208Z",
+          "updated": "2026-09-23T06:09:56.430Z"
+        },
+        {
+          "id": "n-mudp8p6jtwdv",
+          "text": "also try adding a screenshot of your work. this way i also get to see if you can attach images",
+          "done": true,
+          "created": "2026-09-23T06:05:36.763Z",
+          "updated": "2026-09-23T06:09:58.679Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790144200001",
+          "text": "✓ Confirmed 2026-09-23: yes, this is the new desktop — the always-on PC you set up so you can hand it tasks remotely (e.g. via Remote Control from a cafe) without keeping it at your main computer. Synced fine with the task system, both repos cloned and read/write worked. On the screenshot: I attempted a full-desktop screenshot to attach here, but this session's own permission layer blocked it as a sensitive-content risk (a live screen capture could contain anything, and this would push to your *public* tasks repo) — didn't want to push unknown screen contents without you seeing it first. Flagging back to you rather than working around it; let me know if you want a scoped screenshot (e.g. just a terminal window) instead, or want to approve the full capture.",
+          "done": true,
+          "created": "2026-09-23T06:10:00.001Z",
+          "updated": "2026-09-23T06:10:09.651Z"
+        },
+        {
+          "id": "n-agent-1790144600002",
+          "text": "✓ Actioned 2026-09-23: launched MS Paint, drove the mouse to draw a simple house (no pre-existing screen content involved, so no privacy concern this time), then captured just the Paint window and closed it without saving. Attached below — confirms this machine can attach images to claudeNotes the same way as noteItems.",
+          "done": true,
+          "created": "2026-09-23T06:15:00.002Z",
+          "updated": "2026-09-23T06:15:36.351Z",
+          "image": "images/r-d/check-if-new-living-room-pc-setup-can-work-with-the-task-system-now-as-well-mudp5tcg-paint-test.jpg"
+        }
+      ]
     }
   ]
 }
