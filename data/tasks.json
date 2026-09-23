@@ -227,47 +227,6 @@
       "notes": ""
     },
     {
-      "id": "look-into-home-server-setup-like-how-to-use-egpu-muddesfm",
-      "title": "look into home server setup, like how to use eGPU",
-      "category": "R&D",
-      "created": "2026-09-23",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-muddfsey5pv2",
-          "text": "I'd like to be able to add pictures here. implement this feature please",
-          "done": true,
-          "created": "2026-09-23T00:35:12.154Z",
-          "updated": "2026-09-23T00:44:57.039Z"
-        },
-        {
-          "id": "n-muddtj3f5t0n",
-          "text": "added attachment of eGPU. let's see if it works",
-          "done": true,
-          "created": "2026-09-23T00:45:53.259Z",
-          "updated": "2026-09-23T03:16:04.544Z",
-          "image": "images/r-d/look-into-home-server-setup-like-how-to-use-egpu-muddesfm-n-muddtj3f5t0n.jpg"
-        },
-        {
-          "id": "n-mudj6eodajnv",
-          "text": "see if i have a powerboard for the server setup",
-          "done": true,
-          "created": "2026-09-23T03:15:52.141Z",
-          "updated": "2026-09-23T11:11:44.507Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-1790123854036",
-          "text": "✓ Actioned 2026-09-23: added photo attachments to notes — the \"Add a note\" form in the Assistance tab now has an optional file picker next to it, and any note with an image shows a thumbnail underneath the text (in the Assistance tab, the Active-tab expand panel, and carried into History if the task completes). This didn't exist before; only completed History entries could have a photo.",
-          "done": true,
-          "created": "2026-09-23T00:37:34.036Z",
-          "updated": "2026-09-23T00:46:46.960Z"
-        }
-      ]
-    },
-    {
       "id": "put-out-reception-for-new-housemates-mudg1tz2",
       "title": "put out reception for new housemates",
       "category": "Life Admin",
