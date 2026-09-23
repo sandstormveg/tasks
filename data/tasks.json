@@ -89,6 +89,18 @@
           "created": "2026-09-23T08:10:23.905Z",
           "updated": "2026-09-23T08:10:23.905Z"
         }
+      ],
+      "suggestions": [
+        "Direct link: https://www.bulknutrients.com.au/products/creatine-monohydrate — 100% pharmaceutical grade, micronised (200 mesh, dissolves easily), unflavoured. Price breaks kick in from 2x 250g pouches. Standard dose is 3g/day (~1 level teaspoon), ideally ~30 min before training. Made in their own Australian facility."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790162687683x7j",
+          "text": "✓ Actioned 2026-09-23: found the direct Bulk Nutrients product link — see suggestions.",
+          "done": false,
+          "created": "2026-09-23T11:24:47.683Z",
+          "updated": "2026-09-23T11:24:47.683Z"
+        }
       ]
     },
     {
@@ -119,6 +131,20 @@
           "done": false,
           "created": "2026-09-23T09:51:22.065Z",
           "updated": "2026-09-23T09:51:22.065Z"
+        }
+      ],
+      "suggestions": [
+        "Good news: Vietnam Expeditions (the link you sent) is actually operating this specific tour AS Cat Ba Pathfinders — same outfit, and Cat Ba Pathfinders has solid reviews (guides described as helpful/supportive for beginners, accommodating to all skill levels). So it's not an unknown operator. Price: 2,150,000 VND (~US5-90), includes round-trip shuttle, boat + Lan Ha Bay entrance fees, gear, English-speaking guides, a cameraman (360 camera + photos included), first aid, and travel insurance. Tours only run when the tide reaches 2.7m+, so exact timing on the 14th/19th depends on tide charts — worth confirming directly. Meeting point: Cat Ba Pathfinders office, 200 Nui Ngoc, Cat Ba. Hotline/WhatsApp: +84 388 044 501 (Mr. Lam).",
+        "For your second company to compare: Cat Ba Climbing (run by \"Mr. Zoom\") is the other well-reviewed option — noticeably cheaper at ~1,150,000 VND (~US6) for a half-day, departs 7:30am or 12:30pm, and reviews consistently praise the guiding for mixed skill levels. Also worth knowing about: Asia Outdoors (asiaoutdoors.vn) claims to be the only operator formally licensed by Cat Ba National Park for DWS — I couldn't find their pricing directly on their site, so you'd need to contact them, but worth a quick check given the licensing claim (treat that claim as theirs to verify, not independently confirmed).",
+        "Checking exact availability for the 14th and 19th needs a direct message to each operator (tide-dependent scheduling, not something bookable generically online) — I'd suggest WhatsApping Vietnam Expeditions/Pathfinders and Cat Ba Climbing with those two dates and asking to confirm both tide window and open slots."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790162687683pr7",
+          "text": "✓ Actioned 2026-09-23: confirmed Vietnam Expeditions is legit (operates as the well-reviewed Cat Ba Pathfinders), found pricing/inclusions, and suggested a second company (Cat Ba Climbing) for your two-company comparison — see suggestions.",
+          "done": false,
+          "created": "2026-09-23T11:24:47.683Z",
+          "updated": "2026-09-23T11:24:47.683Z"
         }
       ]
     },
@@ -280,7 +306,21 @@
           "image": "images/r-d/how-to-set-up-an-egpu-and-what-else-do-i-need-for-it-mue0avlx-n-mue0f53gzczl.jpg"
         }
       ],
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "On the AOOSTAR AG03 you photographed: reviews are mixed specifically on the quiet requirement. The manufacturer claims 38-45dB, but real owner reports (egpu.io forum review) describe an audible whine/hum under load that varies with GPU power draw — not silent. If quiet operation is a hard requirement, reviewers point to the AOOSTAR EG02 as a quieter alternative worth comparing before buying. Sources: https://egpu.io/forums/thunderbolt-enclosures/my-review-for-the-aoostar-ag03-thunderbolt-5-egpu-dock/ and https://vortexgaming.io/en/postdetail/913708",
+        "What else you need: (1) the GPU card itself — NOT included, AG03 is dock+PSU only; (2) a Thunderbolt 4/5 or USB4 certified cable — usually included with the dock, but if buying separately make sure it says \"Thunderbolt-certified\", not just USB-C, since a generic cable will bottleneck or fail to work; (3) confirm your laptop actually has a Thunderbolt/USB4 port that supports eGPUs (not all USB-C ports do, check your laptop's spec sheet); (4) GPU drivers from Nvidia/AMD once connected. Good news: since the AG03 has a built-in 800W PSU, you skip all the DIY power-cable wiring (24-pin, 8-pin PCIe) that a bare enclosure+separate-PSU build needs — it's much closer to plug-and-play.",
+        "✅ Also fixed the two bugs you flagged: the Add button was overflowing off-screen at narrower widths (form now wraps properly), and file uploads now accept PDFs too (not just images) with an actual preview + remove button instead of the cramped native \"No file chosen\" text."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-17901626876832rr",
+          "text": "✓ Actioned 2026-09-23: researched the AOOSTAR AG03 you photographed (noise reviews are mixed, worth knowing before buying) and what else you'd need — see suggestions. Also fixed both site bugs you flagged: the Add button overflow, and file uploads now accept PDFs with a proper preview.",
+          "done": false,
+          "created": "2026-09-23T11:24:47.683Z",
+          "updated": "2026-09-23T11:24:47.683Z"
+        }
+      ]
     }
   ]
 }
