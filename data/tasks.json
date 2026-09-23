@@ -218,7 +218,16 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "parentId": "finding-a-tardigrade-muasrecb"
+      "parentId": "finding-a-tardigrade-muasrecb",
+      "noteItems": [
+        {
+          "id": "n-mudllo8gb9wg",
+          "text": "https://amscope.com/products/c-me580t-pz-2l?variant=41099226939567",
+          "done": false,
+          "created": "2026-09-23T04:23:43.599Z",
+          "updated": "2026-09-23T04:23:43.599Z"
+        }
+      ]
     },
     {
       "id": "finding-a-tardigrade-muasrecb",
