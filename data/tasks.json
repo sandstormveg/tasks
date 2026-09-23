@@ -12,7 +12,12 @@
         "Daily departures from Hanoi at 07:30, 10:45, and 14:00 — the 07:30 slot gets you to Cat Ba town by early-mid afternoon, matching your Old Quarter accommodation notes about the 12 Oct transfer.",
         "Free hotel pickup is included ONLY for hotels inside the Old Quarter — confirms the same constraint noted on your Hanoi accommodation task, so book that hotel first and give its address when booking this transfer.",
         "Alternative/comparison operators if Cat Ba Express is sold out: catbabus.com and catbaexpressbus.com both run similar bus+speedboat combos from ~$10.50; Bookaway (https://www.bookaway.com/routes/vietnam/hanoi-to-cat-ba-island) lets you compare several operators and times in one place.",
-        "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season."
+        "Book a day or two ahead once your Hanoi hotel is confirmed — seats can sell out on the popular morning departure, especially in peak climbing season.",
+        "The cable car doesn't have single scheduled \"departures\" like a bus — it runs continuously, a cabin every ~10 minutes, during 09:00-11:00 and 13:00-17:00 (it closes for a lunch break 11:00-13:00, and is closed entirely on Tuesdays for maintenance). So there's no specific time to tell your friend to \"catch\" — just get to the station within opening hours.",
+        "Timing check for your group: the 10:45 bus from Hanoi to the cable car's mainland station (Dong Bai/Cat Hai) is roughly a 2-hour leg, so you'd likely arrive around 12:30-13:00 — right around the lunch reopening. Good news: this means there's a real chance you and your friend end up crossing around the same time despite arriving totally different ways.",
+        "Your friend (flight lands 11:20): transfer from Cat Bi Airport to the cable car's mainland station is about 28km / 30-40 min by taxi — fixed fares run roughly 100,000-200,000 VND (negotiate before getting in, or use Grab). That puts him at the station around 12:00-12:10, which is BEFORE the 13:00 reopening — so he'll have a short wait regardless of traffic, meaning he has buffer and doesn't need to rush off the plane.",
+        "Does he need to book ahead? Not strictly — tickets are sold at the counter too — but booking online is worth it to skip the queue and get a QR code straight to your phone, especially since he'll already be waiting around for the 13:00 reopening anyway.",
+        "Where to buy JUST the cable car ticket (no bus, since he doesn't need the Hanoi leg): the official Sun World ticketing site at https://booking.sunworld.vn — select Cat Ba, pick one-way or round-trip. This is separate from Cat Ba Express's bus+cable-car combo product, which is why you couldn't find a cable-car-only option on their site. Price: 50,000 VND one-way / 100,000 VND round-trip per person (~US$2-4) — cheap enough that the main benefit of booking ahead is skipping the line, not saving money."
       ],
       "noteItems": [
         {
@@ -44,6 +49,13 @@
           "done": true,
           "created": "2026-09-22T00:30:45.826Z",
           "updated": "2026-09-23T09:08:16.321Z"
+        },
+        {
+          "id": "n-agent-1790155145930",
+          "text": "✓ Actioned 2026-09-23: answered all three questions — the cable car runs continuously (no fixed departure, closed 11:00-13:00 for lunch + Tuesdays), worked out your friend's likely timing from his 11:20 flight (he'll land before the 13:00 reopening either way, so no rush), and found where to buy a standalone cable-car-only ticket (booking.sunworld.vn — separate from Cat Ba Express's bundled product) — see suggestions.",
+          "done": false,
+          "created": "2026-09-23T09:19:05.929Z",
+          "updated": "2026-09-23T09:19:05.929Z"
         }
       ],
       "parentId": "book-cat-ba-accom-for-12th-to-17th-muamqwbm"
