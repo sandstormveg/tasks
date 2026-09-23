@@ -248,7 +248,9 @@
       "category": "Interested in",
       "completedDate": "2026-09-23",
       "note": "captured some photos with the digital microscope but i learned i need a lot more powerful magnification to capture micrometre scale meteorites",
-      "images": [],
+      "images": [
+        "images/interested-in/search-for-meteorites-muascxpm.jpg"
+      ],
       "noteItems": [
         {
           "id": "n-muc4dzclntun",
