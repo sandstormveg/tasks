@@ -168,7 +168,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mudxb0sx5hfb",
+          "text": "have a look around if this is the best company to go with: https://vietnamexpeditions.com/vne_tour/deep-water-soloing-leo-nui-nhay-bien-2/ happy to try two different companies on different days. and also check availabilities",
+          "done": false,
+          "created": "2026-09-23T09:51:22.065Z",
+          "updated": "2026-09-23T09:51:22.065Z"
+        }
+      ]
     },
     {
       "id": "getting-a-compound-microscope-muasrtsv",
