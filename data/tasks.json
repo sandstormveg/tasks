@@ -293,9 +293,9 @@
         {
           "id": "n-agent-1790123854036",
           "text": "✓ Actioned 2026-09-23: added photo attachments to notes — the \"Add a note\" form in the Assistance tab now has an optional file picker next to it, and any note with an image shows a thumbnail underneath the text (in the Assistance tab, the Active-tab expand panel, and carried into History if the task completes). This didn't exist before; only completed History entries could have a photo.",
-          "done": false,
+          "done": true,
           "created": "2026-09-23T00:37:34.036Z",
-          "updated": "2026-09-23T00:37:34.036Z"
+          "updated": "2026-09-23T00:46:46.960Z"
         }
       ]
     },
