@@ -261,7 +261,16 @@
       "title": "how to set up an eGPU and what else do i need for it?",
       "category": "R&D",
       "created": "2026-09-23",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mue0c5fc0dp4",
+          "text": "is this a good one to buy and what else might i need. ideally i want it to be able to run quietly too.",
+          "done": false,
+          "created": "2026-09-23T11:16:13.560Z",
+          "updated": "2026-09-23T11:16:13.560Z"
+        }
+      ]
     }
   ]
 }
