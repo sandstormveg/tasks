@@ -406,6 +406,14 @@
           "done": true,
           "created": "2026-09-23T06:10:00.001Z",
           "updated": "2026-09-23T06:10:09.651Z"
+        },
+        {
+          "id": "n-agent-1790144600002",
+          "text": "✓ Actioned 2026-09-23: launched MS Paint, drove the mouse to draw a simple house (no pre-existing screen content involved, so no privacy concern this time), then captured just the Paint window and closed it without saving. Attached below — confirms this machine can attach images to claudeNotes the same way as noteItems.",
+          "done": false,
+          "created": "2026-09-23T06:15:00.002Z",
+          "updated": "2026-09-23T06:15:00.002Z",
+          "image": "images/r-d/check-if-new-living-room-pc-setup-can-work-with-the-task-system-now-as-well-mudp5tcg-paint-test.jpg"
         }
       ]
     }
