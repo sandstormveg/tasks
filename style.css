@@ -206,7 +206,7 @@ main.view.wide { max-width: 980px; }
   color: var(--muted);
   margin: 0 0 12px;
 }
-.assist-section h3 .count {
+.assist-section h3 .count, .node-detail-section h4 .count {
   background: var(--accent-2);
   color: #0f1117;
   border-radius: 999px;

@@ -641,7 +641,6 @@ function taskCard(task, depth = 0) {
 
   const key = taskKey(task);
   const expanded = expandedTaskNodes.has(key);
-  const hasDetail = noteItems(task).length > 0 || claudeNoteItems(task).length > 0 || (task.suggestions || []).length > 0;
 
   card.innerHTML = `
     <div class="task-card-header">
@@ -650,7 +649,7 @@ function taskCard(task, depth = 0) {
       </button>
       <div class="task-body">
         <div class="task-title-row">
-          ${hasDetail ? `<button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : ""}
+          <button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>
           <div class="task-title">${esc(task.title)}</div>
         </div>
         ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
@@ -662,14 +661,13 @@ function taskCard(task, depth = 0) {
     </div>
     ${expanded ? taskDetailHtml(task) : ""}
   `;
-  if (hasDetail) {
-    card.querySelector(".task-detail-toggle").addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (expandedTaskNodes.has(key)) expandedTaskNodes.delete(key);
-      else expandedTaskNodes.add(key);
-      renderActive();
-    });
-  }
+  card.querySelector(".task-detail-toggle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (expandedTaskNodes.has(key)) expandedTaskNodes.delete(key);
+    else expandedTaskNodes.add(key);
+    renderActive();
+  });
+  if (expanded) wireTaskDetailInteractivity(task, card);
   card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
@@ -1425,10 +1423,12 @@ function historyNodeDetailHtml(entry) {
   `;
 }
 
-// Active-tab equivalent of historyNodeDetailHtml — same read-only sections (no
-// completion note or images, since the task isn't completed yet). This is what
-// keeps a task's suggestions/notes visible after turning assist off, which removes
-// it from the Assistance tab but shouldn't erase what Claude already found.
+// Active-tab equivalent of the Assistance detail panel — same editable notes (add,
+// check off, edit, delete, attach a photo) so jotting a note never requires opting
+// a task into assist first. Suggestions and Claude's notes stay read-only here
+// (research/editing those happens via the Assistance tab or Claude itself); scoped
+// with classes rather than the Assistance tab's global ids, since several of these
+// can be expanded across different task cards at once.
 function taskDetailHtml(task) {
   const items = noteItems(task);
   const claudeNotes = claudeNoteItems(task);
@@ -1436,10 +1436,94 @@ function taskDetailHtml(task) {
   return `
     <div class="node-detail">
       ${suggestionsSectionHtml(suggestions)}
-      ${claudeNotesSectionHtml(claudeNotes)}
-      ${notesSectionHtml(items)}
+      ${claudeNotes.length ? `
+        <div class="node-detail-section">
+          <h4>🤖 Claude's notes</h4>
+          <ul class="note-list task-claude-note-list">${claudeNotes.map(claudeNoteItemHtml).join("")}</ul>
+        </div>` : ""}
+      <div class="node-detail-section">
+        <h4>✎ Notes${items.length ? ` <span class="count">${items.length}</span>` : ""}</h4>
+        ${items.length ? `<ul class="note-list task-note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
+        <form class="add-note-form task-add-note-form">
+          <input type="text" class="task-add-note-input" placeholder="Add a note…" autocomplete="off" />
+          <input type="file" accept="image/*" class="task-add-note-image" title="Attach a photo (optional)" />
+          <button type="submit">Add</button>
+        </form>
+        <span class="assist-status task-note-status"></span>
+      </div>
     </div>
   `;
+}
+
+// All handlers scoped to `card` (a specific task's DOM), not document-wide ids —
+// several task cards can have their notes expanded and being edited at once.
+function wireTaskDetailInteractivity(task, card) {
+  const claudeNoteList = card.querySelector(".task-claude-note-list");
+  if (claudeNoteList) {
+    claudeNoteList.addEventListener("click", (e) => {
+      const li = e.target.closest(".note-item");
+      if (!li) return;
+      const id = li.dataset.id;
+      if (e.target.closest(".note-check")) toggleClaudeNoteDone(task, id);
+      else if (e.target.closest(".note-delete")) deleteClaudeNoteItem(task, id, li);
+    });
+  }
+
+  const noteList = card.querySelector(".task-note-list");
+  if (noteList) {
+    noteList.addEventListener("click", (e) => {
+      const li = e.target.closest(".note-item");
+      if (!li) return;
+      const id = li.dataset.id;
+      const note = noteItems(task).find((n) => n.id === id);
+      if (!note) return;
+      if (e.target.closest(".note-check")) toggleNoteDone(task, id);
+      else if (e.target.closest(".note-edit")) enterNoteEditMode(task, li, note);
+      else if (e.target.closest(".note-delete")) deleteNoteItem(task, id, li);
+    });
+  }
+
+  const form = card.querySelector(".task-add-note-form");
+  const statusEl = card.querySelector(".task-note-status");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = card.querySelector(".task-add-note-input");
+    const imageInput = card.querySelector(".task-add-note-image");
+    const text = input.value.trim();
+    const file = imageInput.files[0];
+    if (!text || !requireToken()) return;
+    const now = new Date().toISOString();
+    const noteId = newNoteId();
+    const newItems = [...noteItems(task), { id: noteId, text, done: false, created: now, updated: now }];
+    statusEl.textContent = "Saving…";
+    statusEl.className = "assist-status task-note-status";
+    try {
+      await saveNoteItems(task, newItems, `Add note: ${task.title}`);
+      renderAssistList();
+      renderAssistDetail();
+      renderActive();
+
+      if (file) {
+        try {
+          const compressed = await compressImage(file);
+          const base64 = await blobToBase64(compressed);
+          const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          const imagePath = `images/${safeCat}/${task.id}-${noteId}.jpg`;
+          await ghPutImage(repoFor(task._repo), imagePath, base64, `Add image for note: ${task.title}`);
+          const withImage = noteItems(task).map((n) => (n.id === noteId ? { ...n, image: imagePath } : n));
+          await saveNoteItems(task, withImage, `Add image for note: ${task.title}`);
+          renderAssistList();
+          renderAssistDetail();
+          renderActive();
+        } catch (imgErr) {
+          alert(`Your note saved, but the photo didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
+        }
+      }
+    } catch (err) {
+      statusEl.textContent = `Couldn't save: ${err.message}`;
+      statusEl.className = "assist-status task-note-status error";
+    }
+  });
 }
 
 // Same instant + undo pattern as deleting an active task (see deleteTask) — no confirm
@@ -1761,6 +1845,7 @@ async function toggleClaudeNoteDone(task, id) {
   try {
     await saveClaudeNotes(task, items, `Check off Claude's note: ${task.title}`);
     renderAssistDetail();
+    renderActive();
   } catch (err) {
     alert(`Couldn't update note: ${err.message}`);
   }
@@ -1778,6 +1863,7 @@ async function deleteClaudeNoteItem(task, id, liEl) {
   liEl.classList.add("completing");
   const optimistic = prevItems.filter((n) => n.id !== id);
   task.claudeNotes = optimistic;
+  renderActive();
   setTimeout(() => liEl.remove(), 300);
 
   let undone = false;
@@ -1789,6 +1875,7 @@ async function deleteClaudeNoteItem(task, id, liEl) {
       undone = true;
       task.claudeNotes = prevItems;
       renderAssistDetail();
+      renderActive();
     },
   });
 
@@ -1799,6 +1886,7 @@ async function deleteClaudeNoteItem(task, id, liEl) {
     } catch (err) {
       task.claudeNotes = prevItems;
       renderAssistDetail();
+      renderActive();
       alert(`Couldn't delete note: ${err.message}. It's back.`);
     }
   }, DELETE_UNDO_MS + 300);
@@ -1834,11 +1922,12 @@ function enterNoteEditMode(task, li, note) {
   textarea.focus();
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   const save = () => editNoteItem(task, note.id, textarea.value);
-  li.querySelector(".note-cancel").addEventListener("click", () => renderAssistDetail());
+  const cancel = () => { renderAssistDetail(); renderActive(); };
+  li.querySelector(".note-cancel").addEventListener("click", cancel);
   li.querySelector(".note-save").addEventListener("click", save);
   textarea.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); save(); }
-    if (e.key === "Escape") { e.preventDefault(); renderAssistDetail(); }
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
   });
 }
 
@@ -1852,9 +1941,11 @@ async function editNoteItem(task, id, newText) {
     await saveNoteItems(task, items, `Edit note: ${task.title}`);
     renderAssistList();
     renderAssistDetail();
+    renderActive();
   } catch (err) {
     alert(`Couldn't save note: ${err.message}`);
     renderAssistDetail();
+    renderActive();
   }
 }
 
@@ -1865,6 +1956,7 @@ async function toggleNoteDone(task, id) {
   try {
     await saveNoteItems(task, items, `Update note: ${task.title}`);
     renderAssistDetail();
+    renderActive();
   } catch (err) {
     alert(`Couldn't update note: ${err.message}`);
   }
@@ -1884,6 +1976,7 @@ async function deleteNoteItem(task, id, liEl) {
   const optimistic = prevItems.filter((n) => n.id !== id);
   task.noteItems = optimistic;
   renderAssistList();
+  renderActive();
   setTimeout(() => liEl.remove(), 300);
 
   let undone = false;
@@ -1896,6 +1989,7 @@ async function deleteNoteItem(task, id, liEl) {
       task.noteItems = prevItems;
       renderAssistList();
       renderAssistDetail();
+      renderActive();
     },
   });
 
@@ -1907,6 +2001,7 @@ async function deleteNoteItem(task, id, liEl) {
       task.noteItems = prevItems;
       renderAssistList();
       renderAssistDetail();
+      renderActive();
       alert(`Couldn't delete note: ${err.message}. It's back.`);
     }
   }, DELETE_UNDO_MS + 300);
