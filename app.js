@@ -1270,12 +1270,60 @@ function setupPasteImage(textInput, fileInput, statusEl) {
         const dt = new DataTransfer();
         dt.items.add(file);
         fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event("change"));
         if (statusEl) statusEl.textContent = "Image pasted — will attach when you add the note.";
         e.preventDefault();
         break;
       }
     }
   });
+}
+
+// Replaces the native file input's cramped "No file chosen" text with a proper
+// preview (thumbnail for images, filename for anything else) plus a clear button —
+// this is what was overflowing/looking broken in the screenshot that prompted it.
+function setupAttachmentPreview(fileInput, previewEl) {
+  const clear = () => {
+    fileInput.value = "";
+    previewEl.classList.remove("showing");
+    previewEl.innerHTML = "";
+  };
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) { clear(); return; }
+    const isImage = file.type.startsWith("image/");
+    previewEl.innerHTML = `
+      ${isImage ? `<img alt="">` : "📄"}
+      <span class="attachment-name">${esc(file.name)}</span>
+      <button type="button" class="attachment-clear" aria-label="Remove attachment" title="Remove">✕</button>
+    `;
+    previewEl.classList.add("showing");
+    if (isImage) previewEl.querySelector("img").src = URL.createObjectURL(file);
+    previewEl.querySelector(".attachment-clear").addEventListener("click", (e) => {
+      e.preventDefault();
+      clear();
+    });
+  });
+}
+
+// Images get compressed/re-encoded as before; anything else (PDFs, etc.) uploads
+// as-is. Returns the fields to merge into the note item — `image` for images (as
+// already used everywhere images render) or `file` for other attachment types.
+async function uploadNoteAttachment(task, noteId, file) {
+  const repo = repoFor(task._repo);
+  const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  if (file.type.startsWith("image/")) {
+    const compressed = await compressImage(file);
+    const base64 = await blobToBase64(compressed);
+    const imagePath = `images/${safeCat}/${task.id}-${noteId}.jpg`;
+    await ghPutImage(repo, imagePath, base64, `Add image for note: ${task.title}`);
+    return { image: imagePath };
+  }
+  const ext = (file.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
+  const base64 = await blobToBase64(file);
+  const filePath = `images/${safeCat}/${task.id}-${noteId}.${ext}`;
+  await ghPutImage(repo, filePath, base64, `Add attachment for note: ${task.title}`);
+  return { file: { path: filePath, name: file.name } };
 }
 
 function blobToBase64(blob) {
@@ -1440,6 +1488,14 @@ function historyNodeEl(entry) {
   return node;
 }
 
+// Images render inline; anything else (PDFs, etc.) renders as a download link since
+// browsers can't inline-preview arbitrary file types.
+function noteAttachmentHtml(n) {
+  if (n.image) return `<img src="${esc(n.image)}" class="note-image" alt="">`;
+  if (n.file) return `<a href="${esc(n.file.path)}" target="_blank" rel="noopener noreferrer" class="note-file-link">📄 ${esc(n.file.name)}</a>`;
+  return "";
+}
+
 // Shared by the History detail panel and the Active-tab task detail panel below —
 // same read-only rendering either way (editing happens via double-click for the
 // title and the Assistance tab for notes, never here).
@@ -1449,7 +1505,7 @@ function staticNoteListHtml(items) {
       <span class="note-check-static">${n.done ? "✓" : ""}</span>
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
-        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
+        ${noteAttachmentHtml(n)}
         <div class="note-time">${formatExact(n.updated || n.created)}</div>
       </div>
     </li>`).join("")}</ul>`;
@@ -1530,7 +1586,8 @@ function taskDetailHtml(task) {
         ${items.length ? `<ul class="note-list task-note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
         <form class="add-note-form task-add-note-form">
           <input type="text" class="task-add-note-input" placeholder="Add a note… (paste an image too)" autocomplete="off" />
-          <input type="file" accept="image/*" class="task-add-note-image" title="Attach a photo (optional) — or just paste one into the text field" />
+          <input type="file" accept="image/*,application/pdf" class="task-add-note-image" title="Attach a photo or PDF (optional) — or just paste an image into the text field" />
+          <span class="add-note-attachment-preview task-add-note-preview"></span>
           <button type="submit">Add</button>
         </form>
         <span class="assist-status task-note-status"></span>
@@ -1569,7 +1626,9 @@ function wireTaskDetailInteractivity(task, card) {
 
   const form = card.querySelector(".task-add-note-form");
   const statusEl = card.querySelector(".task-note-status");
-  setupPasteImage(card.querySelector(".task-add-note-input"), card.querySelector(".task-add-note-image"), statusEl);
+  const imageInputEl = card.querySelector(".task-add-note-image");
+  setupPasteImage(card.querySelector(".task-add-note-input"), imageInputEl, statusEl);
+  setupAttachmentPreview(imageInputEl, card.querySelector(".task-add-note-preview"));
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = card.querySelector(".task-add-note-input");
@@ -1590,18 +1649,14 @@ function wireTaskDetailInteractivity(task, card) {
 
       if (file) {
         try {
-          const compressed = await compressImage(file);
-          const base64 = await blobToBase64(compressed);
-          const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-          const imagePath = `images/${safeCat}/${task.id}-${noteId}.jpg`;
-          await ghPutImage(repoFor(task._repo), imagePath, base64, `Add image for note: ${task.title}`);
-          const withImage = noteItems(task).map((n) => (n.id === noteId ? { ...n, image: imagePath } : n));
-          await saveNoteItems(task, withImage, `Add image for note: ${task.title}`);
+          const attachment = await uploadNoteAttachment(task, noteId, file);
+          const withAttachment = noteItems(task).map((n) => (n.id === noteId ? { ...n, ...attachment } : n));
+          await saveNoteItems(task, withAttachment, `Add attachment for note: ${task.title}`);
           renderAssistList();
           renderAssistDetail();
           renderActive();
         } catch (imgErr) {
-          alert(`Your note saved, but the photo didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
+          alert(`Your note saved, but the attachment didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
         }
       }
     } catch (err) {
@@ -1784,7 +1839,8 @@ function renderAssistDetail() {
       ${items.length === 0 ? `<div class="assist-hint">No notes yet — add one below. Ideas, plans, links, anything you want to remember about this task.</div>` : ""}
       <form id="add-note-form" class="add-note-form">
         <input id="add-note-input" type="text" placeholder="Add a note… (paste an image too)" autocomplete="off" />
-        <input id="add-note-image" type="file" accept="image/*" title="Attach a photo (optional) — or just paste one into the text field" />
+        <input id="add-note-image" type="file" accept="image/*,application/pdf" title="Attach a photo or PDF (optional) — or just paste an image into the text field" />
+        <span class="add-note-attachment-preview" id="add-note-preview"></span>
         <button type="submit">Add</button>
       </form>
       <span class="assist-status" id="assist-status"></span>
@@ -1792,6 +1848,7 @@ function renderAssistDetail() {
   `;
 
   setupPasteImage(el("#add-note-input"), el("#add-note-image"), el("#assist-status"));
+  setupAttachmentPreview(el("#add-note-image"), el("#add-note-preview"));
 
   container.querySelector(".check").addEventListener("click", () => completeTask(task));
   container.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
@@ -1851,23 +1908,18 @@ function renderAssistDetail() {
       // the completion-note dialog's image handling).
       await saveNoteItems(task, newItems, `Add note: ${task.title}`);
       input.value = "";
-      imageInput.value = "";
       renderAssistList();
       renderAssistDetail();
 
       if (file) {
         try {
-          const compressed = await compressImage(file);
-          const base64 = await blobToBase64(compressed);
-          const safeCat = task.category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-          const imagePath = `images/${safeCat}/${task.id}-${noteId}.jpg`;
-          await ghPutImage(repoFor(task._repo), imagePath, base64, `Add image for note: ${task.title}`);
-          const withImage = noteItems(task).map((n) => (n.id === noteId ? { ...n, image: imagePath } : n));
-          await saveNoteItems(task, withImage, `Add image for note: ${task.title}`);
+          const attachment = await uploadNoteAttachment(task, noteId, file);
+          const withAttachment = noteItems(task).map((n) => (n.id === noteId ? { ...n, ...attachment } : n));
+          await saveNoteItems(task, withAttachment, `Add attachment for note: ${task.title}`);
           renderAssistList();
           renderAssistDetail();
         } catch (imgErr) {
-          alert(`Your note saved, but the photo didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
+          alert(`Your note saved, but the attachment didn't upload: ${imgErr.message}\n\nThe note itself is safe.`);
         }
       }
     } catch (err) {
@@ -1916,7 +1968,7 @@ function claudeNoteItemHtml(n) {
       <button class="note-check" aria-label="${n.done ? "Mark not seen" : "Mark seen"}" title="${n.done ? "Mark not seen" : "Mark seen"}">${n.done ? "✓" : ""}</button>
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
-        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
+        ${noteAttachmentHtml(n)}
         <div class="note-time">${formatWhen(n.updated || n.created)}</div>
       </div>
       <div class="note-actions">
@@ -1985,7 +2037,7 @@ function noteItemHtml(n) {
       <button class="note-check" aria-label="${n.done ? "Mark not done" : "Mark done"}" title="${n.done ? "Mark not done" : "Mark done"}">${n.done ? "✓" : ""}</button>
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
-        ${n.image ? `<img src="${esc(n.image)}" class="note-image" alt="">` : ""}
+        ${noteAttachmentHtml(n)}
         <div class="note-time">${formatWhen(n.updated || n.created)}</div>
       </div>
       <div class="note-actions">
