@@ -313,7 +313,7 @@
           "updated": "2026-09-23T12:18:02.816Z"
         }
       ],
-      "assist": true,
+      "assist": false,
       "suggestions": [
         "On the AOOSTAR AG03 you photographed: reviews are mixed specifically on the quiet requirement. The manufacturer claims 38-45dB, but real owner reports (egpu.io forum review) describe an audible whine/hum under load that varies with GPU power draw — not silent. If quiet operation is a hard requirement, reviewers point to the AOOSTAR EG02 as a quieter alternative worth comparing before buying. Sources: https://egpu.io/forums/thunderbolt-enclosures/my-review-for-the-aoostar-ag03-thunderbolt-5-egpu-dock/ and https://vortexgaming.io/en/postdetail/913708",
         "What else you need: (1) the GPU card itself — NOT included, AG03 is dock+PSU only; (2) a Thunderbolt 4/5 or USB4 certified cable — usually included with the dock, but if buying separately make sure it says \"Thunderbolt-certified\", not just USB-C, since a generic cable will bottleneck or fail to work; (3) confirm your laptop actually has a Thunderbolt/USB4 port that supports eGPUs (not all USB-C ports do, check your laptop's spec sheet); (4) GPU drivers from Nvidia/AMD once connected. Good news: since the AG03 has a built-in 800W PSU, you skip all the DIY power-cable wiring (24-pin, 8-pin PCIe) that a bare enclosure+separate-PSU build needs — it's much closer to plug-and-play.",
