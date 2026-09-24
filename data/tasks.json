@@ -525,6 +525,13 @@
           "done": false,
           "created": "2026-09-24T21:33:26.800Z",
           "updated": "2026-09-24T21:33:26.800Z"
+        },
+        {
+          "id": "n-mug1ud5f3zh7",
+          "text": "if it has relations to other objects then they should be connected.",
+          "done": false,
+          "created": "2026-09-24T21:33:55.347Z",
+          "updated": "2026-09-24T21:33:55.347Z"
         }
       ]
     }
