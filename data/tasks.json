@@ -442,6 +442,13 @@
         }
       ],
       "assist": true
+    },
+    {
+      "id": "test-how-the-new-director-skill-is-working-muex1abw",
+      "title": "Test how the new director skill is working",
+      "category": "Development",
+      "created": "2026-09-24",
+      "notes": ""
     }
   ]
 }
