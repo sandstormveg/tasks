@@ -442,30 +442,6 @@
         }
       ],
       "assist": true
-    },
-    {
-      "id": "change-this-task-system-so-it-is-model-ai-company-agnostic-muexefhb",
-      "title": "change this task system so it is model/ai company agnostic",
-      "category": "Development",
-      "created": "2026-09-24",
-      "notes": "",
-      "noteItems": [
-        {
-          "id": "n-muexgx6dn8ej",
-          "text": "also tell me again what i might need to do to give people access to editing the public files verse the private files. i think my current public access token gives access to both so i might need to build another one that is not for seeing or editing the private data.",
-          "done": false,
-          "created": "2026-09-24T02:43:43.476Z",
-          "updated": "2026-09-24T02:43:43.476Z"
-        },
-        {
-          "id": "n-muexikqu02qe",
-          "text": "agnostic in the sense that if a model does work it might also be good to make them tag or sign who did what (instead of just \"claudes notes/suggestions\"",
-          "done": false,
-          "created": "2026-09-24T02:45:00.678Z",
-          "updated": "2026-09-24T02:45:00.678Z"
-        }
-      ],
-      "assist": true
     }
   ]
 }
