@@ -64,9 +64,23 @@
       <h3>Settings</h3>
       <p class="hint">
         Paste a GitHub fine-grained personal access token with <strong>Contents: Read and write</strong>
-        on <code>sandstormveg/tasks-data</code> (the private repo holding your task data)
-        to let this page load and save your tasks.
-        It's stored only in your browser (localStorage), never sent anywhere except GitHub's API.
+        to let this page load and save your tasks. One token is used for every repo you can
+        access — scope it to whichever you need:
+      </p>
+      <ul class="hint">
+        <li><code>sandstormveg/tasks</code> (public) for the Active/History/Assistance tabs to work at all.</li>
+        <li><code>sandstormveg/tasks-data</code> (private) too, if you also want private tasks to load and be editable.</li>
+      </ul>
+      <p class="hint">
+        To give someone edit access to only the public tasks — never the private ones —
+        create a <em>separate</em> fine-grained token scoped only to
+        <code>sandstormveg/tasks</code> and have them paste that into their own browser's
+        Settings here. They don't need your token at all. Calls to the private repo will
+        just fail for them and those tasks won't show — no code change needed, it's purely
+        which repo(s) the token itself can see.
+      </p>
+      <p class="hint">
+        Your token is stored only in your browser (localStorage), never sent anywhere except GitHub's API.
       </p>
       <input id="settings-token" type="password" placeholder="github_pat_…" />
       <div class="dialog-actions">

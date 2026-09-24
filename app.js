@@ -724,7 +724,7 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
       </div>
       <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
-      <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle Claude assistance">✦</button>
+      <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
       <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
       <button class="delete-toggle" aria-label="Delete task">🗑</button>
     </div>
@@ -755,8 +755,8 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
   });
   const assistBtn = card.querySelector(".assist-toggle");
   assistBtn.title = task.assist
-    ? "Claude is helping with this one — click to stop"
-    : "Click to have Claude work on this task in the Assistance tab";
+    ? "An AI assistant is helping with this one — click to stop"
+    : "Click to have an AI assistant work on this task in the Assistance tab";
   assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
 
   setupTaskTitleEditing(task, card);
@@ -1017,7 +1017,7 @@ async function completeTask(task, card) {
   try {
     assertLoaded(task._repo);
     const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
-    // Carry the task's own notes and Claude's suggestions into history — otherwise
+    // Carry the task's own notes and the agent's suggestions into history — otherwise
     // completing a task silently threw away everything that had been built up on it.
     const carriedNotes = noteItems(task);
     const carriedClaudeNotes = claudeNoteItems(task);
@@ -1473,7 +1473,7 @@ function historyNodeEl(entry) {
   if (entry.note) badges.push(`<span class="badge badge-note" title="Completion note">📝</span>`);
   if (images.length) badges.push(`<span class="badge badge-note" title="${images.length} photo(s)">🖼 ${images.length}</span>`);
   if (items.length) badges.push(`<span class="badge badge-note" title="${items.length} note(s)">✎ ${items.length}</span>`);
-  if (claudeNotes.length) badges.push(`<span class="badge badge-note" title="${claudeNotes.length} of Claude's notes">🤖 ${claudeNotes.length}</span>`);
+  if (claudeNotes.length) badges.push(`<span class="badge badge-note" title="${claudeNotes.length} agent note(s)">🤖 ${claudeNotes.length}</span>`);
   if (suggestions.length) badges.push(`<span class="badge badge-sug" title="${suggestions.length} suggestion(s)">✦ ${suggestions.length}</span>`);
   const hasDetail = badges.length > 0;
 
@@ -1532,7 +1532,7 @@ function staticNoteListHtml(items) {
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
         ${noteAttachmentHtml(n)}
-        <div class="note-time">${formatExact(n.updated || n.created)}</div>
+        <div class="note-time">${formatExact(n.updated || n.created)}${n.author ? ` · ${esc(n.author)}` : ""}</div>
       </div>
     </li>`).join("")}</ul>`;
 }
@@ -1546,11 +1546,26 @@ function formatExact(iso) {
   return d.toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+// Suggestions are historically plain strings ("a finding written by Claude"). To let
+// entries carry which agent/model produced them without a breaking migration across
+// two repos' worth of existing data, a suggestion may now ALSO be an object
+// {text, author} — these two helpers read either shape transparently. Old plain-string
+// suggestions keep working forever; only new ones written with a known author show a tag.
+function suggestionText(s) {
+  return typeof s === "string" ? s : s.text;
+}
+function suggestionAuthor(s) {
+  return typeof s === "string" ? null : s.author || null;
+}
+function authorTagHtml(author) {
+  return author ? `<span class="author-tag">${esc(author)}</span>` : "";
+}
+
 function suggestionsSectionHtml(suggestions) {
   return suggestions.length
     ? `<div class="node-detail-section">
-        <h4>✦ Claude's suggestions</h4>
-        <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(s)}</div></li>`).join("")}</ul>
+        <h4>✦ Agent suggestions</h4>
+        <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(suggestionText(s))}</div>${authorTagHtml(suggestionAuthor(s))}</li>`).join("")}</ul>
       </div>`
     : "";
 }
@@ -1558,7 +1573,7 @@ function suggestionsSectionHtml(suggestions) {
 function claudeNotesSectionHtml(claudeNotes) {
   return claudeNotes.length
     ? `<div class="node-detail-section">
-        <h4>🤖 Claude's notes</h4>
+        <h4>🤖 Agent notes</h4>
         ${staticNoteListHtml(claudeNotes)}
       </div>`
     : "";
@@ -1604,7 +1619,7 @@ function taskDetailHtml(task) {
       ${suggestionsSectionHtml(suggestions)}
       ${claudeNotes.length ? `
         <div class="node-detail-section">
-          <h4>🤖 Claude's notes</h4>
+          <h4>🤖 Agent notes</h4>
           <ul class="note-list task-claude-note-list">${claudeNotes.map(claudeNoteItemHtml).join("")}</ul>
         </div>` : ""}
       <div class="node-detail-section">
@@ -1740,7 +1755,7 @@ function renderAssistList() {
   container.innerHTML = "";
   const tasks = assistTasks();
   if (tasks.length === 0) {
-    container.innerHTML = `<div class="empty-state">No tasks opted in yet. Tap the ✦ on any task in the Active tab to have Claude work on it.</div>`;
+    container.innerHTML = `<div class="empty-state">No tasks opted in yet. Tap the ✦ on any task in the Active tab to have an AI assistant work on it.</div>`;
     return;
   }
   const groups = groupBy(tasks, "category");
@@ -1753,10 +1768,10 @@ function renderAssistList() {
       const btn = document.createElement("button");
       btn.className = "assist-item" + (taskKey(task) === state.selectedAssistKey ? " selected" : "");
       // Badges make it obvious at a glance where there's already work to pick up:
-      // ✦ = Claude left suggestions, 🤖 = Claude actually did something, ✎ = you've written notes.
+      // ✦ = an agent left suggestions, 🤖 = an agent actually did something, ✎ = you've written notes.
       const badges = [];
-      if ((task.suggestions || []).length) badges.push(`<span class="badge badge-sug" title="${task.suggestions.length} suggestion(s) from Claude">✦ ${task.suggestions.length}</span>`);
-      if (claudeNoteItems(task).some((n) => !n.done)) badges.push(`<span class="badge badge-note" title="Claude did something here you haven't checked off yet">🤖</span>`);
+      if ((task.suggestions || []).length) badges.push(`<span class="badge badge-sug" title="${task.suggestions.length} suggestion(s)">✦ ${task.suggestions.length}</span>`);
+      if (claudeNoteItems(task).some((n) => !n.done)) badges.push(`<span class="badge badge-note" title="An agent did something here you haven't checked off yet">🤖</span>`);
       if (noteItems(task).length) badges.push(`<span class="badge badge-note" title="${noteItems(task).length} note(s)">✎ ${noteItems(task).length}</span>`);
       btn.innerHTML = `
         <span class="assist-item-icon">${task._repo === "private" ? "🔒" : "🌐"}</span>
@@ -1817,8 +1832,8 @@ function renderAssistDetail() {
   const task = assistTasks().find((t) => taskKey(t) === state.selectedAssistKey);
   if (!task) {
     container.innerHTML = assistTasks().length
-      ? `<div class="empty-state">Pick a task on the left to see what Claude has worked out and to jot down your own thinking.</div>`
-      : `<div class="empty-state">Nothing here yet. Go to the Active tab and tap ✦ on a task you want help with — it'll show up here with Claude's findings.</div>`;
+      ? `<div class="empty-state">Pick a task on the left to see what an AI assistant has worked out and to jot down your own thinking.</div>`
+      : `<div class="empty-state">Nothing here yet. Go to the Active tab and tap ✦ on a task you want help with — it'll show up here with the agent's findings.</div>`;
     return;
   }
   const suggestions = task.suggestions || [];
@@ -1842,21 +1857,22 @@ function renderAssistDetail() {
     </div>
 
     <div class="assist-section">
-      <h3>✦ Suggestions from Claude${suggestions.length ? ` <span class="count">${suggestions.length}</span>` : ""}</h3>
+      <h3>✦ Agent suggestions${suggestions.length ? ` <span class="count">${suggestions.length}</span>` : ""}</h3>
       ${suggestions.length
         ? `<ul class="suggestion-list">${suggestions.map((s, i) => `
             <li>
-              <div class="suggestion-text">${linkify(s)}</div>
+              <div class="suggestion-text">${linkify(suggestionText(s))}</div>
+              ${authorTagHtml(suggestionAuthor(s))}
               <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes as its own item">→ notes</button>
             </li>`).join("")}</ul>`
-        : `<div class="assist-hint">Nothing yet. Mention this task to Claude in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
+        : `<div class="assist-hint">Nothing yet. Mention this task to an AI assistant in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
     </div>
 
     <div class="assist-section">
-      <h3>🤖 Claude's notes${cNotes.length ? ` <span class="count">${cNotes.length}</span>` : ""}</h3>
+      <h3>🤖 Agent notes${cNotes.length ? ` <span class="count">${cNotes.length}</span>` : ""}</h3>
       ${cNotes.length
         ? `<ul class="note-list" id="claude-note-list">${cNotes.map(claudeNoteItemHtml).join("")}</ul>`
-        : `<div class="assist-hint">Nothing here yet. When Claude actually does something on this task (not just research), it records it here — tick the box once you've seen it.</div>`}
+        : `<div class="assist-hint">Nothing here yet. When an AI assistant actually does something on this task (not just research), it records it here — tick the box once you've seen it.</div>`}
     </div>
 
     <div class="assist-section">
@@ -1956,7 +1972,7 @@ function renderAssistDetail() {
   container.querySelectorAll(".suggestion-add").forEach((addBtn) => {
     addBtn.addEventListener("click", async () => {
       if (!requireToken()) return;
-      const text = suggestions[Number(addBtn.dataset.i)];
+      const text = suggestionText(suggestions[Number(addBtn.dataset.i)]);
       const now = new Date().toISOString();
       const newItems = [...noteItems(task), { id: newNoteId(), text, done: false, created: now, updated: now }];
       try {
@@ -1995,7 +2011,7 @@ function claudeNoteItemHtml(n) {
       <div class="note-body">
         <div class="note-text">${linkify(n.text)}</div>
         ${noteAttachmentHtml(n)}
-        <div class="note-time">${formatWhen(n.updated || n.created)}</div>
+        <div class="note-time">${formatWhen(n.updated || n.created)}${n.author ? ` · ${esc(n.author)}` : ""}</div>
       </div>
       <div class="note-actions">
         <button class="note-delete" aria-label="Delete note" title="Delete">🗑</button>
@@ -2033,7 +2049,7 @@ async function deleteClaudeNoteItem(task, id, liEl) {
 
   let undone = false;
   showToast({
-    message: "Deleted Claude's note",
+    message: "Deleted agent note",
     actionLabel: "Undo",
     duration: DELETE_UNDO_MS,
     onAction: () => {

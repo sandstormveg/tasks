@@ -245,6 +245,17 @@ main.view.wide { max-width: 980px; }
 }
 .suggestion-text { flex: 1; min-width: 0; }
 .suggestion-text a { color: var(--accent); }
+.author-tag {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
 .suggestion-add {
   flex-shrink: 0;
   background: transparent;
