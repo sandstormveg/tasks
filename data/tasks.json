@@ -553,6 +553,13 @@
           "done": false,
           "created": "2026-09-24T21:38:17.002Z",
           "updated": "2026-09-24T21:38:17.002Z"
+        },
+        {
+          "id": "n-mug3xsb0grrz",
+          "text": "i wonder how much we could connect systems/apis such as Wikipedia, Stanford Encyclopaedia, Merriam Webster, Wolfram Alpha etc. This would help populate different data points of an item from different angles and references frames. know what i mean?",
+          "done": false,
+          "created": "2026-09-24T22:32:34.188Z",
+          "updated": "2026-09-24T22:32:34.188Z"
         }
       ],
       "assist": true,
