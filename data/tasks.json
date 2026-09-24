@@ -511,68 +511,6 @@
           "author": "Claude Sonnet 5 — om-task-System"
         }
       ]
-    },
-    {
-      "id": "knowledge-system-design-mug1shm4",
-      "title": "Knowledge system design",
-      "category": "R&D",
-      "created": "2026-09-24",
-      "notes": "",
-      "noteItems": [
-        {
-          "id": "n-mug1tr4g6hw0",
-          "text": "Needs to include more references/links and pictures as well in details.",
-          "done": false,
-          "created": "2026-09-24T21:33:26.800Z",
-          "updated": "2026-09-24T21:33:26.800Z"
-        },
-        {
-          "id": "n-mug1ud5f3zh7",
-          "text": "if it has relations to other objects then they should be connected somehow or shown in its superseded and/or subseded categories.",
-          "done": false,
-          "created": "2026-09-24T21:33:55.347Z",
-          "updated": "2026-09-24T21:34:43.636Z"
-        },
-        {
-          "id": "n-mug1wsuyk9zv",
-          "text": "Any category or object should also be able to be exported and also copied in different formats such as JSON and markdown.",
-          "done": false,
-          "created": "2026-09-24T21:35:49.018Z",
-          "updated": "2026-09-24T21:35:49.018Z"
-        },
-        {
-          "id": "n-mug1xr37nk37",
-          "text": "there also needs to be details on what each part of the UX to explain what it means. and probably an explainer on the site. like an about section.",
-          "done": false,
-          "created": "2026-09-24T21:36:33.379Z",
-          "updated": "2026-09-24T21:37:13.909Z"
-        },
-        {
-          "id": "n-mug1zz1mxkzz",
-          "text": "also i need it to have a section for inputs too, to put in a single item or many items (objects, things, stuff) which will then be researched and integrated by the Atlas system",
-          "done": false,
-          "created": "2026-09-24T21:38:17.002Z",
-          "updated": "2026-09-24T21:38:17.002Z"
-        },
-        {
-          "id": "n-mug3xsb0grrz",
-          "text": "i wonder how much we could connect systems/apis such as Wikipedia, Stanford Encyclopaedia, Merriam Webster, Wolfram Alpha etc. This would help populate different data points of an item from different angles and references frames. know what i mean?",
-          "done": false,
-          "created": "2026-09-24T22:32:34.188Z",
-          "updated": "2026-09-24T22:32:34.188Z"
-        }
-      ],
-      "assist": true,
-      "claudeNotes": [
-        {
-          "id": "n-agent-director-atlas-ux-relay",
-          "text": "✓ Actioned 2026-09-25 by Director (Senti): relayed all 5 requirements to the Atlas owner session (it owns the graph-browser site build) since this is implementation work, not research — references/pictures in detail views, visible superseded/subseded relation links, JSON/Markdown export per object or category, an in-UX 'About' explainer section, and a new intake/ingestion 'inputs' section for feeding raw items to the Atlas for research. Waiting on that session to say what it's picking up now vs. later.",
-          "author": "Claude Sonnet 5",
-          "done": false,
-          "created": "2026-09-25T08:21:00.000Z",
-          "updated": "2026-09-25T08:21:00.000Z"
-        }
-      ]
     }
   ]
 }
