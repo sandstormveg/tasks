@@ -459,6 +459,13 @@
         }
       ],
       "assist": true
+    },
+    {
+      "id": "change-this-task-system-so-it-is-model-ai-company-agnostic-muexefhb",
+      "title": "change this task system so it is model/ai company agnostic",
+      "category": "Development",
+      "created": "2026-09-24",
+      "notes": ""
     }
   ]
 }
