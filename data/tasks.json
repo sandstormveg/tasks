@@ -104,13 +104,6 @@
       ]
     },
     {
-      "id": "get-some-new-glasses-preference-for-hexagonal-shaped-thin-metal-like-the-last-ones-from-specsavers-muasgyx7",
-      "title": "get some new glasses (preference for hexagonal shaped, thin metal like the last ones from specsavers)",
-      "category": "Shopping",
-      "created": "2026-09-21",
-      "notes": ""
-    },
-    {
       "id": "print-the-meta-jigsaw-of-the-death-star-photo-muasfrp0",
       "title": "Print the meta jigsaw of the death star photo",
       "category": "Interested in",
@@ -254,10 +247,19 @@
     },
     {
       "id": "put-out-reception-for-new-housemates-mudg1tz2",
-      "title": "put out reception for new housemates",
+      "title": "find new potential housemates",
       "category": "Life Admin",
       "created": "2026-09-23",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muepzggml5b1",
+          "text": "i first need to come up with a plan to contact and a find housemates who are vegan",
+          "done": false,
+          "created": "2026-09-23T23:14:11.350Z",
+          "updated": "2026-09-23T23:14:11.350Z"
+        }
+      ]
     },
     {
       "id": "think-up-contract-for-new-housemate-so-they-can-t-stay-over-the-test-period-mudg2n4i",
@@ -280,7 +282,8 @@
           "created": "2026-09-23T01:50:59.130Z",
           "updated": "2026-09-23T01:50:59.130Z"
         }
-      ]
+      ],
+      "parentId": "put-out-reception-for-new-housemates-mudg1tz2"
     },
     {
       "id": "how-to-set-up-an-egpu-and-what-else-do-i-need-for-it-mue0avlx",
@@ -313,12 +316,15 @@
           "updated": "2026-09-23T12:18:02.816Z"
         }
       ],
-      "assist": true,
+      "assist": false,
       "suggestions": [
         "On the AOOSTAR AG03 you photographed: reviews are mixed specifically on the quiet requirement. The manufacturer claims 38-45dB, but real owner reports (egpu.io forum review) describe an audible whine/hum under load that varies with GPU power draw — not silent. If quiet operation is a hard requirement, reviewers point to the AOOSTAR EG02 as a quieter alternative worth comparing before buying. Sources: https://egpu.io/forums/thunderbolt-enclosures/my-review-for-the-aoostar-ag03-thunderbolt-5-egpu-dock/ and https://vortexgaming.io/en/postdetail/913708",
         "What else you need: (1) the GPU card itself — NOT included, AG03 is dock+PSU only; (2) a Thunderbolt 4/5 or USB4 certified cable — usually included with the dock, but if buying separately make sure it says \"Thunderbolt-certified\", not just USB-C, since a generic cable will bottleneck or fail to work; (3) confirm your laptop actually has a Thunderbolt/USB4 port that supports eGPUs (not all USB-C ports do, check your laptop's spec sheet); (4) GPU drivers from Nvidia/AMD once connected. Good news: since the AG03 has a built-in 800W PSU, you skip all the DIY power-cable wiring (24-pin, 8-pin PCIe) that a bare enclosure+separate-PSU build needs — it's much closer to plug-and-play.",
         "✅ Also fixed the two bugs you flagged: the Add button was overflowing off-screen at narrower widths (form now wraps properly), and file uploads now accept PDFs too (not just images) with an actual preview + remove button instead of the cramped native \"No file chosen\" text.",
-        "Links for the additional items: (1) GPU card — the AG03 dock does not include one, you pick any desktop card up to 500W; for a quiet pick, the ASRock Intel Arc A580 Challenger has the lowest measured noise under $200 (soundproofgeek.com/quietest-graphics-card-silent-gpu-video-card), or for higher-end quiet performance look at Noctua-edition RTX 5080 cards or a GIGABYTE RX 9060 XT Gaming OC ICE 16G. (2) Thunderbolt cable — AG03 ships with one, but if you need a spare/longer certified one: Silkland 80Gbps Intel-Certified Thunderbolt 5 Cable, 5ft, https://www.amazon.com/Silkland-80Gbps-Intel-Certified-Thunderbolt-Passive/dp/B0HF7MPW13 (look for the \"Intel-Certified\" wording specifically, not just \"USB4\"). (3) GPU drivers — grab these only after the dock is connected and Windows detects the card: Nvidia at https://www.nvidia.com/en-us/drivers/ or AMD at https://www.amd.com/en/support. (4) Confirm your laptop's port supports eGPU: check its exact spec sheet for \"Thunderbolt 4\", \"Thunderbolt 5\", or \"USB4\" (a plain USB-C port without one of those labels will not work)."
+        "Links for the additional items: (1) GPU card — the AG03 dock does not include one, you pick any desktop card up to 500W; for a quiet pick, the ASRock Intel Arc A580 Challenger has the lowest measured noise under $200 (soundproofgeek.com/quietest-graphics-card-silent-gpu-video-card), or for higher-end quiet performance look at Noctua-edition RTX 5080 cards or a GIGABYTE RX 9060 XT Gaming OC ICE 16G. (2) Thunderbolt cable — AG03 ships with one, but if you need a spare/longer certified one: Silkland 80Gbps Intel-Certified Thunderbolt 5 Cable, 5ft, https://www.amazon.com/Silkland-80Gbps-Intel-Certified-Thunderbolt-Passive/dp/B0HF7MPW13 (look for the \"Intel-Certified\" wording specifically, not just \"USB4\"). (3) GPU drivers — grab these only after the dock is connected and Windows detects the card: Nvidia at https://www.nvidia.com/en-us/drivers/ or AMD at https://www.amd.com/en/support. (4) Confirm your laptop's port supports eGPU: check its exact spec sheet for \"Thunderbolt 4\", \"Thunderbolt 5\", or \"USB4\" (a plain USB-C port without one of those labels will not work).",
+        "Links for the additional items: the Thunderbolt 5 cable is actually INCLUDED in the AG03 box (80cm TB5 cable ships with the dock) — you don't need to buy one separately, confirmed via https://www.geeky-gadgets.com/aoostar-ag03-egpu-review/ and https://minixpc.com/products/aoostar-ag03-egpu-dock-with-oculink-usb4-v2-0-ports-compatible-with-thunderbolt-5. Buy the dock itself on Amazon (https://www.amazon.com/AOOSTAR-Thunderbolt-Supports-Mainstream-Graphics/dp/B0H2GJVXPL, ~$260-270) or direct from AOOSTAR (https://aoostar.com/products/aoostar-ag03-egpu-dock).",
+        "GPU card (not included in the dock) — for your quiet requirement, the ASUS Dual GeForce RTX 5060 Ti 16GB OC Edition tested under 30dBA under load with 0dB idle fan-stop (silent at idle), per https://whoismcafee.com/best-quiet-graphics-cards/. Buy on Amazon: https://www.amazon.com/ASUS-DisplayPort-2-5-Slot-Axial-Tech-Technology/dp/B0F4DVKSZ4 (~$429-480) or Newegg: https://www.newegg.com/asus-dual-rtx5060ti-o16g-geforce-rtx-5060-ti-16gb-graphics-card-double-fans/p/N82E16814126798. The non-Ti ASUS Dual RTX 5060 OC is a cheaper option that tests similarly quiet if 16GB isn't needed.",
+        "To confirm your laptop's port will actually run this dock: Win+X → Device Manager → look under \"System devices\" for a \"Thunderbolt\" or \"USB4 Host Router\" entry — if present, you're good. Or look up your exact laptop model's spec sheet on the manufacturer's site under Ports/Connectivity for \"Thunderbolt 4/5\" or \"USB4\". Guide: https://learn.microsoft.com/en-us/answers/questions/2288227/how-can-i-tell-if-i-have-thunderbolt-ports-and-wha"
       ],
       "claudeNotes": [
         {
@@ -334,8 +340,116 @@
           "done": false,
           "created": "2026-09-23T18:03:59.116Z",
           "updated": "2026-09-23T18:03:59.116Z"
+        },
+        {
+          "id": "n-agent-1790230000000egpu",
+          "text": "✓ Actioned 2026-09-24: added the links you asked for — confirmed the TB5 cable ships included with the AG03 (no separate buy needed), found a specific quiet GPU pick (ASUS Dual RTX 5060 Ti 16GB OC, <30dBA under load) with Amazon/Newegg links, and a way to confirm your laptop's Thunderbolt port supports it — see suggestions.",
+          "done": false,
+          "created": "2026-09-24T00:00:00.000Z",
+          "updated": "2026-09-24T00:00:00.000Z"
         }
       ]
+    },
+    {
+      "id": "what-are-the-best-ways-to-learn-a-language-e-g-japanese-muekmq0z",
+      "title": "what are the best ways to learn a language? e.g. Japanese",
+      "category": "Interested in",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "suggestions": [
+        "Best-fit approach for you specifically: you have a Japanese partner (per your Japan trip task) and a Tokyo trip 22-29 Oct — that's a built-in native speaker most learners don't have, so prioritize actually speaking over app-hopping. Structure: (1) hiragana + katakana first, 1-2 weeks, non-negotiable foundation; (2) layer in a kanji/vocab tool + a grammar resource; (3) use your partner (and/or italki) for real speaking practice rather than staying app-only.",
+        "Apps by purpose — rotate tools as your bottleneck changes rather than sticking to one forever: Duolingo (https://www.duolingo.com/course/ja/en/Learn-Japanese) is a fine on-ramp for absolute beginners but not sufficient alone; Anki (https://apps.ankiweb.net/) for free spaced-repetition vocab (~1,000 free Japanese decks available); WaniKani (https://www.wanikani.com/) for structured kanji + vocab (paid subscription); Bunpro (https://bunpro.jp/) for grammar from N5 through N1; italki (https://www.italki.com/) to book a real tutor for speaking practice; HelloTalk (https://www.hellotalk.com/) for casual language exchange with native speakers.",
+        "Free video resources if you'd rather not pay for anything at first: YouTube channels Japanese Ammo with Misa, Cure Dolly (grammar explained in an unusually clear way), and Kaname Naito all have hundreds of hours of free lessons.",
+        "Tied to your trip: 4 weeks of hiragana/katakana + basic conversational phrases before 22 Oct would get you reading menus/signs and using basic Japanese with your partner's friends/family during the trip — a concrete, achievable target given the timeline."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790230000000lang",
+          "text": "✓ Actioned 2026-09-24: researched the best approach + apps for learning Japanese, tailored to having a Japanese partner and the 22-29 Oct Tokyo trip — see suggestions.",
+          "done": true,
+          "created": "2026-09-24T00:00:00.000Z",
+          "updated": "2026-09-23T22:58:09.240Z"
+        }
+      ]
+    },
+    {
+      "id": "toothpaste-mueq2rs8",
+      "title": "toothpaste",
+      "category": "Shopping",
+      "created": "2026-09-23",
+      "notes": ""
+    },
+    {
+      "id": "look-into-https-get-sequencing-com-kitspecials-mueqqdxj",
+      "title": "look into whether this is this best kit for me to sequence my dna https://get.sequencing.com/kitspecials/",
+      "category": "Interested in",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mueqr2fd7s5l",
+          "text": "is this a good option for sequencing? are there better ones",
+          "done": false,
+          "created": "2026-09-23T23:35:39.529Z",
+          "updated": "2026-09-23T23:35:39.529Z"
+        }
+      ],
+      "suggestions": [
+        "Short answer: yes, it's a legitimate, reasonable option — not a scam. It's clinical-grade 30x whole genome sequencing (cheek swab, no blood draw) run at a US-based CLIA-certified/CAP-accredited lab, and delivers standard files (BAM/VCF, FASTQ on some tiers) that any bioinformatics pipeline can read. Independent review score: 83/100 (genomereviews.com) — strong on value (90/100) and reports (92/100), weaker on privacy (70/100, its lowest category).",
+        "The kitspecials page bundles: Rare Disease & Carrier Screen ($399, was $539, 7-8wk turnaround), Comprehensive Health Screen ($599, was $859, 4-6wk), Professional Health Screen ($999, was $1,699, 2-3wk + 1-on-1 coaching), or a Build-Your-Own from $399 with 40+ selectable health areas. All include 15,000+ condition analysis, AI health reports, and their 'Privacy Forever' data-ownership pledge.",
+        "Where it's weaker: Sequencing.com's real product is more of an app marketplace than a single report — 100+ third-party analysis apps of varying quality with no editorial curation, and privacy risk grows with each app you install from an unvetted developer. Budget for that too: meaningful analysis beyond the base kit usually means $5-99 per paid app, so a realistic first-year total if you run 3-5 apps is more like $450-700, not just the $399-599 sticker price.",
+        "Direct alternatives if you want to compare: Dante Labs is cheaper on flash sales (as low as €169, ~$185, vs €399 standard) with the same 30x depth and free FASTQ/BAM/VCF — but it's an Italian lab with an 8-12 week turnaround AND a BBB 'F' rating, which is a real red flag on customer service/fulfillment reliability, so the lower price comes with more risk. Nucleus is positioned as having the cleanest UI of the mainstream options if user experience matters more than price/speed to you (no clear public sequencing price found, would need to check directly). SelfDecode is NOT a sequencing provider — it's an analysis tool you upload existing raw WGS data to (from Sequencing.com, Dante Labs, etc.), with the strongest ACMG-based variant reporting (imputes up to 80M variants at 99.7% accuracy) — worth considering as a second step after sequencing rather than as an alternative to it.",
+        "Bottom line: for your first WGS kit, Sequencing.com's discounted bundles (especially the $399 Rare Disease/Carrier Screen or $599 Comprehensive) are a solid, low-risk pick given the US lab accreditation and 90/100 value score — just be deliberate about which third-party apps you install afterward given the privacy score. If raw price is the only thing that matters and you're comfortable with a longer wait and a lab with a poor service rating, Dante Labs' flash-sale price is cheaper for the same 30x depth."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790240000000seq",
+          "text": "✓ Actioned 2026-09-24: researched Sequencing.com's kitspecials bundles (legit, 83/100 independent review score, pricing/turnaround per tier) and compared against Dante Labs, Nucleus, and SelfDecode — see suggestions for the recommendation and trade-offs.",
+          "done": false,
+          "created": "2026-09-24T00:00:00.000Z",
+          "updated": "2026-09-24T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "work-on-my-threemind-app-and-see-if-it-could-pull-this-task-list-muerbl90",
+      "title": "work on my threemind app and see if it could pull this task list",
+      "category": "R&D",
+      "created": "2026-09-23",
+      "notes": ""
+    },
+    {
+      "id": "look-into-building-improving-my-home-robot-muewsmy7",
+      "title": "look into building/improving my home robot",
+      "category": "R&D",
+      "created": "2026-09-24",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muewtqtzsltc",
+          "text": "can i improve my own robot Corgi with it's web camera and claw arm to do embodied tasks like with a gemma or gemini robotics model",
+          "done": false,
+          "created": "2026-09-24T02:25:42.167Z",
+          "updated": "2026-09-24T02:25:42.167Z"
+        },
+        {
+          "id": "n-muewucwf5nmz",
+          "text": "How expensive is a functional and adaptive/modular robot.i out together from AliExpress?",
+          "done": false,
+          "created": "2026-09-24T02:26:10.767Z",
+          "updated": "2026-09-24T02:26:10.767Z"
+        },
+        {
+          "id": "n-muewvdvafdhg",
+          "text": "What are the latest best and coolest home robotics practices with integrated AI",
+          "done": false,
+          "created": "2026-09-24T02:26:58.678Z",
+          "updated": "2026-09-24T02:26:58.678Z"
+        }
+      ],
+      "assist": true
     }
   ]
 }
