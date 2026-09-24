@@ -517,7 +517,16 @@
       "title": "Knowledge system design",
       "category": "R&D",
       "created": "2026-09-24",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mug1tr4g6hw0",
+          "text": "Needs to include more references/links and pictures as well in details.",
+          "done": false,
+          "created": "2026-09-24T21:33:26.800Z",
+          "updated": "2026-09-24T21:33:26.800Z"
+        }
+      ]
     }
   ]
 }
