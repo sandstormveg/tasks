@@ -448,7 +448,16 @@
       "title": "Test how the new director skill is working",
       "category": "Development",
       "created": "2026-09-24",
-      "notes": ""
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muex1v051jq7",
+          "text": "give a report here. only from the director",
+          "done": false,
+          "created": "2026-09-24T02:32:00.821Z",
+          "updated": "2026-09-24T02:32:00.821Z"
+        }
+      ]
     }
   ]
 }
