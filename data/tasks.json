@@ -555,7 +555,17 @@
           "updated": "2026-09-24T21:38:17.002Z"
         }
       ],
-      "assist": true
+      "assist": true,
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-atlas-ux-relay",
+          "text": "✓ Actioned 2026-09-25 by Director (Senti): relayed all 5 requirements to the Atlas owner session (it owns the graph-browser site build) since this is implementation work, not research — references/pictures in detail views, visible superseded/subseded relation links, JSON/Markdown export per object or category, an in-UX 'About' explainer section, and a new intake/ingestion 'inputs' section for feeding raw items to the Atlas for research. Waiting on that session to say what it's picking up now vs. later.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-25T08:21:00.000Z",
+          "updated": "2026-09-25T08:21:00.000Z"
+        }
+      ]
     }
   ]
 }
