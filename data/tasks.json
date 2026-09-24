@@ -449,7 +449,7 @@
           "updated": "2026-09-24T02:26:58.678Z"
         }
       ],
-      "assist": true,
+      "assist": false,
       "suggestions": [
         {
           "text": "For your Corgi's webcam + claw doing embodied tasks: Google's Gemini Robotics ER 2 (released 30 Jul 2026) is the current closest fit — real-time video understanding, task-progress tracking, and tool integration via the Gemini Live API, publicly available through the Gemini API / Google AI Studio (no special robotics account needed). It is NOT open-source or free to self-host, just an API you call with your camera feed. Source: https://www.labellerr.com/blog/gemini-robotics-2-google-deepmind/, https://en.wikipedia.org/wiki/Gemini_Robotics",
