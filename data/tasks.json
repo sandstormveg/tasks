@@ -453,27 +453,51 @@
       "suggestions": [
         {
           "text": "For your Corgi's webcam + claw doing embodied tasks: Google's Gemini Robotics ER 2 (released 30 Jul 2026) is the current closest fit — real-time video understanding, task-progress tracking, and tool integration via the Gemini Live API, publicly available through the Gemini API / Google AI Studio (no special robotics account needed). It is NOT open-source or free to self-host, just an API you call with your camera feed. Source: https://www.labellerr.com/blog/gemini-robotics-2-google-deepmind/, https://en.wikipedia.org/wiki/Gemini_Robotics",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "text": "If you want it running fully offline instead of calling an API: Gemini Robotics On-Device 2 exists (a lightweight VLA built to run locally, no cloud), but Google hasn't opened it for arbitrary hobbyist hardware the way Gemma has. The realistic DIY-local path is a small Gemma model (Gemma 3 2B class) on a Raspberry Pi 5 16GB + AI HAT+ 2 (Hailo-10H accelerator, 40 TOPS INT4, ~8GB onboard RAM) — enough for local object detection/classification and a small VLM at usable speed with zero cloud dependency. Source: https://www.raspberrypi.com/news/mastering-edge-ai-on-raspberry-pi-with-litert-and-gemma/",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "text": "Reference build worth looking at directly since it's also literally named Corgi: \"XR Corgi\" on Hackaday — a 13-DOF bionic robot-dog kit (ESP32 + Raspberry Pi 4B) that ships pre-loaded with OpenCV and a ROS environment, doing face detection/color tracking/QR detection out of the box. Useful as an architecture reference even if your Corgi is a different specific product. https://hackaday.io/project/205176-xr-corgi-ai-vision-quadruped-robot-dog",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "text": "AliExpress modular arm cost: search didn't surface a single current price (listings fluctuate), but the relevant category is 6-DOF robot arm kits with metal-gear servos — e.g. the \"SO-ARM101 6-Axis AI Robot Arm Kit\" is specifically built open-source for pairing with AI/VLA models (listing: https://www.aliexpress.us/item/3256802817458091.html). As a ballpark from comparable 6-DOF AliExpress kits, expect roughly $60-200 depending on servo quality (plastic vs metal gears) and whether it includes a controller board — check the specific listing's current price before buying, since AliExpress pricing swings a lot with flash sales.",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "text": "Purpose-built reference for \"camera + arm + AI\" specifically (closest match to what you're describing wanting to build toward): the Yahboom DOFBOT series — a Raspberry Pi robot arm with full ROS2 integration and AI vision, used for pick-and-place, color sorting, and object recognition. Good concrete example of the architecture pattern (webcam → vision model → arm control loop) you'd be replicating with Corgi. https://category.yahboom.net/blogs/news/best-robot-kits-for-adults",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "text": "Bottom line shape of the project: (1) fastest path to \"it works\" — point Corgi's webcam frames + a task prompt at the Gemini Robotics ER 2 API and have it return action/tool calls; (2) fully local/private path — Pi 5 16GB + AI HAT+ 2 running a small Gemma model, more setup work and weaker reasoning than the cloud API but zero ongoing cost/latency/privacy tradeoff; (3) DOFBOT and XR Corgi are the closest existing reference builds if you want to see a full working pipeline before wiring your own.",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
+        },
+        {
+          "text": "Gemini Robotics On-Device 2 (the local/offline model) is still trusted-tester only — no public weights or SDK. Worth joining the waitlist (https://docs.google.com/forms/d/1sM5GqcVMWv-KmKY3TOMpVtQ-lDFeAftQ-d9xQn92jCE/viewform) but not worth waiting on. What IS live today: Gemini Robotics-ER 2 in the ordinary Gemini API (gemini-robotics-er-2-preview / -streaming-preview) — send a webcam frame + a prompt like \"point at the sock\", get back coordinates/bounding boxes/grasp points/trajectories; your own code turns that into claw/drive commands. Zero training data needed. ER 1.6 (what most tutorials reference) is deprecated end of Aug 2026.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
+        },
+        {
+          "text": "For actual learned motion (not just pointing): SmolVLA (450M params, LeRobot) — https://huggingface.co/lerobot/smolvla_base, docs at https://github.com/huggingface/lerobot/blob/main/docs/source/smolvla.mdx. Real numbers: ~50 teleop demo episodes of your task (25 tested and proved insufficient), 20k training steps, ~4hrs on one A100 (Colab is fine). π0/π0.5 via openpi (https://github.com/Physical-Intelligence/openpi) is PaliGemma-backboned and open-weights if you want the Gemma lineage specifically.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
+        },
+        {
+          "text": "⚠ The gotcha that decides everything: LeRobot’s pipeline assumes leader/follower teleoperation with joint-position readback for recording training data. If Corgi’s claw is hobby PWM servos with no encoders, you cannot record a dataset — the VLA-finetuning route is closed until you swap in feedback servos (Feetech STS3215 bus servos, used by the SO-101 arm, give position readback). The Gemini ER-as-brain route works regardless of your servos. Check what’s actually in Corgi’s arm before spending anything.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
+        },
+        {
+          "text": "Cost reference (closest match to \"Corgi but modular/LeRobot-native\"): the LeKiwi BOM (https://github.com/SIGRobotics-UIUC/LeKiwi/blob/main/BOM.md) — 12V full build 82, 5V 99, base only 48-251.50, wired version (tethered to a laptop, no onboard Pi) 84 — that wired option is the cheapest real entry point if you’re running the policy on a laptop anyway. Arm alone: SO-ARM101 kit (https://www.aliexpress.com/item/1005008883199466.html, or https://www.seeedstudio.com/SO-ARM101-Low-Cost-AI-Arm-Kit-p-6426.html). Classic AliExpress trap: STS3215 servos ship in different gear ratios (~14/19/27kg·cm) and SO-101 needs a specific mix across joints — buying six identical ones is the most common build failure.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
+        },
+        {
+          "text": "Where the policy actually runs: SmolVLA is ~28ms/step on an RTX 3060; an 8GB Jetson Orin Nano is the minimum memory-constrained tier; a Raspberry Pi cannot run it directly. Standard pattern is a policy-server split — robot streams camera frames over wifi, a laptop/server runs the model, actions stream back. See vla.cpp (https://arxiv.org/html/2606.08094v1, llama.cpp-based runtime serving SmolVLA/π0/BitVLA/GR00T on edge hardware) and VLAgents (https://arxiv.org/html/2601.11250) for the server pattern. 2026 consensus shape: a slow cloud reasoning model (ER 2) decides \"what next / where\", orchestrating a fast local policy or scripted primitives — don’t make one model do both.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
+        },
+        {
+          "text": "If you ever want a second, LeRobot-native-out-of-the-box platform: Reachy Mini (https://huggingface.co/blog/reachy-mini), 99, open-hardware. Not a Corgi replacement, just a useful reference/comparison point for what \"AI-native hobby robot\" looks like when it's not a DIY build.",
+          "author": "Claude Opus 5 — Task tracker — daily R&D pass cowork routine"
         }
       ],
       "claudeNotes": [
@@ -483,7 +507,15 @@
           "done": false,
           "created": "2026-09-25T00:00:00.000Z",
           "updated": "2026-09-25T00:00:00.000Z",
-          "author": "Claude Sonnet 5"
+          "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
+        },
+        {
+          "id": "n-agent-1790281452469",
+          "text": "✓ Actioned 2026-09-25: traced the actual authorship of everything on this task (git commits are always authored as you, the token owner, so they couldn't tell sessions apart — I checked run logs directly). The 6 existing suggestions + prior claudeNote were from the \"Tasks Morning Check (Claude Code)\" cloud routine, not me — corrected their author tags. The text you pasted (SmolVLA, LeKiwi costs, the servo-feedback gotcha, vla.cpp, Reachy Mini) was from the OTHER routine, \"Task tracker — daily R&D pass\" (runs on Opus 5, read-only, never wrote back) — added it as 6 new suggestions attributed to that routine, not to me, since I didn't do that research myself.",
+          "done": false,
+          "created": "2026-09-24T20:24:12.469Z",
+          "updated": "2026-09-24T20:24:12.469Z",
+          "author": "Claude Sonnet 5 — om-task-System"
         }
       ]
     }

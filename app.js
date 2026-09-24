@@ -1862,8 +1862,10 @@ function renderAssistDetail() {
         ? `<ul class="suggestion-list">${suggestions.map((s, i) => `
             <li>
               <div class="suggestion-text">${linkify(suggestionText(s))}</div>
-              ${authorTagHtml(suggestionAuthor(s))}
-              <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes as its own item">→ notes</button>
+              <div class="suggestion-side">
+                <button class="suggestion-add" data-i="${i}" type="button" title="Copy this into your notes as its own item">→ notes</button>
+                ${authorTagHtml(suggestionAuthor(s))}
+              </div>
             </li>`).join("")}</ul>`
         : `<div class="assist-hint">Nothing yet. Mention this task to an AI assistant in a chat and it can leave findings, next steps or subtasks here for you to come back to.</div>`}
     </div>

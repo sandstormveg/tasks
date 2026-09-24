@@ -234,6 +234,7 @@ main.view.wide { max-width: 980px; }
 .suggestion-list li {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -245,6 +246,13 @@ main.view.wide { max-width: 980px; }
 }
 .suggestion-text { flex: 1; min-width: 0; }
 .suggestion-text a { color: var(--accent); }
+.suggestion-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .author-tag {
   display: inline-block;
   font-size: 10px;
@@ -253,8 +261,8 @@ main.view.wide { max-width: 980px; }
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 1px 8px;
-  margin-top: 4px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .suggestion-add {
   flex-shrink: 0;
