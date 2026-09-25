@@ -66,7 +66,31 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        {
+          "text": "No specific requirements noted yet (budget, private room vs dorm, amenities), so here's a shortlist across styles, all central in Cat Ba Town where Cat Ba Express actually drops off: Secret Garden/Wandernest Cat Ba — green garden setting, dorms + private rooms, social but not party-loud, central southern part of town. CatBa Pod Hostel — closest to the very centre, cozy pod-style dorm beds, good budget pick. Domik Homestay — heart of town, walkable to both the market and Cat Co Cove. Cat Ba Central Hostel — budget option with a rooftop terrace overlooking the bay. Latritcia Boutique Hotel — step up in comfort if you want a private-hotel feel rather than hostel. Bamboo House and Victor Charlie Hostel also come up well-reviewed if none of these fit.",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Confirms the constraint from your transport task: Cat Ba Express drops passengers at hotels in Cat Ba Town itself (or the nearest accessible point), so any of these central options works cleanly with the 10:45 bus plan — no separate onward transfer needed once you land in town.",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Nothing bookable on your behalf here (would need your actual payment details), but once you pick a style (hostel/social vs private/quiet) I can narrow to 1-2 exact links with current pricing for your 12-18 Oct dates.",
+          "author": "Claude Sonnet 5"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-catba-accom",
+          "text": "✓ Actioned 2026-09-25 by Director (Senti): no notes existed on this task, so researched a shortlist of central Cat Ba Town options across budget/style (hostel to boutique), confirmed they're compatible with the Cat Ba Express drop-off point — see suggestions. Waiting on a style preference before narrowing to exact links/pricing.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-25T11:21:00.000Z",
+          "updated": "2026-09-25T11:21:00.000Z"
+        }
+      ]
     },
     {
       "id": "tax-return-muasc35s",
