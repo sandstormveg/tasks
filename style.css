@@ -256,8 +256,8 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .add-bar-row2 { display: flex; gap: 8px; align-items: center; }
 .add-bar .combo { flex: 0 1 460px; min-width: 200px; }
 .add-fab {
-  flex-shrink: 0; width: 36px; height: 36px; border-radius: 4px; border: 2px solid var(--accent-2);
-  background: var(--accent-2); color: #0a0f14; font-size: 17px; font-weight: 700;
+  flex-shrink: 0; width: 50px; height: 50px; border-radius: 6px; border: 2px solid var(--accent-2);
+  background: var(--accent-2); color: #0a0f14; font-size: 22px; font-weight: 700;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   clip-path: polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%);
   box-shadow: 0 0 8px var(--accent-2), 0 0 18px rgba(29,233,182,0.4), inset 0 0 8px rgba(29,233,182,0.25);
