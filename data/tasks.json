@@ -523,33 +523,6 @@
       "notes": ""
     },
     {
-      "id": "research-how-deep-interoception-goes-muiasbpl",
-      "title": "Research how deep interoception goes",
-      "category": "Research",
-      "created": "2026-09-26",
-      "notes": "",
-      "assist": true,
-      "noteItems": [
-        {
-          "id": "n-muicrm6rfem9",
-          "text": "Do some research and drop a pdf of what you've found here when you're done",
-          "done": true,
-          "created": "2026-09-26T12:15:15.216Z",
-          "updated": "2026-09-26T20:39:52.756Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-interoception-pdf",
-          "text": "✓ Actioned 2026-09-27: researched how deep interoception (internal-state sensing) actually goes and wrote it up as a PDF, saved to this repo at files/research/research-how-deep-interoception-goes-muiasbpl.pdf (direct link: https://github.com/sandstormveg/tasks/raw/main/files/research/research-how-deep-interoception-goes-muiasbpl.pdf). Short version: conscious interoception plateaus at coarse signals (heartbeat, breath, hunger, gut discomfort) via a handful of known pathways (vagal/spinal afferents, enteric nervous system, gut immune signaling into the brainstem's dorsal vagal complex, then insular cortex/ACC). Training (biofeedback, breathwork, meditation) measurably shifts how much sub-threshold signal becomes conscious and can influence autonomic/immune output (trained-group Wim Hof studies suppressed inflammatory cytokines) — the real ceiling isn't mapped yet, which is why a $14.2M project to map it just started (Oct 2025). Full detail + sources in the PDF.",
-          "author": "Claude Sonnet 5",
-          "done": true,
-          "created": "2026-09-27T06:40:00.000Z",
-          "updated": "2026-09-26T20:45:58.422Z"
-        }
-      ]
-    },
-    {
       "id": "sultanas-and-milk-muiffg4e",
       "title": "sultanas and milk",
       "category": "Shopping",
