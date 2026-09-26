@@ -33,9 +33,19 @@ body {
 }
 
 /* HUD corner-bracket frame — decorative only, sits above everything else. */
+/* Fixed + inset (all four edges independently viewport-relative) lets mobile
+   Chrome/Safari clip an edge during the address-bar show/hide transition, since
+   that resizes the visual viewport without necessarily reflowing a plain "fixed"
+   box the same way. Anchoring with 100dvh (which tracks the visual viewport)
+   instead of letting "bottom" derive from the layout viewport fixes it — and the
+   corners become position:absolute children of this box instead of independently
+   viewport-fixed, so they can't drift out of sync with it either. */
 .hud-frame {
   position: fixed;
-  inset: 10px;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  height: calc(100dvh - 20px);
   pointer-events: none;
   z-index: 500;
   border: 1px solid var(--accent-2);
@@ -43,26 +53,25 @@ body {
   box-shadow: 0 0 12px rgba(29, 233, 182, 0.35), inset 0 0 20px rgba(29, 233, 182, 0.05);
 }
 .hud-corner {
-  position: fixed;
+  position: absolute;
   width: 26px;
   height: 26px;
   border-color: var(--accent-2);
   border-style: solid;
   border-width: 0;
   pointer-events: none;
-  z-index: 501;
 }
-.hud-corner.tl { top: 8px; left: 8px; border-top-width: 3px; border-left-width: 3px; }
-.hud-corner.tr { top: 8px; right: 8px; border-top-width: 3px; border-right-width: 3px; }
-.hud-corner.bl { bottom: 8px; left: 8px; border-bottom-width: 3px; border-left-width: 3px; }
-.hud-corner.br { bottom: 8px; right: 8px; border-bottom-width: 3px; border-right-width: 3px; }
+.hud-corner.tl { top: -2px; left: -2px; border-top-width: 3px; border-left-width: 3px; }
+.hud-corner.tr { top: -2px; right: -2px; border-top-width: 3px; border-right-width: 3px; }
+.hud-corner.bl { bottom: -2px; left: -2px; border-bottom-width: 3px; border-left-width: 3px; }
+.hud-corner.br { bottom: -2px; right: -2px; border-bottom-width: 3px; border-right-width: 3px; }
 @media (max-width: 760px) {
-  .hud-frame { inset: 6px; }
+  .hud-frame { top: 6px; left: 6px; right: 6px; height: calc(100dvh - 12px); }
   .hud-corner { width: 18px; height: 18px; }
-  .hud-corner.tl { top: 5px; left: 5px; }
-  .hud-corner.tr { top: 5px; right: 5px; }
-  .hud-corner.bl { bottom: 5px; left: 5px; }
-  .hud-corner.br { bottom: 5px; right: 5px; }
+  .hud-corner.tl { top: -1px; left: -1px; }
+  .hud-corner.tr { top: -1px; right: -1px; }
+  .hud-corner.bl { bottom: -1px; left: -1px; }
+  .hud-corner.br { bottom: -1px; right: -1px; }
 }
 
 #fx-canvas {
