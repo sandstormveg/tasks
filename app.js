@@ -1500,6 +1500,51 @@ function renderVisibilityToggle() {
 }
 renderVisibilityToggle();
 setupCategoryCombo();
+setupColumnResize();
+
+// ---------- drag-to-resize columns (desktop only — hidden on mobile via CSS) ----------
+function setupColumnResize() {
+  const MIN_WIDTH = 160;
+  const MAX_WIDTH = 560;
+
+  function makeResizable(handle, col, storageKey) {
+    if (!handle || !col) return;
+    const saved = parseInt(localStorage.getItem(storageKey), 10);
+    if (saved >= MIN_WIDTH && saved <= MAX_WIDTH) col.style.width = `${saved}px`;
+
+    let startX = 0;
+    let startWidth = 0;
+
+    function onMove(e) {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const width = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + (clientX - startX)));
+      col.style.width = `${width}px`;
+    }
+    function onEnd() {
+      handle.classList.remove("dragging");
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+      localStorage.setItem(storageKey, parseInt(col.style.width, 10));
+    }
+    function onStart(e) {
+      e.preventDefault();
+      startX = e.touches ? e.touches[0].clientX : e.clientX;
+      startWidth = col.getBoundingClientRect().width;
+      handle.classList.add("dragging");
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onEnd);
+      document.addEventListener("touchmove", onMove, { passive: false });
+      document.addEventListener("touchend", onEnd);
+    }
+    handle.addEventListener("mousedown", onStart);
+    handle.addEventListener("touchstart", onStart, { passive: false });
+  }
+
+  makeResizable(el("#categories-resize-handle"), el("#active-col-categories"), "tasks_col_categories_width");
+  makeResizable(el("#tasks-resize-handle"), el("#active-col-tasks"), "tasks_col_tasks_width");
+}
 
 el("#add-form").addEventListener("submit", async (e) => {
   e.preventDefault();
