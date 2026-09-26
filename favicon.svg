@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="8" fill="#05070a"/>
+  <g stroke="#1de9b6" stroke-width="4" stroke-linecap="square" fill="none">
+    <path d="M4 16 V4 H16"/>
+    <path d="M48 4 H60 V16"/>
+    <path d="M60 48 V60 H48"/>
+    <path d="M16 60 H4 V48"/>
+  </g>
+  <text x="32" y="41" text-anchor="middle" font-family="'Courier New', monospace" font-weight="700" font-size="26" fill="#1de9b6">&gt;</text>
+</svg>

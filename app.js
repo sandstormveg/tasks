@@ -2810,4 +2810,16 @@ function playPop() {
   } catch (e) { /* audio not available, no big deal */ }
 }
 
+function updateHudClock() {
+  const el = document.getElementById("hud-clock");
+  if (!el) return;
+  el.textContent = new Date().toLocaleTimeString("en-GB", { hour12: false });
+}
+updateHudClock();
+setInterval(updateHudClock, 1000);
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
 loadData();

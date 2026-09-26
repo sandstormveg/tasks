@@ -4,7 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tasks</title>
-<link rel="stylesheet" href="style.css?v=15" />
+<meta name="theme-color" content="#05070a" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
   <div class="hud-frame" aria-hidden="true">
@@ -13,6 +17,10 @@
     <span class="hud-corner bl"></span>
     <span class="hud-corner br"></span>
   </div>
+  <div class="hud-readout hud-tl" aria-hidden="true">SYS://TASKS</div>
+  <div class="hud-readout hud-tr" id="hud-clock" aria-hidden="true"></div>
+  <div class="hud-readout hud-bl" aria-hidden="true">CH.01 // ONLINE</div>
+  <div class="hud-readout hud-br" aria-hidden="true"><span class="hud-rec-dot"></span>REC</div>
   <canvas id="fx-canvas"></canvas>
   <div id="toast-container" class="toast-container"></div>
 
@@ -125,6 +133,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
