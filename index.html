@@ -43,10 +43,11 @@
           <div class="col-empty-hint">Select a task to see its details here.</div>
         </div>
       </div>
+      <div class="col-resize-handle" id="detail-resize-handle" title="Drag to resize"></div>
     </div>
 
     <form id="add-form" class="add-bar">
-      <input id="add-title" type="text" placeholder="New task…" autocomplete="off" required />
+      <textarea id="add-title" rows="1" placeholder="New task…" autocomplete="off" required></textarea>
       <div class="combo" id="category-combo">
         <input id="add-category" type="text" placeholder="Category" autocomplete="off" required />
         <div class="combo-menu hidden" id="category-menu"></div>

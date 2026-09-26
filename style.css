@@ -206,7 +206,6 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
   border-top: 1px solid var(--border);
   display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;
 }
-.add-bar #add-title { flex: 1 1 auto; min-width: 0; }
 .add-bar .combo { flex: 0 1 150px; min-width: 90px; }
 .add-fab {
   flex-shrink: 0; width: 36px; height: 36px; border-radius: 4px; border: 2px solid var(--accent-2);
@@ -387,7 +386,7 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
   font-size: 13.5px;
   line-height: 1.55;
 }
-.suggestion-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.suggestion-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .suggestion-text { flex: 1; min-width: 0; }
 .suggestion-text a { color: var(--accent); }
 .author-tag {
@@ -705,17 +704,36 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
 
 .vis-toggle {
   flex-shrink: 0;
-  width: 34px;
+  width: auto;
   height: 34px;
+  padding: 0 9px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--panel-2);
-  font-size: 15px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.vis-toggle:hover { transform: scale(1.08); background: #262b3c; }
+.vis-toggle.public { color: var(--accent-2); border-color: var(--accent-2); }
+.vis-toggle.private { color: var(--accent); border-color: var(--accent); }
+.vis-toggle:hover { transform: scale(1.06); background: #262b3c; }
 .vis-toggle:disabled { opacity: 0.5; cursor: default; }
+
+.vis-tag { font-weight: 700; letter-spacing: 0.03em; }
+.vis-tag.public { color: var(--accent-2); }
+.vis-tag.private { color: var(--accent); }
+
+.vis-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+.vis-dot.public { background: var(--accent-2); box-shadow: 0 0 4px var(--accent-2); }
+.vis-dot.private { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
 
 .assist-toggle {
   flex-shrink: 0;
@@ -753,6 +771,36 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
 }
 .delete-toggle:hover { color: #ff6b9d; border-color: #ff6b9d; transform: scale(1.08); }
 .delete-toggle:disabled { opacity: 0.5; cursor: default; }
+
+.expand-toggle {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.expand-toggle:hover { color: var(--accent-2); border-color: var(--accent-2); transform: scale(1.08); }
+.expand-toggle.expanded { color: var(--accent-2); transform: rotate(180deg); }
+.expand-toggle.expanded:hover { transform: rotate(180deg) scale(1.08); }
+
+.col-detail.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: auto !important; /* overrides the inline width a column-resize drag may have set */
+  max-width: none;
+  max-height: none;
+  background: var(--bg);
+  padding: max(20px, env(safe-area-inset-top)) 40px 24px;
+  transform: none;
+  opacity: 1;
+  border-right: none;
+}
 
 /* toasts */
 .toast-container {
@@ -817,7 +865,7 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
 }
 .toast-close:hover { color: var(--text); }
 
-#add-form input {
+#add-form input, #add-form textarea {
   background: var(--panel);
   border: 1px solid var(--border);
   color: var(--text);
@@ -825,22 +873,34 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
   border-radius: 10px;
   font-size: 13px;
 }
-#add-form input:focus {
+#add-form input:focus, #add-form textarea:focus {
   outline: none;
   border-color: var(--accent-2);
 }
+#add-title {
+  resize: none;
+  overflow-y: auto;
+  max-height: 96px;
+  line-height: 1.4;
+}
+.add-bar #add-title { flex: 1 1 auto; min-width: 0; max-width: 480px; }
 .visibility-toggle {
   background: var(--panel-2);
-  color: var(--text);
+  color: var(--muted);
   border: 1px solid var(--border);
   border-radius: 10px;
-  width: 36px;
+  width: auto;
   height: 36px;
+  padding: 0 10px;
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
+.visibility-toggle.public { color: var(--accent-2); border-color: var(--accent-2); }
+.visibility-toggle.private { color: var(--accent); border-color: var(--accent); }
 .visibility-toggle:hover { transform: scale(1.06); background: #262b3c; }
 
 /* category combobox */
@@ -1139,6 +1199,7 @@ dialog textarea { min-height: 70px; resize: vertical; }
 
 @media (max-width: 760px) {
   .col-resize-handle { display: none; }
+  .expand-toggle { display: none; } /* detail is already a full-screen page here */
   .topbar { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
   .topbar h1 { font-size: 17px; }
   .tab-btn { padding: 7px 11px; font-size: 13px; }
@@ -1150,7 +1211,8 @@ dialog textarea { min-height: 70px; resize: vertical; }
   /* five buttons per card (check, assist, vis, delete) needs tighter spacing to
      leave room for the title on narrow screens */
   .task-card { gap: 8px; padding: 12px; }
-  .assist-toggle, .vis-toggle, .delete-toggle { width: 30px; height: 30px; font-size: 13px; }
+  .assist-toggle, .delete-toggle { width: 30px; height: 30px; font-size: 13px; }
+  .vis-toggle { height: 30px; padding: 0 7px; font-size: 9.5px; }
   .check { --size: 24px; }
 
   /* Active tab: categories become a slide-down sheet you open with ☰, task

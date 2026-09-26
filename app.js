@@ -128,6 +128,31 @@ function taskKey(task) {
   return `${task._repo}::${task.id}`;
 }
 
+// ---------- public/private visual language ----------
+// Bracket-tag terminal labels instead of the 🌐/🔒 emoji, color-coded the same way
+// public/positive (accent-2, teal) vs private/alert (accent, pink) are used elsewhere.
+function visClass(repo) {
+  return repo === "private" ? "private" : "public";
+}
+function visShortLabel(repo) {
+  return repo === "private" ? "[PRIV]" : "[PUB]";
+}
+function visLabel(repo) {
+  return repo === "private" ? "[PRIVATE]" : "[PUBLIC]";
+}
+function visTitle(repo) {
+  return repo === "private" ? "Private — click to make public" : "Public — click to make private";
+}
+function visToggleButtonHtml(repo) {
+  return `<button class="vis-toggle ${visClass(repo)}" aria-label="Toggle public/private" title="${visTitle(repo)}">${visShortLabel(repo)}</button>`;
+}
+function visTagHtml(repo) {
+  return `<span class="vis-tag ${visClass(repo)}">${visLabel(repo)}</span>`;
+}
+function visDotHtml(repo) {
+  return `<span class="vis-dot ${visClass(repo)}" title="${repo === "private" ? "Private" : "Public"}"></span>`;
+}
+
 // ---------- category combobox ----------
 // A real dropdown rather than a native <datalist>: browsers render datalists
 // inconsistently and most won't show the full list on focus, which is the whole
@@ -429,6 +454,7 @@ function renderActive() {
   } else {
     el("#active-detail-body").innerHTML = `<div class="col-empty-hint">Select a task to see its details here.</div>`;
     detailCol.classList.remove("showing");
+    detailCol.classList.remove("fullscreen");
   }
 }
 
@@ -528,7 +554,21 @@ function selectActiveTask(task) {
 
 function closeActiveDetail() {
   state.selectedActiveTaskKey = null;
+  el("#active-col-detail").classList.remove("fullscreen");
   renderActive();
+}
+
+// Expands the detail column to cover the whole Active tab, like the mobile
+// full-screen detail page, but toggleable on desktop instead of automatic.
+function toggleDetailFullscreen() {
+  const detailCol = el("#active-col-detail");
+  const isFullscreen = detailCol.classList.toggle("fullscreen");
+  const btn = detailCol.querySelector(".expand-toggle");
+  if (btn) {
+    btn.classList.toggle("expanded", isFullscreen);
+    btn.title = isFullscreen ? "Exit full page" : "Open as full page";
+    btn.setAttribute("aria-label", btn.title);
+  }
 }
 
 function openCategoriesSheet() {
@@ -547,6 +587,7 @@ function closeCategoriesSheet() {
 // notes/suggestions section generically for any container, so this just adds the header.
 function renderActiveDetail(task) {
   const body = el("#active-detail-body");
+  const isFullscreen = el("#active-col-detail").classList.contains("fullscreen");
   body.innerHTML = `
     <div class="assist-head">
       <div class="assist-head-row">
@@ -556,16 +597,18 @@ function renderActiveDetail(task) {
         <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
         <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
         <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        ${visToggleButtonHtml(task._repo)}
+        <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
         <button class="delete-toggle" aria-label="Delete task">🗑</button>
       </div>
-      <div class="assist-meta">${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}</div>
+      <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
     </div>
     ${taskDetailHtml(task)}
   `;
   body.querySelector(".check").addEventListener("click", () => completeTask(task));
   body.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   body.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task));
+  body.querySelector(".expand-toggle").addEventListener("click", () => toggleDetailFullscreen());
   const subtaskBtn = body.querySelector(".subtask-btn");
   subtaskBtn.addEventListener("click", (e) => openSubtaskMenu(task, subtaskBtn));
   const assistBtn = body.querySelector(".assist-toggle");
@@ -843,7 +886,7 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         <span class="task-card-icons-spacer"></span>
         <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
         <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        ${visToggleButtonHtml(task._repo)}
         <button class="delete-toggle" aria-label="Delete task">🗑</button>
         <span class="chev">›</span>
       </div>
@@ -1120,7 +1163,9 @@ async function toggleVisibility(task, btnEl) {
         : `Couldn't move task: ${err.message}`
     );
     btnEl.disabled = false;
-    btnEl.textContent = fromVisibility === "private" ? "🔒" : "🌐";
+    btnEl.textContent = visShortLabel(fromVisibility);
+    btnEl.classList.remove("public", "private");
+    btnEl.classList.add(visClass(fromVisibility));
     if (addedToDestination) await loadData();
   }
 }
@@ -1493,14 +1538,37 @@ el("#add-visibility").addEventListener("click", () => {
 });
 function renderVisibilityToggle() {
   const isPublic = state.newTaskVisibility === "public";
-  el("#add-visibility").textContent = isPublic ? "🌐" : "🔒";
-  el("#add-visibility").title = isPublic
+  const btn = el("#add-visibility");
+  btn.textContent = isPublic ? "[PUB]" : "[PRI]";
+  btn.classList.toggle("public", isPublic);
+  btn.classList.toggle("private", !isPublic);
+  btn.title = isPublic
     ? "New task will be public — click to make it private"
     : "New task will be private — click to make it public";
 }
 renderVisibilityToggle();
 setupCategoryCombo();
 setupColumnResize();
+setupAddTitleAutoGrow();
+
+// Grows #add-title as its wrapped text takes more lines (capped by its CSS
+// max-height, which then scrolls), and submits on Enter like a normal text
+// input would — Shift+Enter still inserts a real line break.
+function setupAddTitleAutoGrow() {
+  const textarea = el("#add-title");
+  const grow = () => {
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+  textarea.addEventListener("input", grow);
+  textarea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      el("#add-form").requestSubmit();
+    }
+  });
+  grow();
+}
 
 // ---------- drag-to-resize columns (desktop only — hidden on mobile via CSS) ----------
 function setupColumnResize() {
@@ -1544,6 +1612,7 @@ function setupColumnResize() {
 
   makeResizable(el("#categories-resize-handle"), el("#active-col-categories"), "tasks_col_categories_width");
   makeResizable(el("#tasks-resize-handle"), el("#active-col-tasks"), "tasks_col_tasks_width");
+  makeResizable(el("#detail-resize-handle"), el("#active-col-detail"), "tasks_col_detail_width");
 }
 
 el("#add-form").addEventListener("submit", async (e) => {
@@ -1568,6 +1637,7 @@ el("#add-form").addEventListener("submit", async (e) => {
     renderCategoryOptions();
     renderAssistList();
     el("#add-form").reset();
+    el("#add-title").style.height = "auto";
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
   }
@@ -1633,7 +1703,7 @@ const historyNodeKey = (entry) => `${entry._repo}::${entry.id}`;
 function historyNodeEl(entry) {
   const key = historyNodeKey(entry);
   const expanded = expandedHistoryNodes.has(key);
-  const visIcon = entry._repo === "private" ? "🔒" : "🌐";
+  const visIcon = visDotHtml(entry._repo);
   const items = entry.noteItems || [];
   const claudeNotes = entry.claudeNotes || [];
   const suggestions = entry.suggestions || [];
@@ -1735,7 +1805,7 @@ function suggestionsSectionHtml(suggestions) {
   return suggestions.length
     ? `<div class="node-detail-section">
         <h4>✦ Agent suggestions</h4>
-        <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-text">${linkify(suggestionText(s))}</div>${authorTagHtml(suggestionAuthor(s))}</li>`).join("")}</ul>
+        <ul class="suggestion-list">${suggestions.map((s) => `<li><div class="suggestion-main"><div class="suggestion-text">${linkify(suggestionText(s))}</div>${authorTagHtml(suggestionAuthor(s))}</div></li>`).join("")}</ul>
       </div>`
     : "";
 }
@@ -1944,7 +2014,7 @@ function renderAssistList() {
       if (claudeNoteItems(task).some((n) => !n.done)) badges.push(`<span class="badge badge-note" title="An agent did something here you haven't checked off yet">🤖</span>`);
       if (noteItems(task).length) badges.push(`<span class="badge badge-note" title="${noteItems(task).length} note(s)">✎ ${noteItems(task).length}</span>`);
       btn.innerHTML = `
-        <span class="assist-item-icon">${task._repo === "private" ? "🔒" : "🌐"}</span>
+        <span class="assist-item-icon">${visDotHtml(task._repo)}</span>
         <span class="assist-item-title">${esc(task.title)}</span>
         ${badges.join("")}
       `;
@@ -2017,11 +2087,11 @@ function renderAssistDetail() {
           <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
         </button>
         <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        ${visToggleButtonHtml(task._repo)}
         <button class="delete-toggle" aria-label="Delete task">🗑</button>
       </div>
       <div class="assist-meta">
-        ${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}
+        ${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}
         <button class="assist-stop-btn" type="button">Stop assistance</button>
       </div>
     </div>
