@@ -8,6 +8,9 @@ const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 const state = {
   tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public",
   selectedAssistKey: null, publicLoaded: false, privateLoaded: false,
+  // Drive the Active tab's categories/tasks/detail drill-down columns. "__all__" is the
+  // sentinel for the "All tasks" rail item (never a real category name).
+  selectedCategory: "__all__", selectedActiveTaskKey: null,
   // The sha of tasks.json/history.json as last seen from the API, per repo — used to
   // detect a lost-update race (see saveTasks/saveHistory below): a fresh sha fetched
   // right before writing only stops GitHub rejecting the PUT, it does NOT mean the
@@ -401,50 +404,183 @@ function groupBy(items, key) {
   }, {});
 }
 
-function renderActive() {
-  const container = el("#task-groups");
-  container.innerHTML = "";
-  if (state.tasks.length === 0) {
-    container.innerHTML = `<div class="empty-state">Nothing on the list. Add something below.</div>`;
-    return;
-  }
-  const groups = groupBy(state.tasks, "category");
-  rootCategories(Object.keys(groups)).forEach((rootName) => renderCategoryBranch(container, rootName, groups, 0));
+// The Active tab is a book-like drill-down: categories on the left, that category's
+// tasks in the middle, and the selected task's full detail on the right (mobile: the
+// categories rail becomes a slide-down sheet and the detail becomes a full-screen page —
+// see the CSS media query). renderActive() is still the single entry point every mutation
+// calls afterward, so nothing elsewhere in this file needed to change.
+function isMobile() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
-// Recurses through the category hierarchy so a parent category's section is followed
-// immediately by its children's sections, indented — drag one category's header onto
-// another to nest it (see the drag handlers below); a purely organizational category
-// (no tasks of its own, just grouping subcategories) still gets a header so it stays
-// draggable and visible, rather than disappearing until you happen to nest something under it.
-// Categories collapsed by the user (by name) — collapsing hides everything under that
-// header, including nested child categories, so one click tidies a whole branch away.
-const collapsedCategories = persistentSet("tasks_collapsed_categories");
+function renderActive() {
+  // If the previously-open task got completed/deleted/moved out from under us, drop
+  // back to the empty-detail state instead of rendering stale content for it.
+  if (state.selectedActiveTaskKey && !state.tasks.some((t) => taskKey(t) === state.selectedActiveTaskKey)) {
+    state.selectedActiveTaskKey = null;
+  }
+  renderCategoriesRail();
+  renderActiveTasksColumn();
+  const selectedTask = state.tasks.find((t) => taskKey(t) === state.selectedActiveTaskKey);
+  const detailCol = el("#active-col-detail");
+  if (selectedTask) {
+    renderActiveDetail(selectedTask);
+    detailCol.classList.add("showing");
+  } else {
+    el("#active-detail-body").innerHTML = `<div class="col-empty-hint">Select a task to see its details here.</div>`;
+    detailCol.classList.remove("showing");
+  }
+}
 
-function renderCategoryBranch(container, name, groups, depth) {
+function renderCategoriesRail() {
+  const container = el("#active-category-list");
+  container.innerHTML = "";
+  const groups = groupBy(state.tasks, "category");
+  const allCount = state.tasks.filter((t) => !isSubtask(t)).length;
+  container.appendChild(categoryRailRow("__all__", "All tasks", allCount, 0, false));
+  rootCategories(Object.keys(groups)).forEach((name) => appendCategoryRailBranch(container, name, groups, 0));
+}
+
+// Recurses through the category hierarchy so a parent category's row is followed
+// immediately by its children's rows, indented — drag one category onto another to
+// nest it (see the drag handlers below). A purely organizational category (no tasks
+// of its own, just grouping subcategories) still gets a row so it stays draggable and
+// visible, rather than disappearing until you happen to nest something under it.
+function appendCategoryRailBranch(container, name, groups, depth) {
   const children = categoryChildren(name);
   // Subtasks render nested under their parent task (wherever that parent's category
-  // puts it), not as their own top-level entry in whatever category they carry —
-  // so a category whose only task just became somebody's subtask can legitimately
-  // have nothing left to show here.
+  // puts it), not as their own row here — so a category whose only task just became
+  // somebody's subtask can legitimately have nothing left to show.
   const tasks = (groups[name] || []).filter((t) => !isSubtask(t));
   if (tasks.length === 0 && children.length === 0) return;
+  container.appendChild(categoryRailRow(name, name, tasks.length, depth, true));
+  children.forEach((childName) => appendCategoryRailBranch(container, childName, groups, depth + 1));
+}
 
-  const collapsed = collapsedCategories.has(name);
-  const section = document.createElement("div");
-  section.className = "category-group" + (depth > 0 ? " nested" : "");
-  section.appendChild(categoryHeader(name, depth, tasks.length, collapsed));
-  if (!collapsed) {
-    tasks.forEach((task) => appendTaskWithSubtasks(section, task, 0));
+function categoryRailRow(name, label, count, depth, nestable) {
+  const row = document.createElement("div");
+  row.className = "cat-item" + (state.selectedCategory === name ? " active" : "");
+  if (depth > 0) row.style.marginLeft = `${depth * 14}px`;
+  const parent = nestable ? categoryParent(name) : null;
+  row.innerHTML = `
+    <span class="cat-item-label">${esc(label)}</span>
+    <span class="cat-item-right">
+      <span class="cat-count">${count}</span>
+      ${nestable ? `<button type="button" class="category-move-btn" title="Move this category under another one">⇅</button>` : ""}
+      ${parent ? `<button type="button" class="category-detach" title="Remove from &quot;${esc(parent)}&quot;">✕</button>` : ""}
+    </span>
+  `;
+  row.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    selectCategory(name);
+  });
+  if (nestable) {
+    row.style.position = "relative";
+    row.draggable = true;
+    row.dataset.category = name;
+    row.title = "Click to view. Drag onto another category to nest this one under it.";
+    row.addEventListener("dragstart", onCategoryDragStart);
+    row.addEventListener("dragover", onCategoryDragOver);
+    row.addEventListener("dragleave", onCategoryDragLeave);
+    row.addEventListener("drop", onCategoryDrop);
+    row.addEventListener("dragend", onCategoryDragEnd);
+    row.querySelector(".category-move-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openCategoryMoveMenu(name, row);
+    });
+    const detachBtn = row.querySelector(".category-detach");
+    if (detachBtn) detachBtn.addEventListener("click", (e) => { e.stopPropagation(); unnestCategory(name); });
   }
-  container.appendChild(section);
+  return row;
+}
 
-  // Collapsing hides the whole subtree, nested child categories included — expanding
-  // again re-renders them from scratch, so their own collapsed/expanded state (kept
-  // in the same Set by name) survives independently of the parent's.
-  if (!collapsed) {
-    children.forEach((childName) => renderCategoryBranch(container, childName, groups, depth + 1));
+function tasksForSelectedCategory() {
+  const topLevel = state.tasks.filter((t) => !isSubtask(t));
+  return state.selectedCategory === "__all__" ? topLevel : topLevel.filter((t) => t.category === state.selectedCategory);
+}
+
+function renderActiveTasksColumn() {
+  el("#active-tasks-title").textContent = state.selectedCategory === "__all__" ? "All tasks" : state.selectedCategory;
+  const container = el("#active-task-list");
+  container.innerHTML = "";
+  const tasks = tasksForSelectedCategory();
+  if (state.tasks.length === 0) {
+    container.innerHTML = `<div class="col-empty-hint">Nothing on the list. Add something below.</div>`;
+  } else if (tasks.length === 0) {
+    container.innerHTML = `<div class="col-empty-hint">Nothing in this category yet.</div>`;
+  } else {
+    tasks.forEach((task) => appendTaskWithSubtasks(container, task, 0));
   }
+}
+
+// ---------- Active tab: category rail + task selection ----------
+function selectCategory(name) {
+  state.selectedCategory = name;
+  state.selectedActiveTaskKey = null;
+  renderActive();
+  if (isMobile()) closeCategoriesSheet();
+}
+
+function selectActiveTask(task) {
+  state.selectedActiveTaskKey = taskKey(task);
+  renderActive();
+}
+
+function closeActiveDetail() {
+  state.selectedActiveTaskKey = null;
+  renderActive();
+}
+
+function openCategoriesSheet() {
+  el("#active-col-categories").classList.add("mobile-open");
+  el("#active-backdrop").classList.add("showing");
+}
+function closeCategoriesSheet() {
+  el("#active-col-categories").classList.remove("mobile-open");
+  el("#active-backdrop").classList.remove("showing");
+}
+
+// The detail column reuses the Assistance tab's header markup/CSS (.assist-head etc.)
+// so a task looks and behaves the same whether you opened it here or from Assistance —
+// same icon buttons, same rename-by-double-click title. taskDetailHtml/
+// wireTaskDetailInteractivity (defined further down) already render+wire the editable
+// notes/suggestions section generically for any container, so this just adds the header.
+function renderActiveDetail(task) {
+  const body = el("#active-detail-body");
+  body.innerHTML = `
+    <div class="assist-head">
+      <div class="assist-head-row">
+        <button class="check" aria-label="Complete task">
+          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        </button>
+        <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
+        <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
+        <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
+        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        <button class="delete-toggle" aria-label="Delete task">🗑</button>
+      </div>
+      <div class="assist-meta">${esc(task.category)} · ${task._repo === "private" ? "🔒 Private" : "🌐 Public"} · added ${esc(task.created || "—")}</div>
+    </div>
+    ${taskDetailHtml(task)}
+  `;
+  body.querySelector(".check").addEventListener("click", () => completeTask(task));
+  body.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
+  body.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task));
+  const subtaskBtn = body.querySelector(".subtask-btn");
+  subtaskBtn.addEventListener("click", (e) => openSubtaskMenu(task, subtaskBtn));
+  const assistBtn = body.querySelector(".assist-toggle");
+  assistBtn.title = task.assist
+    ? "An AI assistant is helping with this one — click to stop"
+    : "Click to have an AI assistant work on this task in the Assistance tab";
+  assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
+  const titleEl = body.querySelector(".assist-title");
+  titleEl.addEventListener("dblclick", () => {
+    renameTaskInline(task, titleEl, {
+      inputClassName: "assist-title-edit",
+      onDone: () => renderActive(),
+    });
+  });
+  wireTaskDetailInteractivity(task, body);
 }
 
 // A task is a subtask if its parentId points at another task that actually exists
@@ -458,8 +594,8 @@ function subtasksOf(task) {
   return state.tasks.filter((t) => t._repo === task._repo && t.parentId === task.id);
 }
 
-// Tasks whose subtasks are collapsed, keyed like taskKey() — independent of
-// expandedTaskNodes (that's the notes/suggestions detail panel, a different thing).
+// Tasks whose subtasks are collapsed, keyed like taskKey() — a list-tidying toggle,
+// independent of which task (if any) currently has its detail open in the right column.
 const collapsedSubtaskParents = persistentSet("tasks_collapsed_subtasks");
 
 function appendTaskWithSubtasks(container, task, depth) {
@@ -467,70 +603,6 @@ function appendTaskWithSubtasks(container, task, depth) {
   container.appendChild(taskCard(task, depth, kids.length));
   if (kids.length && collapsedSubtaskParents.has(taskKey(task))) return;
   kids.forEach((child) => appendTaskWithSubtasks(container, child, depth + 1));
-}
-
-function categoryHeader(name, depth, taskCount, collapsed) {
-  const header = document.createElement("h2");
-  header.className = "category-header";
-  header.draggable = true;
-  header.dataset.category = name;
-  header.title = "Drag onto another category to nest this one under it";
-  header.addEventListener("dragstart", onCategoryDragStart);
-  header.addEventListener("dragover", onCategoryDragOver);
-  header.addEventListener("dragleave", onCategoryDragLeave);
-  header.addEventListener("drop", onCategoryDrop);
-  header.addEventListener("dragend", onCategoryDragEnd);
-
-  const collapseBtn = document.createElement("button");
-  collapseBtn.className = "node-toggle category-collapse-toggle";
-  collapseBtn.type = "button";
-  collapseBtn.textContent = collapsed ? "▸" : "▾";
-  collapseBtn.title = collapsed ? "Expand category" : "Collapse category";
-  collapseBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (collapsed) collapsedCategories.delete(name);
-    else collapsedCategories.add(name);
-    renderActive();
-  });
-  header.appendChild(collapseBtn);
-
-  const nameEl = document.createElement("span");
-  nameEl.textContent = name;
-  header.appendChild(nameEl);
-
-  if (collapsed && taskCount) {
-    const countEl = document.createElement("span");
-    countEl.className = "count-badge";
-    countEl.textContent = taskCount;
-    header.appendChild(countEl);
-  }
-
-  // Drag only works with a mouse — this button is the touch-friendly equivalent, since
-  // the assistants using this on their phones can't drag a header at all.
-  const moveBtn = document.createElement("button");
-  moveBtn.className = "category-move-btn";
-  moveBtn.type = "button";
-  moveBtn.textContent = "⇅";
-  moveBtn.title = "Move this category under another one";
-  moveBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openCategoryMoveMenu(name, header);
-  });
-  header.appendChild(moveBtn);
-
-  if (depth > 0) {
-    const detach = document.createElement("button");
-    detach.className = "category-detach";
-    detach.type = "button";
-    detach.textContent = "✕";
-    detach.title = `Remove from "${categoryParent(name)}"`;
-    detach.addEventListener("click", (e) => {
-      e.stopPropagation();
-      unnestCategory(name);
-    });
-    header.appendChild(detach);
-  }
-  return header;
 }
 
 function openCategoryMoveMenu(name, anchorEl) {
@@ -731,15 +803,24 @@ function onCategoryDrop(e) {
 
 function onCategoryDragEnd(e) {
   e.currentTarget.classList.remove("dragging");
-  document.querySelectorAll(".category-header.drag-over").forEach((el) => el.classList.remove("drag-over"));
+  document.querySelectorAll(".cat-item.drag-over").forEach((el) => el.classList.remove("drag-over"));
   draggedCategory = null;
 }
 
-// Which active tasks have their notes/suggestions detail expanded, keyed like
-// taskKey() — mirrors expandedHistoryNodes so it survives re-renders. This is what
-// lets you still see a task's notes/suggestions after turning assist off (which
-// removes it from the Assistance tab, but shouldn't make its history disappear).
-const expandedTaskNodes = persistentSet("tasks_expanded_task_nodes");
+// Meta line shown under a task's title in the tasks column — a quick-glance summary
+// of what's waiting on it, echoing what you'd find if you opened it (subtasks,
+// suggestions, notes). A task's own free-text `notes` field (legacy, rare) always
+// wins if set, since that was explicitly written to be seen at a glance.
+function taskCardMeta(task, subtaskCount) {
+  if (task.notes) return esc(task.notes);
+  const parts = [];
+  if (subtaskCount) parts.push(`${subtaskCount} subtask${subtaskCount > 1 ? "s" : ""}`);
+  const sugg = (task.suggestions || []).length;
+  if (sugg) parts.push(`${sugg} suggestion${sugg > 1 ? "s" : ""}`);
+  const notesN = noteItems(task).length;
+  if (notesN) parts.push(`${notesN} note${notesN > 1 ? "s" : ""}`);
+  return parts.length ? parts.join(" · ") : "No notes yet";
+}
 
 function taskCard(task, depth = 0, subtaskCount = 0) {
   const card = document.createElement("div");
@@ -747,10 +828,10 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
   if (depth > 0) card.style.marginLeft = `${depth * 22}px`;
   card.draggable = true;
   card.dataset.taskKey = taskKey(task);
-  card.title = "Double-click (or press and hold) the title to rename. Drag to reorder.";
+  card.title = "Click to open. Double-click (or press and hold) the title to rename. Drag to reorder.";
 
   const key = taskKey(task);
-  const expanded = expandedTaskNodes.has(key);
+  if (state.selectedActiveTaskKey === key) card.classList.add("selected");
   const subtasksCollapsed = subtaskCount > 0 && collapsedSubtaskParents.has(key);
 
   card.innerHTML = `
@@ -760,24 +841,22 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
       </button>
       <div class="task-body">
         <div class="task-title-row">
-          <button class="node-toggle task-detail-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>
           <div class="task-title">${esc(task.title)}</div>
           ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
         </div>
-        ${task.notes ? `<div class="task-meta">${esc(task.notes)}</div>` : ""}
+        <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
       </div>
       <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
       <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
       <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
       <button class="delete-toggle" aria-label="Delete task">🗑</button>
+      <span class="chev">›</span>
     </div>
-    ${expanded ? taskDetailHtml(task) : ""}
   `;
-  card.querySelector(".task-detail-toggle").addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (expandedTaskNodes.has(key)) expandedTaskNodes.delete(key);
-    else expandedTaskNodes.add(key);
-    renderActive();
+  card.addEventListener("click", (e) => {
+    if (card.classList.contains("editing")) return;
+    if (e.target.closest("button") || e.target.closest("input")) return;
+    selectActiveTask(task);
   });
   if (subtaskCount > 0) {
     card.querySelector(".subtask-collapse-toggle").addEventListener("click", (e) => {
@@ -787,7 +866,6 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
       renderActive();
     });
   }
-  if (expanded) wireTaskDetailInteractivity(task, card);
   card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
   card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
   card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
@@ -2270,12 +2348,19 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     el("#active-view").classList.toggle("hidden", tab !== "active");
     el("#tree-view").classList.toggle("hidden", tab !== "tree");
     el("#assist-view").classList.toggle("hidden", tab !== "assist");
+    el("#categories-menu-btn").classList.toggle("hidden", tab !== "active");
+    if (tab !== "active") closeCategoriesSheet();
     if (tab === "assist") {
       renderAssistList();
       renderAssistDetail();
     }
   });
 });
+
+// ---------- Active tab: hamburger sheet + detail back button ----------
+el("#categories-menu-btn").addEventListener("click", openCategoriesSheet);
+el("#active-backdrop").addEventListener("click", closeCategoriesSheet);
+el("#active-detail-back").addEventListener("click", closeActiveDetail);
 
 // ---------- settings ----------
 el("#settings-btn").addEventListener("click", () => {

@@ -4,13 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tasks</title>
-<link rel="stylesheet" href="style.css?v=11" />
+<link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
   <canvas id="fx-canvas"></canvas>
   <div id="toast-container" class="toast-container"></div>
 
   <header class="topbar">
+    <button id="categories-menu-btn" class="menu-btn" aria-label="Categories" title="Categories">☰</button>
     <h1>Tasks</h1>
     <nav class="tabs">
       <button class="tab-btn active" data-tab="active">Active</button>
@@ -20,18 +21,36 @@
     <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
   </header>
 
-  <main id="active-view" class="view">
-    <div id="task-groups"></div>
-    <form id="add-form" class="add-form">
-      <input id="add-title" type="text" placeholder="New task…" required />
-      <div class="add-row">
-        <div class="combo" id="category-combo">
-          <input id="add-category" type="text" placeholder="Category" autocomplete="off" required />
-          <div class="combo-menu hidden" id="category-menu"></div>
-        </div>
-        <button type="button" id="add-visibility" class="visibility-toggle" aria-label="Toggle public or private"></button>
-        <button type="submit" class="add-submit">Add</button>
+  <main id="active-view" class="view columns-view">
+    <div class="columns" id="active-columns">
+      <div class="mobile-backdrop" id="active-backdrop"></div>
+
+      <div class="col col-categories" id="active-col-categories">
+        <div class="rail-title">Categories</div>
+        <div id="active-category-list"></div>
       </div>
+
+      <div class="col col-tasks" id="active-col-tasks">
+        <div class="section-title" id="active-tasks-title">All tasks</div>
+        <div id="active-task-list"></div>
+      </div>
+
+      <div class="col col-detail" id="active-col-detail">
+        <div class="detail-back" id="active-detail-back">‹ Back</div>
+        <div class="col-detail-body" id="active-detail-body">
+          <div class="col-empty-hint">Select a task to see its details here.</div>
+        </div>
+      </div>
+    </div>
+
+    <form id="add-form" class="add-bar">
+      <input id="add-title" type="text" placeholder="New task…" required />
+      <div class="combo" id="category-combo">
+        <input id="add-category" type="text" placeholder="Category" autocomplete="off" required />
+        <div class="combo-menu hidden" id="category-menu"></div>
+      </div>
+      <button type="button" id="add-visibility" class="visibility-toggle" aria-label="Toggle public or private"></button>
+      <button type="submit" class="add-fab" aria-label="Add task" title="Add task">＋</button>
     </form>
   </main>
 
@@ -90,6 +109,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
