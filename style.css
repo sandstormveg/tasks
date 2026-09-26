@@ -244,7 +244,7 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 }
 .add-bar-row1 { display: flex; gap: 8px; align-items: flex-end; }
 .add-bar-row2 { display: flex; gap: 8px; align-items: center; }
-.add-bar .combo { flex: 0 1 200px; min-width: 90px; }
+.add-bar .combo { flex: 0 1 320px; min-width: 140px; }
 .add-fab {
   flex-shrink: 0; width: 36px; height: 36px; border-radius: 4px; border: 2px solid var(--accent-2);
   background: var(--accent-2); color: #0a0f14; font-size: 17px; font-weight: 700;
@@ -864,8 +864,11 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 }
 #add-title {
   resize: none;
-  overflow-y: auto;
-  max-height: 96px;
+  overflow-y: hidden;
+  min-height: 46px;
+  max-height: 160px;
+  padding: 12px 14px;
+  font-size: 15px;
   line-height: 1.4;
 }
 .add-bar #add-title { flex: 1 1 auto; min-width: 0; }
@@ -887,6 +890,25 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .visibility-toggle.public { color: var(--accent-2); border-color: var(--accent-2); }
 .visibility-toggle.private { color: var(--accent); border-color: var(--accent); }
 .visibility-toggle:hover { transform: scale(1.06); background: #262b3c; }
+
+.assist-toggle-btn {
+  background: var(--panel-2);
+  color: #4b5264;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.assist-toggle-btn:hover { color: var(--accent-2); transform: scale(1.06); }
+.assist-toggle-btn.on {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+  text-shadow: 0 0 6px var(--accent-2);
+}
 
 /* category combobox */
 .combo { position: relative; flex: 1; min-width: 0; }
@@ -1240,5 +1262,5 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .detail-back:active { color: var(--accent-2); }
 
   .add-bar { margin: 0 -14px; padding: 8px 14px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-  .add-bar .combo { flex: 0 1 100px; min-width: 70px; }
+  .add-bar .combo { flex: 0 1 150px; min-width: 90px; }
 }

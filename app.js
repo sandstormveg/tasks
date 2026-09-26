@@ -6,7 +6,7 @@ const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
 const state = {
-  tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public",
+  tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public", newTaskAssist: false,
   selectedAssistKey: null, publicLoaded: false, privateLoaded: false,
   // Drive the Active tab's categories/tasks/detail drill-down columns. "__all__" is the
   // sentinel for the "All tasks" rail item (never a real category name).
@@ -1652,6 +1652,20 @@ function renderVisibilityToggle() {
     : "New task will be private — click to make it public";
 }
 renderVisibilityToggle();
+
+el("#add-assist").addEventListener("click", () => {
+  state.newTaskAssist = !state.newTaskAssist;
+  renderAssistAddToggle();
+});
+function renderAssistAddToggle() {
+  const btn = el("#add-assist");
+  btn.classList.toggle("on", state.newTaskAssist);
+  btn.title = state.newTaskAssist
+    ? "New task will start with AI assistance on — click to turn off"
+    : "Click to have an AI assistant work on this task once added";
+}
+renderAssistAddToggle();
+
 setupCategoryCombo();
 setupColumnResize();
 setupAddTitleAutoGrow();
@@ -1663,7 +1677,14 @@ function setupAddTitleAutoGrow() {
   const textarea = el("#add-title");
   const grow = () => {
     textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
+    const needed = textarea.scrollHeight;
+    const max = parseFloat(getComputedStyle(textarea).maxHeight) || Infinity;
+    textarea.style.height = `${Math.min(needed, max)}px`;
+    // Only turn on scrolling once content genuinely exceeds the cap — otherwise a
+    // textarea's scrollHeight can read a hair taller than its own set height (a
+    // well-known cross-browser rounding quirk), showing a full-track scrollbar
+    // that has nothing to actually scroll.
+    textarea.style.overflowY = needed > max ? "auto" : "hidden";
   };
   textarea.addEventListener("input", grow);
   textarea.addEventListener("keydown", (e) => {
@@ -1735,7 +1756,7 @@ el("#add-form").addEventListener("submit", async (e) => {
   const visibility = state.newTaskVisibility;
   const repo = repoFor(visibility);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
-  const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "" };
+  const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "", assist: state.newTaskAssist };
   const existingInRepo = state.tasks.filter((t) => t._repo === visibility).map(({ _repo, ...rest }) => rest);
   const newTasksInRepo = [...existingInRepo, task];
 
@@ -1746,8 +1767,11 @@ el("#add-form").addEventListener("submit", async (e) => {
     renderActive();
     renderCategoryOptions();
     renderAssistList();
+    renderAssistTabCount();
     el("#add-form").reset();
     el("#add-title").style.height = "auto";
+    state.newTaskAssist = false;
+    renderAssistAddToggle();
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
   }
