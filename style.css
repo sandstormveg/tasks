@@ -443,6 +443,9 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .suggestion-text a { color: var(--accent); }
 .author-tag {
   display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 10px;
   color: var(--muted);
   background: var(--panel-2);

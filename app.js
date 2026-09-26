@@ -1932,7 +1932,7 @@ function suggestionAuthor(s) {
   return typeof s === "string" ? null : s.author || null;
 }
 function authorTagHtml(author) {
-  return author ? `<span class="author-tag">${esc(author)}</span>` : "";
+  return author ? `<span class="author-tag" title="${esc(author)}">${esc(author)}</span>` : "";
 }
 
 function suggestionsSectionHtml(suggestions) {
