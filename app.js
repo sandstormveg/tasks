@@ -591,15 +591,18 @@ function renderActiveDetail(task) {
   body.innerHTML = `
     <div class="assist-head">
       <div class="assist-head-row">
-        <button class="check" aria-label="Complete task">
-          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-        </button>
+        <div class="assist-head-icons">
+          <button class="check" aria-label="Complete task">
+            <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+          </button>
+          <span class="assist-head-icons-spacer"></span>
+          <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
+          <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
+          ${visToggleButtonHtml(task._repo)}
+          <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
+          <button class="delete-toggle" aria-label="Delete task">🗑</button>
+        </div>
         <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-        <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
-        <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-        ${visToggleButtonHtml(task._repo)}
-        <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
-        <button class="delete-toggle" aria-label="Delete task">🗑</button>
       </div>
       <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
     </div>
@@ -2083,12 +2086,15 @@ function renderAssistDetail() {
   container.innerHTML = `
     <div class="assist-head">
       <div class="assist-head-row">
-        <button class="check" aria-label="Complete task">
-          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-        </button>
+        <div class="assist-head-icons">
+          <button class="check" aria-label="Complete task">
+            <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+          </button>
+          <span class="assist-head-icons-spacer"></span>
+          ${visToggleButtonHtml(task._repo)}
+          <button class="delete-toggle" aria-label="Delete task">🗑</button>
+        </div>
         <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-        ${visToggleButtonHtml(task._repo)}
-        <button class="delete-toggle" aria-label="Delete task">🗑</button>
       </div>
       <div class="assist-meta">
         ${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}
