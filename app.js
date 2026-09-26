@@ -5,7 +5,17 @@ const PUBLIC_REPO = "sandstormveg/tasks";
 const PRIVATE_REPO = "sandstormveg/tasks-data";
 const apiBase = (repo) => `https://api.github.com/repos/${repo}/contents`;
 
-const state = { tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public", selectedAssistKey: null, publicLoaded: false, privateLoaded: false };
+const state = {
+  tasks: [], history: [], categories: {}, pendingNoteEdit: null, newTaskVisibility: "public",
+  selectedAssistKey: null, publicLoaded: false, privateLoaded: false,
+  // The sha of tasks.json/history.json as last seen from the API, per repo — used to
+  // detect a lost-update race (see saveTasks/saveHistory below): a fresh sha fetched
+  // right before writing only stops GitHub rejecting the PUT, it does NOT mean the
+  // content we're about to overwrite with (built from in-memory state) still matches
+  // what's actually on GitHub. Comparing against the sha from our last load catches
+  // "someone else committed since I loaded this page" instead of silently clobbering it.
+  shas: { public: { tasks: null, history: null }, private: { tasks: null, history: null } },
+};
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
@@ -59,6 +69,8 @@ async function loadPublicData() {
         tasks: JSON.parse(t.content).tasks || [],
         history: JSON.parse(h.content).entries || [],
         categories: JSON.parse(c.content).categories || {},
+        tasksSha: t.sha,
+        historySha: h.sha,
         authoritative: true,
       };
     } catch (err) {
@@ -80,6 +92,8 @@ async function loadData() {
   state.categories = pub.categories;
   state.publicLoaded = pub.authoritative;
   state.privateLoaded = false;
+  state.shas.public.tasks = pub.tasksSha || null;
+  state.shas.public.history = pub.historySha || null;
 
   if (getToken()) {
     try {
@@ -90,6 +104,8 @@ async function loadData() {
       tasks = tasks.concat((JSON.parse(privT.content).tasks || []).map((t) => ({ ...t, _repo: "private" })));
       history = history.concat((JSON.parse(privH.content).entries || []).map((e) => ({ ...e, _repo: "private" })));
       state.privateLoaded = true;
+      state.shas.private.tasks = privT.sha;
+      state.shas.private.history = privH.sha;
     } catch (err) {
       console.warn("Couldn't load private tasks:", err.message);
     }
@@ -226,6 +242,8 @@ async function ghPutFile(repo, path, contentObj, sha, message) {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Failed to write ${path}: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  return json.content.sha;
 }
 
 async function ghPutImage(repo, path, base64Data, message) {
@@ -241,14 +259,39 @@ async function ghPutImage(repo, path, base64Data, message) {
   if (!res.ok) throw new Error(`Failed to upload image: ${res.status} ${await res.text()}`);
 }
 
+function visibilityForRepo(repo) {
+  return repo === PRIVATE_REPO ? "private" : "public";
+}
+
+// Refetching the sha right before a write only stops GitHub *rejecting* the PUT — it
+// does nothing to stop us *overwriting* someone else's change, since the content we
+// send is built from in-memory state, not from what's actually on GitHub right now.
+// Comparing the freshly-fetched sha against the sha from our last load catches that:
+// if they differ, someone else committed since we loaded, so refuse instead of
+// silently clobbering it. This is why every save function reads through this check —
+// callers get the error via their existing try/catch + alert, no call-site changes needed.
+function assertNoConcurrentChange(visibility, file, knownSha, currentSha) {
+  if (knownSha && currentSha !== knownSha) {
+    throw new Error(
+      `Someone else changed ${file} since you loaded this page — reload to see the latest, then redo this change. (Nothing was overwritten.)`
+    );
+  }
+}
+
 async function saveTasks(repo, newTasks, message) {
+  const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/tasks.json");
-  await ghPutFile(repo, "data/tasks.json", { tasks: newTasks }, current.sha, message);
+  assertNoConcurrentChange(visibility, "the tasks list", state.shas[visibility].tasks, current.sha);
+  const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: newTasks }, current.sha, message);
+  state.shas[visibility].tasks = newSha;
 }
 
 async function saveHistory(repo, newEntries, message) {
+  const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
-  await ghPutFile(repo, "data/history.json", { entries: newEntries }, current.sha, message);
+  assertNoConcurrentChange(visibility, "the history", state.shas[visibility].history, current.sha);
+  const newSha = await ghPutFile(repo, "data/history.json", { entries: newEntries }, current.sha, message);
+  state.shas[visibility].history = newSha;
 }
 
 // categories.json only exists once someone nests a category, so its absence isn't an
