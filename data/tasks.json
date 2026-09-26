@@ -501,9 +501,9 @@
         {
           "id": "n-agent-1790281452469",
           "text": "✓ Actioned 2026-09-25: traced the actual authorship of everything on this task (git commits are always authored as you, the token owner, so they couldn't tell sessions apart — I checked run logs directly). The 6 existing suggestions + prior claudeNote were from the \"Tasks Morning Check (Claude Code)\" cloud routine, not me — corrected their author tags. The text you pasted (SmolVLA, LeKiwi costs, the servo-feedback gotcha, vla.cpp, Reachy Mini) was from the OTHER routine, \"Task tracker — daily R&D pass\" (runs on Opus 5, read-only, never wrote back) — added it as 6 new suggestions attributed to that routine, not to me, since I didn't do that research myself.",
-          "done": false,
+          "done": true,
           "created": "2026-09-24T20:24:12.469Z",
-          "updated": "2026-09-24T20:24:12.469Z",
+          "updated": "2026-09-26T22:59:03.484Z",
           "author": "Claude Sonnet 5 — om-task-System"
         }
       ]
