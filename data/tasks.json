@@ -536,7 +536,16 @@
       "category": "Interested in",
       "created": "2026-09-26",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muiyecjiuoys",
+          "text": "attached hard requirements",
+          "done": false,
+          "created": "2026-09-26T22:20:47.742Z",
+          "updated": "2026-09-26T22:20:47.742Z"
+        }
+      ]
     }
   ]
 }
