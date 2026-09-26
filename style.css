@@ -565,7 +565,9 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
   transition: transform 0.15s ease, opacity 0.3s ease, background 0.2s ease;
 }
 .task-card:hover { background: var(--panel-2); }
-.task-card-header { display: flex; align-items: center; gap: 14px; }
+.task-card-header { display: flex; flex-direction: column; gap: 8px; }
+.task-card-icons { display: flex; align-items: center; gap: 14px; }
+.task-card-icons-spacer { flex: 1; min-width: 0; }
 .task-card .node-detail { margin-left: 0; }
 .task-card.completing {
   opacity: 0;
@@ -798,6 +800,7 @@ main.view.columns-view { max-width: 1100px; padding: 20px 20px 0; }
 
 /* category combobox */
 .combo { position: relative; flex: 1; min-width: 0; }
+.combo input { width: 100%; }
 .combo-menu {
   position: absolute;
   bottom: calc(100% + 6px);

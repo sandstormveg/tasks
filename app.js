@@ -836,9 +836,17 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
 
   card.innerHTML = `
     <div class="task-card-header">
-      <button class="check" aria-label="Complete task">
-        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-      </button>
+      <div class="task-card-icons">
+        <button class="check" aria-label="Complete task">
+          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        </button>
+        <span class="task-card-icons-spacer"></span>
+        <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
+        <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
+        <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
+        <button class="delete-toggle" aria-label="Delete task">🗑</button>
+        <span class="chev">›</span>
+      </div>
       <div class="task-body">
         <div class="task-title-row">
           <div class="task-title">${esc(task.title)}</div>
@@ -846,11 +854,6 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </div>
         <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
       </div>
-      <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
-      <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-      <button class="vis-toggle" aria-label="Toggle public/private">${task._repo === "private" ? "🔒" : "🌐"}</button>
-      <button class="delete-toggle" aria-label="Delete task">🗑</button>
-      <span class="chev">›</span>
     </div>
   `;
   card.addEventListener("click", (e) => {
