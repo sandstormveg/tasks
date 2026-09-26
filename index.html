@@ -11,14 +11,16 @@
   <div id="toast-container" class="toast-container"></div>
 
   <header class="topbar">
-    <button id="categories-menu-btn" class="menu-btn" aria-label="Categories" title="Categories">☰</button>
-    <h1>Tasks</h1>
-    <nav class="tabs">
-      <button class="tab-btn active" data-tab="active">Active</button>
-      <button class="tab-btn" data-tab="tree">History</button>
-      <button class="tab-btn assist-tab-btn" data-tab="assist" title="Assistance" aria-label="Assistance"><span class="assist-tab-star">✦</span></button>
-    </nav>
-    <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+    <div class="topbar-inner">
+      <button id="categories-menu-btn" class="menu-btn" aria-label="Categories" title="Categories">☰</button>
+      <h1>Tasks</h1>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="active">Active</button>
+        <button class="tab-btn" data-tab="tree">History</button>
+        <button class="tab-btn assist-tab-btn" data-tab="assist" title="Assistance" aria-label="Assistance"><span class="assist-tab-star">✦</span></button>
+      </nav>
+      <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+    </div>
   </header>
 
   <main id="active-view" class="view columns-view">
@@ -47,13 +49,17 @@
     </div>
 
     <form id="add-form" class="add-bar">
-      <textarea id="add-title" rows="1" placeholder="New task…" autocomplete="off" required></textarea>
-      <div class="combo" id="category-combo">
-        <input id="add-category" type="text" placeholder="Category" autocomplete="off" required />
-        <div class="combo-menu hidden" id="category-menu"></div>
+      <div class="add-bar-row1">
+        <textarea id="add-title" rows="1" placeholder="New task…" autocomplete="off" required></textarea>
+        <button type="submit" class="add-fab" aria-label="Add task" title="Add task">＋</button>
       </div>
-      <button type="button" id="add-visibility" class="visibility-toggle" aria-label="Toggle public or private"></button>
-      <button type="submit" class="add-fab" aria-label="Add task" title="Add task">＋</button>
+      <div class="add-bar-row2">
+        <div class="combo" id="category-combo">
+          <input id="add-category" type="text" placeholder="Category" autocomplete="off" />
+          <div class="combo-menu hidden" id="category-menu"></div>
+        </div>
+        <button type="button" id="add-visibility" class="visibility-toggle" aria-label="Toggle public or private"></button>
+      </div>
     </form>
   </main>
 

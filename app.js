@@ -591,18 +591,19 @@ function renderActiveDetail(task) {
   body.innerHTML = `
     <div class="assist-head">
       <div class="assist-head-row">
-        <div class="assist-head-icons">
+        <div class="assist-head-top">
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
-          <span class="assist-head-icons-spacer"></span>
+          <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
+        </div>
+        <div class="assist-head-icons">
           <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
           <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
           ${visToggleButtonHtml(task._repo)}
           <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
           <button class="delete-toggle" aria-label="Delete task">🗑</button>
         </div>
-        <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
       </div>
       <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
     </div>
@@ -882,23 +883,24 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
 
   card.innerHTML = `
     <div class="task-card-header">
-      <div class="task-card-icons">
+      <div class="task-card-top">
         <button class="check" aria-label="Complete task">
           <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
         </button>
-        <span class="task-card-icons-spacer"></span>
+        <div class="task-body">
+          <div class="task-title-row">
+            <div class="task-title">${esc(task.title)}</div>
+            ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
+          </div>
+          <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
+        </div>
+      </div>
+      <div class="task-card-icons">
         <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
         <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
         ${visToggleButtonHtml(task._repo)}
         <button class="delete-toggle" aria-label="Delete task">🗑</button>
         <span class="chev">›</span>
-      </div>
-      <div class="task-body">
-        <div class="task-title-row">
-          <div class="task-title">${esc(task.title)}</div>
-          ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
-        </div>
-        <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
       </div>
     </div>
   `;
@@ -1576,7 +1578,7 @@ function setupAddTitleAutoGrow() {
 // ---------- drag-to-resize columns (desktop only — hidden on mobile via CSS) ----------
 function setupColumnResize() {
   const MIN_WIDTH = 160;
-  const MAX_WIDTH = 560;
+  const MAX_WIDTH = 900;
 
   function makeResizable(handle, col, storageKey) {
     if (!handle || !col) return;
@@ -1623,7 +1625,12 @@ el("#add-form").addEventListener("submit", async (e) => {
   if (!requireToken()) return;
   const title = el("#add-title").value.trim();
   const category = el("#add-category").value.trim();
-  if (!title || !category) return;
+  if (!title) return;
+  if (!category) {
+    el("#add-category").focus();
+    openCategoryMenu();
+    return;
+  }
 
   const visibility = state.newTaskVisibility;
   const repo = repoFor(visibility);
@@ -2086,15 +2093,16 @@ function renderAssistDetail() {
   container.innerHTML = `
     <div class="assist-head">
       <div class="assist-head-row">
-        <div class="assist-head-icons">
+        <div class="assist-head-top">
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
-          <span class="assist-head-icons-spacer"></span>
+          <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
+        </div>
+        <div class="assist-head-icons">
           ${visToggleButtonHtml(task._repo)}
           <button class="delete-toggle" aria-label="Delete task">🗑</button>
         </div>
-        <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
       </div>
       <div class="assist-meta">
         ${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}
