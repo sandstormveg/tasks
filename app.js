@@ -1084,7 +1084,8 @@ function renderAssistTabCount() {
   const tabBtn = document.querySelector('.tab-btn[data-tab="assist"]');
   if (!tabBtn) return;
   const n = assistTasks().length;
-  tabBtn.textContent = n ? `Assistance (${n})` : "Assistance";
+  tabBtn.title = n ? `Assistance (${n})` : "Assistance";
+  tabBtn.innerHTML = `<span class="assist-tab-star">✦</span>${n ? `<span class="assist-tab-count">${n}</span>` : ""}`;
 }
 
 const stripRepo = ({ _repo, ...rest }) => rest;

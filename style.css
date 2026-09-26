@@ -3,7 +3,7 @@
   --bg: #05070a;
   --panel: #0a0f14;
   --panel-2: #101822;
-  --text: #4ade80;
+  --text: #dcffe1;
   --muted: #6fa89a;
   --accent: #ff2e63;
   --accent-2: #1de9b6;
@@ -79,6 +79,17 @@ body {
   background: var(--panel-2);
   color: var(--text);
   border-color: var(--border);
+}
+
+.assist-tab-btn { display: inline-flex; align-items: center; gap: 5px; }
+.assist-tab-star {
+  font-size: 16px;
+  color: var(--accent-2);
+  text-shadow: 0 0 6px var(--accent-2), 0 0 14px rgba(29, 233, 182, 0.55);
+}
+.assist-tab-count {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+  font-size: 10.5px; padding: 1px 7px; color: var(--muted);
 }
 
 .icon-btn {
