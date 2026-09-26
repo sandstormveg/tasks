@@ -521,6 +521,14 @@
       "category": "Shopping",
       "created": "2026-09-26",
       "notes": ""
+    },
+    {
+      "id": "research-how-deep-interoception-goes-muiasbpl",
+      "title": "Research how deep interoception goes",
+      "category": "Research",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": true
     }
   ]
 }
