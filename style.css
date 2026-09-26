@@ -669,15 +669,26 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   user-select: none;
   -webkit-touch-callout: none;
 }
-.task-card .private-dot {
+.task-card .task-card-badges {
   position: absolute;
   right: 10px;
   bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.task-card .private-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 5px var(--accent);
+}
+.task-card .assist-badge {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--accent-2);
+  text-shadow: 0 0 4px var(--accent-2);
 }
 .task-card .task-title-edit { -webkit-user-select: text; user-select: text; }
 .task-card:hover { background: var(--panel-2); }

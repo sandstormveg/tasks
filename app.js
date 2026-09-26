@@ -1003,7 +1003,11 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </div>
       </div>
     </div>
-    ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
+    ${task.assist || task._repo === "private" ? `
+      <span class="task-card-badges">
+        ${task.assist ? `<span class="assist-badge" title="AI assistance on">✦</span>` : ""}
+        ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
+      </span>` : ""}
   `;
   setupLongPress(card, (x, y) => openTaskOptionsMenu(task, x, y));
   card.addEventListener("click", (e) => {
