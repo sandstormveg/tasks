@@ -2687,6 +2687,22 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
       const dx = e.changedTouches[0].clientX - startX;
       if (Math.abs(dx) < SWIPE_THRESHOLD) return;
       const currentTab = document.querySelector(".tab-btn.active")?.dataset.tab;
+
+      // A right swipe means something contextual on the Active tab before it
+      // means "previous tab": back out of an open task's detail (same as the
+      // ‹ Back button), or — with no detail open — reveal the categories
+      // sheet (same as ☰). Both read naturally as "swipe right" on a list
+      // screen, and neither collides with tab-navigation: swiping right from
+      // Active normally has nowhere to go anyway, since it's already first.
+      if (dx > 0 && currentTab === "active") {
+        if (el("#active-col-detail").classList.contains("showing")) {
+          closeActiveDetail();
+        } else {
+          openCategoriesSheet();
+        }
+        return;
+      }
+
       const index = TAB_ORDER.indexOf(currentTab);
       if (index === -1) return;
       const nextIndex = dx < 0 ? index + 1 : index - 1;

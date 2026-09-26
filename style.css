@@ -30,6 +30,7 @@ body {
   background: radial-gradient(ellipse at top, #0c1a17, var(--bg) 60%);
   color: var(--text);
   min-height: 100vh;
+  overflow-wrap: break-word; /* long unbroken tokens (URLs, IDs) wrap instead of overflowing their box — inherited everywhere */
 }
 
 /* HUD corner-bracket frame — decorative only, sits above everything else. */
