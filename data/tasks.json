@@ -419,16 +419,16 @@
         {
           "id": "n-muewtqtzsltc",
           "text": "can i improve my own robot Corgi with it's web camera and claw arm to do embodied tasks like with a gemma or gemini robotics model",
-          "done": false,
+          "done": true,
           "created": "2026-09-24T02:25:42.167Z",
-          "updated": "2026-09-24T02:25:42.167Z"
+          "updated": "2026-09-26T22:59:10.913Z"
         },
         {
           "id": "n-muewucwf5nmz",
           "text": "How expensive is a functional and adaptive/modular robot.i out together from AliExpress?",
-          "done": false,
+          "done": true,
           "created": "2026-09-24T02:26:10.767Z",
-          "updated": "2026-09-24T02:26:10.767Z"
+          "updated": "2026-09-26T22:59:13.107Z"
         },
         {
           "id": "n-muewvdvafdhg",
@@ -493,17 +493,17 @@
         {
           "id": "n-agent-1790270000000robot",
           "text": "✓ Actioned 2026-09-25: researched all three questions — Gemini Robotics ER 2 vs local Gemma+Pi options for the embodied-tasks question, AliExpress modular arm pricing/ballpark, and reference builds (XR Corgi, DOFBOT) for current home robotics + AI practice. See suggestions.",
-          "done": false,
+          "done": true,
           "created": "2026-09-25T00:00:00.000Z",
-          "updated": "2026-09-25T00:00:00.000Z",
+          "updated": "2026-09-26T22:59:01.558Z",
           "author": "Claude Sonnet 5 — Tasks Morning Check (Claude Code) cloud routine"
         },
         {
           "id": "n-agent-1790281452469",
           "text": "✓ Actioned 2026-09-25: traced the actual authorship of everything on this task (git commits are always authored as you, the token owner, so they couldn't tell sessions apart — I checked run logs directly). The 6 existing suggestions + prior claudeNote were from the \"Tasks Morning Check (Claude Code)\" cloud routine, not me — corrected their author tags. The text you pasted (SmolVLA, LeKiwi costs, the servo-feedback gotcha, vla.cpp, Reachy Mini) was from the OTHER routine, \"Task tracker — daily R&D pass\" (runs on Opus 5, read-only, never wrote back) — added it as 6 new suggestions attributed to that routine, not to me, since I didn't do that research myself.",
-          "done": false,
+          "done": true,
           "created": "2026-09-24T20:24:12.469Z",
-          "updated": "2026-09-24T20:24:12.469Z",
+          "updated": "2026-09-26T22:59:03.484Z",
           "author": "Claude Sonnet 5 — om-task-System"
         }
       ]
@@ -523,19 +523,46 @@
       "notes": ""
     },
     {
-      "id": "research-how-deep-interoception-goes-muiasbpl",
-      "title": "Research how deep interoception goes",
-      "category": "Research",
+      "id": "sultanas-and-milk-muiffg4e",
+      "title": "sultanas and milk",
+      "category": "Shopping",
       "created": "2026-09-26",
       "notes": "",
-      "assist": true,
+      "assist": false
+    },
+    {
+      "id": "new-vegas-mod-install-muiydlsq",
+      "title": "New Vegas mod install",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
       "noteItems": [
         {
-          "id": "n-muicrm6rfem9",
-          "text": "Do some research and drop a pdf of what you've found here when you're done",
+          "id": "n-muiyecjiuoys",
+          "text": "attached hard requirements",
           "done": false,
-          "created": "2026-09-26T12:15:15.216Z",
-          "updated": "2026-09-26T12:15:15.216Z"
+          "created": "2026-09-26T22:20:47.742Z",
+          "updated": "2026-09-26T22:20:47.742Z",
+          "image": "images/interested-in/new-vegas-mod-install-muiydlsq-n-muiyecjiuoys.jpg"
+        }
+      ]
+    },
+    {
+      "id": "manufacturing-robot-food-fabrication-muj0c06l",
+      "title": "manufacturing robot/food fabrication",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muj0cqilq1bh",
+          "text": "ali express costs - pizza vending machine, protein bar shape maker",
+          "done": false,
+          "created": "2026-09-26T23:15:31.773Z",
+          "updated": "2026-09-26T23:15:31.773Z",
+          "image": "images/interested-in/manufacturing-robot-food-fabrication-muj0c06l-n-muj0cqilq1bh.jpg"
         }
       ]
     }
