@@ -645,6 +645,7 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .task-options-menu .option-danger:hover { background: #ff6b9d; color: #0f1117; }
 
 .task-card {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -654,6 +655,16 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+.task-card .private-dot {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
 }
 .task-card .task-title-edit { -webkit-user-select: text; user-select: text; }
 .task-card:hover { background: var(--panel-2); }
