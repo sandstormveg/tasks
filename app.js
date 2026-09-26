@@ -140,12 +140,6 @@ function visShortLabel(repo) {
 function visLabel(repo) {
   return repo === "private" ? "[PRIVATE]" : "[PUBLIC]";
 }
-function visTitle(repo) {
-  return repo === "private" ? "Private — click to make public" : "Public — click to make private";
-}
-function visToggleButtonHtml(repo) {
-  return `<button class="vis-toggle ${visClass(repo)}" aria-label="Toggle public/private" title="${visTitle(repo)}">${visShortLabel(repo)}</button>`;
-}
 function visTagHtml(repo) {
   return `<span class="vis-tag ${visClass(repo)}">${visLabel(repo)}</span>`;
 }
@@ -595,14 +589,12 @@ function renderActiveDetail(task) {
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
+          ${visDotHtml(task._repo)}
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
+          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
         </div>
         <div class="assist-head-icons">
-          <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
-          <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-          ${visToggleButtonHtml(task._repo)}
           <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
-          <button class="delete-toggle" aria-label="Delete task">🗑</button>
         </div>
       </div>
       <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
@@ -610,16 +602,19 @@ function renderActiveDetail(task) {
     ${taskDetailHtml(task)}
   `;
   body.querySelector(".check").addEventListener("click", () => completeTask(task));
-  body.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
-  body.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task));
   body.querySelector(".expand-toggle").addEventListener("click", () => toggleDetailFullscreen());
-  const subtaskBtn = body.querySelector(".subtask-btn");
-  subtaskBtn.addEventListener("click", (e) => openSubtaskMenu(task, subtaskBtn));
-  const assistBtn = body.querySelector(".assist-toggle");
-  assistBtn.title = task.assist
-    ? "An AI assistant is helping with this one — click to stop"
-    : "Click to have an AI assistant work on this task in the Assistance tab";
-  assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
+  const menuBtn = body.querySelector(".task-menu-btn");
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const r = menuBtn.getBoundingClientRect();
+    openTaskOptionsMenu(task, r.left, r.bottom + 4);
+  });
+  const headTop = body.querySelector(".assist-head-top");
+  headTop.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    openTaskOptionsMenu(task, e.clientX, e.clientY);
+  });
+  setupLongPress(headTop, (x, y) => openTaskOptionsMenu(task, x, y));
   const titleEl = body.querySelector(".assist-title");
   titleEl.addEventListener("dblclick", () => {
     renameTaskInline(task, titleEl, {
@@ -760,7 +755,7 @@ async function setTaskCategory(task, category) {
 // task under another, and moving it to a different category. Keeping both here
 // (rather than adding drag-to-change-category) avoids a single drop meaning three
 // different things at once — reorder, nest, or recategorize.
-function openSubtaskMenu(task, anchorEl) {
+function openSubtaskMenu(task, anchor) {
   closeSubtaskMenu();
   const menu = document.createElement("div");
   menu.className = "category-move-menu";
@@ -804,8 +799,16 @@ function openSubtaskMenu(task, anchorEl) {
     });
   });
 
-  anchorEl.style.position = "relative";
-  anchorEl.appendChild(menu);
+  if (anchor instanceof Element) {
+    anchor.style.position = "relative";
+    anchor.appendChild(menu);
+  } else {
+    document.body.appendChild(menu);
+    menu.classList.add("fixed-menu");
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(anchor.x, window.innerWidth - rect.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(anchor.y, window.innerHeight - rect.height - 8))}px`;
+  }
   setTimeout(() => document.addEventListener("click", onDocClickCloseSubtaskMenu, { capture: true }), 0);
 }
 
@@ -818,6 +821,113 @@ function closeSubtaskMenu() {
 function onDocClickCloseSubtaskMenu(e) {
   const menu = document.getElementById("subtask-menu");
   if (menu && !menu.contains(e.target)) closeSubtaskMenu();
+}
+
+// ---------- task options menu (nest/assist/visibility/delete) ----------
+// The secondary actions used to be a permanent row of buttons on every task card —
+// too much visual weight for a list that can have dozens of these. They're all here
+// instead, behind a ⋮ button, a right-click, or a press-and-hold — same options
+// wherever a task is shown (the list card and the detail page header).
+function openTaskOptionsMenu(task, x, y) {
+  closeTaskOptionsMenu();
+  const menu = document.createElement("div");
+  menu.className = "category-move-menu task-options-menu";
+  menu.id = "task-options-menu";
+  menu.innerHTML = `
+    <div class="combo-option" data-action="nest">↳ Nest or move…</div>
+    <div class="combo-option" data-action="assist">✦ ${task.assist ? "Stop AI assistance" : "Start AI assistance"}</div>
+    <div class="combo-option" data-action="vis">${task._repo === "private" ? "Make public" : "Make private"}</div>
+    <div class="combo-option option-danger" data-action="delete">🗑 Delete task</div>
+  `;
+  menu.querySelector('[data-action="nest"]').addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    openSubtaskMenu(task, { x, y });
+  });
+  menu.querySelector('[data-action="assist"]').addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    toggleAssist(task, document.createElement("button"));
+  });
+  menu.querySelector('[data-action="vis"]').addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    toggleVisibility(task, document.createElement("button"));
+  });
+  menu.querySelector('[data-action="delete"]').addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    deleteTask(task);
+  });
+
+  document.body.appendChild(menu);
+  const rect = menu.getBoundingClientRect();
+  const left = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+  const top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+
+  setTimeout(() => document.addEventListener("click", onDocClickCloseTaskOptionsMenu, { capture: true }), 0);
+}
+
+function closeTaskOptionsMenu() {
+  const existing = document.getElementById("task-options-menu");
+  if (existing) existing.remove();
+  document.removeEventListener("click", onDocClickCloseTaskOptionsMenu, { capture: true });
+}
+
+function onDocClickCloseTaskOptionsMenu(e) {
+  const menu = document.getElementById("task-options-menu");
+  if (menu && !menu.contains(e.target)) closeTaskOptionsMenu();
+}
+
+// Generic press-and-hold detector for touch: fires onLongPress(x, y) if the finger
+// stays down (within a small move tolerance) for `delay` ms, and swallows the click
+// that would otherwise follow (so it doesn't also trigger whatever a tap does).
+function setupLongPress(el, onLongPress, delay = 500) {
+  let timer = null;
+  let startX = 0;
+  let startY = 0;
+  const MOVE_TOLERANCE = 10;
+
+  el.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      timer = setTimeout(() => {
+        timer = null;
+        // The touchend that follows synthesizes a "click" shortly after (and, since
+        // onLongPress typically opens a menu, that click would otherwise also look
+        // like an "outside click" to the menu's own close-on-outside-click listener,
+        // closing it immediately). Swallow exactly that one click, registered before
+        // onLongPress runs so it fires before any listener onLongPress itself adds.
+        document.addEventListener(
+          "click",
+          (e2) => {
+            e2.stopImmediatePropagation();
+            e2.preventDefault();
+          },
+          { capture: true, once: true }
+        );
+        onLongPress(startX, startY);
+      }, delay);
+    },
+    { passive: true }
+  );
+  const cancel = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+  el.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!timer) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dx) > MOVE_TOLERANCE || Math.abs(dy) > MOVE_TOLERANCE) cancel();
+    },
+    { passive: true }
+  );
+  el.addEventListener("touchend", cancel);
+  el.addEventListener("touchcancel", cancel);
 }
 
 // ---------- category drag-and-drop ----------
@@ -889,25 +999,26 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </button>
         <div class="task-body">
           <div class="task-title-row">
+            ${visDotHtml(task._repo)}
             <div class="task-title">${esc(task.title)}</div>
             ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
+            <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
           </div>
           <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
         </div>
       </div>
-      <div class="task-card-icons">
-        <button class="subtask-btn" aria-label="Nest or move this task" title="Nest under another task, or move to a different category">↳</button>
-        <button class="assist-toggle ${task.assist ? "on" : "off"}" aria-label="Toggle AI assistance">✦</button>
-        ${visToggleButtonHtml(task._repo)}
-        <button class="delete-toggle" aria-label="Delete task">🗑</button>
-        <span class="chev">›</span>
-      </div>
     </div>
   `;
+  setupLongPress(card, (x, y) => openTaskOptionsMenu(task, x, y));
   card.addEventListener("click", (e) => {
     if (card.classList.contains("editing")) return;
     if (e.target.closest("button") || e.target.closest("input")) return;
     selectActiveTask(task);
+  });
+  card.addEventListener("contextmenu", (e) => {
+    if (card.classList.contains("editing")) return;
+    e.preventDefault();
+    openTaskOptionsMenu(task, e.clientX, e.clientY);
   });
   if (subtaskCount > 0) {
     card.querySelector(".subtask-collapse-toggle").addEventListener("click", (e) => {
@@ -918,18 +1029,12 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
     });
   }
   card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
-  card.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
-  card.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task, card));
-  const subtaskBtn = card.querySelector(".subtask-btn");
-  subtaskBtn.addEventListener("click", (e) => {
+  const menuBtn = card.querySelector(".task-menu-btn");
+  menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    openSubtaskMenu(task, subtaskBtn);
+    const r = menuBtn.getBoundingClientRect();
+    openTaskOptionsMenu(task, r.left, r.bottom + 4);
   });
-  const assistBtn = card.querySelector(".assist-toggle");
-  assistBtn.title = task.assist
-    ? "An AI assistant is helping with this one — click to stop"
-    : "Click to have an AI assistant work on this task in the Assistance tab";
-  assistBtn.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
 
   setupTaskTitleEditing(task, card);
 
@@ -2097,11 +2202,9 @@ function renderAssistDetail() {
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
+          ${visDotHtml(task._repo)}
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-        </div>
-        <div class="assist-head-icons">
-          ${visToggleButtonHtml(task._repo)}
-          <button class="delete-toggle" aria-label="Delete task">🗑</button>
+          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
         </div>
       </div>
       <div class="assist-meta">
@@ -2149,8 +2252,18 @@ function renderAssistDetail() {
   setupAttachmentPreview(el("#add-note-image"), el("#add-note-preview"));
 
   container.querySelector(".check").addEventListener("click", () => completeTask(task));
-  container.querySelector(".vis-toggle").addEventListener("click", (e) => toggleVisibility(task, e.currentTarget));
-  container.querySelector(".delete-toggle").addEventListener("click", () => deleteTask(task));
+  const menuBtn = container.querySelector(".task-menu-btn");
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const r = menuBtn.getBoundingClientRect();
+    openTaskOptionsMenu(task, r.left, r.bottom + 4);
+  });
+  const headTop = container.querySelector(".assist-head-top");
+  headTop.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    openTaskOptionsMenu(task, e.clientX, e.clientY);
+  });
+  setupLongPress(headTop, (x, y) => openTaskOptionsMenu(task, x, y));
   container.querySelector(".assist-stop-btn").addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
   const assistTitleEl = container.querySelector(".assist-title");
   assistTitleEl.addEventListener("dblclick", () => {
