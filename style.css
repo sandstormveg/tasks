@@ -300,7 +300,6 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 }
 .assist-item:hover { background: var(--panel-2); }
 .assist-item.selected { background: var(--accent); color: #0f1117; font-weight: 600; }
-.assist-item-icon { flex-shrink: 0; }
 .assist-item-title {
   flex: 1;
   min-width: 0;
@@ -682,11 +681,12 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   width: var(--size);
   height: var(--size);
   border-radius: 8px;
-  border: 2px solid var(--muted);
+  border: 2.5px solid var(--accent-2);
   flex-shrink: 0;
   cursor: pointer;
   position: relative;
   background: transparent;
+  box-shadow: 0 0 6px rgba(29, 233, 182, 0.35);
   transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
 }
 .check:hover { border-color: var(--accent); transform: scale(1.08); }
@@ -756,16 +756,6 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .vis-tag { font-weight: 700; letter-spacing: 0.03em; }
 .vis-tag.public { color: var(--accent-2); }
 .vis-tag.private { color: var(--accent); }
-
-.vis-dot {
-  display: inline-block;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-.vis-dot.public { background: var(--accent-2); box-shadow: 0 0 4px var(--accent-2); }
-.vis-dot.private { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
 
 .expand-toggle {
   flex-shrink: 0;

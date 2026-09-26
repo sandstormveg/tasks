@@ -143,9 +143,6 @@ function visLabel(repo) {
 function visTagHtml(repo) {
   return `<span class="vis-tag ${visClass(repo)}">${visLabel(repo)}</span>`;
 }
-function visDotHtml(repo) {
-  return `<span class="vis-dot ${visClass(repo)}" title="${repo === "private" ? "Private" : "Public"}"></span>`;
-}
 
 // ---------- category combobox ----------
 // A real dropdown rather than a native <datalist>: browsers render datalists
@@ -589,7 +586,6 @@ function renderActiveDetail(task) {
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
-          ${visDotHtml(task._repo)}
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
           <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
         </div>
@@ -999,7 +995,6 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </button>
         <div class="task-body">
           <div class="task-title-row">
-            ${visDotHtml(task._repo)}
             <div class="task-title">${esc(task.title)}</div>
             ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
             <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
@@ -1818,7 +1813,6 @@ const historyNodeKey = (entry) => `${entry._repo}::${entry.id}`;
 function historyNodeEl(entry) {
   const key = historyNodeKey(entry);
   const expanded = expandedHistoryNodes.has(key);
-  const visIcon = visDotHtml(entry._repo);
   const items = entry.noteItems || [];
   const claudeNotes = entry.claudeNotes || [];
   const suggestions = entry.suggestions || [];
@@ -1840,7 +1834,7 @@ function historyNodeEl(entry) {
   node.innerHTML = `
     <div class="node-row${hasDetail ? " node-row-toggle" : ""}">
       ${hasDetail ? `<button class="node-toggle" aria-label="${expanded ? "Collapse" : "Expand"}">${expanded ? "▾" : "▸"}</button>` : `<span class="node-toggle-spacer"></span>`}
-      <span class="node-title">${visIcon} ${esc(entry.title)}</span>
+      <span class="node-title">${esc(entry.title)}</span>
     </div>
     <div class="node-meta-row">
       <span class="history-cat-badge" style="color: ${color}; border-color: ${color};">${esc(entry.category)}</span>
@@ -2129,7 +2123,6 @@ function renderAssistList() {
       if (claudeNoteItems(task).some((n) => !n.done)) badges.push(`<span class="badge badge-note" title="An agent did something here you haven't checked off yet">🤖</span>`);
       if (noteItems(task).length) badges.push(`<span class="badge badge-note" title="${noteItems(task).length} note(s)">✎ ${noteItems(task).length}</span>`);
       btn.innerHTML = `
-        <span class="assist-item-icon">${visDotHtml(task._repo)}</span>
         <span class="assist-item-title">${esc(task.title)}</span>
         ${badges.join("")}
       `;
@@ -2202,7 +2195,6 @@ function renderAssistDetail() {
           <button class="check" aria-label="Complete task">
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
-          ${visDotHtml(task._repo)}
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
           <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
         </div>
