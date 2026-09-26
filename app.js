@@ -2603,22 +2603,99 @@ function linkify(str) {
 }
 
 // ---------- tabs ----------
+// Active/Assistance/History, in that order — Assistance sits next to Active
+// (rather than after History) so the two tabs you switch between most while
+// working a task are a single swipe apart.
+const TAB_ORDER = ["active", "assist", "tree"];
+
+function switchToTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  el("#active-view").classList.toggle("hidden", tab !== "active");
+  el("#tree-view").classList.toggle("hidden", tab !== "tree");
+  el("#assist-view").classList.toggle("hidden", tab !== "assist");
+  el("#categories-menu-btn").classList.toggle("hidden", tab !== "active");
+  if (tab !== "active") closeCategoriesSheet();
+  if (tab === "assist") {
+    renderAssistList();
+    renderAssistDetail();
+  }
+}
+
 document.querySelectorAll(".tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    const tab = btn.dataset.tab;
-    el("#active-view").classList.toggle("hidden", tab !== "active");
-    el("#tree-view").classList.toggle("hidden", tab !== "tree");
-    el("#assist-view").classList.toggle("hidden", tab !== "assist");
-    el("#categories-menu-btn").classList.toggle("hidden", tab !== "active");
-    if (tab !== "active") closeCategoriesSheet();
-    if (tab === "assist") {
-      renderAssistList();
-      renderAssistDetail();
-    }
-  });
+  btn.addEventListener("click", () => switchToTab(btn.dataset.tab));
 });
+
+// Swipe left/right (touch only) steps through TAB_ORDER, mirroring a tap on
+// the tab bar. A rightward pan is also the browser's own swipe-back gesture,
+// so just watching passively and deciding at touchend (as a first pass at
+// this did) isn't enough — the browser can already be mid-navigation by
+// then. Instead this direction-locks like a real carousel: once a touch's
+// movement is clearly horizontal (past a small tolerance, dominant over
+// vertical), every further touchmove in that gesture calls preventDefault()
+// to claim it away from the browser (both page scroll and back/forward
+// navigation) before deciding the outcome at touchend. A gesture that turns
+// out vertical instead is released immediately and never touched — normal
+// list scrolling is completely unaffected.
+(function setupTabSwipe() {
+  const SWIPE_THRESHOLD = 60;
+  const LOCK_THRESHOLD = 10;
+  // iOS Safari's edge swipe-back is a system-level gesture that can preempt
+  // page JS even with preventDefault() — direction-locking isn't guaranteed
+  // to win there, so also just stay out of its way entirely near the edges.
+  const EDGE_MARGIN = 24;
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+  let horizontalLock = false;
+
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = startX > EDGE_MARGIN && startX < window.innerWidth - EDGE_MARGIN;
+      horizontalLock = false;
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!tracking || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!horizontalLock && (Math.abs(dx) > LOCK_THRESHOLD || Math.abs(dy) > LOCK_THRESHOLD)) {
+        horizontalLock = Math.abs(dx) > Math.abs(dy) * 1.5;
+        if (!horizontalLock) {
+          tracking = false; // vertical gesture — hands off, let it scroll
+          return;
+        }
+      }
+      if (horizontalLock) e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "touchend",
+    (e) => {
+      const wasTracking = tracking;
+      tracking = false;
+      if (!wasTracking || !horizontalLock || document.querySelector("dialog[open]")) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+      const currentTab = document.querySelector(".tab-btn.active")?.dataset.tab;
+      const index = TAB_ORDER.indexOf(currentTab);
+      if (index === -1) return;
+      const nextIndex = dx < 0 ? index + 1 : index - 1;
+      if (nextIndex < 0 || nextIndex >= TAB_ORDER.length) return;
+      switchToTab(TAB_ORDER[nextIndex]);
+    },
+    { passive: true }
+  );
+})();
 
 // ---------- Active tab: hamburger sheet + detail back button ----------
 el("#categories-menu-btn").addEventListener("click", openCategoriesSheet);
