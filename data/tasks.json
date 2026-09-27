@@ -551,13 +551,6 @@
       ]
     },
     {
-      "id": "buy-a-new-microwave-mui7c03v",
-      "title": "buy a new microwave",
-      "category": "Shopping",
-      "created": "2026-09-26",
-      "notes": ""
-    },
-    {
       "id": "new-vegas-mod-install-muiydlsq",
       "title": "New Vegas mod install",
       "category": "Interested in",
@@ -614,6 +607,13 @@
       "title": "sell guitar",
       "category": "Life Admin",
       "created": "2026-09-27",
+      "notes": ""
+    },
+    {
+      "id": "buy-a-new-microwave-mui7c03v",
+      "title": "buy a new microwave",
+      "category": "Shopping",
+      "created": "2026-09-26",
       "notes": ""
     },
     {
