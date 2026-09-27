@@ -518,19 +518,19 @@
       "notes": ""
     },
     {
-      "id": "buy-a-new-microwave-mui7c03v",
-      "title": "buy a new microwave",
-      "category": "Shopping",
-      "created": "2026-09-26",
-      "notes": ""
-    },
-    {
       "id": "sultanas-and-milk-muiffg4e",
       "title": "sultanas and milk",
       "category": "Shopping",
       "created": "2026-09-26",
       "notes": "",
       "assist": false
+    },
+    {
+      "id": "buy-a-new-microwave-mui7c03v",
+      "title": "buy a new microwave",
+      "category": "Shopping",
+      "created": "2026-09-26",
+      "notes": ""
     },
     {
       "id": "new-vegas-mod-install-muiydlsq",
