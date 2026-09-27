@@ -544,6 +544,23 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .note-text { font-size: 13.5px; line-height: 1.5; word-break: break-word; }
 .note-item.done .note-text { color: var(--muted); text-decoration: line-through; }
 .note-text a { color: var(--accent); }
+
+/* Shared rendering for the light markdown linkify() produces (notes, agent
+   suggestions, agent notes, history entry notes all go through it). */
+.note-text ul, .note-text ol,
+.suggestion-text ul, .suggestion-text ol,
+.node-note ul, .node-note ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.note-text li, .suggestion-text li, .node-note li { margin: 2px 0; }
+.note-text code, .suggestion-text code, .node-note code {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.92em;
+}
 .note-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .note-actions { flex-shrink: 0; display: flex; gap: 2px; }
 .note-edit, .note-delete {
@@ -585,7 +602,7 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .note-save { background: var(--accent) !important; color: #0f1117 !important; border: none !important; font-weight: 600; }
 
 .add-note-form { display: flex; flex-wrap: wrap; gap: 8px; }
-.add-note-form input[type="text"] {
+.add-note-form textarea {
   flex: 1 1 100%;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -593,8 +610,13 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   border-radius: 9px;
   padding: 9px 12px;
   font-size: 13.5px;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 36px;
+  max-height: 220px;
 }
-.add-note-form input:focus { outline: none; border-color: var(--accent); }
+.add-note-form textarea:focus { outline: none; border-color: var(--accent); }
 .add-note-form button {
   background: var(--accent);
   border: none;

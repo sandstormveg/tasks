@@ -1710,13 +1710,21 @@ renderAssistAddToggle();
 
 setupCategoryCombo();
 setupColumnResize();
-setupAddTitleAutoGrow();
+setupTextareaAutoGrow(el("#add-title"), { submitOnEnter: () => el("#add-form").requestSubmit() });
 
-// Grows #add-title as its wrapped text takes more lines (capped by its CSS
-// max-height, which then scrolls), and submits on Enter like a normal text
-// input would — Shift+Enter still inserts a real line break.
-function setupAddTitleAutoGrow() {
-  const textarea = el("#add-title");
+// Grows a textarea as its wrapped text takes more lines (capped by its own CSS
+// max-height, which then scrolls) — used for the new-task title and every "add
+// a note" field, so typing more than a few words wraps and grows the box
+// instead of scrolling sideways in a single line. Note textareas get re-wired
+// on every re-render (they're rebuilt from scratch each time, like their
+// paste/attachment handlers).
+//
+// The title field submits on Enter, like a normal text input (Shift+Enter for
+// a real line break) — titles are short one-liners. Notes are the opposite:
+// they're meant to hold multi-line lists and paragraphs, so plain Enter just
+// breaks the line and Cmd/Ctrl+Enter submits instead, matching the shortcut
+// the existing edit-note textarea already uses.
+function setupTextareaAutoGrow(textarea, { submitOnEnter, submitOnModEnter } = {}) {
   const grow = () => {
     textarea.style.height = "auto";
     const needed = textarea.scrollHeight;
@@ -1729,12 +1737,22 @@ function setupAddTitleAutoGrow() {
     textarea.style.overflowY = needed > max ? "auto" : "hidden";
   };
   textarea.addEventListener("input", grow);
-  textarea.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      el("#add-form").requestSubmit();
-    }
-  });
+  if (submitOnEnter) {
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        submitOnEnter();
+      }
+    });
+  }
+  if (submitOnModEnter) {
+    textarea.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        submitOnModEnter();
+      }
+    });
+  }
   grow();
 }
 
@@ -2048,7 +2066,7 @@ function taskDetailHtml(task) {
         <h4>✎ Notes${items.length ? ` <span class="count">${items.length}</span>` : ""}</h4>
         ${items.length ? `<ul class="note-list task-note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
         <form class="add-note-form task-add-note-form">
-          <input type="text" class="task-add-note-input" placeholder="Add a note… (paste an image too)" autocomplete="off" />
+          <textarea rows="1" class="task-add-note-input" placeholder="Add a note… (paste an image too)"></textarea>
           <input type="file" accept="image/*,application/pdf" class="task-add-note-image" title="Attach a photo or PDF (optional) — or just paste an image into the text field" />
           <span class="add-note-attachment-preview task-add-note-preview"></span>
           <button type="submit">Add</button>
@@ -2090,7 +2108,9 @@ function wireTaskDetailInteractivity(task, card) {
   const form = card.querySelector(".task-add-note-form");
   const statusEl = card.querySelector(".task-note-status");
   const imageInputEl = card.querySelector(".task-add-note-image");
-  setupPasteImage(card.querySelector(".task-add-note-input"), imageInputEl, statusEl);
+  const noteInputEl = card.querySelector(".task-add-note-input");
+  setupTextareaAutoGrow(noteInputEl, { submitOnModEnter: () => form.requestSubmit() });
+  setupPasteImage(noteInputEl, imageInputEl, statusEl);
   setupAttachmentPreview(imageInputEl, card.querySelector(".task-add-note-preview"));
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2338,7 +2358,7 @@ function renderAssistDetail() {
       ${items.length ? `<ul class="note-list" id="note-list">${items.map(noteItemHtml).join("")}</ul>` : ""}
       ${items.length === 0 ? `<div class="assist-hint">No notes yet — add one below. Ideas, plans, links, anything you want to remember about this task.</div>` : ""}
       <form id="add-note-form" class="add-note-form">
-        <input id="add-note-input" type="text" placeholder="Add a note… (paste an image too)" autocomplete="off" />
+        <textarea id="add-note-input" rows="1" placeholder="Add a note… (paste an image too)"></textarea>
         <input id="add-note-image" type="file" accept="image/*,application/pdf" title="Attach a photo or PDF (optional) — or just paste an image into the text field" />
         <span class="add-note-attachment-preview" id="add-note-preview"></span>
         <button type="submit">Add</button>
@@ -2347,6 +2367,7 @@ function renderAssistDetail() {
     </div>
   `;
 
+  setupTextareaAutoGrow(el("#add-note-input"), { submitOnModEnter: () => el("#add-note-form").requestSubmit() });
   setupPasteImage(el("#add-note-input"), el("#add-note-image"), el("#assist-status"));
   setupAttachmentPreview(el("#add-note-image"), el("#add-note-preview"));
 
@@ -2680,8 +2701,60 @@ function esc(str) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+// Turns plain note/suggestion text into readable HTML: bare URLs become links
+// (as before), plus the handful of markdown markers people (and agents) type
+// without thinking — **bold**, *italic*, `code`, "- "/"1. " lists — render
+// instead of showing up as literal asterisks and dashes. Deliberately not a
+// full markdown parser (no headers, tables, nested lists): notes here are
+// short and casual, not documents. URLs are protected behind placeholders
+// before the markdown pass so formatting characters that happen to appear
+// inside one (an underscore in a path, say) can never be misread as markup.
 function linkify(str) {
-  return esc(str).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  const escaped = esc(str);
+  const urls = [];
+  const withPlaceholders = escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+    urls.push(url);
+    return `\u0000${urls.length - 1}\u0000`;
+  });
+  const withMarkdown = renderInlineMarkdown(withPlaceholders);
+  return withMarkdown.replace(/\u0000(\d+)\u0000/g, (_, i) => {
+    const url = urls[i];
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+}
+
+function renderInlineMarkdown(text) {
+  const lines = text.split("\n");
+  const out = [];
+  let listType = null; // "ul" | "ol" | null while inside a list
+  const closeList = () => {
+    if (listType) { out.push(`</${listType}>`); listType = null; }
+  };
+
+  lines.forEach((line, i) => {
+    const bullet = /^\s*[-*]\s+(.+)$/.exec(line);
+    const numbered = /^\s*\d+\.\s+(.+)$/.exec(line);
+    if (bullet) {
+      if (listType !== "ul") { closeList(); out.push("<ul>"); listType = "ul"; }
+      out.push(`<li>${inlineMarkdown(bullet[1])}</li>`);
+    } else if (numbered) {
+      if (listType !== "ol") { closeList(); out.push("<ol>"); listType = "ol"; }
+      out.push(`<li>${inlineMarkdown(numbered[1])}</li>`);
+    } else {
+      closeList();
+      if (line.trim() === "") { if (i > 0 && i < lines.length - 1) out.push("<br>"); }
+      else out.push(i < lines.length - 1 ? `${inlineMarkdown(line)}<br>` : inlineMarkdown(line));
+    }
+  });
+  closeList();
+  return out.join("");
+}
+
+function inlineMarkdown(text) {
+  return text
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_, a, b) => `<strong>${a || b}</strong>`)
+    .replace(/(?<!\*)\*([^*]+)\*(?!\*)|\b_([^_]+)_\b/g, (_, a, b) => `<em>${a || b}</em>`);
 }
 
 // ---------- tabs ----------
