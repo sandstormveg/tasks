@@ -518,19 +518,37 @@
       "notes": ""
     },
     {
-      "id": "buy-a-new-microwave-mui7c03v",
-      "title": "buy a new microwave",
-      "category": "Shopping",
-      "created": "2026-09-26",
-      "notes": ""
-    },
-    {
       "id": "sultanas-and-milk-muiffg4e",
       "title": "sultanas and milk",
       "category": "Shopping",
       "created": "2026-09-26",
       "notes": "",
       "assist": false
+    },
+    {
+      "id": "get-oats-mujhvwbb",
+      "title": "get oats",
+      "category": "Shopping",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false
+    },
+    {
+      "id": "wgac-tp-muj4qm2t",
+      "title": "wgac tp",
+      "category": "Shopping",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mujajnyr780z",
+          "text": "order with Woolworths",
+          "done": true,
+          "created": "2026-09-27T04:00:51.219Z",
+          "updated": "2026-09-27T04:00:54.577Z"
+        }
+      ]
     },
     {
       "id": "new-vegas-mod-install-muiydlsq",
@@ -585,23 +603,6 @@
       "assist": false
     },
     {
-      "id": "wgac-tp-muj4qm2t",
-      "title": "wgac tp",
-      "category": "Shopping",
-      "created": "2026-09-27",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mujajnyr780z",
-          "text": "order with Woolworths",
-          "done": true,
-          "created": "2026-09-27T04:00:51.219Z",
-          "updated": "2026-09-27T04:00:54.577Z"
-        }
-      ]
-    },
-    {
       "id": "sell-guitar-mujaqhxf",
       "title": "sell guitar",
       "category": "Life Admin",
@@ -609,12 +610,11 @@
       "notes": ""
     },
     {
-      "id": "get-oats-mujhvwbb",
-      "title": "get oats",
+      "id": "buy-a-new-microwave-mui7c03v",
+      "title": "buy a new microwave",
       "category": "Shopping",
-      "created": "2026-09-27",
-      "notes": "",
-      "assist": false
+      "created": "2026-09-26",
+      "notes": ""
     },
     {
       "id": "setup-coles-ordering-mujj5mf7",
@@ -647,6 +647,21 @@
         "Suggested plan for your dates: back in Hanoi ~20th, VietClimb 9am shuttle on the 21st to Mao or Duc, climb that afternoon, stay the night (worth it over a same-day return — 3hrs each way makes a there-and-back day trip tight for actual climbing time), head back to Hanoi on the 22nd. Book directly via vietclimb.vn or their Facebook page (facebook.com/VietClimb) since availability for a group of 4-5 is worth confirming ahead, not turning up on spec.",
         "Nothing bookable on your behalf here (no payment/booking access), but this is enough detail to message VietClimb directly and lock in the 21st."
       ]
+    },
+    {
+      "id": "buy-plug-adapter-muk9qpf6",
+      "title": "buy plug adapter",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false,
+      "suggestions": [
+        "Australia's Type I plug won't fit Vietnamese sockets, so you do need an adapter (voltage isn't an issue — Vietnam runs 220V/50Hz, same as Australia, so no separate voltage converter needed, just a plug shape adapter). In Hanoi/northern Vietnam specifically, outlets are mostly European-style Type C/F (two round pins) rather than the flat-pin Type A more common in the south, so get one that covers C/F, not just A.",
+        "Easiest single buy: JB Hi-Fi's \"Terminal 2 Outbound Travel Adaptor with 4 USB Ports for Europe, Russia, Vietnam & More\" — explicitly lists Vietnam, covers the C/F pin shape, and the 4 USB ports mean everyone in your group of 4-5 can charge phones off one adapter if you're sharing a room, so you likely only need 1-2 of these rather than one each.",
+        "Alternative if that's out of stock: JB Hi-Fi also stocks the Jackson-brand outbound/international adapters, or a universal world adapter set on Amazon Australia (search \"universal travel adapter Vietnam\" — several listings explicitly cover EU/Vietnam/Thailand/Bali in one kit, useful if you're stopping elsewhere too).",
+        "Nothing purchasable on your behalf here (no payment access), but grab one from JB Hi-Fi in person or order online before you fly — don't rely on finding one easily in Hanoi itself once you land."
+      ],
+      "parentId": "plan-what-to-take-in-backpack-mucb24b0"
     }
   ]
 }
