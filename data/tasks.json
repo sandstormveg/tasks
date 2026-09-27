@@ -342,9 +342,9 @@
         {
           "id": "n-agent-1790230000000egpu",
           "text": "✓ Actioned 2026-09-24: added the links you asked for — confirmed the TB5 cable ships included with the AG03 (no separate buy needed), found a specific quiet GPU pick (ASUS Dual RTX 5060 Ti 16GB OC, <30dBA under load) with Amazon/Newegg links, and a way to confirm your laptop's Thunderbolt port supports it — see suggestions.",
-          "done": false,
+          "done": true,
           "created": "2026-09-24T00:00:00.000Z",
-          "updated": "2026-09-24T00:00:00.000Z"
+          "updated": "2026-09-27T08:30:27.800Z"
         }
       ]
     },
