@@ -20,6 +20,31 @@ const state = {
   shas: { public: { tasks: null, history: null }, private: { tasks: null, history: null } },
 };
 
+// Remembers which tab/category/task you were looking at, so a refresh picks
+// back up there instead of resetting to the Active tab's "All tasks" list —
+// a per-device display preference, same idea as the collapsed/expanded sets
+// below, never synced to GitHub.
+const uiStateKey = "tasks_ui_state";
+function saveUiState() {
+  try {
+    localStorage.setItem(uiStateKey, JSON.stringify({
+      tab: currentTab,
+      selectedCategory: state.selectedCategory,
+      selectedActiveTaskKey: state.selectedActiveTaskKey,
+      selectedAssistKey: state.selectedAssistKey,
+    }));
+  } catch {
+    // localStorage unavailable/full — last-viewed state just won't survive reload.
+  }
+}
+function loadUiState() {
+  try {
+    return JSON.parse(localStorage.getItem(uiStateKey)) || {};
+  } catch {
+    return {};
+  }
+}
+
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
 const getToken = () => localStorage.getItem(tokenKey) || "";
@@ -447,6 +472,7 @@ function renderActive() {
     detailCol.classList.remove("showing");
     detailCol.classList.remove("fullscreen");
   }
+  saveUiState();
 }
 
 function renderCategoriesRail() {
@@ -2180,6 +2206,7 @@ async function duplicateHistoryEntry(entry) {
 
 // ---------- assistance tab: suggestions + scratchpad per task ----------
 function renderAssistList() {
+  saveUiState();
   const container = el("#assist-list");
   container.innerHTML = "";
   const tasks = assistTasks();
@@ -2662,14 +2689,17 @@ function linkify(str) {
 // (rather than after History) so the two tabs you switch between most while
 // working a task are a single swipe apart.
 const TAB_ORDER = ["active", "assist", "tree"];
+let currentTab = "active";
 
 function switchToTab(tab) {
+  currentTab = tab;
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   el("#active-view").classList.toggle("hidden", tab !== "active");
   el("#tree-view").classList.toggle("hidden", tab !== "tree");
   el("#assist-view").classList.toggle("hidden", tab !== "assist");
   el("#categories-menu-btn").classList.toggle("hidden", tab !== "active");
   if (tab !== "active") closeCategoriesSheet();
+  saveUiState();
   if (tab === "assist") {
     renderAssistList();
     renderAssistDetail();
@@ -2911,5 +2941,16 @@ setInterval(updateHudClock, 1000);
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
+
+// Restore the last-viewed tab/category/task before the initial load, so a
+// refresh picks back up where you left off instead of resetting to the
+// Active tab's "All tasks" list. A restored task/category that no longer
+// exists is harmless — renderActive()/renderAssistList() fall back to the
+// empty state once state.tasks is populated.
+const savedUiState = loadUiState();
+if (savedUiState.selectedCategory) state.selectedCategory = savedUiState.selectedCategory;
+if (savedUiState.selectedActiveTaskKey) state.selectedActiveTaskKey = savedUiState.selectedActiveTaskKey;
+if (savedUiState.selectedAssistKey) state.selectedAssistKey = savedUiState.selectedAssistKey;
+if (savedUiState.tab && TAB_ORDER.includes(savedUiState.tab)) switchToTab(savedUiState.tab);
 
 loadData();
