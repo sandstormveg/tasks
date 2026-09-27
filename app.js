@@ -626,10 +626,12 @@ function renderActiveDetail(task) {
           <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
         </div>
       </div>
+      ${subtaskParentLinkHtml(task)}
       <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
     </div>
     ${taskDetailHtml(task)}
   `;
+  wireSubtaskParentLink(body, task);
   body.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   body.querySelector(".expand-toggle").addEventListener("click", () => toggleDetailFullscreen());
   const menuBtn = body.querySelector(".task-menu-btn");
@@ -662,6 +664,31 @@ function isSubtask(t) {
 
 function subtasksOf(task) {
   return state.tasks.filter((t) => t._repo === task._repo && t.parentId === task.id);
+}
+
+function parentTaskOf(task) {
+  return isSubtask(task) ? state.tasks.find((t) => t._repo === task._repo && t.id === task.parentId) : null;
+}
+
+// Subtasks appear nested under their parent in the Active list, but the Assistance
+// tab lists tasks flat — so a subtask opened there has no visible link back to what
+// it belongs to. This small breadcrumb (used in both detail views) fixes that.
+function subtaskParentLinkHtml(task) {
+  const parent = parentTaskOf(task);
+  return parent ? `<button type="button" class="subtask-parent-link">↳ Subtask of ${esc(parent.title)}</button>` : "";
+}
+
+function wireSubtaskParentLink(container, task) {
+  const link = container.querySelector(".subtask-parent-link");
+  if (!link) return;
+  link.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const parent = parentTaskOf(task);
+    if (!parent) return;
+    switchToTab("active");
+    state.selectedCategory = parent.category;
+    selectActiveTask(parent);
+  });
 }
 
 // Tasks whose subtasks are collapsed, keyed like taskKey() — a list-tidying toggle,
@@ -2273,6 +2300,7 @@ function renderAssistDetail() {
           <button class="task-menu-btn" aria-label="More options" title="More options (or right-click)">⋮</button>
         </div>
       </div>
+      ${subtaskParentLinkHtml(task)}
       <div class="assist-meta">
         ${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}
         <button class="assist-stop-btn" type="button">Stop assistance</button>
@@ -2318,6 +2346,7 @@ function renderAssistDetail() {
   setupPasteImage(el("#add-note-input"), el("#add-note-image"), el("#assist-status"));
   setupAttachmentPreview(el("#add-note-image"), el("#add-note-preview"));
 
+  wireSubtaskParentLink(container, task);
   container.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   const menuBtn = container.querySelector(".task-menu-btn");
   menuBtn.addEventListener("click", (e) => {
