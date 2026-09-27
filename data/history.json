@@ -494,6 +494,18 @@
           "updated": "2026-09-26T20:45:58.422Z"
         }
       ]
+    },
+    {
+      "id": "get-me-the-links-to-the-vietnam-e-visa-and-the-play-store-grab-app-muji0rd1",
+      "title": "get me the links to the vietnam e-visa and the play store grab app",
+      "category": "Hanoi Climbing trip",
+      "completedDate": "2026-09-27",
+      "note": "",
+      "images": [],
+      "suggestions": [
+        "Vietnam official e-visa portal: https://evisa.gov.vn — heads up, the old evisa.xuatnhapcanh.gov.vn domain was migrated here (and to thithucdientu.gov.vn) as of Nov 2024, so use this one, not older bookmarked links. E-visa is valid up to 90 days, single or multiple entry.",
+        "Grab app (Google Play): https://play.google.com/store/apps/details?id=com.grabtaxi.passenger — this is the main rider app (rides + food delivery), the one you want for getting around Hanoi/Cat Ba. Don't confuse it with GrabMerchant or Grab Driver, which are separate apps for businesses/drivers."
+      ]
     }
   ]
 }
