@@ -654,7 +654,13 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-27",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "Australia's Type I plug won't fit Vietnamese sockets, so you do need an adapter (voltage isn't an issue — Vietnam runs 220V/50Hz, same as Australia, so no separate voltage converter needed, just a plug shape adapter). In Hanoi/northern Vietnam specifically, outlets are mostly European-style Type C/F (two round pins) rather than the flat-pin Type A more common in the south, so get one that covers C/F, not just A.",
+        "Easiest single buy: JB Hi-Fi's \"Terminal 2 Outbound Travel Adaptor with 4 USB Ports for Europe, Russia, Vietnam & More\" — explicitly lists Vietnam, covers the C/F pin shape, and the 4 USB ports mean everyone in your group of 4-5 can charge phones off one adapter if you're sharing a room, so you likely only need 1-2 of these rather than one each.",
+        "Alternative if that's out of stock: JB Hi-Fi also stocks the Jackson-brand outbound/international adapters, or a universal world adapter set on Amazon Australia (search \"universal travel adapter Vietnam\" — several listings explicitly cover EU/Vietnam/Thailand/Bali in one kit, useful if you're stopping elsewhere too).",
+        "Nothing purchasable on your behalf here (no payment access), but grab one from JB Hi-Fi in person or order online before you fly — don't rely on finding one easily in Hanoi itself once you land."
+      ]
     }
   ]
 }
