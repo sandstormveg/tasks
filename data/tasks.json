@@ -630,7 +630,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-27",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mujl09bsh2vq",
+          "text": "We will get back to Hanoi probably on the 20th. maybe go for the climbing day on the 21st to Huu long and then either stay one night there or head back for the evening too.",
+          "done": false,
+          "created": "2026-09-27T08:53:41.560Z",
+          "updated": "2026-09-27T08:53:41.560Z"
+        }
+      ]
     }
   ]
 }
