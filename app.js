@@ -535,7 +535,14 @@ function selectCategory(name) {
   state.selectedCategory = name;
   state.selectedActiveTaskKey = null;
   renderActive();
+  applyDefaultCategory();
   if (isMobile()) closeCategoriesSheet();
+}
+
+function applyDefaultCategory() {
+  const field = el("#add-category");
+  if (!field) return;
+  field.value = state.selectedCategory === "__all__" ? "" : state.selectedCategory;
 }
 
 function selectActiveTask(task) {
@@ -1769,12 +1776,14 @@ el("#add-form").addEventListener("submit", async (e) => {
     assertLoaded(visibility);
     await saveTasks(repo, newTasksInRepo, `Add task: ${title}`);
     state.tasks = [...state.tasks, { ...task, _repo: visibility }];
+    playBlip();
     renderActive();
     renderCategoryOptions();
     renderAssistList();
     renderAssistTabCount();
     el("#add-form").reset();
     el("#add-title").style.height = "auto";
+    applyDefaultCategory();
     state.newTaskAssist = false;
     renderAssistAddToggle();
   } catch (err) {
@@ -2807,6 +2816,23 @@ function playPop() {
     osc.connect(gain).connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + 0.22);
+  } catch (e) { /* audio not available, no big deal */ }
+}
+
+function playBlip() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(990, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.13);
   } catch (e) { /* audio not available, no big deal */ }
 }
 
