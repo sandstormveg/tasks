@@ -1297,7 +1297,7 @@ async function completeTask(task, card) {
   if (checkBtn) {
     checkBtn.classList.add("checked");
     burst(checkBtn);
-    playPop();
+    playComplete();
     card.classList.add("completing");
   }
 
@@ -2756,21 +2756,23 @@ window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 let particles = [];
+const GLITCH_GLYPHS = ["0", "1", "/", "\\", "#", "_", "▓", "░", "■", "<", ">"];
 function burst(originEl) {
   const rect = originEl.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
-  const colors = ["#5fe3a1", "#7c9bff", "#ffb86b", "#ff6b9d", "#ffe66b"];
-  for (let i = 0; i < 22; i++) {
-    const angle = (Math.PI * 2 * i) / 22 + Math.random() * 0.3;
-    const speed = 2 + Math.random() * 3.5;
+  const colors = ["#1de9b6", "#ff2e63", "#1fae74", "#dcffe1"];
+  for (let i = 0; i < 18; i++) {
+    const angle = (Math.PI * 2 * i) / 18 + Math.random() * 0.4;
+    const speed = 2.5 + Math.random() * 4;
     particles.push({
       x, y,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 1,
+      vy: Math.sin(angle) * speed - 0.5,
       life: 1,
-      size: 3 + Math.random() * 3,
+      size: 10 + Math.random() * 6,
       color: colors[Math.floor(Math.random() * colors.length)],
+      glyph: GLITCH_GLYPHS[Math.floor(Math.random() * GLITCH_GLYPHS.length)],
     });
   }
   if (!animating) requestAnimationFrame(tick);
@@ -2781,19 +2783,23 @@ function tick() {
   animating = true;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   particles.forEach((p) => {
-    p.x += p.vx;
+    p.x += p.vx + (Math.random() - 0.5) * 0.8;
     p.y += p.vy;
-    p.vy += 0.12;
-    p.life -= 0.018;
+    p.vy += 0.08;
+    p.life -= 0.02;
   });
   particles = particles.filter((p) => p.life > 0);
   particles.forEach((p) => {
+    // static-flicker instead of a smooth fade — dropped frames read as digital noise
+    if (p.life < 0.75 && Math.random() < 0.25) return;
     ctx.globalAlpha = Math.max(p.life, 0);
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 6;
+    ctx.font = `bold ${p.size}px "Courier New", monospace`;
+    ctx.fillText(p.glyph, p.x, p.y);
   });
+  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   if (particles.length > 0) {
     requestAnimationFrame(tick);
@@ -2802,20 +2808,36 @@ function tick() {
   }
 }
 
-function playPop() {
+function playComplete() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioCtx();
+
+    // a short burst of filtered noise reads as a relay/data-write click
+    const bufferSize = Math.floor(audioCtx.sampleRate * 0.03);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+    noise.connect(noiseGain).connect(audioCtx.destination);
+    noise.start();
+
+    // descending sawtooth zap — a process-terminated tone, not a happy chime
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(520, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.02);
+    osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.22);
+    gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.24);
     osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.22);
+    osc.start(audioCtx.currentTime + 0.02);
+    osc.stop(audioCtx.currentTime + 0.26);
   } catch (e) { /* audio not available, no big deal */ }
 }
 
