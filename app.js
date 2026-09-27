@@ -1882,6 +1882,7 @@ function historyNodeEl(entry) {
       <span class="history-cat-badge" style="color: ${color}; border-color: ${color};">${esc(entry.category)}</span>
       ${badges.join("")}
       <button class="node-edit-note" aria-label="Add or edit note and photo" title="Add or edit note and photo">✎ Note</button>
+      <button class="node-duplicate" aria-label="Duplicate to a new active task" title="Duplicate to a new active task">⧉</button>
       <button class="node-delete" aria-label="Delete from history">🗑</button>
     </div>
     ${expanded ? historyNodeDetailHtml(entry) : ""}
@@ -1890,6 +1891,10 @@ function historyNodeEl(entry) {
   node.querySelector(".node-edit-note").addEventListener("click", (e) => {
     e.stopPropagation();
     openNoteDialog(entry);
+  });
+  node.querySelector(".node-duplicate").addEventListener("click", (e) => {
+    e.stopPropagation();
+    duplicateHistoryEntry(entry);
   });
   node.querySelector(".node-delete").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -2138,6 +2143,39 @@ async function deleteHistoryEntry(entry, nodeEl) {
       alert(`Couldn't delete "${entry.title}" from history: ${err.message}. It's back.`);
     }
   }, DELETE_UNDO_MS + 300);
+}
+
+// Spins up a fresh active task from a completed history entry — just title and
+// category, same as typing it into the add-bar again. Notes/images/subtasks stay
+// with the history entry rather than carrying over, since a duplicate is a new
+// attempt at the task, not a copy of the old one's record.
+async function duplicateHistoryEntry(entry) {
+  if (!requireToken()) return;
+  try {
+    assertLoaded(entry._repo);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+
+  const repo = repoFor(entry._repo);
+  const id = entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
+  const task = { id, title: entry.title, category: entry.category, created: new Date().toISOString().slice(0, 10), notes: "" };
+  const existingInRepo = state.tasks.filter((t) => t._repo === entry._repo).map(({ _repo, ...rest }) => rest);
+  const newTasksInRepo = [...existingInRepo, task];
+
+  try {
+    await saveTasks(repo, newTasksInRepo, `Add task: ${entry.title}`);
+    state.tasks = [...state.tasks, { ...task, _repo: entry._repo }];
+    playBlip();
+    renderActive();
+    renderCategoryOptions();
+    renderAssistList();
+    renderAssistTabCount();
+    showToast({ message: `Duplicated "${entry.title}" to Active` });
+  } catch (err) {
+    alert(`Couldn't save to GitHub: ${err.message}`);
+  }
 }
 
 // ---------- assistance tab: suggestions + scratchpad per task ----------

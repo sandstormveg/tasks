@@ -1164,6 +1164,18 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   transition: color 0.15s ease, background 0.15s ease;
 }
 .node-edit-note:hover { color: var(--accent); background: rgba(124, 155, 255, 0.1); }
+.node-duplicate {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.node-duplicate:hover { color: var(--good); background: rgba(124, 255, 178, 0.1); }
 .tree-node::before {
   content: "";
   position: absolute;
