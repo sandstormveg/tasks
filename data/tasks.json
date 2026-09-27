@@ -630,7 +630,7 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-27",
       "notes": "",
-      "assist": false
+      "assist": true
     }
   ]
 }
