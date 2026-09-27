@@ -2709,18 +2709,40 @@ function esc(str) {
 // short and casual, not documents. URLs are protected behind placeholders
 // before the markdown pass so formatting characters that happen to appear
 // inside one (an underscore in a path, say) can never be misread as markup.
+// Bare domain mentions ("vietclimb.vn", "facebook.com/VietClimb") are common in
+// agent suggestions, which cite a site without bothering to spell out https://.
+// Matched only against a curated TLD list (rather than "any word.word") so
+// ordinary sentence punctuation ("e.g.", "Node.js", "3.5 apples") never gets
+// mistaken for a link — and never right after "@", so email addresses don't
+// get their domain half linkified as if it were a website.
+const BARE_DOMAIN_TLDS = "com|net|org|io|co|gov|edu|app|dev|ai|info|biz|me|xyz|vn|th|id|my|sg|uk|au|nz|us|ca|de|fr|jp|in|cn|hk|tw|kr|es|it|nl|ie|ch|se|no|dk|fi|pl|br|mx|za|tv|to";
+const BARE_DOMAIN_RE = new RegExp(
+  `(?<!@)\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:${BARE_DOMAIN_TLDS})(?:\\/[^\\s<]*)?\\b`,
+  "gi"
+);
+
 function linkify(str) {
   const escaped = esc(str);
   const urls = [];
-  const withPlaceholders = escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+  const withUrls = escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
     urls.push(url);
-    return `\u0000${urls.length - 1}\u0000`;
+    return `\u0000U${urls.length - 1}\u0000`;
+  });
+  const domains = [];
+  const withPlaceholders = withUrls.replace(BARE_DOMAIN_RE, (domain) => {
+    domains.push(domain);
+    return `\u0000D${domains.length - 1}\u0000`;
   });
   const withMarkdown = renderInlineMarkdown(withPlaceholders);
-  return withMarkdown.replace(/\u0000(\d+)\u0000/g, (_, i) => {
-    const url = urls[i];
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-  });
+  return withMarkdown
+    .replace(/\u0000U(\d+)\u0000/g, (_, i) => {
+      const url = urls[i];
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    })
+    .replace(/\u0000D(\d+)\u0000/g, (_, i) => {
+      const domain = domains[i];
+      return `<a href="https://${domain}" target="_blank" rel="noopener noreferrer">${domain}</a>`;
+    });
 }
 
 function renderInlineMarkdown(text) {
