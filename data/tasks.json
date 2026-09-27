@@ -622,7 +622,11 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-27",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "Vietnam official e-visa portal: https://evisa.gov.vn — heads up, the old evisa.xuatnhapcanh.gov.vn domain was migrated here (and to thithucdientu.gov.vn) as of Nov 2024, so use this one, not older bookmarked links. E-visa is valid up to 90 days, single or multiple entry.",
+        "Grab app (Google Play): https://play.google.com/store/apps/details?id=com.grabtaxi.passenger — this is the main rider app (rides + food delivery), the one you want for getting around Hanoi/Cat Ba. Don't confuse it with GrabMerchant or Grab Driver, which are separate apps for businesses/drivers."
+      ]
     }
   ]
 }
