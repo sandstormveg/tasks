@@ -506,6 +506,29 @@
         "Vietnam official e-visa portal: https://evisa.gov.vn — heads up, the old evisa.xuatnhapcanh.gov.vn domain was migrated here (and to thithucdientu.gov.vn) as of Nov 2024, so use this one, not older bookmarked links. E-visa is valid up to 90 days, single or multiple entry.",
         "Grab app (Google Play): https://play.google.com/store/apps/details?id=com.grabtaxi.passenger — this is the main rider app (rides + food delivery), the one you want for getting around Hanoi/Cat Ba. Don't confuse it with GrabMerchant or Grab Driver, which are separate apps for businesses/drivers."
       ]
+    },
+    {
+      "id": "what-are-the-best-ways-to-learn-a-language-e-g-japanese-muekmq0z",
+      "title": "what are the best ways to learn a language? e.g. Japanese",
+      "category": "Interested in",
+      "completedDate": "2026-09-27",
+      "note": "",
+      "images": [],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790230000000lang",
+          "text": "✓ Actioned 2026-09-24: researched the best approach + apps for learning Japanese, tailored to having a Japanese partner and the 22-29 Oct Tokyo trip — see suggestions.",
+          "done": true,
+          "created": "2026-09-24T00:00:00.000Z",
+          "updated": "2026-09-23T22:58:09.240Z"
+        }
+      ],
+      "suggestions": [
+        "Best-fit approach for you specifically: you have a Japanese partner (per your Japan trip task) and a Tokyo trip 22-29 Oct — that's a built-in native speaker most learners don't have, so prioritize actually speaking over app-hopping. Structure: (1) hiragana + katakana first, 1-2 weeks, non-negotiable foundation; (2) layer in a kanji/vocab tool + a grammar resource; (3) use your partner (and/or italki) for real speaking practice rather than staying app-only.",
+        "Apps by purpose — rotate tools as your bottleneck changes rather than sticking to one forever: Duolingo (https://www.duolingo.com/course/ja/en/Learn-Japanese) is a fine on-ramp for absolute beginners but not sufficient alone; Anki (https://apps.ankiweb.net/) for free spaced-repetition vocab (~1,000 free Japanese decks available); WaniKani (https://www.wanikani.com/) for structured kanji + vocab (paid subscription); Bunpro (https://bunpro.jp/) for grammar from N5 through N1; italki (https://www.italki.com/) to book a real tutor for speaking practice; HelloTalk (https://www.hellotalk.com/) for casual language exchange with native speakers.",
+        "Free video resources if you'd rather not pay for anything at first: YouTube channels Japanese Ammo with Misa, Cure Dolly (grammar explained in an unusually clear way), and Kaname Naito all have hundreds of hours of free lessons.",
+        "Tied to your trip: 4 weeks of hiragana/katakana + basic conversational phrases before 22 Oct would get you reading menus/signs and using basic Japanese with your partner's friends/family during the trip — a concrete, achievable target given the timeline."
+      ]
     }
   ]
 }

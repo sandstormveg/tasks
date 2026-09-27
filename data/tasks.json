@@ -160,6 +160,13 @@
           "done": false,
           "created": "2026-09-23T04:23:43.599Z",
           "updated": "2026-09-23T04:23:43.599Z"
+        },
+        {
+          "id": "n-mukfuk7808s6",
+          "text": "might need a different kind of microscope to see micrometeorites. see above link. much more expensive",
+          "done": false,
+          "created": "2026-09-27T23:17:03.812Z",
+          "updated": "2026-09-27T23:17:16.239Z"
         }
       ]
     },
@@ -349,29 +356,6 @@
       ]
     },
     {
-      "id": "what-are-the-best-ways-to-learn-a-language-e-g-japanese-muekmq0z",
-      "title": "what are the best ways to learn a language? e.g. Japanese",
-      "category": "Interested in",
-      "created": "2026-09-23",
-      "notes": "",
-      "assist": false,
-      "suggestions": [
-        "Best-fit approach for you specifically: you have a Japanese partner (per your Japan trip task) and a Tokyo trip 22-29 Oct — that's a built-in native speaker most learners don't have, so prioritize actually speaking over app-hopping. Structure: (1) hiragana + katakana first, 1-2 weeks, non-negotiable foundation; (2) layer in a kanji/vocab tool + a grammar resource; (3) use your partner (and/or italki) for real speaking practice rather than staying app-only.",
-        "Apps by purpose — rotate tools as your bottleneck changes rather than sticking to one forever: Duolingo (https://www.duolingo.com/course/ja/en/Learn-Japanese) is a fine on-ramp for absolute beginners but not sufficient alone; Anki (https://apps.ankiweb.net/) for free spaced-repetition vocab (~1,000 free Japanese decks available); WaniKani (https://www.wanikani.com/) for structured kanji + vocab (paid subscription); Bunpro (https://bunpro.jp/) for grammar from N5 through N1; italki (https://www.italki.com/) to book a real tutor for speaking practice; HelloTalk (https://www.hellotalk.com/) for casual language exchange with native speakers.",
-        "Free video resources if you'd rather not pay for anything at first: YouTube channels Japanese Ammo with Misa, Cure Dolly (grammar explained in an unusually clear way), and Kaname Naito all have hundreds of hours of free lessons.",
-        "Tied to your trip: 4 weeks of hiragana/katakana + basic conversational phrases before 22 Oct would get you reading menus/signs and using basic Japanese with your partner's friends/family during the trip — a concrete, achievable target given the timeline."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-1790230000000lang",
-          "text": "✓ Actioned 2026-09-24: researched the best approach + apps for learning Japanese, tailored to having a Japanese partner and the 22-29 Oct Tokyo trip — see suggestions.",
-          "done": true,
-          "created": "2026-09-24T00:00:00.000Z",
-          "updated": "2026-09-23T22:58:09.240Z"
-        }
-      ]
-    },
-    {
       "id": "toothpaste-mueq2rs8",
       "title": "toothpaste",
       "category": "Shopping",
@@ -547,42 +531,6 @@
           "done": true,
           "created": "2026-09-27T04:00:51.219Z",
           "updated": "2026-09-27T04:00:54.577Z"
-        }
-      ]
-    },
-    {
-      "id": "new-vegas-mod-install-muiydlsq",
-      "title": "New Vegas mod install",
-      "category": "Interested in",
-      "created": "2026-09-26",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-muiyecjiuoys",
-          "text": "attached hard requirements",
-          "done": false,
-          "created": "2026-09-26T22:20:47.742Z",
-          "updated": "2026-09-26T22:20:47.742Z",
-          "image": "images/interested-in/new-vegas-mod-install-muiydlsq-n-muiyecjiuoys.jpg"
-        }
-      ]
-    },
-    {
-      "id": "manufacturing-robot-food-fabrication-muj0c06l",
-      "title": "manufacturing robot/food fabrication",
-      "category": "Interested in",
-      "created": "2026-09-26",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-muj0cqilq1bh",
-          "text": "ali express costs - pizza vending machine, protein bar shape maker",
-          "done": false,
-          "created": "2026-09-26T23:15:31.773Z",
-          "updated": "2026-09-26T23:15:31.773Z",
-          "image": "images/interested-in/manufacturing-robot-food-fabrication-muj0c06l-n-muj0cqilq1bh.jpg"
         }
       ]
     },
