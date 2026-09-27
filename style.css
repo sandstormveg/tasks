@@ -366,6 +366,9 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   border-radius: 14px;
   padding: 22px;
   min-height: 300px;
+  min-width: 0; /* grid items default to min-width:auto, which refuses to shrink below an
+                   unbroken run of text (e.g. a URL in the title) — that stretched the whole
+                   layout past the viewport on narrow screens, forcing a pinch-zoom-out. */
 }
 .assist-head {
   border-bottom: 1px solid var(--border);
@@ -1353,6 +1356,8 @@ dialog textarea { min-height: 70px; resize: vertical; }
   main.view { padding: 22px 14px 70px; }
   .assist-layout { grid-template-columns: 1fr; }
   .assist-list { max-height: 260px; }
+  .assist-item { font-size: 15.5px; padding: 11px 10px; }
+  .assist-list .assist-cat { font-size: 12.5px; }
   .assist-detail { padding: 18px; }
 
   .task-card { gap: 8px; padding: 12px; }

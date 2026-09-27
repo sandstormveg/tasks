@@ -620,7 +620,7 @@ function renderActiveDetail(task) {
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
+          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click)">⋮</button>
         </div>
         <div class="assist-head-icons">
           <button class="expand-toggle${isFullscreen ? " expanded" : ""}" aria-label="${isFullscreen ? "Exit full page" : "Open as full page"}" title="${isFullscreen ? "Exit full page" : "Open as full page"}">⤢</button>
@@ -643,7 +643,6 @@ function renderActiveDetail(task) {
     e.preventDefault();
     openTaskOptionsMenu(task, e.clientX, e.clientY);
   });
-  setupLongPress(headTop, (x, y) => openTaskOptionsMenu(task, x, y));
   const titleEl = body.querySelector(".assist-title");
   titleEl.addEventListener("dblclick", () => {
     renameTaskInline(task, titleEl, {
@@ -855,8 +854,10 @@ function onDocClickCloseSubtaskMenu(e) {
 // ---------- task options menu (nest/assist/visibility/delete) ----------
 // The secondary actions used to be a permanent row of buttons on every task card —
 // too much visual weight for a list that can have dozens of these. They're all here
-// instead, behind a ⋮ button, a right-click, or a press-and-hold — same options
-// wherever a task is shown (the list card and the detail page header).
+// instead, behind a ⋮ button or a right-click — same options wherever a task is
+// shown (the list card and the detail page header). Long-press used to open this
+// too, but it fought with drag-to-reorder on touch, so it was dropped once the
+// ⋮ button covered the same ground.
 function openTaskOptionsMenu(task, x, y) {
   closeTaskOptionsMenu();
   const menu = document.createElement("div");
@@ -904,59 +905,6 @@ function closeTaskOptionsMenu() {
 function onDocClickCloseTaskOptionsMenu(e) {
   const menu = document.getElementById("task-options-menu");
   if (menu && !menu.contains(e.target)) closeTaskOptionsMenu();
-}
-
-// Generic press-and-hold detector for touch: fires onLongPress(x, y) if the finger
-// stays down (within a small move tolerance) for `delay` ms, and swallows the click
-// that would otherwise follow (so it doesn't also trigger whatever a tap does).
-function setupLongPress(el, onLongPress, delay = 500) {
-  let timer = null;
-  let startX = 0;
-  let startY = 0;
-  const MOVE_TOLERANCE = 10;
-
-  el.addEventListener(
-    "touchstart",
-    (e) => {
-      if (e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      timer = setTimeout(() => {
-        timer = null;
-        // The touchend that follows synthesizes a "click" shortly after (and, since
-        // onLongPress typically opens a menu, that click would otherwise also look
-        // like an "outside click" to the menu's own close-on-outside-click listener,
-        // closing it immediately). Swallow exactly that one click, registered before
-        // onLongPress runs so it fires before any listener onLongPress itself adds.
-        document.addEventListener(
-          "click",
-          (e2) => {
-            e2.stopImmediatePropagation();
-            e2.preventDefault();
-          },
-          { capture: true, once: true }
-        );
-        onLongPress(startX, startY);
-      }, delay);
-    },
-    { passive: true }
-  );
-  const cancel = () => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-  };
-  el.addEventListener(
-    "touchmove",
-    (e) => {
-      if (!timer) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      if (Math.abs(dx) > MOVE_TOLERANCE || Math.abs(dy) > MOVE_TOLERANCE) cancel();
-    },
-    { passive: true }
-  );
-  el.addEventListener("touchend", cancel);
-  el.addEventListener("touchcancel", cancel);
 }
 
 // ---------- category drag-and-drop ----------
@@ -1030,7 +978,7 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
           <div class="task-title-row">
             <div class="task-title">${esc(task.title)}</div>
             ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
-            <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
+            <button class="task-menu-btn" aria-label="More options" title="More options (or right-click)">⋮</button>
           </div>
           <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
         </div>
@@ -1042,7 +990,6 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
       </span>` : ""}
   `;
-  setupLongPress(card, (x, y) => openTaskOptionsMenu(task, x, y));
   card.addEventListener("click", (e) => {
     if (card.classList.contains("editing")) return;
     if (e.target.closest("button") || e.target.closest("input")) return;
@@ -2323,7 +2270,7 @@ function renderAssistDetail() {
             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
           </button>
           <h2 class="assist-title" title="Double-click to rename">${esc(task.title)}</h2>
-          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click / press and hold)">⋮</button>
+          <button class="task-menu-btn" aria-label="More options" title="More options (or right-click)">⋮</button>
         </div>
       </div>
       <div class="assist-meta">
@@ -2383,7 +2330,6 @@ function renderAssistDetail() {
     e.preventDefault();
     openTaskOptionsMenu(task, e.clientX, e.clientY);
   });
-  setupLongPress(headTop, (x, y) => openTaskOptionsMenu(task, x, y));
   container.querySelector(".assist-stop-btn").addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
   const assistTitleEl = container.querySelector(".assist-title");
   assistTitleEl.addEventListener("dblclick", () => {
