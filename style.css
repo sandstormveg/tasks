@@ -1374,6 +1374,9 @@ dialog textarea { min-height: 70px; resize: vertical; }
     padding: max(16px, env(safe-area-inset-top)) 16px 16px;
   }
   .col-categories.mobile-open { transform: translateY(0); }
+  .col-categories .rail-title { font-size: 13px; margin-bottom: 14px; }
+  .col-categories .cat-item { font-size: 17px; padding: 13px 12px; }
+  .col-categories .cat-count { font-size: 12.5px; padding: 2px 9px; }
   .mobile-backdrop {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 55;
   }
