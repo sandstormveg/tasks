@@ -335,9 +335,9 @@
         {
           "id": "n-agent-1790186639116",
           "text": "✓ Actioned 2026-09-24: added links for the additional eGPU items you asked about — GPU card options, a certified Thunderbolt 5 cable, driver pages, and how to check your laptop's port supports eGPU. See suggestions.",
-          "done": false,
+          "done": true,
           "created": "2026-09-23T18:03:59.116Z",
-          "updated": "2026-09-23T18:03:59.116Z"
+          "updated": "2026-09-27T08:30:22.112Z"
         },
         {
           "id": "n-agent-1790230000000egpu",
