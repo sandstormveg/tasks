@@ -604,7 +604,7 @@ function renderActiveDetail(task) {
     </div>
     ${taskDetailHtml(task)}
   `;
-  body.querySelector(".check").addEventListener("click", () => completeTask(task));
+  body.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   body.querySelector(".expand-toggle").addEventListener("click", () => toggleDetailFullscreen());
   const menuBtn = body.querySelector(".task-menu-btn");
   menuBtn.addEventListener("click", (e) => {
@@ -1035,7 +1035,7 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
       renderActive();
     });
   }
-  card.querySelector(".check").addEventListener("click", () => completeTask(task, card));
+  card.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   const menuBtn = card.querySelector(".task-menu-btn");
   menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1290,16 +1290,20 @@ async function toggleVisibility(task, btnEl) {
 // ---------- completing a task ----------
 // Ticking a box completes it immediately — no modal in the way. A note/photo is
 // optional and offered afterward via the toast, so adding one is a choice, not a toll.
-async function completeTask(task, card) {
+async function completeTask(task, checkBtn) {
   if (!requireToken()) return;
   const repo = repoFor(task._repo);
-  const checkBtn = card ? card.querySelector(".check") : null;
-  if (checkBtn) {
-    checkBtn.classList.add("checked");
-    burst(checkBtn);
-    playComplete();
-    card.classList.add("completing");
-  }
+  // The task being completed may be showing in more places than just wherever the
+  // click came from — e.g. its Active-list card next to its own open detail panel —
+  // so animate every check button for it, not just the one that was clicked.
+  const card = document.querySelector(`.task-card[data-task-key="${CSS.escape(taskKey(task))}"]`);
+  const checkBtns = new Set([checkBtn, card ? card.querySelector(".check") : null].filter(Boolean));
+  checkBtns.forEach((btn) => {
+    btn.classList.add("checked");
+    burst(btn);
+  });
+  playComplete();
+  if (card) card.classList.add("completing");
 
   try {
     assertLoaded(task._repo);
@@ -1348,7 +1352,7 @@ async function completeTask(task, card) {
   } catch (err) {
     alert(`Couldn't save to GitHub: ${err.message}`);
     if (card) card.classList.remove("completing");
-    if (checkBtn) checkBtn.classList.remove("checked");
+    checkBtns.forEach((btn) => btn.classList.remove("checked"));
   }
 }
 
@@ -2281,7 +2285,7 @@ function renderAssistDetail() {
   setupPasteImage(el("#add-note-input"), el("#add-note-image"), el("#assist-status"));
   setupAttachmentPreview(el("#add-note-image"), el("#add-note-preview"));
 
-  container.querySelector(".check").addEventListener("click", () => completeTask(task));
+  container.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   const menuBtn = container.querySelector(".task-menu-btn");
   menuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
