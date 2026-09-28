@@ -633,6 +633,13 @@
           "done": false,
           "created": "2026-09-28T00:21:35.597Z",
           "updated": "2026-09-28T00:21:35.597Z"
+        },
+        {
+          "id": "n-muki5r8u3k69",
+          "text": "Let me check your GPU, storage, and PSU situation so the recommendations are grounded in what you actually have.\n\nNo worries — the CUSU stick isn't wasted, it just isn't the ideal fit for a matched upgrade. Keep it as an emergency spare or return it if the seller allows.\n\nHere's the fuller picture and where your money's actually best spent:\n\n**Your current setup:**\n- CPU: Ryzen 5 2600 (2018, Zen+, 6c/12t)\n- GPU: RTX 2070 Super (8GB) — still solid\n- RAM: 16GB DDR4, misconfigured at 2133MHz instead of 3200MHz\n- Storage: 500GB NVMe + 250GB SATA SSD (750GB total)\n- OS: Windows 10 Home — **this fell out of security support in Oct 2025, so you're currently running unpatched**\n\n**Priority order:**\n\n1. **Free fix first — enable DOCP/XMP in BIOS.** Your existing RAM is rated 3200MHz CL16 but running at 2133. Ryzen performance is unusually sensitive to RAM speed (infinity fabric), so this alone is a real free performance gain before you spend anything.\n\n2. **CPU is your real bottleneck.** The 2070 Super is being held back by the 2600 in a lot of modern games. Because your board is X470, you can drop in a **Ryzen 5700X or 5800X3D** (same AM4 socket, no motherboard swap needed) — big single/multi-core jump, and it's the best price-to-performance move available to you. You'll need to update your ASRock X470 Master SLI BIOS to a recent AGESA version first (check ASRock's support page for your board — X470 boards got 5000-series support via BIOS update, but confirm before buying the CPU).\n\n3. **This also fixes your Windows 11 problem.** Ryzen 2000-series isn't on Microsoft's official supported CPU list for Windows 11; a 5000-series chip is. So the CPU upgrade doubles as your path off unsupported Windows 10.\n\n4. **Storage next.** 750GB combined is tight by today's standards. A 1–2TB NVMe drive is cheap now and worth adding before you run into game-install headaches.\n\n5. **RAM to 32GB — only if you multitask/stream/edit.** For pure gaming, 16GB properly clocked at 3200 is still fine. If you do want to go bigger, buy a proper matched 2×16GB kit rather than adding odd sticks.\n\n6. **GPU — leave it.** The 2070 Super is still a good 1080p/1440p card; no rush here.\n\nIf you're on a budget, do #1 (free) and #2 (CPU) first — that's the combo that actually changes how the machine feels day to day.",
+          "done": false,
+          "created": "2026-09-28T00:21:45.390Z",
+          "updated": "2026-09-28T00:21:45.390Z"
         }
       ]
     }
