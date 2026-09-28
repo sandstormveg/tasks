@@ -1,36 +1,19 @@
 {
   "tasks": [
     {
-      "id": "iqwant-live-graduation-criteria",
-      "title": "iQwant: decide graduation criteria before any real money",
+      "id": "iqwant-catalyst-calendar-rule",
+      "title": "iQwant: add a catalyst-calendar risk rule",
       "category": "Development",
       "created": "2026-09-23",
       "notes": "",
       "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
-      "noteItems": [
-        {
-          "id": "n-muizlhnj6a1o",
-          "text": "well, i guess doing quite well. i.e >10% returns. the other rules sound good too",
-          "done": false,
-          "created": "2026-09-26T22:54:20.575Z",
-          "updated": "2026-09-26T22:54:20.575Z"
-        }
-      ],
       "claudeNotes": [
         {
-          "id": "n-agent-1790157556027x7g",
-          "text": "Write down, before looking at results, what paper performance would justify unlocking live (e.g. 3+ months paper, beats equal-weight buy & hold after costs, max drawdown under a set limit, every trade traceable to a rule). Live is locked in code until then.",
-          "done": true,
-          "created": "2026-09-23T09:59:16.027Z",
-          "updated": "2026-09-26T22:56:23.083Z"
-        },
-        {
-          "id": "n-agent-20260927-graduation-checkable",
-          "text": "✓ Actioned 2026-09-27: folded your >10% paper-return answer into the actual graduation criteria and made the whole list checkable in code, not just written down. New `trader/graduation.py` (`check_graduation`) + `python -m trader graduation` CLI command reports pass/fail on all five: 3+ months paper-traded, total return >= 10%, beats equal-weight buy & hold, max drawdown under the account's own 8% circuit-breaker limit, and every trade traceable to a rule (this last one is structural - Order.rule_id/ClosedTrade.exit_rule are required fields, so it's always true by construction, not something that needs measuring). 4 new tests, full suite (122) still green. Documented in CLAUDE.md and docs/GUIDE.md §14, committed and pushed (458a522). It only reports - live trading stays locked exactly as before in trader/ibkr.py; this just tells you when the case for that conversation actually exists.",
-          "author": "Claude Sonnet 5 — iQwant owner session",
+          "id": "n-agent-1790157556027d6r",
+          "text": "Block or shrink new entries within N days of a known binary event (results, AGM votes, regulatory decisions) unless the thesis is about that event. Idea from research/reference/equity-research-notes.md.",
           "done": false,
-          "created": "2026-09-27T00:00:00.000Z",
-          "updated": "2026-09-27T00:00:00.000Z"
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-23T09:59:16.027Z"
         }
       ]
     },
