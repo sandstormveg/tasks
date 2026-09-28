@@ -670,7 +670,16 @@
       "category": "Groceries",
       "created": "2026-09-28",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mukt1l2x4ova",
+          "text": "like coles and woolworths ordering for sludge",
+          "done": false,
+          "created": "2026-09-28T05:26:26.553Z",
+          "updated": "2026-09-28T05:26:26.553Z"
+        }
+      ]
     },
     {
       "id": "unstack-dishwasher-muksi1h7",
