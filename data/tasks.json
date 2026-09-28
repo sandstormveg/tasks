@@ -137,9 +137,9 @@
           "id": "n-agent-declutter-feedback-relay",
           "text": "✓ Actioned 2026-09-26 by Director: relayed your annotated screenshot feedback to the Atlas session — move the object/relation-count subheading into About, remove the Export JSON/Markdown/dark-mode-toggle buttons from the landing page (relocate to wherever browse-all lives), plus flagged your two open ideas (view-all-UNIQUE-items for dedup once external APIs are wired in, and a per-item 'request more info/note for clarity' action). Not built yet, day window, just relayed. Note: your 'check other knowledge databases for differentiation' note (n-mugn2we6w8zx, 2026-09-25 07:28) is older and still unaddressed — that one's mine to research directly next pass, not implementation work.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-09-26T07:21:00.000Z",
-          "updated": "2026-09-26T07:21:00.000Z"
+          "updated": "2026-09-28T05:29:05.584Z"
         },
         {
           "id": "n-agent-more-ux-feedback-relay",
