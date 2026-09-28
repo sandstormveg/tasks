@@ -1,22 +1,6 @@
 {
   "tasks": [
     {
-      "id": "reconsider-privacy-concerns-muf8sqh0",
-      "title": "reconsider privacy concerns",
-      "category": "R&D",
-      "created": "2026-09-24",
-      "notes": "",
-      "noteItems": [
-        {
-          "id": "n-muf8tys56mru",
-          "text": "like by default maybe this website shouldn't show my public tasks.",
-          "done": false,
-          "created": "2026-09-24T08:01:47.861Z",
-          "updated": "2026-09-24T08:01:47.861Z"
-        }
-      ]
-    },
-    {
       "id": "work-on-my-threemind-app-and-see-if-it-could-pull-this-task-list-muerbl90",
       "title": "work on my inTactic app (previously called threemind) and see if it could pull this task list",
       "category": "R&D",
