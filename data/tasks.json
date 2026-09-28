@@ -1,41 +1,6 @@
 {
   "tasks": [
     {
-      "id": "integrate-epistemic-atlas-with-intactic",
-      "title": "Integrate Epistemic Atlas with inTactic",
-      "category": "R&D",
-      "created": "2026-09-25",
-      "notes": "",
-      "parentId": "come-up-with-a-knowledge-system-architecture-muex37ro",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mug1qi7vspfz",
-          "text": "future task for atlas to do",
-          "done": false,
-          "created": "2026-09-24T21:30:55.288Z",
-          "updated": "2026-09-24T21:30:55.288Z"
-        },
-        {
-          "id": "n-muhg1i5311l0",
-          "text": "tell me if we could build a version if this for Atlas, like by taking the best bits or whether i should build inTactic and connect it somehow like via a rest api. the latter approach seems a bit convoluted.still.might be out of scope for now. but propose some kind of minimal version of both taking the best bits and also what nee features might be good for gemini to build for inTactic",
-          "done": false,
-          "created": "2026-09-25T20:59:09.207Z",
-          "updated": "2026-09-25T20:59:09.207Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-intactic-first-look",
-          "text": "Cloned and read sandstormveg/inTactic (private, 3 commits, created 2026-09-25) at Silica's suggestion for the Atlas's relation-graph visualization. It's a React 19 + Three.js + Express app (\"threeview_mind\") with a Gemini-chat-driven 3D mind-map: SceneManager.ts is a real, working interactive 3D scene (OrbitControls, click/drag/select, CSS3D labels/snippets), not a prototype. Its data model (types.ts) is a simple, portable {Node{id,title,details,position,shape,color,scale,texture},Link{source,target,color,style,size}} pair - clean enough that an Atlas -> inTactic adapter (graph.jsonld nodes/edges -> Node[]/Link[], mapping @type to shape+color and relation @type to Link.style) looks genuinely feasible once both sides are ready. It's currently a standalone app (own Express server, own Gemini chat panel), not a drop-in embeddable widget, so integration would mean either extracting the Three.js rendering pieces as a reusable component or running it as its own deployment fed by an Atlas export - not decided, just scoped. Not building this now; noting the assessment so it's not lost, and marking assist:true since this is now a live thread rather than a someday-task.",
-          "author": "Claude Sonnet 5",
-          "done": true,
-          "created": "2026-09-25T12:00:00.000Z",
-          "updated": "2026-09-25T20:59:18.183Z"
-        }
-      ]
-    },
-    {
       "id": "reconsider-privacy-concerns-muf8sqh0",
       "title": "reconsider privacy concerns",
       "category": "R&D",
