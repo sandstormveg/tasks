@@ -18,43 +18,6 @@
       ]
     },
     {
-      "id": "iqwant-walk-forward-technical-rules",
-      "title": "iQwant: improve the technical rules with walk-forward testing",
-      "category": "Development",
-      "created": "2026-09-23",
-      "notes": "",
-      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
-      "claudeNotes": [
-        {
-          "id": "n-agent-179015755602794x",
-          "text": "The backtest is about flat vs +7.7% for buy & hold, so there's no edge yet. Any rule change should be tested on data it wasn't tuned on (walk-forward / out-of-sample), never by tweaking thresholds until the past looks good.",
-          "done": true,
-          "created": "2026-09-23T09:59:16.027Z",
-          "updated": "2026-09-24T02:06:14.103Z"
-        },
-        {
-          "id": "n-agent-20260924093751b",
-          "text": "✓ Actioned 2026-09-24: built trader/walkforward.py - splits cached history into independent windows (no compounding) and runs the current fixed ruleset on each separately, flagging when one window carries the whole result. `python -m trader walkforward`. First real result (2025-07-09→2026-09-23, 4x 4-month windows): +0.88% / +0.81% / -1.07% / -1.83% — one window explains the entire positive result. Only 4 independent windows exist yet, so this isn't enough to call the rules working or not — it's evidence the full-period 'flat vs buy&hold' number was never a stable edge. Full explanation (studies/game theory/math grounding, how you can be involved, determinism vs approval points) given in chat and docs/GUIDE.md §12.",
-          "done": true,
-          "created": "2026-09-23T23:37:51.000Z",
-          "updated": "2026-09-24T02:06:34.230Z"
-        }
-      ],
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mueqenrklvqb",
-          "text": "improve this then. and explain how our strategy evolves and gets better over time and is based on the best studies and research and fintech performance, philosophy, game theory, probability, math, tools etc",
-          "done": true,
-          "created": "2026-09-23T23:26:00.656Z",
-          "updated": "2026-09-24T02:06:38.323Z"
-        }
-      ],
-      "suggestions": [
-        "Next real lever, in order: (1) let the paper account + research ledger accumulate for a few more weeks so walk-forward has more independent windows to judge consistency from — 4 is too few; (2) only after that, consider giving the analysts full announcement PDFs (separate paused task) so Gold/Polychrome claims can actually verify; (3) a Kelly-criterion-style position sizing review once there's a real win-rate/payoff-ratio to size against — premature before then."
-      ]
-    },
-    {
       "id": "integrate-epistemic-atlas-with-intactic",
       "title": "Integrate Epistemic Atlas with inTactic",
       "category": "R&D",
