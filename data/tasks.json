@@ -565,14 +565,6 @@
       "notes": ""
     },
     {
-      "id": "setup-coles-ordering-mujj5mf7",
-      "title": "setup coles ordering",
-      "category": "Groceries",
-      "created": "2026-09-27",
-      "notes": "",
-      "assist": false
-    },
-    {
       "id": "huu-long-on-the-21st-of-oct-mujkzr8g",
       "title": "Huu long on the 21st of Oct?",
       "category": "Hanoi Climbing trip",
@@ -661,6 +653,14 @@
       "title": "sultanas",
       "category": "Groceries",
       "created": "2026-09-28",
+      "notes": "",
+      "assist": false
+    },
+    {
+      "id": "setup-coles-ordering-mujj5mf7",
+      "title": "setup coles ordering",
+      "category": "Groceries",
+      "created": "2026-09-27",
       "notes": "",
       "assist": false
     },
