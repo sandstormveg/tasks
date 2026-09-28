@@ -330,6 +330,20 @@ async function saveTasks(repo, newTasks, message) {
   state.shas[visibility].tasks = newSha;
 }
 
+// Adding a task is the one mutation that never conflicts with someone else's concurrent
+// change — it doesn't need to know what else happened, just to not clobber it. So instead
+// of building the new list from our (possibly stale) in-memory copy and rejecting on a sha
+// mismatch, read the file fresh right before writing and append to *that*. Returns the
+// fresh list (pre-append) so the caller can resync state.tasks with whatever else changed.
+async function saveTasksAppend(repo, newTask, message) {
+  const visibility = visibilityForRepo(repo);
+  const current = await ghGetFile(repo, "data/tasks.json");
+  const currentTasks = JSON.parse(current.content).tasks;
+  const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: [...currentTasks, newTask] }, current.sha, message);
+  state.shas[visibility].tasks = newSha;
+  return currentTasks;
+}
+
 async function saveHistory(repo, newEntries, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
@@ -1855,13 +1869,12 @@ el("#add-form").addEventListener("submit", async (e) => {
   const repo = repoFor(visibility);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "", assist: state.newTaskAssist };
-  const existingInRepo = state.tasks.filter((t) => t._repo === visibility).map(({ _repo, ...rest }) => rest);
-  const newTasksInRepo = [...existingInRepo, task];
 
   try {
     assertLoaded(visibility);
-    await saveTasks(repo, newTasksInRepo, `Add task: ${title}`);
-    state.tasks = [...state.tasks, { ...task, _repo: visibility }];
+    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${title}`);
+    const otherRepos = state.tasks.filter((t) => t._repo !== visibility);
+    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: visibility })), { ...task, _repo: visibility }];
     playBlip();
     renderActive();
     renderCategoryOptions();
@@ -2245,12 +2258,11 @@ async function duplicateHistoryEntry(entry) {
   const repo = repoFor(entry._repo);
   const id = entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title: entry.title, category: entry.category, created: new Date().toISOString().slice(0, 10), notes: "" };
-  const existingInRepo = state.tasks.filter((t) => t._repo === entry._repo).map(({ _repo, ...rest }) => rest);
-  const newTasksInRepo = [...existingInRepo, task];
 
   try {
-    await saveTasks(repo, newTasksInRepo, `Add task: ${entry.title}`);
-    state.tasks = [...state.tasks, { ...task, _repo: entry._repo }];
+    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${entry.title}`);
+    const otherRepos = state.tasks.filter((t) => t._repo !== entry._repo);
+    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: entry._repo })), { ...task, _repo: entry._repo }];
     playBlip();
     renderActive();
     renderCategoryOptions();
