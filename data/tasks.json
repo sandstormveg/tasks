@@ -1,47 +1,6 @@
 {
   "tasks": [
     {
-      "id": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
-      "title": "Test paper (not real) version of the trading system iQwant",
-      "category": "Development",
-      "created": "2026-09-23",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mudt81etaxlw",
-          "text": "- also call it iQuant or iQwant whichever you think is best.",
-          "done": true,
-          "created": "2026-09-23T07:57:04.421Z",
-          "updated": "2026-09-23T11:12:46.705Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-iqwant-named-191347",
-          "text": "✓ Actioned 2026-09-23: named it iQwant (iQuant is already used by several finance products; iQwant is distinctive and matches this task). The UI, README and start.bat now say iQwant; the GitHub repo is still 'trading-system'. Also wrote the how-to guide (docs/GUIDE.md in the repo) and added 8 'iQwant:' to-do tasks in Development.",
-          "done": true,
-          "created": "2026-09-23T09:13:47.000Z",
-          "updated": "2026-09-23T11:12:52.300Z"
-        },
-        {
-          "id": "n-agent-20260924101441",
-          "text": "✓ Actioned 2026-09-24: added tier-upgrade alerts (a native Windows desktop notification fires the moment a ticker newly reaches Gold/Polychrome - informational only, every tier still auto-queues exactly as before, per your choice) and a shareable trading-card view (#/print/<SYMBOL>, MTG/Slay the Spire/Balatro/Gwent-styled, procedurally generated crest art since no AI image-gen tool is available here - deterministic per ticker, never random). A mockup is live now at #/print/DEMO (also linked from the bottom of the Deck) since no real Gold/Polychrome exists yet. Also automated the daily run via Task Scheduler and added walk-forward sub-period testing (`python -m trader walkforward`) - see the other claudeNotes/history entries for details on each.",
-          "done": true,
-          "created": "2026-09-24T00:14:41.000Z",
-          "updated": "2026-09-24T21:39:01.071Z"
-        },
-        {
-          "id": "n-agent-20260927-gold-sizing-cards",
-          "text": "✓ Actioned 2026-09-27: Gold/Polychrome now get conviction-scaled position sizing (2%→4% Gold, 2%→6% Polychrome, linear by conviction, entry-v1.5) instead of the flat 2% every tier got before - and you can approve or adjust that size on the Run page before it fills at the next open (untouched, it still auto-fills at the computed size - not a hard approval gate, matches your earlier 'entries stay automatic' choice). Also wired real trading-card PNGs into the tier-upgrade notification: ported the web app's procedural crest generator (mulberry32 PRNG) to Pillow so the toast's image is the same art as the real card, not a placeholder. Resolved the sizing numbers via a couple of AskUserQuestion rounds since your first answers on the range conflicted with each other. 11 new/updated tests, full suite (133) green, committed and pushed (a82e536). Full writeup in CLAUDE.md and docs/GUIDE.md §7/§14.",
-          "author": "Claude Sonnet 5 — iQwant owner session",
-          "done": false,
-          "created": "2026-09-27T00:00:00.000Z",
-          "updated": "2026-09-27T00:00:00.000Z"
-        }
-      ]
-    },
-    {
       "id": "iqwant-ibkr-paper-session",
       "title": "iQwant: open IBKR account and run a first paper session",
       "category": "Development",
