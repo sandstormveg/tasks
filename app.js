@@ -414,6 +414,55 @@ async function unnestCategory(child) {
   }
 }
 
+// A category name is its identity everywhere it's used — task.category strings,
+// history entries, and as a key/value in the parent-hierarchy map — so renaming one
+// means rewriting all of it in one go, across both repos, rather than just relabeling
+// a single record the way renaming a task does.
+async function renameCategory(oldName, newName) {
+  if (!requireToken()) return false;
+  const inUse = new Set([
+    ...state.tasks.map((t) => t.category),
+    ...state.history.map((h) => h.category),
+    ...Object.keys(state.categories),
+    ...Object.values(state.categories).filter(Boolean),
+  ]);
+  if (inUse.has(newName)) {
+    alert(`A category named "${newName}" already exists — pick a different name.`);
+    return false;
+  }
+  try {
+    for (const repo of [PUBLIC_REPO, PRIVATE_REPO]) {
+      const visibility = visibilityForRepo(repo);
+      const repoTasks = state.tasks.filter((t) => t._repo === visibility);
+      if (repoTasks.some((t) => t.category === oldName)) {
+        assertLoaded(visibility);
+        const updated = repoTasks.map((t) => stripRepo(t.category === oldName ? { ...t, category: newName } : t));
+        await saveTasks(repo, updated, `Rename category "${oldName}" to "${newName}"`);
+      }
+      const repoHistory = state.history.filter((h) => h._repo === visibility);
+      if (repoHistory.some((h) => h.category === oldName)) {
+        assertLoaded(visibility);
+        const updatedHistory = repoHistory.map((h) => stripRepo(h.category === oldName ? { ...h, category: newName } : h));
+        await saveHistory(repo, updatedHistory, `Rename category "${oldName}" to "${newName}"`);
+      }
+    }
+    if (Object.keys(state.categories).includes(oldName) || Object.values(state.categories).includes(oldName)) {
+      const newMap = {};
+      for (const [child, parent] of Object.entries(state.categories)) {
+        newMap[child === oldName ? newName : child] = parent === oldName ? newName : parent;
+      }
+      await saveCategories(newMap, `Rename category "${oldName}" to "${newName}"`);
+    }
+    if (state.selectedCategory === oldName) state.selectedCategory = newName;
+    await loadData();
+    applyDefaultCategory();
+    return true;
+  } catch (err) {
+    alert(`Couldn't rename category: ${err.message}`);
+    return false;
+  }
+}
+
 function repoFor(visibility) {
   return visibility === "private" ? PRIVATE_REPO : PUBLIC_REPO;
 }
@@ -521,20 +570,76 @@ function categoryRailRow(name, label, count, depth, nestable) {
     row.style.position = "relative";
     row.draggable = true;
     row.dataset.category = name;
-    row.title = "Click to view. Drag onto another category to nest this one under it.";
+    row.title = "Click to view. Drag onto another category to nest this one under it. Right-click (or press and hold) to rename.";
     row.addEventListener("dragstart", onCategoryDragStart);
     row.addEventListener("dragover", onCategoryDragOver);
     row.addEventListener("dragleave", onCategoryDragLeave);
     row.addEventListener("drop", onCategoryDrop);
     row.addEventListener("dragend", onCategoryDragEnd);
+    row.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      enterCategoryRenameMode(name, row);
+    });
     row.querySelector(".category-move-btn").addEventListener("click", (e) => {
       e.stopPropagation();
       openCategoryMoveMenu(name, row);
     });
     const detachBtn = row.querySelector(".category-detach");
     if (detachBtn) detachBtn.addEventListener("click", (e) => { e.stopPropagation(); unnestCategory(name); });
+    setupCategoryRenameLongPress(row, name);
   }
   return row;
+}
+
+// ---------- category renaming (right-click, or press-and-hold on touch) ----------
+// The long-press listens on just the label text, not the whole row, the same way
+// task-title renaming does — the row itself stays draggable (for nesting), and a
+// long-press starting from anywhere else on it would fight that native touch-drag
+// gesture the same way it did for the task-card menu we removed earlier.
+function setupCategoryRenameLongPress(row, name) {
+  const labelEl = row.querySelector(".cat-item-label");
+  let holdTimer = null;
+  let moved = false;
+  labelEl.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    moved = false;
+    holdTimer = setTimeout(() => {
+      if (!moved) enterCategoryRenameMode(name, row);
+    }, 550);
+  });
+  labelEl.addEventListener("pointermove", () => { moved = true; });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
+    labelEl.addEventListener(ev, () => clearTimeout(holdTimer))
+  );
+}
+
+function enterCategoryRenameMode(name, row) {
+  if (row.classList.contains("editing")) return;
+  row.classList.add("editing");
+  row.draggable = false;
+  const labelEl = row.querySelector(".cat-item-label");
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "cat-item-edit";
+  input.value = name;
+  labelEl.replaceWith(input);
+  input.focus();
+  input.select();
+  input.addEventListener("click", (e) => e.stopPropagation());
+
+  let settled = false;
+  const finish = async (commit) => {
+    if (settled) return;
+    settled = true;
+    const newName = input.value.trim();
+    if (commit && newName && newName !== name) await renameCategory(name, newName);
+    else renderActive();
+  };
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
 }
 
 function tasksForSelectedCategory() {
