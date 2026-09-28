@@ -714,14 +714,6 @@
       ]
     },
     {
-      "id": "add-in-new-ram-module-to-om-muj1husr",
-      "title": "add in new RAM module to om",
-      "category": "Development",
-      "created": "2026-09-26",
-      "notes": "",
-      "assist": false
-    },
-    {
       "id": "sell-guitar-mujaqhxf",
       "title": "sell guitar",
       "category": "Life Admin",
@@ -859,6 +851,851 @@
       "created": "2026-09-28",
       "notes": "",
       "assist": false
+    },
+    {
+      "id": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "title": "Test paper (not real) version of the trading system iQwant",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mudt81etaxlw",
+          "text": "- also call it iQuant or iQwant whichever you think is best.",
+          "done": true,
+          "created": "2026-09-23T07:57:04.421Z",
+          "updated": "2026-09-23T11:12:46.705Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-iqwant-named-191347",
+          "text": "✓ Actioned 2026-09-23: named it iQwant (iQuant is already used by several finance products; iQwant is distinctive and matches this task). The UI, README and start.bat now say iQwant; the GitHub repo is still 'trading-system'. Also wrote the how-to guide (docs/GUIDE.md in the repo) and added 8 'iQwant:' to-do tasks in Development.",
+          "done": true,
+          "created": "2026-09-23T09:13:47.000Z",
+          "updated": "2026-09-23T11:12:52.300Z"
+        },
+        {
+          "id": "n-agent-20260924101441",
+          "text": "✓ Actioned 2026-09-24: added tier-upgrade alerts (a native Windows desktop notification fires the moment a ticker newly reaches Gold/Polychrome - informational only, every tier still auto-queues exactly as before, per your choice) and a shareable trading-card view (#/print/<SYMBOL>, MTG/Slay the Spire/Balatro/Gwent-styled, procedurally generated crest art since no AI image-gen tool is available here - deterministic per ticker, never random). A mockup is live now at #/print/DEMO (also linked from the bottom of the Deck) since no real Gold/Polychrome exists yet. Also automated the daily run via Task Scheduler and added walk-forward sub-period testing (`python -m trader walkforward`) - see the other claudeNotes/history entries for details on each.",
+          "done": true,
+          "created": "2026-09-24T00:14:41.000Z",
+          "updated": "2026-09-24T21:39:01.071Z"
+        },
+        {
+          "id": "n-agent-20260927-gold-sizing-cards",
+          "text": "✓ Actioned 2026-09-27: Gold/Polychrome now get conviction-scaled position sizing (2%→4% Gold, 2%→6% Polychrome, linear by conviction, entry-v1.5) instead of the flat 2% every tier got before - and you can approve or adjust that size on the Run page before it fills at the next open (untouched, it still auto-fills at the computed size - not a hard approval gate, matches your earlier 'entries stay automatic' choice). Also wired real trading-card PNGs into the tier-upgrade notification: ported the web app's procedural crest generator (mulberry32 PRNG) to Pillow so the toast's image is the same art as the real card, not a placeholder. Resolved the sizing numbers via a couple of AskUserQuestion rounds since your first answers on the range conflicted with each other. 11 new/updated tests, full suite (133) green, committed and pushed (a82e536). Full writeup in CLAUDE.md and docs/GUIDE.md §7/§14.",
+          "author": "Claude Sonnet 5 — iQwant owner session",
+          "done": false,
+          "created": "2026-09-27T00:00:00.000Z",
+          "updated": "2026-09-27T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-ibkr-paper-session",
+      "title": "iQwant: open IBKR account and run a first paper session",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-17901575560273o5",
+          "text": "Open Interactive Brokers (ASX access, real API, separate paper account). Then: pip install ib_async, start TWS/IB Gateway on the paper account with the API enabled (port 7497), run `python -m trader paper --broker ibkr` after the close. Untested against a real Gateway, so expect fixes. Guide §9.",
+          "done": false,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-23T09:59:16.027Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-live-graduation-criteria",
+      "title": "iQwant: decide graduation criteria before any real money",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "noteItems": [
+        {
+          "id": "n-muizlhnj6a1o",
+          "text": "well, i guess doing quite well. i.e >10% returns. the other rules sound good too",
+          "done": false,
+          "created": "2026-09-26T22:54:20.575Z",
+          "updated": "2026-09-26T22:54:20.575Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790157556027x7g",
+          "text": "Write down, before looking at results, what paper performance would justify unlocking live (e.g. 3+ months paper, beats equal-weight buy & hold after costs, max drawdown under a set limit, every trade traceable to a rule). Live is locked in code until then.",
+          "done": true,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-26T22:56:23.083Z"
+        },
+        {
+          "id": "n-agent-20260927-graduation-checkable",
+          "text": "✓ Actioned 2026-09-27: folded your >10% paper-return answer into the actual graduation criteria and made the whole list checkable in code, not just written down. New `trader/graduation.py` (`check_graduation`) + `python -m trader graduation` CLI command reports pass/fail on all five: 3+ months paper-traded, total return >= 10%, beats equal-weight buy & hold, max drawdown under the account's own 8% circuit-breaker limit, and every trade traceable to a rule (this last one is structural - Order.rule_id/ClosedTrade.exit_rule are required fields, so it's always true by construction, not something that needs measuring). 4 new tests, full suite (122) still green. Documented in CLAUDE.md and docs/GUIDE.md §14, committed and pushed (458a522). It only reports - live trading stays locked exactly as before in trader/ibkr.py; this just tells you when the case for that conversation actually exists.",
+          "author": "Claude Sonnet 5 — iQwant owner session",
+          "done": false,
+          "created": "2026-09-27T00:00:00.000Z",
+          "updated": "2026-09-27T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-catalyst-calendar-rule",
+      "title": "iQwant: add a catalyst-calendar risk rule",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790157556027d6r",
+          "text": "Block or shrink new entries within N days of a known binary event (results, AGM votes, regulatory decisions) unless the thesis is about that event. Idea from research/reference/equity-research-notes.md.",
+          "done": false,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-23T09:59:16.027Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-walk-forward-technical-rules",
+      "title": "iQwant: improve the technical rules with walk-forward testing",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-179015755602794x",
+          "text": "The backtest is about flat vs +7.7% for buy & hold, so there's no edge yet. Any rule change should be tested on data it wasn't tuned on (walk-forward / out-of-sample), never by tweaking thresholds until the past looks good.",
+          "done": true,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-24T02:06:14.103Z"
+        },
+        {
+          "id": "n-agent-20260924093751b",
+          "text": "✓ Actioned 2026-09-24: built trader/walkforward.py - splits cached history into independent windows (no compounding) and runs the current fixed ruleset on each separately, flagging when one window carries the whole result. `python -m trader walkforward`. First real result (2025-07-09→2026-09-23, 4x 4-month windows): +0.88% / +0.81% / -1.07% / -1.83% — one window explains the entire positive result. Only 4 independent windows exist yet, so this isn't enough to call the rules working or not — it's evidence the full-period 'flat vs buy&hold' number was never a stable edge. Full explanation (studies/game theory/math grounding, how you can be involved, determinism vs approval points) given in chat and docs/GUIDE.md §12.",
+          "done": true,
+          "created": "2026-09-23T23:37:51.000Z",
+          "updated": "2026-09-24T02:06:34.230Z"
+        }
+      ],
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mueqenrklvqb",
+          "text": "improve this then. and explain how our strategy evolves and gets better over time and is based on the best studies and research and fintech performance, philosophy, game theory, probability, math, tools etc",
+          "done": true,
+          "created": "2026-09-23T23:26:00.656Z",
+          "updated": "2026-09-24T02:06:38.323Z"
+        }
+      ],
+      "suggestions": [
+        "Next real lever, in order: (1) let the paper account + research ledger accumulate for a few more weeks so walk-forward has more independent windows to judge consistency from — 4 is too few; (2) only after that, consider giving the analysts full announcement PDFs (separate paused task) so Gold/Polychrome claims can actually verify; (3) a Kelly-criterion-style position sizing review once there's a real win-rate/payoff-ratio to size against — premature before then."
+      ]
+    },
+    {
+      "id": "integrate-epistemic-atlas-with-intactic",
+      "title": "Integrate Epistemic Atlas with inTactic",
+      "category": "R&D",
+      "created": "2026-09-25",
+      "notes": "",
+      "parentId": "come-up-with-a-knowledge-system-architecture-muex37ro",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mug1qi7vspfz",
+          "text": "future task for atlas to do",
+          "done": false,
+          "created": "2026-09-24T21:30:55.288Z",
+          "updated": "2026-09-24T21:30:55.288Z"
+        },
+        {
+          "id": "n-muhg1i5311l0",
+          "text": "tell me if we could build a version if this for Atlas, like by taking the best bits or whether i should build inTactic and connect it somehow like via a rest api. the latter approach seems a bit convoluted.still.might be out of scope for now. but propose some kind of minimal version of both taking the best bits and also what nee features might be good for gemini to build for inTactic",
+          "done": false,
+          "created": "2026-09-25T20:59:09.207Z",
+          "updated": "2026-09-25T20:59:09.207Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-intactic-first-look",
+          "text": "Cloned and read sandstormveg/inTactic (private, 3 commits, created 2026-09-25) at Silica's suggestion for the Atlas's relation-graph visualization. It's a React 19 + Three.js + Express app (\"threeview_mind\") with a Gemini-chat-driven 3D mind-map: SceneManager.ts is a real, working interactive 3D scene (OrbitControls, click/drag/select, CSS3D labels/snippets), not a prototype. Its data model (types.ts) is a simple, portable {Node{id,title,details,position,shape,color,scale,texture},Link{source,target,color,style,size}} pair - clean enough that an Atlas -> inTactic adapter (graph.jsonld nodes/edges -> Node[]/Link[], mapping @type to shape+color and relation @type to Link.style) looks genuinely feasible once both sides are ready. It's currently a standalone app (own Express server, own Gemini chat panel), not a drop-in embeddable widget, so integration would mean either extracting the Three.js rendering pieces as a reusable component or running it as its own deployment fed by an Atlas export - not decided, just scoped. Not building this now; noting the assessment so it's not lost, and marking assist:true since this is now a live thread rather than a someday-task.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T12:00:00.000Z",
+          "updated": "2026-09-25T20:59:18.183Z"
+        }
+      ]
+    },
+    {
+      "id": "reconsider-privacy-concerns-muf8sqh0",
+      "title": "reconsider privacy concerns",
+      "category": "R&D",
+      "created": "2026-09-24",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muf8tys56mru",
+          "text": "like by default maybe this website shouldn't show my public tasks.",
+          "done": false,
+          "created": "2026-09-24T08:01:47.861Z",
+          "updated": "2026-09-24T08:01:47.861Z"
+        }
+      ]
+    },
+    {
+      "id": "work-on-my-threemind-app-and-see-if-it-could-pull-this-task-list-muerbl90",
+      "title": "work on my inTactic app (previously called threemind) and see if it could pull this task list",
+      "category": "R&D",
+      "created": "2026-09-23",
+      "notes": ""
+    },
+    {
+      "id": "knowledge-system-design-mug1shm4",
+      "title": "Knowledge system design",
+      "category": "R&D",
+      "created": "2026-09-24",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-mug1tr4g6hw0",
+          "text": "Needs to include more references/links and pictures as well in details.",
+          "done": false,
+          "created": "2026-09-24T21:33:26.800Z",
+          "updated": "2026-09-24T21:33:26.800Z"
+        },
+        {
+          "id": "n-mug1ud5f3zh7",
+          "text": "if it has relations to other objects then they should be connected somehow or shown in its superseded and/or subseded categories.",
+          "done": false,
+          "created": "2026-09-24T21:33:55.347Z",
+          "updated": "2026-09-24T21:34:43.636Z"
+        },
+        {
+          "id": "n-mug1wsuyk9zv",
+          "text": "Any category or object should also be able to be exported and also copied in different formats such as JSON and markdown.",
+          "done": true,
+          "created": "2026-09-24T21:35:49.018Z",
+          "updated": "2026-09-25T07:20:26.039Z"
+        },
+        {
+          "id": "n-mug1xr37nk37",
+          "text": "there also needs to be details on what each part of the UX to explain what it means. and probably an explainer on the site. like an about section.",
+          "done": true,
+          "created": "2026-09-24T21:36:33.379Z",
+          "updated": "2026-09-25T07:20:34.372Z"
+        },
+        {
+          "id": "n-mug1zz1mxkzz",
+          "text": "also i need it to have a section for inputs too, to put in a single item or many items (objects, things, stuff) which will then be researched and integrated by the Atlas system",
+          "done": true,
+          "created": "2026-09-24T21:38:17.002Z",
+          "updated": "2026-09-25T07:20:43.782Z"
+        },
+        {
+          "id": "n-mug3xsb0grrz",
+          "text": "i wonder how much we could connect systems/apis such as Wikipedia, Stanford Encyclopaedia, Merriam Webster, Wolfram Alpha etc. This would help populate different data points of an item from different angles and references frames. know what i mean?",
+          "done": false,
+          "created": "2026-09-24T22:32:34.188Z",
+          "updated": "2026-09-24T22:32:34.188Z"
+        },
+        {
+          "id": "n-mughbdln705o",
+          "text": "i feel like the search needs to built/improved. not just search for id. it needs to be a holistic search. across APIs, words, domains and also if there isn't much we can give an option to make it known/make a ticket for it to be researched and added (after going through Atlas verification/auditing by an Atlas agent/claude code session with skillful understanding of system)",
+          "done": false,
+          "created": "2026-09-25T04:47:03.323Z",
+          "updated": "2026-09-25T04:47:03.323Z"
+        },
+        {
+          "id": "n-mugmyi4x0cet",
+          "text": "ths experience design needs to be upgraded. we can't just start with an object list. that should be something the user chooses to select into. The initial experience should be something simple like a search/input box. user can toggle and option for it to be inputs/log items for indexing. otherwise the search is a way to use it for connecting to the atlas infodex system. The atlas builds around what the user has requested if it is an index. if it is a search and the item is already retrievable then the UX changes to be around the items data visualisation, reference frames, relationships, info etc etc.",
+          "done": true,
+          "created": "2026-09-25T07:25:00.369Z",
+          "updated": "2026-09-25T21:11:02.842Z"
+        },
+        {
+          "id": "n-mugn2we6w8zx",
+          "text": "check again for other knowledge databases. in what ways can i build this to hold/address/catalogue every thing possible in a way other systems do not.",
+          "done": false,
+          "created": "2026-09-25T07:28:25.470Z",
+          "updated": "2026-09-25T07:28:25.470Z"
+        },
+        {
+          "id": "n-muhgol2hkfwn",
+          "text": "screenshot an pen is letting you know what to remove/move. I'm trying to declutter the landing search page. move subheading to about, move the other buttons like export when the user is in another page such as the view all items page. I'm starting to think that it should be perhaps view all unique items. because when things like wiki and other apis are integrated won't that start to pull in other information? I'm thinking for each item there should be an option to request further information/make a note to get clarity etc. if this feature is integrated then it i think addresses my older notes on when to connect apis and add more references/apis/images etc. enabling the user to flag things and ask questions and input further information for an item will be great. not exactly sure how this will look so i may need to choose from different mockups.",
+          "done": false,
+          "created": "2026-09-25T21:17:06.089Z",
+          "updated": "2026-09-25T21:21:59.383Z",
+          "image": "images/r-d/knowledge-system-design-mug1shm4-n-muhgol2hkfwn.jpg"
+        },
+        {
+          "id": "n-muhgqqdwkdu9",
+          "text": "not sure if my screenshot went through adding again here",
+          "done": false,
+          "created": "2026-09-25T21:18:46.291Z",
+          "updated": "2026-09-25T21:18:46.291Z",
+          "image": "images/r-d/knowledge-system-design-mug1shm4-n-muhgqqdwkdu9.jpg"
+        },
+        {
+          "id": "n-muhh1hytiq6l",
+          "text": "i think we need to get rid of claim 42 and its relations. it's confusing. I'm not sure it's relations should be called objects either. or if we do we should be able to filter the list by selecting it as shown in the list (they'll still be shown when a main item is being explored) but they are more like sub items or something (not directly input or the main object that we were exploring) also be careful though that some main items may have other main items in their relations. think carefully about this one",
+          "done": false,
+          "created": "2026-09-25T21:27:08.594Z",
+          "updated": "2026-09-25T21:27:08.594Z"
+        },
+        {
+          "id": "n-muhhvx4ulaq6",
+          "text": "i don't need to see the object list when i am trying to reading an items page and relation graph. and anyway it should be collapsible too. the export and such buttons don't need to be there still. there should be a seamless transition from search to reading/understand an item. Add key information/summary beneath the relation graph. we might need a button to show picture and/or switch to different visual presentations if there are some. like of course a picture of ivysaur would ideally show up because when the research was conducted the pictures were grabbed too/connected too.",
+          "done": false,
+          "created": "2026-09-25T21:50:47.933Z",
+          "updated": "2026-09-25T21:50:47.933Z"
+        },
+        {
+          "id": "n-muhrw7bvplp9",
+          "text": "note to original Atlas Intelligence. I've starting working with Gemini in a different repo (atlas_infodex). it's probably made a lot of good changes where i couldn't keep working (as in I'd have to wait for reset) with claude code because the usage limits were way too frequent.",
+          "done": false,
+          "created": "2026-09-26T02:30:57.304Z",
+          "updated": "2026-09-26T02:30:57.304Z"
+        }
+      ],
+      "assist": false,
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-atlas-ux-relay",
+          "text": "✓ Actioned 2026-09-25 by Director (Senti): relayed all 5 requirements to the Atlas owner session (it owns the graph-browser site build) since this is implementation work, not research — references/pictures in detail views, visible superseded/subseded relation links, JSON/Markdown export per object or category, an in-UX 'About' explainer section, and a new intake/ingestion 'inputs' section for feeding raw items to the Atlas for research. Waiting on that session to say what it's picking up now vs. later.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T08:21:00.000Z",
+          "updated": "2026-09-25T04:26:58.395Z"
+        },
+        {
+          "id": "n-agent-atlas-ux-triage",
+          "text": "✓ Atlas owner session triaged the 5 requirements (2026-09-25): building #1-4 now — (1) reference/image fields on objects, schema + viewer rendering, 1-2 real examples seeded, full content backfill is separate ongoing work; (2) supersedes/superseded_by as its own visible section instead of buried in generic relations; (3) JSON + Markdown export, per-object and per-category (cheap — source .md already round-trips on the live site); (4) an 'About' panel explaining the interface itself (graph/sidebar/shapes/DEBUG-cascade). Holding #5 (inputs/intake queue) for a deliberate go/no-go rather than building blind — a real version needs a GitHub write credential live in a public-facing serverless function (new attack surface), and 'researched and integrated by the system' likely means queued items get processed by that session manually (like you just handing it 13 items in chat) rather than a live automated backend. It'll raise #5 with you directly once 1-4 ship.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T08:45:00.000Z",
+          "updated": "2026-09-25T04:33:28.700Z"
+        },
+        {
+          "id": "n-agent-declutter-feedback-relay",
+          "text": "✓ Actioned 2026-09-26 by Director: relayed your annotated screenshot feedback to the Atlas session — move the object/relation-count subheading into About, remove the Export JSON/Markdown/dark-mode-toggle buttons from the landing page (relocate to wherever browse-all lives), plus flagged your two open ideas (view-all-UNIQUE-items for dedup once external APIs are wired in, and a per-item 'request more info/note for clarity' action). Not built yet, day window, just relayed. Note: your 'check other knowledge databases for differentiation' note (n-mugn2we6w8zx, 2026-09-25 07:28) is older and still unaddressed — that one's mine to research directly next pass, not implementation work.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-26T07:21:00.000Z",
+          "updated": "2026-09-26T07:21:00.000Z"
+        },
+        {
+          "id": "n-agent-more-ux-feedback-relay",
+          "text": "✓ Actioned 2026-09-26 by Director: relayed 3 more notes to the Atlas session — (1) your edit tying the per-item 'request more info' feature to your earlier external-API note, plus that you want to see mockup options rather than one fixed design; (2) drop the claim-042 demo object/relations, and think carefully about whether related objects should be called 'objects' at all given some are full main-items elsewhere in the graph (not a simple rename); (3) hide the sidebar object list by default in item view (collapsible), keep export/etc. off there too, smoother search→item transition, a summary block under the relation graph, and an image/visual-mode toggle — flagged that Ivysaur's picture should already be wired up from when it was researched, worth checking if it isn't showing. 'Check other knowledge databases' research question (n-mugn2we6w8zx) is still queued for me, rolled over again since these were newer.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-26T11:21:00.000Z",
+          "updated": "2026-09-26T11:21:00.000Z"
+        },
+        {
+          "id": "n-agent-atlas-note6-relay",
+          "text": "✓ Actioned 2026-09-25 by Director: a 6th note landed on this task after my original relay (connecting Wikipedia/Stanford Encyclopaedia/Merriam-Webster/Wolfram Alpha to populate object data from multiple reference frames) — flagged it to the Atlas session as part of the same #5 go/no-go conversation, since it's the same 'external read/write surface' shape of decision, not separate scope.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T10:25:00.000Z",
+          "updated": "2026-09-25T21:01:35.730Z"
+        },
+        {
+          "id": "n-agent-atlas-owner-items-1-4-shipped",
+          "text": "✓ Actioned 2026-09-25 by the Atlas owner session, items 1-4 live now (epistemic-atlas-gray.vercel.app): (1) references [{label,url?}] and image fields, rendered in the entry view - seeded 3 real examples, no fabricated URLs; (2) supersedes/superseded_by as their own always-visible entry section, not buried in generic relation data; (3) per-object Copy/Download as JSON or Markdown (Markdown pulls the real source .md, including free-text notes), per-type JSON export, and a whole-Atlas JSON/Markdown export in the header; (4) an 'About' panel explaining the interface itself, toggled from the header. Also fixed a real bug this surfaced along the way: the id-matching regex only allowed exactly one hyphen, so multi-word ids were silently invisible to reference validation. Item 5 (inputs/intake queue) and the note-6 external-API idea are still held for a go/no-go with you directly - both need a live write/fetch credential in a public-facing (password-gated) function, a new attack-surface decision I don't want to make unilaterally.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T11:00:00.000Z",
+          "updated": "2026-09-25T07:20:06.859Z"
+        },
+        {
+          "id": "n-agent-atlas-search-relay",
+          "text": "✓ Actioned 2026-09-25 by Director: relayed your new search note to the Atlas session — two parts: (1) holistic search across content/words/domains, not just id lookup, possibly tied to the same external-API idea from note 6; (2) a 'research ticket' flow for search misses, with an explicit verification/audit step (an Atlas agent reviewing before anything becomes a real object) so speculative content never silently becomes a 'supported' claim. Not built yet — day window, so I relayed rather than requesting immediate work.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T15:21:00.000Z",
+          "updated": "2026-09-25T21:12:13.878Z"
+        },
+        {
+          "id": "n-agent-decisions-from-silica",
+          "text": "✓ All three open questions now genuinely confirmed by you (2026-09-25): (1) inputs/intake queue live-vs-manual — left to Atlas's own judgment; (2) external reference APIs (Wikipedia/Stanford/Merriam-Webster/Wolfram Alpha) — also Atlas's call; (3) research-ticket audit gate — explicit YES, an audit/verification step is required before search-miss research becomes a real object. Correction: my first pass at (1) and (2) mistakenly read a UI default as your answer before you'd actually answered — you caught it, I re-asked, and got real answers this time (same outcome, but properly confirmed). Relayed to the Atlas session both times; no change needed to what it's doing.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T16:00:00.000Z",
+          "updated": "2026-09-25T21:12:09.855Z"
+        },
+        {
+          "id": "n-agent-atlas-night-pass-20260926",
+          "text": "✓ Night pass 2026-09-26 (01:21-~02:30 AEST), Atlas owner session. Shipped, all live and verified: (1) 13 real Wikipedia citations added where I was genuinely confident of the exact article title (skipped agent-foundations/pancomputational-enactivism/cyberprep, already-flagged no-source; used Bulbapedia not Wikipedia for Ivysaur since individual Pokemon species got merged into list articles years ago). (2) Holistic full-text search - matches everything in an object (address, epistemics, references, notes), not just id - plus a 'nothing found -> flag for research' button wired straight into the existing Inputs queue, both halves of your search note. (3) The audit-gate mechanism: wrote docs/audit-gate-proposal.md weighing a soft review_status flag vs. git-branch staging vs. a hybrid, then built the hybrid's low-risk half - review_status: unaudited frontmatter + a visible UNAUDITED badge in the UI + a new `atlas.py audit` CLI command - and retroactively flagged the 3 objects already shipped from the queue for consistency. Did NOT build the harder git-branch staging gate or decide who does the actual second look - both left open in the proposal doc rather than decided solo. Also took a first look at inTactic per your suggestion (separate claudeNote on the inTactic task) - genuinely promising, not integrated yet. Left alone tonight: the landing-page/search-first UX rearchitecture note - that's a bigger rework of the primary UX I'd proposed but hadn't gotten your sign-off on the shape of, so it's waiting for you rather than built blind overnight.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-26T02:35:00.000Z",
+          "updated": "2026-09-25T21:11:33.324Z"
+        },
+        {
+          "id": "n-agent-search-first-decisions",
+          "text": "✓ You answered all 4 search-first redesign questions directly (2026-09-26), relayed to the Atlas session immediately: (1) core shape confirmed YES — search-first landing; (2) on a match, keep the sidebar/graph frame (not a stripped focused mode); (3) search/log toggle — you want BOTH the explicit toggle control and the existing zero-result inference, not either/or; (4) browse-all UX — open to rethinking, not locked to today's exact layout. Atlas has the go-ahead to build.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-26T06:35:00.000Z",
+          "updated": "2026-09-25T21:12:34.044Z"
+        },
+        {
+          "id": "n-agent-atlas-declutter-and-cleanup-20260926c",
+          "text": "✓ Actioned 2026-09-26 (third time re-noting the declutter/landing-page-shipped summary — my prior two attempts at this were both lost to the same read-modify-write race on this file, once each; pulling immediately before this commit). SHIPPED from the annotated-screenshot feedback: (1) declutter — stats line moved to About panel, Export/Theme buttons moved out of the header into the browsing view only; (2) removed claim-042 and its 6-object demo cluster entirely (confusing alongside real content) — README/atlas-skill examples updated to reference newtons-apple-head-myth instead, original example preserved in docs/design-spec.md; (3) added ivysaur.md's image field — fetched and HEAD-verified the real pokemon.com artwork URL rather than guessing, since you flagged it should've been there already; (4) renamed the sidebar 'OBJECTS' heading to 'Everything in the Atlas' in user-facing copy (object stays as the internal/schema term). WRITTEN UP, not built — docs/relation-terminology-proposal.md addresses your 'should relations be called objects' question: no type-based main/sub split (breaks on exactly the case you flagged — isaac-newton is a full main entry despite also being a relation of newtons-apple-head-myth), the distinction is about viewing context not object type, and the existing relation-section labels already communicate that correctly. NOT BUILT, logged for later: (a) your note-1 edit tying the request-more-info/flag-for-clarity feature to the external-API note, and that you'll want to see a few mockup options before committing to a design — will build 2-3 mockups when this gets picked up, same pattern as the visual-design ones; (b) note-3's concrete asks — collapse/hide the object list by default when reading one item (collapsible, not gone), keep export/etc. off the item-reading view too (browsing mode needs to actually split into 'browse everything' vs 'reading one item' — right now it's one mode), a smoother search-to-item transition, a key-info summary block beneath the relation graph, and an image/visual-presentation toggle for items with pictures. SEPARATE FLAG, not an Atlas issue to fix: this is the second time in a row my own claudeNotes got silently dropped by a concurrent edit to this same task file (once by a website edit, once by Senti's own relay commits) — worth someone looking at write discipline on this file (pull-immediately-before-write on every writer, or some form of locking) since it's now happened twice in one night with real content loss each time, not hypothetical.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-26T09:00:00.000Z",
+          "updated": "2026-09-26T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "publish-cuhree-app-on-play-store-mug43ntq",
+      "title": "publish Cuhree app on play store",
+      "category": "Development",
+      "created": "2026-09-24",
+      "notes": ""
+    },
+    {
+      "id": "integrate-my-google-calendar-muhh5id1",
+      "title": "integrate my google calendar/task item menu",
+      "category": "R&D",
+      "created": "2026-09-25",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muhhajs36wlq",
+          "text": "could be an option in a three dot menu. i guess this would be a new feature. instead of having the trash icon it could be including in a menu dropdown along with some of the other buttons like the migrate button and the privacy button.",
+          "done": false,
+          "created": "2026-09-25T21:34:10.851Z",
+          "updated": "2026-09-25T21:34:10.851Z"
+        }
+      ],
+      "assist": false
+    },
+    {
+      "id": "work-out-if-i-want-to-still-work-on-my-grant-for-the-clr-fund-muiv3z2n",
+      "title": "Work out if i want to still work on my grant for the CLR fund",
+      "category": "Research",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muiv7o29yq64",
+          "text": "might need some advice",
+          "done": false,
+          "created": "2026-09-26T20:51:37.233Z",
+          "updated": "2026-09-26T20:51:37.233Z"
+        },
+        {
+          "id": "n-muixb3p8yaak",
+          "text": "working with claude to come up a plan",
+          "done": false,
+          "created": "2026-09-26T21:50:16.699Z",
+          "updated": "2026-09-26T21:50:16.699Z"
+        }
+      ]
+    },
+    {
+      "id": "look-into-https-coefficientgiving-org-tailwind-mukeyqla",
+      "title": "Look into https://coefficientgiving.org/tailwind/",
+      "category": "Research",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mukf395f5l39",
+          "text": "need to come up with a plan to see where my strategic fit for tailwind funds could be. do i still work within s-risk and SRCP framing like with CLR fund or do i shift to pitching work on moonshot alignment, macrostrategy, building my team of researchers etc. need to brainstorm",
+          "done": true,
+          "created": "2026-09-27T22:55:49.777Z",
+          "updated": "2026-09-28T00:24:46.843Z"
+        },
+        {
+          "id": "n-mukfrkvy9ry1",
+          "text": "is there another coefficient giving fund i could apply for?",
+          "done": true,
+          "created": "2026-09-27T23:14:44.734Z",
+          "updated": "2026-09-28T00:24:44.156Z"
+        }
+      ],
+      "suggestions": [
+        "What Tailwind actually is: Coefficient Giving's \"Project Tailwind\" is a call for founders to launch new AI safety initiatives, not a research fellowship like CLR's. Three funding tiers: Pre-seed ($200k-$2m, explicitly for people who may not yet have a team or detailed plan), Seed ($2-20m, needs a founding team + preliminary results), and Scale ($20-200m+, for proven teams/orgs). Process: express interest -> submit a proposal (track record + vision) -> strong candidates get fast-tracked to a pitch meeting -> rapid decision + disbursement. Apply via coefficientgiving.org/tailwind/get-involved/.",
+        "What they're actually looking to fund: their published initiatives list spans evidence generation, independent assessment, AI security/verification, research institutions, talent acceleration, alignment moonshots, and things like a 'frontier capabilities observatory' — broad AI-safety-ecosystem gaps. Nothing in their public framing specifically names s-risk or suffering-focused work as a target category, unlike CLR which is built around that framing by design.",
+        "Strategic fit answer: Tailwind is structurally a founder/institution-building fund, not a cause-area fellowship — it's evaluating YOU as a founder and the gap you'd fill, not primarily which sub-field you work in. That favors leaning toward the 'moonshot alignment, macrostrategy, building a team' framing over a narrow s-risk/SRCP pitch, since that's the shape of thing their pre-seed tier is explicitly designed to catch (no team/plan required yet). That doesn't mean dropping your s-risk expertise — it can work as your differentiator (e.g. 'macrostrategy research org that takes s-risk-relevant failure modes seriously, which most alignment orgs don't') rather than as the whole pitch, similar to how CLR's fellowship judged you on the SRCP frame specifically.",
+        "Concrete next step: given the pre-seed tier doesn't require a team/detailed plan yet, this is a reasonable stage to submit an expression of interest now with the macrostrategy/moonshot framing as primary and s-risk depth as your edge, rather than waiting until you have a full team assembled. Worth reading coefficientgiving.org/tailwind/initiatives/ directly for their exact initiative list before finalizing which specific gap you'd pitch filling.",
+        "Nothing submittable on your behalf here (this needs your own track record/vision writeup), but happy to help draft the actual pitch/expression-of-interest once you've picked a framing direction.",
+        "Yes — other Coefficient Giving funds besides Tailwind: the 'Navigating Transformative AI' fund runs an open 'Request for Proposals: Technical AI Safety Research' (coefficientgiving.org/funds/navigating-transformative-ai/request-for-proposals-technical-ai-safety-research/) — this is a traditional research-grant model (fund a project/individual, not 'launch an org' like Tailwind), so it's structurally closer to what the CLR fellowship was. Same fund also covers career-transition/independent-study support (grad study, unpaid internships, career-transition periods) for people moving into GCR/AI-safety work, plus fieldbuilding programs (BlueDot, MATS, ML4Good) if a structured program fits better than a self-directed grant right now. Given the note about wanting to keep the s-risk/SRCP framing rather than pivot to founder/moonshot pitching, this RFP is likely the better-fitting application than Tailwind — worth reading its specific scope before choosing between the two."
+      ]
+    },
+    {
+      "id": "plan-room-change-to-see-if-everything-will-fit-with-the-king-bed-in-the-room-mukftatf",
+      "title": "Plan room change to see if everything will fit with the king bed in the room",
+      "category": "Life Admin",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mukiu8njkz9j",
+          "text": "Room A: 3.7 x 3.2 | Room B: 2.7 x 3.5",
+          "done": false,
+          "created": "2026-09-28T00:40:47.695Z",
+          "updated": "2026-09-28T00:40:47.695Z"
+        }
+      ]
+    },
+    {
+      "id": "new-vegas-mod-install-muiydlsq",
+      "title": "New Vegas mod install",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muiyecjiuoys",
+          "text": "attached hard requirements",
+          "done": false,
+          "created": "2026-09-26T22:20:47.742Z",
+          "updated": "2026-09-26T22:20:47.742Z",
+          "image": "images/interested-in/new-vegas-mod-install-muiydlsq-n-muiyecjiuoys.jpg"
+        }
+      ]
+    },
+    {
+      "id": "manufacturing-robot-food-fabrication-muj0c06l",
+      "title": "manufacturing robot/food fabrication",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muj0cqilq1bh",
+          "text": "ali express costs - pizza vending machine, protein bar shape maker",
+          "done": false,
+          "created": "2026-09-26T23:15:31.773Z",
+          "updated": "2026-09-26T23:15:31.773Z",
+          "image": "images/interested-in/manufacturing-robot-food-fabrication-muj0c06l-n-muj0cqilq1bh.jpg"
+        }
+      ]
+    },
+    {
+      "id": "apply-for-eagx-mukgh2bt",
+      "title": "apply for eagx",
+      "category": "Interested in",
+      "created": "2026-09-27",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mukghcmpd2zt",
+          "text": "https://effectivealtruism.org.au/get-involved/eagx/",
+          "done": false,
+          "created": "2026-09-27T23:34:47.089Z",
+          "updated": "2026-09-27T23:34:47.089Z"
+        }
+      ]
+    },
+    {
+      "id": "upgrade-pc-muki5ape",
+      "title": "upgrade PC",
+      "category": "Development",
+      "created": "2026-09-28",
+      "notes": "",
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muki5jot8sy5",
+          "text": "buy 4k monitor",
+          "done": false,
+          "created": "2026-09-28T00:21:35.597Z",
+          "updated": "2026-09-28T00:21:35.597Z"
+        },
+        {
+          "id": "n-muki5r8u3k69",
+          "text": "**Your current setup:**\n- CPU: Ryzen 5 2600 (2018, Zen+, 6c/12t)\n- GPU: RTX 2070 Super (8GB) — still solid\n- RAM: 16GB DDR4, misconfigured at 2133MHz instead of 3200MHz\n- Storage: 500GB NVMe + 250GB SATA SSD (750GB total)\n- OS: Windows 10 Home — **this fell out of security support in Oct 2025, so you're currently running unpatched**\n\n**Priority order:**\n\n1. **Free fix first — enable DOCP/XMP in BIOS.** Your existing RAM is rated 3200MHz CL16 but running at 2133. Ryzen performance is unusually sensitive to RAM speed (infinity fabric), so this alone is a real free performance gain before you spend anything.\n\n2. **CPU is your real bottleneck.** The 2070 Super is being held back by the 2600 in a lot of modern games. Because your board is X470, you can drop in a **Ryzen 5700X or 5800X3D** (same AM4 socket, no motherboard swap needed) — big single/multi-core jump, and it's the best price-to-performance move available to you. You'll need to update your ASRock X470 Master SLI BIOS to a recent AGESA version first (check ASRock's support page for your board — X470 boards got 5000-series support via BIOS update, but confirm before buying the CPU).\n\n3. **This also fixes your Windows 11 problem.** Ryzen 2000-series isn't on Microsoft's official supported CPU list for Windows 11; a 5000-series chip is. So the CPU upgrade doubles as your path off unsupported Windows 10.\n\n4. **Storage next.** 750GB combined is tight by today's standards. A 1–2TB NVMe drive is cheap now and worth adding before you run into game-install headaches.\n\n5. **RAM to 32GB — only if you multitask/stream/edit.** For pure gaming, 16GB properly clocked at 3200 is still fine. If you do want to go bigger, buy a proper matched 2×16GB kit rather than adding odd sticks.\n\n6. **GPU — leave it.** The 2070 Super is still a good 1080p/1440p card; no rush here.\n\nIf you're on a budget, do #1 (free) and #2 (CPU) first — that's the combo that actually changes how the machine feels day to day.",
+          "done": false,
+          "created": "2026-09-28T00:21:45.390Z",
+          "updated": "2026-09-28T00:22:19.930Z"
+        },
+        {
+          "id": "n-muki6q5v38wq",
+          "text": "buy new CPU. find aliexpress link for this part",
+          "done": false,
+          "created": "2026-09-28T00:22:30.643Z",
+          "updated": "2026-09-28T00:22:46.757Z"
+        }
+      ],
+      "suggestions": [
+        "AliExpress CPU listings: Ryzen 7 5800X3D — aliexpress.com/item/1005004199460135.html (listed ~$327 USD but reputable high-rated stores commonly sell it $150-170; check seller rating/reviews before buying). General search pages if you want to compare sellers: aliexpress.com/w/wholesale-ryzen-7-5800x3d.html and aliexpress.com/w/wholesale-ryzen-5700x3d.html.",
+        "5800X3D vs 5700X: since the earlier note already leans toward the CPU being the priority upgrade for gaming, the 5800X3D is the better pick over a plain 5700X — its extra L3 cache gives up to ~20% higher frame rates in CPU-bound games (e.g. Valorant, FIFA 23). Both are drop-in AM4, so no motherboard change either way — just confirm the ASRock X470 BIOS is updated to a 5000-series-supporting AGESA version first, as already noted.",
+        "Caveat on AliExpress specifically for CPUs: this is one of the more counterfeit/used-as-new-prone categories on the platform — only buy from a store with high ratings and a long history of CPU sales specifically (not just high overall store rating), read recent reviews for this exact listing, and expect no real warranty recourse if something's wrong. If warranty matters more than saving ~$50-100, a local retailer (PCCG, Centre Com, Scorptec) is the safer bet for this specific part even though AliExpress is usually cheaper."
+      ]
+    },
+    {
+      "id": "look-into-https-neurips-cc-for-any-ai-safety-papers-or-anything-else-aligned-with-my-interests-muknviib",
+      "title": "look into https://neurips.cc/ for any ai safety papers or anything else aligned with my interests",
+      "category": "Research",
+      "created": "2026-09-28",
+      "notes": "",
+      "assist": true,
+      "suggestions": [
+        "NeurIPS 2026 runs 6-12 Dec in Sydney (satellite events in Atlanta and Paris same week) — worth noting since that's local for you, unlike most AI conferences.",
+        "No workshop is specifically s-risk/SRCP-focused this year, but the closest fit at the Sydney venue is 'The Third Workshop on Agents in the Wild: Safety, Security, and Beyond' (agentwild-workshop.github.io/neurips2026) — agent safety/security is adjacent to failure-mode/macrostrategy thinking. Also at Sydney: 'Trustworthy AI Evaluation' (tai-eval.github.io) and 'Who Verifies the Agents?' (verify-agents-workshop.github.io) if evaluation/verification is more your angle.",
+        "Directly relevant paper worth reading regardless of attending: \"The 2026 Singapore Consensus on Global AI Safety Research Priorities\" (arxiv.org/pdf/2608.14611) — a cross-institutional research-priorities document, likely the single best proxy for 'what the field currently thinks matters' that you could cite or position against in a CLR/Tailwind pitch.",
+        "For actual papers (not just workshops) matching s-risk/alignment specifically, OpenReview's NeurIPS 2026 submissions search (openreview.net, filter by venue) is the right tool — workshop pages don't list accepted papers yet this far out, so a targeted OpenReview keyword search (\"s-risk\", \"suffering risk\", \"cooperative AI\", \"multi-agent failure\") closer to the Nov/Dec paper-release date will surface more than the workshop list can right now."
+      ]
+    },
+    {
+      "id": "xr-glasses-mukt08to",
+      "title": "XR Glasses",
+      "category": "Shopping 🛍️",
+      "created": "2026-09-28",
+      "notes": "",
+      "assist": false
+    },
+    {
+      "id": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "title": "Test paper (not real) version of the trading system iQwant",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mudt81etaxlw",
+          "text": "- also call it iQuant or iQwant whichever you think is best.",
+          "done": true,
+          "created": "2026-09-23T07:57:04.421Z",
+          "updated": "2026-09-23T11:12:46.705Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-iqwant-named-191347",
+          "text": "✓ Actioned 2026-09-23: named it iQwant (iQuant is already used by several finance products; iQwant is distinctive and matches this task). The UI, README and start.bat now say iQwant; the GitHub repo is still 'trading-system'. Also wrote the how-to guide (docs/GUIDE.md in the repo) and added 8 'iQwant:' to-do tasks in Development.",
+          "done": true,
+          "created": "2026-09-23T09:13:47.000Z",
+          "updated": "2026-09-23T11:12:52.300Z"
+        },
+        {
+          "id": "n-agent-20260924101441",
+          "text": "✓ Actioned 2026-09-24: added tier-upgrade alerts (a native Windows desktop notification fires the moment a ticker newly reaches Gold/Polychrome - informational only, every tier still auto-queues exactly as before, per your choice) and a shareable trading-card view (#/print/<SYMBOL>, MTG/Slay the Spire/Balatro/Gwent-styled, procedurally generated crest art since no AI image-gen tool is available here - deterministic per ticker, never random). A mockup is live now at #/print/DEMO (also linked from the bottom of the Deck) since no real Gold/Polychrome exists yet. Also automated the daily run via Task Scheduler and added walk-forward sub-period testing (`python -m trader walkforward`) - see the other claudeNotes/history entries for details on each.",
+          "done": true,
+          "created": "2026-09-24T00:14:41.000Z",
+          "updated": "2026-09-24T21:39:01.071Z"
+        },
+        {
+          "id": "n-agent-20260927-gold-sizing-cards",
+          "text": "✓ Actioned 2026-09-27: Gold/Polychrome now get conviction-scaled position sizing (2%→4% Gold, 2%→6% Polychrome, linear by conviction, entry-v1.5) instead of the flat 2% every tier got before - and you can approve or adjust that size on the Run page before it fills at the next open (untouched, it still auto-fills at the computed size - not a hard approval gate, matches your earlier 'entries stay automatic' choice). Also wired real trading-card PNGs into the tier-upgrade notification: ported the web app's procedural crest generator (mulberry32 PRNG) to Pillow so the toast's image is the same art as the real card, not a placeholder. Resolved the sizing numbers via a couple of AskUserQuestion rounds since your first answers on the range conflicted with each other. 11 new/updated tests, full suite (133) green, committed and pushed (a82e536). Full writeup in CLAUDE.md and docs/GUIDE.md §7/§14.",
+          "author": "Claude Sonnet 5 — iQwant owner session",
+          "done": false,
+          "created": "2026-09-27T00:00:00.000Z",
+          "updated": "2026-09-27T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-ibkr-paper-session",
+      "title": "iQwant: open IBKR account and run a first paper session",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-17901575560273o5",
+          "text": "Open Interactive Brokers (ASX access, real API, separate paper account). Then: pip install ib_async, start TWS/IB Gateway on the paper account with the API enabled (port 7497), run `python -m trader paper --broker ibkr` after the close. Untested against a real Gateway, so expect fixes. Guide §9.",
+          "done": false,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-23T09:59:16.027Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-live-graduation-criteria",
+      "title": "iQwant: decide graduation criteria before any real money",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "noteItems": [
+        {
+          "id": "n-muizlhnj6a1o",
+          "text": "well, i guess doing quite well. i.e >10% returns. the other rules sound good too",
+          "done": false,
+          "created": "2026-09-26T22:54:20.575Z",
+          "updated": "2026-09-26T22:54:20.575Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790157556027x7g",
+          "text": "Write down, before looking at results, what paper performance would justify unlocking live (e.g. 3+ months paper, beats equal-weight buy & hold after costs, max drawdown under a set limit, every trade traceable to a rule). Live is locked in code until then.",
+          "done": true,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-26T22:56:23.083Z"
+        },
+        {
+          "id": "n-agent-20260927-graduation-checkable",
+          "text": "✓ Actioned 2026-09-27: folded your >10% paper-return answer into the actual graduation criteria and made the whole list checkable in code, not just written down. New `trader/graduation.py` (`check_graduation`) + `python -m trader graduation` CLI command reports pass/fail on all five: 3+ months paper-traded, total return >= 10%, beats equal-weight buy & hold, max drawdown under the account's own 8% circuit-breaker limit, and every trade traceable to a rule (this last one is structural - Order.rule_id/ClosedTrade.exit_rule are required fields, so it's always true by construction, not something that needs measuring). 4 new tests, full suite (122) still green. Documented in CLAUDE.md and docs/GUIDE.md §14, committed and pushed (458a522). It only reports - live trading stays locked exactly as before in trader/ibkr.py; this just tells you when the case for that conversation actually exists.",
+          "author": "Claude Sonnet 5 — iQwant owner session",
+          "done": false,
+          "created": "2026-09-27T00:00:00.000Z",
+          "updated": "2026-09-27T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "iqwant-walk-forward-technical-rules",
+      "title": "iQwant: improve the technical rules with walk-forward testing",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-179015755602794x",
+          "text": "The backtest is about flat vs +7.7% for buy & hold, so there's no edge yet. Any rule change should be tested on data it wasn't tuned on (walk-forward / out-of-sample), never by tweaking thresholds until the past looks good.",
+          "done": true,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-24T02:06:14.103Z"
+        },
+        {
+          "id": "n-agent-20260924093751b",
+          "text": "✓ Actioned 2026-09-24: built trader/walkforward.py - splits cached history into independent windows (no compounding) and runs the current fixed ruleset on each separately, flagging when one window carries the whole result. `python -m trader walkforward`. First real result (2025-07-09→2026-09-23, 4x 4-month windows): +0.88% / +0.81% / -1.07% / -1.83% — one window explains the entire positive result. Only 4 independent windows exist yet, so this isn't enough to call the rules working or not — it's evidence the full-period 'flat vs buy&hold' number was never a stable edge. Full explanation (studies/game theory/math grounding, how you can be involved, determinism vs approval points) given in chat and docs/GUIDE.md §12.",
+          "done": true,
+          "created": "2026-09-23T23:37:51.000Z",
+          "updated": "2026-09-24T02:06:34.230Z"
+        }
+      ],
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mueqenrklvqb",
+          "text": "improve this then. and explain how our strategy evolves and gets better over time and is based on the best studies and research and fintech performance, philosophy, game theory, probability, math, tools etc",
+          "done": true,
+          "created": "2026-09-23T23:26:00.656Z",
+          "updated": "2026-09-24T02:06:38.323Z"
+        }
+      ],
+      "suggestions": [
+        "Next real lever, in order: (1) let the paper account + research ledger accumulate for a few more weeks so walk-forward has more independent windows to judge consistency from — 4 is too few; (2) only after that, consider giving the analysts full announcement PDFs (separate paused task) so Gold/Polychrome claims can actually verify; (3) a Kelly-criterion-style position sizing review once there's a real win-rate/payoff-ratio to size against — premature before then."
+      ]
+    },
+    {
+      "id": "iqwant-catalyst-calendar-rule",
+      "title": "iQwant: add a catalyst-calendar risk rule",
+      "category": "Development",
+      "created": "2026-09-23",
+      "notes": "",
+      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
+      "claudeNotes": [
+        {
+          "id": "n-agent-1790157556027d6r",
+          "text": "Block or shrink new entries within N days of a known binary event (results, AGM votes, regulatory decisions) unless the thesis is about that event. Idea from research/reference/equity-research-notes.md.",
+          "done": false,
+          "created": "2026-09-23T09:59:16.027Z",
+          "updated": "2026-09-23T09:59:16.027Z"
+        }
+      ]
+    },
+    {
+      "id": "integrate-epistemic-atlas-with-intactic",
+      "title": "Integrate Epistemic Atlas with inTactic",
+      "category": "R&D",
+      "created": "2026-09-25",
+      "notes": "",
+      "parentId": "come-up-with-a-knowledge-system-architecture-muex37ro",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mug1qi7vspfz",
+          "text": "future task for atlas to do",
+          "done": false,
+          "created": "2026-09-24T21:30:55.288Z",
+          "updated": "2026-09-24T21:30:55.288Z"
+        },
+        {
+          "id": "n-muhg1i5311l0",
+          "text": "tell me if we could build a version if this for Atlas, like by taking the best bits or whether i should build inTactic and connect it somehow like via a rest api. the latter approach seems a bit convoluted.still.might be out of scope for now. but propose some kind of minimal version of both taking the best bits and also what nee features might be good for gemini to build for inTactic",
+          "done": false,
+          "created": "2026-09-25T20:59:09.207Z",
+          "updated": "2026-09-25T20:59:09.207Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-intactic-first-look",
+          "text": "Cloned and read sandstormveg/inTactic (private, 3 commits, created 2026-09-25) at Silica's suggestion for the Atlas's relation-graph visualization. It's a React 19 + Three.js + Express app (\"threeview_mind\") with a Gemini-chat-driven 3D mind-map: SceneManager.ts is a real, working interactive 3D scene (OrbitControls, click/drag/select, CSS3D labels/snippets), not a prototype. Its data model (types.ts) is a simple, portable {Node{id,title,details,position,shape,color,scale,texture},Link{source,target,color,style,size}} pair - clean enough that an Atlas -> inTactic adapter (graph.jsonld nodes/edges -> Node[]/Link[], mapping @type to shape+color and relation @type to Link.style) looks genuinely feasible once both sides are ready. It's currently a standalone app (own Express server, own Gemini chat panel), not a drop-in embeddable widget, so integration would mean either extracting the Three.js rendering pieces as a reusable component or running it as its own deployment fed by an Atlas export - not decided, just scoped. Not building this now; noting the assessment so it's not lost, and marking assist:true since this is now a live thread rather than a someday-task.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T12:00:00.000Z",
+          "updated": "2026-09-25T20:59:18.183Z"
+        }
+      ]
+    },
+    {
+      "id": "reconsider-privacy-concerns-muf8sqh0",
+      "title": "reconsider privacy concerns",
+      "category": "R&D",
+      "created": "2026-09-24",
+      "notes": "",
+      "noteItems": [
+        {
+          "id": "n-muf8tys56mru",
+          "text": "like by default maybe this website shouldn't show my public tasks.",
+          "done": false,
+          "created": "2026-09-24T08:01:47.861Z",
+          "updated": "2026-09-24T08:01:47.861Z"
+        }
+      ]
+    },
+    {
+      "id": "new-vegas-mod-install-muiydlsq",
+      "title": "New Vegas mod install",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muiyecjiuoys",
+          "text": "attached hard requirements",
+          "done": false,
+          "created": "2026-09-26T22:20:47.742Z",
+          "updated": "2026-09-26T22:20:47.742Z",
+          "image": "images/interested-in/new-vegas-mod-install-muiydlsq-n-muiyecjiuoys.jpg"
+        }
+      ]
+    },
+    {
+      "id": "manufacturing-robot-food-fabrication-muj0c06l",
+      "title": "manufacturing robot/food fabrication",
+      "category": "Interested in",
+      "created": "2026-09-26",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-muj0cqilq1bh",
+          "text": "ali express costs - pizza vending machine, protein bar shape maker",
+          "done": false,
+          "created": "2026-09-26T23:15:31.773Z",
+          "updated": "2026-09-26T23:15:31.773Z",
+          "image": "images/interested-in/manufacturing-robot-food-fabrication-muj0c06l-n-muj0cqilq1bh.jpg"
+        }
+      ]
     }
   ]
 }
