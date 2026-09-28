@@ -617,6 +617,23 @@
       "category": "Shopping",
       "created": "2026-09-28",
       "notes": "",
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mukiaz6mkw1c",
+          "text": "find options on AliExpress",
+          "done": false,
+          "created": "2026-09-28T00:25:48.958Z",
+          "updated": "2026-09-28T00:25:48.958Z"
+        }
+      ]
+    },
+    {
+      "id": "buy-more-up-and-gos-mukif06m",
+      "title": "buy more up and gos",
+      "category": "Shopping",
+      "created": "2026-09-28",
+      "notes": "",
       "assist": false
     }
   ]
