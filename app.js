@@ -568,14 +568,8 @@ function categoryRailRow(name, label, count, depth, nestable) {
   });
   if (nestable) {
     row.style.position = "relative";
-    row.draggable = true;
     row.dataset.category = name;
-    row.title = "Click to view. Drag onto another category to nest this one under it. Right-click (or press and hold) to rename.";
-    row.addEventListener("dragstart", onCategoryDragStart);
-    row.addEventListener("dragover", onCategoryDragOver);
-    row.addEventListener("dragleave", onCategoryDragLeave);
-    row.addEventListener("drop", onCategoryDrop);
-    row.addEventListener("dragend", onCategoryDragEnd);
+    row.title = "Click to view. Right-click (or press and hold) to rename. Use ⇅ to nest under another category.";
     row.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       enterCategoryRenameMode(name, row);
@@ -593,9 +587,9 @@ function categoryRailRow(name, label, count, depth, nestable) {
 
 // ---------- category renaming (right-click, or press-and-hold on touch) ----------
 // The long-press listens on just the label text, not the whole row, the same way
-// task-title renaming does — the row itself stays draggable (for nesting), and a
-// long-press starting from anywhere else on it would fight that native touch-drag
-// gesture the same way it did for the task-card menu we removed earlier.
+// task-title renaming does. Categories used to also support drag-to-nest, which
+// fought this same gesture on touch (a hold-and-move reads as a drag start); that
+// drag feature was removed since the ⇅ move button already covers the same ground.
 function setupCategoryRenameLongPress(row, name) {
   const labelEl = row.querySelector(".cat-item-label");
   let holdTimer = null;
@@ -616,7 +610,6 @@ function setupCategoryRenameLongPress(row, name) {
 function enterCategoryRenameMode(name, row) {
   if (row.classList.contains("editing")) return;
   row.classList.add("editing");
-  row.draggable = false;
   const labelEl = row.querySelector(".cat-item-label");
   const input = document.createElement("input");
   input.type = "text";
@@ -1037,40 +1030,6 @@ function closeTaskOptionsMenu() {
 function onDocClickCloseTaskOptionsMenu(e) {
   const menu = document.getElementById("task-options-menu");
   if (menu && !menu.contains(e.target)) closeTaskOptionsMenu();
-}
-
-// ---------- category drag-and-drop ----------
-let draggedCategory = null;
-
-function onCategoryDragStart(e) {
-  draggedCategory = e.currentTarget.dataset.category;
-  e.currentTarget.classList.add("dragging");
-  e.dataTransfer.effectAllowed = "move";
-  e.dataTransfer.setData("text/plain", draggedCategory);
-}
-
-function onCategoryDragOver(e) {
-  if (!draggedCategory || draggedCategory === e.currentTarget.dataset.category) return;
-  e.preventDefault();
-  e.currentTarget.classList.add("drag-over");
-}
-
-function onCategoryDragLeave(e) {
-  e.currentTarget.classList.remove("drag-over");
-}
-
-function onCategoryDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove("drag-over");
-  const target = e.currentTarget.dataset.category;
-  if (draggedCategory && draggedCategory !== target) nestCategory(draggedCategory, target);
-  draggedCategory = null;
-}
-
-function onCategoryDragEnd(e) {
-  e.currentTarget.classList.remove("dragging");
-  document.querySelectorAll(".cat-item.drag-over").forEach((el) => el.classList.remove("drag-over"));
-  draggedCategory = null;
 }
 
 // Meta line shown under a task's title in the tasks column — a quick-glance summary
