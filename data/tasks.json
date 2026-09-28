@@ -1,23 +1,6 @@
 {
   "tasks": [
     {
-      "id": "iqwant-ibkr-paper-session",
-      "title": "iQwant: open IBKR account and run a first paper session",
-      "category": "Development",
-      "created": "2026-09-23",
-      "notes": "",
-      "parentId": "test-paper-not-real-version-of-the-trading-system-iqwant-mudt7f2m",
-      "claudeNotes": [
-        {
-          "id": "n-agent-17901575560273o5",
-          "text": "Open Interactive Brokers (ASX access, real API, separate paper account). Then: pip install ib_async, start TWS/IB Gateway on the paper account with the API enabled (port 7497), run `python -m trader paper --broker ibkr` after the close. Untested against a real Gateway, so expect fixes. Guide §9.",
-          "done": false,
-          "created": "2026-09-23T09:59:16.027Z",
-          "updated": "2026-09-23T09:59:16.027Z"
-        }
-      ]
-    },
-    {
       "id": "iqwant-live-graduation-criteria",
       "title": "iQwant: decide graduation criteria before any real money",
       "category": "Development",
