@@ -1340,7 +1340,7 @@ async function toggleVisibility(task, btnEl) {
     assertLoaded(toVisibility);
 
     const remainingInFrom = state.tasks.filter((t) => t._repo === fromVisibility && t.id !== task.id).map(stripRepo);
-    const existingInTo = state.tasks.filter((t) => t._repo === toVisibility).map(stripRepo);
+    const existingInTo = state.tasks.filter((t) => t._repo === toVisibility && t.id !== task.id).map(stripRepo);
     const movedTask = stripRepo(task);
 
     // Add to the destination BEFORE removing from the source. There's no way to make
@@ -1569,7 +1569,7 @@ async function deleteTask(task, card) {
     if (undone) return;
     try {
       const repo = repoFor(task._repo);
-      const remaining = prevTasks.filter((t) => !(t.id === task.id && t._repo === task._repo)).map(stripRepo);
+      const remaining = prevTasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
       await saveTasks(repo, remaining, `Delete task: ${task.title}`);
     } catch (err) {
       state.tasks = prevTasks;
