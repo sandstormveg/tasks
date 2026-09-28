@@ -682,23 +682,6 @@
       "assist": false
     },
     {
-      "id": "wgac-tp-muj4qm2t",
-      "title": "wgac tp",
-      "category": "Groceries",
-      "created": "2026-09-27",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mujajnyr780z",
-          "text": "order with Woolworths",
-          "done": true,
-          "created": "2026-09-27T04:00:51.219Z",
-          "updated": "2026-09-27T04:00:54.577Z"
-        }
-      ]
-    },
-    {
       "id": "sell-guitar-mujaqhxf",
       "title": "sell guitar",
       "category": "Life Admin",
