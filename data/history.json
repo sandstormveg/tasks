@@ -529,6 +529,206 @@
         "Free video resources if you'd rather not pay for anything at first: YouTube channels Japanese Ammo with Misa, Cure Dolly (grammar explained in an unusually clear way), and Kaname Naito all have hundreds of hours of free lessons.",
         "Tied to your trip: 4 weeks of hiragana/katakana + basic conversational phrases before 22 Oct would get you reading menus/signs and using basic Japanese with your partner's friends/family during the trip — a concrete, achievable target given the timeline."
       ]
+    },
+    {
+      "id": "knowledge-system-design-mug1shm4",
+      "title": "Knowledge system design",
+      "category": "R&D",
+      "completedDate": "2026-09-28",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mug1tr4g6hw0",
+          "text": "Needs to include more references/links and pictures as well in details.",
+          "done": false,
+          "created": "2026-09-24T21:33:26.800Z",
+          "updated": "2026-09-24T21:33:26.800Z"
+        },
+        {
+          "id": "n-mug1ud5f3zh7",
+          "text": "if it has relations to other objects then they should be connected somehow or shown in its superseded and/or subseded categories.",
+          "done": false,
+          "created": "2026-09-24T21:33:55.347Z",
+          "updated": "2026-09-24T21:34:43.636Z"
+        },
+        {
+          "id": "n-mug1wsuyk9zv",
+          "text": "Any category or object should also be able to be exported and also copied in different formats such as JSON and markdown.",
+          "done": true,
+          "created": "2026-09-24T21:35:49.018Z",
+          "updated": "2026-09-25T07:20:26.039Z"
+        },
+        {
+          "id": "n-mug1xr37nk37",
+          "text": "there also needs to be details on what each part of the UX to explain what it means. and probably an explainer on the site. like an about section.",
+          "done": true,
+          "created": "2026-09-24T21:36:33.379Z",
+          "updated": "2026-09-25T07:20:34.372Z"
+        },
+        {
+          "id": "n-mug1zz1mxkzz",
+          "text": "also i need it to have a section for inputs too, to put in a single item or many items (objects, things, stuff) which will then be researched and integrated by the Atlas system",
+          "done": true,
+          "created": "2026-09-24T21:38:17.002Z",
+          "updated": "2026-09-25T07:20:43.782Z"
+        },
+        {
+          "id": "n-mug3xsb0grrz",
+          "text": "i wonder how much we could connect systems/apis such as Wikipedia, Stanford Encyclopaedia, Merriam Webster, Wolfram Alpha etc. This would help populate different data points of an item from different angles and references frames. know what i mean?",
+          "done": false,
+          "created": "2026-09-24T22:32:34.188Z",
+          "updated": "2026-09-24T22:32:34.188Z"
+        },
+        {
+          "id": "n-mughbdln705o",
+          "text": "i feel like the search needs to built/improved. not just search for id. it needs to be a holistic search. across APIs, words, domains and also if there isn't much we can give an option to make it known/make a ticket for it to be researched and added (after going through Atlas verification/auditing by an Atlas agent/claude code session with skillful understanding of system)",
+          "done": false,
+          "created": "2026-09-25T04:47:03.323Z",
+          "updated": "2026-09-25T04:47:03.323Z"
+        },
+        {
+          "id": "n-mugmyi4x0cet",
+          "text": "ths experience design needs to be upgraded. we can't just start with an object list. that should be something the user chooses to select into. The initial experience should be something simple like a search/input box. user can toggle and option for it to be inputs/log items for indexing. otherwise the search is a way to use it for connecting to the atlas infodex system. The atlas builds around what the user has requested if it is an index. if it is a search and the item is already retrievable then the UX changes to be around the items data visualisation, reference frames, relationships, info etc etc.",
+          "done": true,
+          "created": "2026-09-25T07:25:00.369Z",
+          "updated": "2026-09-25T21:11:02.842Z"
+        },
+        {
+          "id": "n-mugn2we6w8zx",
+          "text": "check again for other knowledge databases. in what ways can i build this to hold/address/catalogue every thing possible in a way other systems do not.",
+          "done": false,
+          "created": "2026-09-25T07:28:25.470Z",
+          "updated": "2026-09-25T07:28:25.470Z"
+        },
+        {
+          "id": "n-muhgol2hkfwn",
+          "text": "screenshot an pen is letting you know what to remove/move. I'm trying to declutter the landing search page. move subheading to about, move the other buttons like export when the user is in another page such as the view all items page. I'm starting to think that it should be perhaps view all unique items. because when things like wiki and other apis are integrated won't that start to pull in other information? I'm thinking for each item there should be an option to request further information/make a note to get clarity etc. if this feature is integrated then it i think addresses my older notes on when to connect apis and add more references/apis/images etc. enabling the user to flag things and ask questions and input further information for an item will be great. not exactly sure how this will look so i may need to choose from different mockups.",
+          "done": false,
+          "created": "2026-09-25T21:17:06.089Z",
+          "updated": "2026-09-25T21:21:59.383Z",
+          "image": "images/r-d/knowledge-system-design-mug1shm4-n-muhgol2hkfwn.jpg"
+        },
+        {
+          "id": "n-muhgqqdwkdu9",
+          "text": "not sure if my screenshot went through adding again here",
+          "done": false,
+          "created": "2026-09-25T21:18:46.291Z",
+          "updated": "2026-09-25T21:18:46.291Z",
+          "image": "images/r-d/knowledge-system-design-mug1shm4-n-muhgqqdwkdu9.jpg"
+        },
+        {
+          "id": "n-muhh1hytiq6l",
+          "text": "i think we need to get rid of claim 42 and its relations. it's confusing. I'm not sure it's relations should be called objects either. or if we do we should be able to filter the list by selecting it as shown in the list (they'll still be shown when a main item is being explored) but they are more like sub items or something (not directly input or the main object that we were exploring) also be careful though that some main items may have other main items in their relations. think carefully about this one",
+          "done": false,
+          "created": "2026-09-25T21:27:08.594Z",
+          "updated": "2026-09-25T21:27:08.594Z"
+        },
+        {
+          "id": "n-muhhvx4ulaq6",
+          "text": "i don't need to see the object list when i am trying to reading an items page and relation graph. and anyway it should be collapsible too. the export and such buttons don't need to be there still. there should be a seamless transition from search to reading/understand an item. Add key information/summary beneath the relation graph. we might need a button to show picture and/or switch to different visual presentations if there are some. like of course a picture of ivysaur would ideally show up because when the research was conducted the pictures were grabbed too/connected too.",
+          "done": false,
+          "created": "2026-09-25T21:50:47.933Z",
+          "updated": "2026-09-25T21:50:47.933Z"
+        },
+        {
+          "id": "n-muhrw7bvplp9",
+          "text": "note to original Atlas Intelligence. I've starting working with Gemini in a different repo (atlas_infodex). it's probably made a lot of good changes where i couldn't keep working (as in I'd have to wait for reset) with claude code because the usage limits were way too frequent.",
+          "done": false,
+          "created": "2026-09-26T02:30:57.304Z",
+          "updated": "2026-09-26T02:30:57.304Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-atlas-ux-relay",
+          "text": "✓ Actioned 2026-09-25 by Director (Senti): relayed all 5 requirements to the Atlas owner session (it owns the graph-browser site build) since this is implementation work, not research — references/pictures in detail views, visible superseded/subseded relation links, JSON/Markdown export per object or category, an in-UX 'About' explainer section, and a new intake/ingestion 'inputs' section for feeding raw items to the Atlas for research. Waiting on that session to say what it's picking up now vs. later.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T08:21:00.000Z",
+          "updated": "2026-09-25T04:26:58.395Z"
+        },
+        {
+          "id": "n-agent-atlas-ux-triage",
+          "text": "✓ Atlas owner session triaged the 5 requirements (2026-09-25): building #1-4 now — (1) reference/image fields on objects, schema + viewer rendering, 1-2 real examples seeded, full content backfill is separate ongoing work; (2) supersedes/superseded_by as its own visible section instead of buried in generic relations; (3) JSON + Markdown export, per-object and per-category (cheap — source .md already round-trips on the live site); (4) an 'About' panel explaining the interface itself (graph/sidebar/shapes/DEBUG-cascade). Holding #5 (inputs/intake queue) for a deliberate go/no-go rather than building blind — a real version needs a GitHub write credential live in a public-facing serverless function (new attack surface), and 'researched and integrated by the system' likely means queued items get processed by that session manually (like you just handing it 13 items in chat) rather than a live automated backend. It'll raise #5 with you directly once 1-4 ship.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T08:45:00.000Z",
+          "updated": "2026-09-25T04:33:28.700Z"
+        },
+        {
+          "id": "n-agent-declutter-feedback-relay",
+          "text": "✓ Actioned 2026-09-26 by Director: relayed your annotated screenshot feedback to the Atlas session — move the object/relation-count subheading into About, remove the Export JSON/Markdown/dark-mode-toggle buttons from the landing page (relocate to wherever browse-all lives), plus flagged your two open ideas (view-all-UNIQUE-items for dedup once external APIs are wired in, and a per-item 'request more info/note for clarity' action). Not built yet, day window, just relayed. Note: your 'check other knowledge databases for differentiation' note (n-mugn2we6w8zx, 2026-09-25 07:28) is older and still unaddressed — that one's mine to research directly next pass, not implementation work.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-26T07:21:00.000Z",
+          "updated": "2026-09-28T05:29:05.584Z"
+        },
+        {
+          "id": "n-agent-more-ux-feedback-relay",
+          "text": "✓ Actioned 2026-09-26 by Director: relayed 3 more notes to the Atlas session — (1) your edit tying the per-item 'request more info' feature to your earlier external-API note, plus that you want to see mockup options rather than one fixed design; (2) drop the claim-042 demo object/relations, and think carefully about whether related objects should be called 'objects' at all given some are full main-items elsewhere in the graph (not a simple rename); (3) hide the sidebar object list by default in item view (collapsible), keep export/etc. off there too, smoother search→item transition, a summary block under the relation graph, and an image/visual-mode toggle — flagged that Ivysaur's picture should already be wired up from when it was researched, worth checking if it isn't showing. 'Check other knowledge databases' research question (n-mugn2we6w8zx) is still queued for me, rolled over again since these were newer.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-26T11:21:00.000Z",
+          "updated": "2026-09-26T11:21:00.000Z"
+        },
+        {
+          "id": "n-agent-atlas-note6-relay",
+          "text": "✓ Actioned 2026-09-25 by Director: a 6th note landed on this task after my original relay (connecting Wikipedia/Stanford Encyclopaedia/Merriam-Webster/Wolfram Alpha to populate object data from multiple reference frames) — flagged it to the Atlas session as part of the same #5 go/no-go conversation, since it's the same 'external read/write surface' shape of decision, not separate scope.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T10:25:00.000Z",
+          "updated": "2026-09-25T21:01:35.730Z"
+        },
+        {
+          "id": "n-agent-atlas-owner-items-1-4-shipped",
+          "text": "✓ Actioned 2026-09-25 by the Atlas owner session, items 1-4 live now (epistemic-atlas-gray.vercel.app): (1) references [{label,url?}] and image fields, rendered in the entry view - seeded 3 real examples, no fabricated URLs; (2) supersedes/superseded_by as their own always-visible entry section, not buried in generic relation data; (3) per-object Copy/Download as JSON or Markdown (Markdown pulls the real source .md, including free-text notes), per-type JSON export, and a whole-Atlas JSON/Markdown export in the header; (4) an 'About' panel explaining the interface itself, toggled from the header. Also fixed a real bug this surfaced along the way: the id-matching regex only allowed exactly one hyphen, so multi-word ids were silently invisible to reference validation. Item 5 (inputs/intake queue) and the note-6 external-API idea are still held for a go/no-go with you directly - both need a live write/fetch credential in a public-facing (password-gated) function, a new attack-surface decision I don't want to make unilaterally.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T11:00:00.000Z",
+          "updated": "2026-09-25T07:20:06.859Z"
+        },
+        {
+          "id": "n-agent-atlas-search-relay",
+          "text": "✓ Actioned 2026-09-25 by Director: relayed your new search note to the Atlas session — two parts: (1) holistic search across content/words/domains, not just id lookup, possibly tied to the same external-API idea from note 6; (2) a 'research ticket' flow for search misses, with an explicit verification/audit step (an Atlas agent reviewing before anything becomes a real object) so speculative content never silently becomes a 'supported' claim. Not built yet — day window, so I relayed rather than requesting immediate work.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T15:21:00.000Z",
+          "updated": "2026-09-25T21:12:13.878Z"
+        },
+        {
+          "id": "n-agent-decisions-from-silica",
+          "text": "✓ All three open questions now genuinely confirmed by you (2026-09-25): (1) inputs/intake queue live-vs-manual — left to Atlas's own judgment; (2) external reference APIs (Wikipedia/Stanford/Merriam-Webster/Wolfram Alpha) — also Atlas's call; (3) research-ticket audit gate — explicit YES, an audit/verification step is required before search-miss research becomes a real object. Correction: my first pass at (1) and (2) mistakenly read a UI default as your answer before you'd actually answered — you caught it, I re-asked, and got real answers this time (same outcome, but properly confirmed). Relayed to the Atlas session both times; no change needed to what it's doing.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-25T16:00:00.000Z",
+          "updated": "2026-09-25T21:12:09.855Z"
+        },
+        {
+          "id": "n-agent-atlas-night-pass-20260926",
+          "text": "✓ Night pass 2026-09-26 (01:21-~02:30 AEST), Atlas owner session. Shipped, all live and verified: (1) 13 real Wikipedia citations added where I was genuinely confident of the exact article title (skipped agent-foundations/pancomputational-enactivism/cyberprep, already-flagged no-source; used Bulbapedia not Wikipedia for Ivysaur since individual Pokemon species got merged into list articles years ago). (2) Holistic full-text search - matches everything in an object (address, epistemics, references, notes), not just id - plus a 'nothing found -> flag for research' button wired straight into the existing Inputs queue, both halves of your search note. (3) The audit-gate mechanism: wrote docs/audit-gate-proposal.md weighing a soft review_status flag vs. git-branch staging vs. a hybrid, then built the hybrid's low-risk half - review_status: unaudited frontmatter + a visible UNAUDITED badge in the UI + a new `atlas.py audit` CLI command - and retroactively flagged the 3 objects already shipped from the queue for consistency. Did NOT build the harder git-branch staging gate or decide who does the actual second look - both left open in the proposal doc rather than decided solo. Also took a first look at inTactic per your suggestion (separate claudeNote on the inTactic task) - genuinely promising, not integrated yet. Left alone tonight: the landing-page/search-first UX rearchitecture note - that's a bigger rework of the primary UX I'd proposed but hadn't gotten your sign-off on the shape of, so it's waiting for you rather than built blind overnight.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-26T02:35:00.000Z",
+          "updated": "2026-09-25T21:11:33.324Z"
+        },
+        {
+          "id": "n-agent-search-first-decisions",
+          "text": "✓ You answered all 4 search-first redesign questions directly (2026-09-26), relayed to the Atlas session immediately: (1) core shape confirmed YES — search-first landing; (2) on a match, keep the sidebar/graph frame (not a stripped focused mode); (3) search/log toggle — you want BOTH the explicit toggle control and the existing zero-result inference, not either/or; (4) browse-all UX — open to rethinking, not locked to today's exact layout. Atlas has the go-ahead to build.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-09-26T06:35:00.000Z",
+          "updated": "2026-09-25T21:12:34.044Z"
+        },
+        {
+          "id": "n-agent-atlas-declutter-and-cleanup-20260926c",
+          "text": "✓ Actioned 2026-09-26 (third time re-noting the declutter/landing-page-shipped summary — my prior two attempts at this were both lost to the same read-modify-write race on this file, once each; pulling immediately before this commit). SHIPPED from the annotated-screenshot feedback: (1) declutter — stats line moved to About panel, Export/Theme buttons moved out of the header into the browsing view only; (2) removed claim-042 and its 6-object demo cluster entirely (confusing alongside real content) — README/atlas-skill examples updated to reference newtons-apple-head-myth instead, original example preserved in docs/design-spec.md; (3) added ivysaur.md's image field — fetched and HEAD-verified the real pokemon.com artwork URL rather than guessing, since you flagged it should've been there already; (4) renamed the sidebar 'OBJECTS' heading to 'Everything in the Atlas' in user-facing copy (object stays as the internal/schema term). WRITTEN UP, not built — docs/relation-terminology-proposal.md addresses your 'should relations be called objects' question: no type-based main/sub split (breaks on exactly the case you flagged — isaac-newton is a full main entry despite also being a relation of newtons-apple-head-myth), the distinction is about viewing context not object type, and the existing relation-section labels already communicate that correctly. NOT BUILT, logged for later: (a) your note-1 edit tying the request-more-info/flag-for-clarity feature to the external-API note, and that you'll want to see a few mockup options before committing to a design — will build 2-3 mockups when this gets picked up, same pattern as the visual-design ones; (b) note-3's concrete asks — collapse/hide the object list by default when reading one item (collapsible, not gone), keep export/etc. off the item-reading view too (browsing mode needs to actually split into 'browse everything' vs 'reading one item' — right now it's one mode), a smoother search-to-item transition, a key-info summary block beneath the relation graph, and an image/visual-presentation toggle for items with pictures. SEPARATE FLAG, not an Atlas issue to fix: this is the second time in a row my own claudeNotes got silently dropped by a concurrent edit to this same task file (once by a website edit, once by Senti's own relay commits) — worth someone looking at write discipline on this file (pull-immediately-before-write on every writer, or some form of locking) since it's now happened twice in one night with real content loss each time, not hypothetical.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-26T09:00:00.000Z",
+          "updated": "2026-09-26T09:00:00.000Z"
+        }
+      ]
     }
   ]
 }
