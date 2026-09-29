@@ -418,7 +418,14 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-29",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "suggestions": [
+        "Short answer: yes, get travel insurance for this trip — you have deep water soloing booked (a separate task on this tracker) plus general climbing/cable car/boat activities in Cat Ba, and standard travel policies typically exclude these unless you add adventure-sports cover specifically.",
+        "The activity that matters most for picking a plan: World Nomads' Epic plan explicitly lists 'Deep Water Soloing' as a covered activity, along with rock climbing and bouldering up to 8,000m. Their cheaper Explorer plan only covers bouldering/soloing up to 6,500m and does NOT list deep water soloing by name — so for this trip specifically, Epic is the tier you'd need, not the base plan.",
+        "Coverage levels worth checking for Vietnam: aim for at least $100,000 emergency medical and $250,000 medical evacuation — remote/water-based injuries in Vietnam can require evacuation to Bangkok or Singapore, which is the expensive part if uninsured.",
+        "Practical step: buy the policy before you fly (not after arriving), and when you check out on World Nomads' site, explicitly add/select Deep Water Soloing and Rock Climbing in the activities list during quote setup — coverage is activity-specific, so an unlisted activity isn't covered even under the right plan tier.",
+        "Sources: worldnomads.com/usa/travel-insurance/whats-covered/adventure-sports-and-activities, worldnomads.com/travel-insurance/activities/water-and-sports-activities-travel-insurance, squaremouth.com/resources/destinations/vietnam"
+      ]
     }
   ]
 }
