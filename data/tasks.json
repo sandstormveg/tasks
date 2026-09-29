@@ -405,23 +405,6 @@
       "assist": false
     },
     {
-      "id": "help-kez-with-trip-mum418nr",
-      "title": "Help Kez with trip",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-09-29",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mum41vb9ut0n",
-          "text": "E-visa, cat ba accom, friend joining?",
-          "done": false,
-          "created": "2026-09-29T03:22:21.765Z",
-          "updated": "2026-09-29T03:22:21.765Z"
-        }
-      ]
-    },
-    {
       "id": "add-a-pep-up-mode-with-positive-voice-affirmations-mum6vdu7",
       "title": "add a pep up mode with positive voice affirmations",
       "category": "Development",
