@@ -11,6 +11,9 @@ const state = {
   // Drive the Active tab's categories/tasks/detail drill-down columns. "__all__" is the
   // sentinel for the "All tasks" rail item (never a real category name).
   selectedCategory: "__all__", selectedActiveTaskKey: null,
+  // Whether "All tasks" groups its list under per-category headers — only meaningful
+  // there, since a single selected category already implies one group.
+  showCategoryHeaders: false,
   // The sha of tasks.json/history.json as last seen from the API, per repo — used to
   // detect a lost-update race (see saveTasks/saveHistory below): a fresh sha fetched
   // right before writing only stops GitHub rejecting the PUT, it does NOT mean the
@@ -32,6 +35,7 @@ function saveUiState() {
       selectedCategory: state.selectedCategory,
       selectedActiveTaskKey: state.selectedActiveTaskKey,
       selectedAssistKey: state.selectedAssistKey,
+      showCategoryHeaders: state.showCategoryHeaders,
     }));
   } catch {
     // localStorage unavailable/full — last-viewed state just won't survive reload.
@@ -655,7 +659,11 @@ function tasksForSelectedCategory() {
 }
 
 function renderActiveTasksColumn() {
-  el("#active-tasks-title").textContent = state.selectedCategory === "__all__" ? "All tasks" : state.selectedCategory;
+  const isAllTasks = state.selectedCategory === "__all__";
+  el("#active-tasks-title").textContent = isAllTasks ? "All tasks" : state.selectedCategory;
+  const headersToggle = el("#category-headers-toggle");
+  headersToggle.classList.toggle("hidden", !isAllTasks);
+  headersToggle.classList.toggle("on", state.showCategoryHeaders);
   const container = el("#active-task-list");
   container.innerHTML = "";
   const tasks = tasksForSelectedCategory();
@@ -663,10 +671,25 @@ function renderActiveTasksColumn() {
     container.innerHTML = `<div class="col-empty-hint">Nothing on the list. Add something below.</div>`;
   } else if (tasks.length === 0) {
     container.innerHTML = `<div class="col-empty-hint">Nothing in this category yet.</div>`;
+  } else if (isAllTasks && state.showCategoryHeaders) {
+    const groups = groupBy(tasks, "category");
+    Object.keys(groups).sort().forEach((cat) => {
+      const header = document.createElement("div");
+      header.className = "active-cat-header";
+      header.textContent = cat;
+      container.appendChild(header);
+      groups[cat].forEach((task) => appendTaskWithSubtasks(container, task, 0));
+    });
   } else {
     tasks.forEach((task) => appendTaskWithSubtasks(container, task, 0));
   }
 }
+
+el("#category-headers-toggle").addEventListener("click", () => {
+  state.showCategoryHeaders = !state.showCategoryHeaders;
+  renderActiveTasksColumn();
+  saveUiState();
+});
 
 // ---------- Active tab: category rail + task selection ----------
 function selectCategory(name) {
@@ -3097,6 +3120,7 @@ const savedUiState = loadUiState();
 if (savedUiState.selectedCategory) state.selectedCategory = savedUiState.selectedCategory;
 if (savedUiState.selectedActiveTaskKey) state.selectedActiveTaskKey = savedUiState.selectedActiveTaskKey;
 if (savedUiState.selectedAssistKey) state.selectedAssistKey = savedUiState.selectedAssistKey;
+if (savedUiState.showCategoryHeaders) state.showCategoryHeaders = true;
 if (savedUiState.tab && TAB_ORDER.includes(savedUiState.tab)) switchToTab(savedUiState.tab);
 
 loadData();

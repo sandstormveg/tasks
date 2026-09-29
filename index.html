@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="manifest" href="manifest.json" />
-<link rel="stylesheet" href="style.css?v=28" />
+<link rel="stylesheet" href="style.css?v=29" />
 </head>
 <body>
   <div class="hud-frame" aria-hidden="true">
@@ -48,7 +48,10 @@
       <div class="col-resize-handle" id="categories-resize-handle" title="Drag to resize"></div>
 
       <div class="col col-tasks" id="active-col-tasks">
-        <div class="section-title" id="active-tasks-title">All tasks</div>
+        <div class="section-title-row">
+          <div class="section-title" id="active-tasks-title">All tasks</div>
+          <button type="button" id="category-headers-toggle" class="section-title-toggle" title="Group by category">Group by category</button>
+        </div>
         <div id="active-task-list"></div>
       </div>
       <div class="col-resize-handle" id="tasks-resize-handle" title="Drag to resize"></div>
@@ -133,6 +136,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
