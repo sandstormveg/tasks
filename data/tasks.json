@@ -6,7 +6,7 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-21",
       "notes": "",
-      "assist": false,
+      "assist": true,
       "suggestions": [
         {
           "text": "No specific requirements noted yet (budget, private room vs dorm, amenities), so here's a shortlist across styles, all central in Cat Ba Town where Cat Ba Express actually drops off: Secret Garden/Wandernest Cat Ba — green garden setting, dorms + private rooms, social but not party-loud, central southern part of town. CatBa Pod Hostel — closest to the very centre, cozy pod-style dorm beds, good budget pick. Domik Homestay — heart of town, walkable to both the market and Cat Co Cove. Cat Ba Central Hostel — budget option with a rooftop terrace overlooking the bay. Latritcia Boutique Hotel — step up in comfort if you want a private-hotel feel rather than hostel. Bamboo House and Victor Charlie Hostel also come up well-reviewed if none of these fit.",
@@ -27,6 +27,14 @@
         {
           "text": "Booking 4 rooms together for 6 nights in peak-ish season (mid-Oct) needs live availability, which isn't checkable without booking on your behalf - search 'Secret Garden Wandernest Cat Ba', 'Family Home Catba', or 'Latritcia Boutique Hotel Cat Ba' directly on Booking.com or Agoda for 12-18 Oct, request 4 rooms in one booking, and book 2-4 weeks ahead since Cat Ba rooms do sell out around this time of year.",
           "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Real links, plus the loosened constraint noted (you get your own room; the others can be nearby or in the same place, not strictly all 4 in one property): Secret Garden - Wandernest Cat Ba - booking.com/reviews/vn/hotel/secret-garden-cat-ba.html or agoda.com/en-sg/secret-garden-hostel-wandernest-cat-ba-h35759092/hotel/cat-ba-island-vn.html (169-171 Nui Ngoc, rated 8.9/10 on Booking.com from 1498 reviews, ~$11 USD/night avg, pool, free breakfast - good pick for YOUR own room since it has genuine private rooms, not just dorms). Family Home Catba - agoda.com/en-ie/family-home-catba/hotel/hang-suoi-vn.html (multi-room guesthouse, good for the others as a group). Latritcia Boutique Hotel - booking.com/hotel/vn/latritcia-boutique.html or agoda.com/latritcia-boutique-hotel/hotel/hang-suoi-vn.html or direct at latritciahotel.com (5 min walk to Cat Ba National Park, family rooms with balconies, 4/5 on Tripadvisor). Cat Ba Central Hostel - agoda.com/catba-central-hostel/hotel/cat-ba-island-vn.html (cheapest, bay-view rooftop, praised for friendly English-speaking staff).",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Given the loosened constraint, a clean split: you book your own private room at Secret Garden - Wandernest (it's the best-rated and has real private-room stock, not just dorms), and the other 3 book together at Family Home Catba or Latritcia - both are a short walk from Secret Garden within Cat Ba Town, so you'd still be eating/hanging out together despite being in different buildings. Still needs live-availability checking and booking on the actual sites for your 12-18 Oct dates - I can't book on your behalf.",
+          "author": "Claude Sonnet 5"
         }
       ],
       "claudeNotes": [
@@ -45,6 +53,14 @@
           "done": true,
           "created": "2026-09-29T00:00:00.000Z",
           "updated": "2026-09-29T08:40:16.301Z"
+        },
+        {
+          "id": "n-agent-director-20260929-catba-links",
+          "text": "✓ Actioned 2026-09-29 by Director (Senti): added real Booking.com/Agoda links for all 4 shortlisted properties, and adjusted the recommendation for the loosened constraint (your own room, others nearby/same place is fine) - see suggestions.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-29T00:00:00.000Z",
+          "updated": "2026-09-29T00:00:00.000Z"
         }
       ],
       "noteItems": [
@@ -234,7 +250,30 @@
       "title": "buy a new microwave",
       "category": "Shopping 🛍️",
       "created": "2026-09-26",
-      "notes": ""
+      "notes": "",
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mumi0kwal3tf",
+          "text": "find a good affordable microwave on amazon au (cause i think aliexpress will be too expensive right)",
+          "done": false,
+          "created": "2026-09-29T09:53:16.234Z",
+          "updated": "2026-09-29T09:53:16.234Z"
+        }
+      ],
+      "suggestions": [
+        "COMFEE' 700W 20L Microwave (manual dial control, CM-M202CC) on Amazon AU: https://www.amazon.com.au/COMFEE-Microwave-Cooking-Defrost-Function/dp/B09XQ8JGL9 (white) or https://www.amazon.com.au/COMFEE-Microwave-Cooking-Defrost-Function/dp/B09XQP3QJ6 (black) — cheapest solid option, simple dial rather than digital, 4.5★ from thousands of AU reviews, good for a small kitchen.",
+        "COMFEE' 700W 20L Digital Microwave (CM-E202CC, more features — 6 cooking presets, express cook, 11 power levels, memory function) on Amazon AU, ~$187 AUD: https://www.amazon.com.au/COMFEE-Digital-Microwave-Cooking-Function/dp/B0B2JWNLW9 (black) or https://www.amazon.com.au/COMFEE-Digital-Microwave-Cooking-Function/dp/B0B2JXRQSS (white) — pick this over the manual one if you want digital presets/timer; otherwise the manual CM-M202CC above is the cheaper pick."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-20260929-microwave",
+          "text": "✓ Actioned 2026-09-29 by Director (Senti): found real Amazon AU listings — COMFEE' 20L manual (cheapest) and COMFEE' 20L digital (~$187, more features) — see suggestions for links.",
+          "done": false,
+          "created": "2026-09-29T00:00:00.000Z",
+          "updated": "2026-09-29T00:00:00.000Z"
+        }
+      ]
     },
     {
       "id": "huu-long-on-the-21st-of-oct-mujkzr8g",
