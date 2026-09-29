@@ -235,7 +235,16 @@
       "category": "Shopping 🛍️",
       "created": "2026-09-26",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mumi0kwal3tf",
+          "text": "find a good affordable microwave on amazon au (cause i think aliexpress will be too expensive right)",
+          "done": false,
+          "created": "2026-09-29T09:53:16.234Z",
+          "updated": "2026-09-29T09:53:16.234Z"
+        }
+      ]
     },
     {
       "id": "huu-long-on-the-21st-of-oct-mujkzr8g",
