@@ -2060,6 +2060,56 @@ function noteAttachmentHtml(n) {
   return "";
 }
 
+// Attachments are stored as repo-relative paths. Files from the public repo are served by
+// Pages at that same relative URL, but private-repo files aren't on the site at all (404),
+// so those are read through the API with the token and shown from a blob URL instead.
+const attachmentBlobUrls = new Map();
+const ATTACHMENT_TYPES = {
+  pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg",
+  png: "image/png", gif: "image/gif", webp: "image/webp",
+};
+
+async function privateAttachmentUrl(path) {
+  if (attachmentBlobUrls.has(path)) return attachmentBlobUrls.get(path);
+  if (!getToken()) throw new Error("Add your GitHub token in Settings to open private attachments.");
+  const res = await fetch(`${apiBase(PRIVATE_REPO)}/${path}`, {
+    headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github.raw" },
+  });
+  if (!res.ok) throw new Error(`Couldn't read ${path}: ${res.status}`);
+  const ext = path.split(".").pop().toLowerCase();
+  const blob = new Blob([await res.arrayBuffer()], { type: ATTACHMENT_TYPES[ext] || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  attachmentBlobUrls.set(path, url);
+  return url;
+}
+
+// Opened via a window created synchronously in the click, since browsers (mobile
+// especially) block popups opened after an await.
+document.addEventListener("click", async (e) => {
+  const link = e.target.closest("a.note-file-link");
+  if (!link) return;
+  e.preventDefault();
+  const win = window.open("", "_blank");
+  const go = (url) => { if (win) win.location.href = url; else location.href = url; };
+  try {
+    const onSite = await fetch(link.href, { method: "HEAD" });
+    go(onSite.ok ? link.href : await privateAttachmentUrl(link.getAttribute("href")));
+  } catch (err) {
+    if (win) win.close();
+    alert(`Couldn't open attachment: ${err.message}`);
+  }
+});
+
+// error doesn't bubble, so listen in the capture phase.
+document.addEventListener("error", async (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || img.dataset.privateTried) return;
+  const src = img.getAttribute("src");
+  if (!src || /^(blob:|data:|https?:)/.test(src)) return;
+  img.dataset.privateTried = "1";
+  try { img.src = await privateAttachmentUrl(src); } catch (err) { /* stays broken, as before */ }
+}, true);
+
 // Shared by the History detail panel and the Active-tab task detail panel below —
 // same read-only rendering either way (editing happens via double-click for the
 // title and the Assistance tab for notes, never here).
