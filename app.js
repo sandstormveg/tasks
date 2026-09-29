@@ -356,6 +356,47 @@ async function saveHistory(repo, newEntries, message) {
   state.shas[visibility].history = newSha;
 }
 
+// Same reasoning as saveTasksAppend: completing a task only adds one history entry, so it
+// doesn't need to agree with our in-memory copy about anything else that changed history.json
+// in the meantime. Fetch fresh, append, write that.
+async function saveHistoryAppend(repo, newEntry, message) {
+  const visibility = visibilityForRepo(repo);
+  const current = await ghGetFile(repo, "data/history.json");
+  const currentEntries = JSON.parse(current.content).entries;
+  const newSha = await ghPutFile(repo, "data/history.json", { entries: [...currentEntries, newEntry] }, current.sha, message);
+  state.shas[visibility].history = newSha;
+  return currentEntries;
+}
+
+// Most task edits only touch one task's own field(s) — they don't need to agree with our
+// in-memory copy about every other task, only that this one task's identity still exists.
+// So fetch tasks.json fresh, apply mutateFn to just that task within the fresh list (return
+// null/undefined from mutateFn to delete it), and write that back — sidestepping the same
+// false-positive conflict saveTasksAppend avoids for pure appends.
+async function saveTaskMutation(repo, taskId, mutateFn, message) {
+  const visibility = visibilityForRepo(repo);
+  const current = await ghGetFile(repo, "data/tasks.json");
+  const currentTasks = JSON.parse(current.content).tasks;
+  const updated = currentTasks.map((t) => (t.id === taskId ? mutateFn(t) : t)).filter(Boolean);
+  const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: updated }, current.sha, message);
+  state.shas[visibility].tasks = newSha;
+  return currentTasks;
+}
+
+// Same as saveTaskMutation, but for a single history entry — e.g. adding a note or photo
+// right after completing a task, which used to spuriously conflict with whatever else had
+// touched history.json (often seconds earlier, from the completion's own history write) in
+// the gap between ticking the box and finishing the note.
+async function saveHistoryMutation(repo, entryId, mutateFn, message) {
+  const visibility = visibilityForRepo(repo);
+  const current = await ghGetFile(repo, "data/history.json");
+  const currentEntries = JSON.parse(current.content).entries;
+  const updated = currentEntries.map((h) => (h.id === entryId ? mutateFn(h) : h)).filter(Boolean);
+  const newSha = await ghPutFile(repo, "data/history.json", { entries: updated }, current.sha, message);
+  state.shas[visibility].history = newSha;
+  return currentEntries;
+}
+
 // categories.json only exists once someone nests a category, so its absence isn't an
 // error — treat a failed read as "no hierarchy yet" rather than surfacing a 404.
 async function saveCategories(newMap, message) {
@@ -913,10 +954,12 @@ async function setTaskParent(task, parentId) {
   try {
     assertLoaded(task._repo);
     const repo = repoFor(task._repo);
-    const updated = state.tasks
-      .filter((t) => t._repo === task._repo)
-      .map((t) => stripRepo(t.id === task.id ? { ...t, parentId: parentId || undefined } : t));
-    await saveTasks(repo, updated, parentId ? `Make subtask: ${task.title}` : `Un-nest: ${task.title}`);
+    await saveTaskMutation(
+      repo,
+      task.id,
+      (t) => ({ ...t, parentId: parentId || undefined }),
+      parentId ? `Make subtask: ${task.title}` : `Un-nest: ${task.title}`
+    );
     task.parentId = parentId || undefined;
     renderActive();
   } catch (err) {
@@ -929,10 +972,7 @@ async function setTaskCategory(task, category) {
   try {
     assertLoaded(task._repo);
     const repo = repoFor(task._repo);
-    const updated = state.tasks
-      .filter((t) => t._repo === task._repo)
-      .map((t) => stripRepo(t.id === task.id ? { ...t, category } : t));
-    await saveTasks(repo, updated, `Move to category "${category}": ${task.title}`);
+    await saveTaskMutation(repo, task.id, (t) => ({ ...t, category }), `Move to category "${category}": ${task.title}`);
     task.category = category;
     renderActive();
     renderCategoryOptions();
@@ -1277,10 +1317,7 @@ function renameTaskInline(task, titleEl, { onBeforeEdit, onDone, inputClassName 
     try {
       assertLoaded(task._repo);
       const repo = repoFor(task._repo);
-      const updated = state.tasks
-        .filter((t) => t._repo === task._repo)
-        .map((t) => stripRepo(t.id === task.id ? { ...t, title: newTitle } : t));
-      await saveTasks(repo, updated, `Rename task: ${task.title} → ${newTitle}`);
+      await saveTaskMutation(repo, task.id, (t) => ({ ...t, title: newTitle }), `Rename task: ${task.title} → ${newTitle}`);
       task.title = newTitle;
       onDone();
     } catch (err) {
@@ -1325,10 +1362,7 @@ async function toggleAssist(task, btnEl) {
   try {
     assertLoaded(task._repo);
     const repo = repoFor(task._repo);
-    const updated = state.tasks
-      .filter((t) => t._repo === task._repo)
-      .map((t) => stripRepo(t.id === task.id ? { ...t, assist: next } : t));
-    await saveTasks(repo, updated, `${next ? "Enable" : "Disable"} assistance: ${task.title}`);
+    await saveTaskMutation(repo, task.id, (t) => ({ ...t, assist: next }), `${next ? "Enable" : "Disable"} assistance: ${task.title}`);
     task.assist = next;
     if (!next && state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
     renderActive();
@@ -1408,7 +1442,6 @@ async function completeTask(task, checkBtn) {
 
   try {
     assertLoaded(task._repo);
-    const remainingInRepo = state.tasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
     // Carry the task's own notes and the agent's suggestions into history — otherwise
     // completing a task silently threw away everything that had been built up on it.
     const carriedNotes = noteItems(task);
@@ -1428,8 +1461,8 @@ async function completeTask(task, checkBtn) {
 
     // History first, then removal — if the second write fails the task is still on the
     // list and can be ticked again, rather than erased with no record of completion.
-    await saveHistory(repo, historyInRepo, `Log history: ${task.title}`);
-    await saveTasks(repo, remainingInRepo, `Complete task: ${task.title}`);
+    await saveHistoryAppend(repo, entry, `Log history: ${task.title}`);
+    await saveTaskMutation(repo, task.id, () => null, `Complete task: ${task.title}`);
 
     state.tasks = state.tasks.filter((t) => t.id !== task.id || t._repo !== task._repo);
     state.history = state.history.filter((h) => h._repo !== task._repo).concat(
@@ -1504,11 +1537,7 @@ el("#complete-form").addEventListener("submit", async (e) => {
     // Save the note text first and independently of any image — a failed photo upload
     // should never be able to cost you the words you already wrote.
     let images = entry.images || [];
-    const updatedHistory = state.history
-      .filter((h) => h._repo === entry._repo)
-      .map(stripRepo)
-      .map((h) => (h.id === entry.id ? { ...h, note, images } : h));
-    await saveHistory(repo, updatedHistory, `Update note: ${entry.title}`);
+    await saveHistoryMutation(repo, entry.id, (h) => ({ ...h, note, images }), `Update note: ${entry.title}`);
     state.history = state.history.map((h) =>
       h.id === entry.id && h._repo === entry._repo ? { ...h, note, images } : h
     );
@@ -1523,11 +1552,7 @@ el("#complete-form").addEventListener("submit", async (e) => {
         const imagePath = `images/${safeCat}/${entry.id}.jpg`;
         await ghPutImage(repo, imagePath, base64, `Add image for ${entry.title}`);
         images = [imagePath];
-        const withImage = state.history
-          .filter((h) => h._repo === entry._repo)
-          .map(stripRepo)
-          .map((h) => (h.id === entry.id ? { ...h, images } : h));
-        await saveHistory(repo, withImage, `Add image: ${entry.title}`);
+        await saveHistoryMutation(repo, entry.id, (h) => ({ ...h, images }), `Add image: ${entry.title}`);
         state.history = state.history.map((h) =>
           h.id === entry.id && h._repo === entry._repo ? { ...h, images } : h
         );
@@ -1592,8 +1617,7 @@ async function deleteTask(task, card) {
     if (undone) return;
     try {
       const repo = repoFor(task._repo);
-      const remaining = prevTasks.filter((t) => t._repo === task._repo && t.id !== task.id).map(stripRepo);
-      await saveTasks(repo, remaining, `Delete task: ${task.title}`);
+      await saveTaskMutation(repo, task.id, () => null, `Delete task: ${task.title}`);
     } catch (err) {
       state.tasks = prevTasks;
       renderActive();
@@ -2255,8 +2279,7 @@ async function deleteHistoryEntry(entry, nodeEl) {
     if (undone) return;
     try {
       const repo = repoFor(entry._repo);
-      const remaining = prevHistory.filter((h) => h._repo === entry._repo && h.id !== entry.id).map(stripRepo);
-      await saveHistory(repo, remaining, `Delete history entry: ${entry.title}`);
+      await saveHistoryMutation(repo, entry.id, () => null, `Delete history entry: ${entry.title}`);
     } catch (err) {
       state.history = prevHistory;
       renderTree();
@@ -2361,15 +2384,15 @@ function newNoteId() {
 async function saveNoteItems(task, newItems, message) {
   assertLoaded(task._repo);
   const repo = repoFor(task._repo);
-  const updated = state.tasks
-    .filter((t) => t._repo === task._repo)
-    .map((t) => {
-      const stripped = stripRepo(t);
-      if (t.id !== task.id) return stripped;
-      const { scratchpad, scratchpadUpdated, ...rest } = stripped;
+  await saveTaskMutation(
+    repo,
+    task.id,
+    (t) => {
+      const { scratchpad, scratchpadUpdated, ...rest } = t;
       return { ...rest, noteItems: newItems };
-    });
-  await saveTasks(repo, updated, message);
+    },
+    message
+  );
   task.noteItems = newItems;
   delete task.scratchpad;
   delete task.scratchpadUpdated;
@@ -2560,10 +2583,7 @@ function claudeNoteItems(task) {
 async function saveClaudeNotes(task, newItems, message) {
   assertLoaded(task._repo);
   const repo = repoFor(task._repo);
-  const updated = state.tasks
-    .filter((t) => t._repo === task._repo)
-    .map((t) => (t.id === task.id ? { ...stripRepo(t), claudeNotes: newItems } : stripRepo(t)));
-  await saveTasks(repo, updated, message);
+  await saveTaskMutation(repo, task.id, (t) => ({ ...t, claudeNotes: newItems }), message);
   task.claudeNotes = newItems;
 }
 
