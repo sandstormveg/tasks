@@ -102,9 +102,9 @@
           "id": "n-agent-20260929-catba-4rooms",
           "text": "✓ Actioned 2026-09-29: narrowed the shortlist to fit Silica's stated requirement (4 people, each own room, 12-18 Oct) - see suggestions for the 4 best candidates and next steps.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-09-29T00:00:00.000Z",
-          "updated": "2026-09-29T00:00:00.000Z"
+          "updated": "2026-09-29T08:40:16.301Z"
         }
       ],
       "noteItems": [
