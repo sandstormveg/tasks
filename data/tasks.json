@@ -79,6 +79,14 @@
         {
           "text": "Nothing bookable on your behalf here (would need your actual payment details), but once you pick a style (hostel/social vs private/quiet) I can narrow to 1-2 exact links with current pricing for your 12-18 Oct dates.",
           "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Style preference now given (2026-09-29): 4 people, each wants their own room, 12-18 Oct (6 nights). Best fits from the shortlist for 4 separate private rooms under one roof: Secret Garden - Wandernest Cat Ba (garden setting, mix of private rooms available, central-south town, on-site restaurant/bar) and Family Home Catba (name fits the brief - multi-room guesthouse, rooftop bar, central, 24hr reception). Latritcia Boutique Hotel is the upgrade option if you want hotel-standard private rooms rather than guesthouse-style. Cat Ba Central Hostel also does private rooms ($25-35/room) with a rooftop bay view if you want the cheapest 4-room option.",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Booking 4 rooms together for 6 nights in peak-ish season (mid-Oct) needs live availability, which isn't checkable without booking on your behalf - search 'Secret Garden Wandernest Cat Ba', 'Family Home Catba', or 'Latritcia Boutique Hotel Cat Ba' directly on Booking.com or Agoda for 12-18 Oct, request 4 rooms in one booking, and book 2-4 weeks ahead since Cat Ba rooms do sell out around this time of year.",
+          "author": "Claude Sonnet 5"
         }
       ],
       "claudeNotes": [
@@ -89,6 +97,14 @@
           "done": true,
           "created": "2026-09-25T11:21:00.000Z",
           "updated": "2026-09-26T10:18:19.866Z"
+        },
+        {
+          "id": "n-agent-20260929-catba-4rooms",
+          "text": "✓ Actioned 2026-09-29: narrowed the shortlist to fit Silica's stated requirement (4 people, each own room, 12-18 Oct) - see suggestions for the 4 best candidates and next steps.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-29T00:00:00.000Z",
+          "updated": "2026-09-29T00:00:00.000Z"
         }
       ]
     },
