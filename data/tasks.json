@@ -260,6 +260,19 @@
           "created": "2026-09-29T09:53:16.234Z",
           "updated": "2026-09-29T09:53:16.234Z"
         }
+      ],
+      "suggestions": [
+        "COMFEE' 700W 20L Microwave (manual dial control, CM-M202CC) on Amazon AU: https://www.amazon.com.au/COMFEE-Microwave-Cooking-Defrost-Function/dp/B09XQ8JGL9 (white) or https://www.amazon.com.au/COMFEE-Microwave-Cooking-Defrost-Function/dp/B09XQP3QJ6 (black) — cheapest solid option, simple dial rather than digital, 4.5★ from thousands of AU reviews, good for a small kitchen.",
+        "COMFEE' 700W 20L Digital Microwave (CM-E202CC, more features — 6 cooking presets, express cook, 11 power levels, memory function) on Amazon AU, ~$187 AUD: https://www.amazon.com.au/COMFEE-Digital-Microwave-Cooking-Function/dp/B0B2JWNLW9 (black) or https://www.amazon.com.au/COMFEE-Digital-Microwave-Cooking-Function/dp/B0B2JXRQSS (white) — pick this over the manual one if you want digital presets/timer; otherwise the manual CM-M202CC above is the cheaper pick."
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-director-20260929-microwave",
+          "text": "✓ Actioned 2026-09-29 by Director (Senti): found real Amazon AU listings — COMFEE' 20L manual (cheapest) and COMFEE' 20L digital (~$187, more features) — see suggestions for links.",
+          "done": false,
+          "created": "2026-09-29T00:00:00.000Z",
+          "updated": "2026-09-29T00:00:00.000Z"
+        }
       ]
     },
     {
