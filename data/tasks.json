@@ -417,7 +417,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-30",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-munheh45jnex",
+          "text": "find vegan restaurants and cafe links, bouldering gyms, hikes, climbs etc",
+          "done": false,
+          "created": "2026-09-30T02:23:51.077Z",
+          "updated": "2026-09-30T02:23:51.077Z"
+        }
+      ]
     }
   ]
 }
