@@ -426,6 +426,22 @@
           "created": "2026-09-30T02:23:51.077Z",
           "updated": "2026-09-30T02:23:51.077Z"
         }
+      ],
+      "suggestions": [
+        "Vegan/vegan-friendly: Casa Bonita (well-reviewed for vegan-friendly Asian + Western dishes) and Celery Restaurant (healthy breakfast/lunch, poke bowls, salads, vegan options, open 7am-5pm) are the two named standouts. Cat Ba is seafood-heavy overall so options are limited outside these - most other restaurants can do a tofu/veggie stir-fry on request. Full current list: https://www.tripadvisor.com/Restaurants-g737051-zfz10697-Cat_Ba_Hai_Phong.html",
+        "Bouldering/indoor climbing: no dedicated bouldering gym on the island. Cat Ba Climbing (the DWS operator from your other task) has a small indoor wall at their office for beginners to try technique before going outdoor - not a real bouldering gym, more a warm-up/intro wall.",
+        "Real climbing here is outdoor sport climbing - 120+ routes across 13 crags, 4a-8a: Butterfly Valley (most iconic, 60+ routes, ~30min by scooter, overhangs/slabs/cracks), Hidden Valley (2nd-largest crag, wide range beginner-advanced), Ben Beo Harbor (sea-view routes 5c-7c), The Cave (small, good rainy-day option, most routes protected), Kingfisher Valley (beginner-friendly). Independent climbers just need a motorbike/bicycle to reach them. Route database + topos: https://www.thecrag.com/en/climbing/vietnam/cat-ba-island and https://www.mountainproject.com/area/107069005/cat-ba-island. Guide: https://www.thewanderingclimber.com/cat-ba-climbing-guide/",
+        "Hikes in Cat Ba National Park: Ngu Lam Peak (1.4km each way, 204m, panoramic summit views, moderate), Hospital Cave Trail (500m round trip, easy, WWII bomb-proof hospital site), Cannon Fort Trail (3km round trip, easy, some of the best island views), Ngu Lam Loop (4.4km loop, forest + karst formations), and the bigger National Park - Frog Lake - Viet Hai Village trail (14km, challenging, flooded willow forest + freshwater lake) if you want a full-day trek. Best Oct-Apr (dry season, less mud) - lines up with your trip. Sources: https://www.bestpricetravel.com/travel-guide/cat-ba-trekking-2490.html, https://national-parks.org/vietnam/cat-ba/"
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-20260930-catba-other-things",
+          "text": "✓ Actioned 2026-09-30: researched vegan cafes/restaurants, bouldering/climbing options, and hikes for non-climbing days in Cat Ba - see suggestions for named spots, crags, and trails with links.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-09-30T00:00:00.000Z",
+          "updated": "2026-09-30T00:00:00.000Z"
+        }
       ]
     }
   ]
