@@ -379,9 +379,9 @@
           "id": "n-agent-20260930-catba-other-things",
           "text": "✓ Actioned 2026-09-30: researched vegan cafes/restaurants, bouldering/climbing options, and hikes for non-climbing days in Cat Ba - see suggestions for named spots, crags, and trails with links.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-09-30T00:00:00.000Z",
-          "updated": "2026-09-30T00:00:00.000Z"
+          "updated": "2026-10-01T23:56:01.291Z"
         },
         {
           "id": "n-agent-20261001-catba-gym-correction",
