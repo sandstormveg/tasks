@@ -302,23 +302,6 @@
       "assist": false
     },
     {
-      "id": "set-up-call-for-ai-to-get-shopping-basics-muksh4of",
-      "title": "Set up call for AI to get shopping basics",
-      "category": "Groceries",
-      "created": "2026-09-28",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mukt1l2x4ova",
-          "text": "like coles and woolworths ordering for sludge",
-          "done": false,
-          "created": "2026-09-28T05:26:26.553Z",
-          "updated": "2026-09-28T05:26:26.553Z"
-        }
-      ]
-    },
-    {
       "id": "rice-cooker-muku4zkz",
       "title": "Rice cooker",
       "category": "Shopping 🛍️",
