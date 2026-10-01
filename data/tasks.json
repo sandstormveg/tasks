@@ -387,9 +387,9 @@
           "id": "n-agent-20261001-catba-gym-correction",
           "text": "✓ Actioned 2026-10-01: checked your note about having been to a climbing gym - that's VietClimb in Hanoi (real bouldering gym), not Cat Ba itself. Cat Ba island has no dedicated gym, just Cat Ba Climbing's small intro wall. Detail added to suggestions.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-10-01T00:00:00.000Z",
-          "updated": "2026-10-01T00:00:00.000Z"
+          "updated": "2026-10-01T23:55:58.964Z"
         }
       ]
     },
