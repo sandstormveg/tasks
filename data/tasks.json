@@ -371,6 +371,7 @@
       "suggestions": [
         "Vegan/vegan-friendly: Casa Bonita (well-reviewed for vegan-friendly Asian + Western dishes) and Celery Restaurant (healthy breakfast/lunch, poke bowls, salads, vegan options, open 7am-5pm) are the two named standouts. Cat Ba is seafood-heavy overall so options are limited outside these - most other restaurants can do a tofu/veggie stir-fry on request. Full current list: https://www.tripadvisor.com/Restaurants-g737051-zfz10697-Cat_Ba_Hai_Phong.html",
         "Bouldering/indoor climbing: no dedicated bouldering gym on the island. Cat Ba Climbing (the DWS operator from your other task) has a small indoor wall at their office for beginners to try technique before going outdoor - not a real bouldering gym, more a warm-up/intro wall.",
+        "RE: 'I'm sure there are climbing gyms, I've been to one' (2026-10-01) - you're probably thinking of VietClimb in Hanoi (tripadvisor calls it a 'great little bouldering gym', well-reviewed, a real dedicated facility) since your trip starts/ends there - that's not on Cat Ba itself though. There's also a Clip'n Climb at AEON Mall in Hai Phong (the mainland city you transit through to reach Cat Ba) but that's a kids'-party-style auto-belay wall, not real bouldering. So: real bouldering gym = VietClimb, Hanoi; nothing equivalent on Cat Ba island itself, just the small intro wall at Cat Ba Climbing's office mentioned above.",
         "Real climbing here is outdoor sport climbing - 120+ routes across 13 crags, 4a-8a: Butterfly Valley (most iconic, 60+ routes, ~30min by scooter, overhangs/slabs/cracks), Hidden Valley (2nd-largest crag, wide range beginner-advanced), Ben Beo Harbor (sea-view routes 5c-7c), The Cave (small, good rainy-day option, most routes protected), Kingfisher Valley (beginner-friendly). Independent climbers just need a motorbike/bicycle to reach them. Route database + topos: https://www.thecrag.com/en/climbing/vietnam/cat-ba-island and https://www.mountainproject.com/area/107069005/cat-ba-island. Guide: https://www.thewanderingclimber.com/cat-ba-climbing-guide/",
         "Hikes in Cat Ba National Park: Ngu Lam Peak (1.4km each way, 204m, panoramic summit views, moderate), Hospital Cave Trail (500m round trip, easy, WWII bomb-proof hospital site), Cannon Fort Trail (3km round trip, easy, some of the best island views), Ngu Lam Loop (4.4km loop, forest + karst formations), and the bigger National Park - Frog Lake - Viet Hai Village trail (14km, challenging, flooded willow forest + freshwater lake) if you want a full-day trek. Best Oct-Apr (dry season, less mud) - lines up with your trip. Sources: https://www.bestpricetravel.com/travel-guide/cat-ba-trekking-2490.html, https://national-parks.org/vietnam/cat-ba/"
       ],
@@ -382,6 +383,14 @@
           "done": false,
           "created": "2026-09-30T00:00:00.000Z",
           "updated": "2026-09-30T00:00:00.000Z"
+        },
+        {
+          "id": "n-agent-20261001-catba-gym-correction",
+          "text": "✓ Actioned 2026-10-01: checked your note about having been to a climbing gym - that's VietClimb in Hanoi (real bouldering gym), not Cat Ba itself. Cat Ba island has no dedicated gym, just Cat Ba Climbing's small intro wall. Detail added to suggestions.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-10-01T00:00:00.000Z",
+          "updated": "2026-10-01T00:00:00.000Z"
         }
       ]
     }
