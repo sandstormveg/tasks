@@ -407,7 +407,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-10-01",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muq6ulb2q7vc",
+          "text": "should i do this and do i need to book it in online? https://www.agoda.com/activities/detail?activityId=1044174",
+          "done": false,
+          "created": "2026-10-01T23:51:45.758Z",
+          "updated": "2026-10-01T23:51:45.758Z"
+        }
+      ]
     }
   ]
 }
