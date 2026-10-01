@@ -82,7 +82,16 @@
       "category": "Interested in",
       "created": "2026-09-21",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muq6h9fo1phl",
+          "text": "add step by step guide including url on how to find a tardigrade.",
+          "done": false,
+          "created": "2026-10-01T23:41:23.844Z",
+          "updated": "2026-10-01T23:41:23.844Z"
+        }
+      ]
     },
     {
       "id": "plan-what-to-take-in-backpack-mucb24b0",
