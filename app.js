@@ -348,6 +348,24 @@ async function saveTasksAppend(repo, newTask, message) {
   return currentTasks;
 }
 
+// A write built from freshly fetched content leaves GitHub ahead of our in-memory copy
+// (anything someone else changed since load is now in the file but not in state). Since
+// state.shas is advanced to the new sha, a later sha-checked write would otherwise see "no
+// concurrent change" and clobber that content from a stale list. So whenever a helper
+// advances the sha it must also resync the in-memory copy of that repo to what it wrote.
+// Repos keep their load order (public first) so the merged "All tasks" order doesn't shuffle.
+function syncRepoTasks(visibility, tasks) {
+  const mine = tasks.map((t) => ({ ...t, _repo: visibility }));
+  const others = state.tasks.filter((t) => t._repo !== visibility);
+  state.tasks = visibility === "public" ? [...mine, ...others] : [...others, ...mine];
+}
+
+function syncRepoHistory(visibility, entries) {
+  const mine = entries.map((e) => ({ ...e, _repo: visibility }));
+  const others = state.history.filter((e) => e._repo !== visibility);
+  state.history = visibility === "public" ? [...mine, ...others] : [...others, ...mine];
+}
+
 async function saveHistory(repo, newEntries, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
@@ -363,8 +381,10 @@ async function saveHistoryAppend(repo, newEntry, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
   const currentEntries = JSON.parse(current.content).entries;
-  const newSha = await ghPutFile(repo, "data/history.json", { entries: [...currentEntries, newEntry] }, current.sha, message);
+  const updated = [...currentEntries, newEntry];
+  const newSha = await ghPutFile(repo, "data/history.json", { entries: updated }, current.sha, message);
   state.shas[visibility].history = newSha;
+  syncRepoHistory(visibility, updated);
   return currentEntries;
 }
 
@@ -380,6 +400,7 @@ async function saveTaskMutation(repo, taskId, mutateFn, message) {
   const updated = currentTasks.map((t) => (t.id === taskId ? mutateFn(t) : t)).filter(Boolean);
   const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: updated }, current.sha, message);
   state.shas[visibility].tasks = newSha;
+  syncRepoTasks(visibility, updated);
   return currentTasks;
 }
 
@@ -394,6 +415,7 @@ async function saveHistoryMutation(repo, entryId, mutateFn, message) {
   const updated = currentEntries.map((h) => (h.id === entryId ? mutateFn(h) : h)).filter(Boolean);
   const newSha = await ghPutFile(repo, "data/history.json", { entries: updated }, current.sha, message);
   state.shas[visibility].history = newSha;
+  syncRepoHistory(visibility, updated);
   return currentEntries;
 }
 
@@ -1457,17 +1479,12 @@ async function completeTask(task, checkBtn) {
       ...(carriedClaudeNotes.length ? { claudeNotes: carriedClaudeNotes } : {}),
       ...((task.suggestions || []).length ? { suggestions: task.suggestions } : {}),
     };
-    const historyInRepo = state.history.filter((h) => h._repo === task._repo).map(stripRepo).concat(entry);
 
     // History first, then removal — if the second write fails the task is still on the
     // list and can be ticked again, rather than erased with no record of completion.
     await saveHistoryAppend(repo, entry, `Log history: ${task.title}`);
     await saveTaskMutation(repo, task.id, () => null, `Complete task: ${task.title}`);
 
-    state.tasks = state.tasks.filter((t) => t.id !== task.id || t._repo !== task._repo);
-    state.history = state.history.filter((h) => h._repo !== task._repo).concat(
-      historyInRepo.map((h) => ({ ...h, _repo: task._repo }))
-    );
     if (state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
     if (card) setTimeout(() => renderActive(), 350);
     else renderActive();
