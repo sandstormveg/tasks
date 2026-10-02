@@ -107,9 +107,9 @@
           "id": "n-agent-20261002-tardigrade-guide",
           "text": "✓ Actioned 2026-10-02: added a 5-step guide to find a tardigrade (collect moss, soak, squeeze and settle, sample, search at 40-100x) with a kit list, tips and four illustrated guide links. See suggestions.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-10-02T00:00:00.000Z",
-          "updated": "2026-10-02T00:00:00.000Z"
+          "updated": "2026-10-02T05:19:22.862Z"
         }
       ]
     },
