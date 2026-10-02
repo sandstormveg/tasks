@@ -474,9 +474,9 @@
           "id": "n-agent-20261002-singapore-layover",
           "text": "✓ Actioned 2026-10-02: couldn't open the Agoda listing (blocked), so gave a checklist to judge it plus the free Changi City Sights tour (evening slots, in-person sign-up, no online booking), an airport-only plan (Jewel, Snooze Lounges) and a suggested timeline back to check-in by ~3:30am. See suggestions.",
           "author": "Claude Sonnet 5",
-          "done": false,
+          "done": true,
           "created": "2026-10-02T00:00:00.000Z",
-          "updated": "2026-10-02T00:00:00.000Z"
+          "updated": "2026-10-02T05:20:05.748Z"
         }
       ]
     }
