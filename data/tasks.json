@@ -91,6 +91,26 @@
           "created": "2026-10-01T23:41:23.844Z",
           "updated": "2026-10-01T23:41:23.844Z"
         }
+      ],
+      "suggestions": [
+        "Step-by-step guide to find a tardigrade (water bear). WHAT YOU NEED: a microscope that reaches 40x-100x (a basic compound microscope or even a decent USB/clip-on one works - see your 'getting a compound microscope' task), a few glass slides + coverslips (or a clean petri dish), a dropper/pipette, a shallow dish, a spoon or knife, a paper bag, and bottled or rain water (not chlorinated tap water).",
+        "Step 1 - Collect: tardigrades live in the film of water around moss and lichen. Scrape a golf-ball-sized handful of DRY moss or lichen off a rock, brick wall, tree bark, a paved-path crack or a roof gutter (shady, north-facing spots are good) into a paper bag. Moss that has dried out is fine - tardigrades survive dry as 'tuns'. Label where and when you got it.",
+        "Step 2 - Soak: put the moss in a shallow dish and cover with bottled or rain water for 3-24 hours (overnight is ideal). This revives any tardigrades from their dried-out state.",
+        "Step 3 - Squeeze and settle: squeeze the moss over a clean dish so the water and debris run out, then let the dish sit for 10-20 minutes so the sediment settles. Tardigrades sink to the bottom.",
+        "Step 4 - Sample: use a dropper to pull a small amount from the bottom sediment (not the surface), put one drop on a slide and add a coverslip (or look at it in the dish under a low-power scope).",
+        "Step 5 - Search: start at 40x and scan the drop slowly in rows. Look for a slow, bumbling, 8-legged 'bear' about 0.3-0.5 mm long, usually clear/pinkish/brown, gripping debris with little claws. Nematodes and rotifers also turn up - nematodes thrash like worms, tardigrades lumber slowly. Go to 100x to see detail. If you find none, make another drop; it can take several slides.",
+        "Tips: use several different moss samples (different spots, different moss types) - success varies a lot. A dark background and a light that isn't too hot helps, and heat/bright light can stress them. Keep your finds in a dish of spring water with a little moss for a day or two if you want to keep watching.",
+        "Guides with pictures: https://www.microscopeclub.com/how-to-find-tardigrades-water-bears-under-a-microscope/ , https://joyfulmicrobe.com/find-a-tardigrade/ , https://tomlov.com/blogs/blog/find-tardigrade-at-home , and an Australia-based one: https://microscopes.com.au/blogs/news/how-and-where-to-find-tardigrades"
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-20261002-tardigrade-guide",
+          "text": "✓ Actioned 2026-10-02: added a 5-step guide to find a tardigrade (collect moss, soak, squeeze and settle, sample, search at 40-100x) with a kit list, tips and four illustrated guide links. See suggestions.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-10-02T00:00:00.000Z",
+          "updated": "2026-10-02T00:00:00.000Z"
+        }
       ]
     },
     {
