@@ -1,51 +1,6 @@
 {
   "tasks": [
     {
-      "id": "book-in-deep-water-solo-trips-14th-19th-muaspgwt",
-      "title": "book in deep water solo trips 14th & 19th",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-09-21",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mudxb0sx5hfb",
-          "text": "have a look around if this is the best company to go with: https://vietnamexpeditions.com/vne_tour/deep-water-soloing-leo-nui-nhay-bien-2/ happy to try two different companies on different days. and also check availabilities",
-          "done": false,
-          "created": "2026-09-23T09:51:22.065Z",
-          "updated": "2026-09-23T09:51:22.065Z"
-        },
-        {
-          "id": "n-munko1qemr7x",
-          "text": "alt: https://catbaclimbing.com/half-day-deep-water-solo.\n\nmight choose this one for 14th as they have insurance",
-          "done": false,
-          "created": "2026-09-30T03:55:16.549Z",
-          "updated": "2026-09-30T03:55:16.549Z"
-        },
-        {
-          "id": "n-muoy9g9cnh4l",
-          "text": "\"\"Hello, thanks for getting in touch.\n\nWe can run the tour on either October 14 or October 19. \nOn October 14, the tour will be in the morning. \nOn October 19, you can choose either a morning or afternoon session.\n\nThe price is 1,150,000 VND per person.\"",
-          "done": false,
-          "created": "2026-10-01T03:03:36.336Z",
-          "updated": "2026-10-01T03:03:36.336Z"
-        }
-      ],
-      "suggestions": [
-        "Good news: Vietnam Expeditions (the link you sent) is actually operating this specific tour AS Cat Ba Pathfinders — same outfit, and Cat Ba Pathfinders has solid reviews (guides described as helpful/supportive for beginners, accommodating to all skill levels). So it's not an unknown operator. Price: 2,150,000 VND (~US5-90), includes round-trip shuttle, boat + Lan Ha Bay entrance fees, gear, English-speaking guides, a cameraman (360 camera + photos included), first aid, and travel insurance. Tours only run when the tide reaches 2.7m+, so exact timing on the 14th/19th depends on tide charts — worth confirming directly. Meeting point: Cat Ba Pathfinders office, 200 Nui Ngoc, Cat Ba. Hotline/WhatsApp: +84 388 044 501 (Mr. Lam).",
-        "For your second company to compare: Cat Ba Climbing (run by \"Mr. Zoom\") is the other well-reviewed option — noticeably cheaper at ~1,150,000 VND (~US6) for a half-day, departs 7:30am or 12:30pm, and reviews consistently praise the guiding for mixed skill levels. Also worth knowing about: Asia Outdoors (asiaoutdoors.vn) claims to be the only operator formally licensed by Cat Ba National Park for DWS — I couldn't find their pricing directly on their site, so you'd need to contact them, but worth a quick check given the licensing claim (treat that claim as theirs to verify, not independently confirmed).",
-        "Checking exact availability for the 14th and 19th needs a direct message to each operator (tide-dependent scheduling, not something bookable generically online) — I'd suggest WhatsApping Vietnam Expeditions/Pathfinders and Cat Ba Climbing with those two dates and asking to confirm both tide window and open slots."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-1790162687683pr7",
-          "text": "✓ Actioned 2026-09-23: confirmed Vietnam Expeditions is legit (operates as the well-reviewed Cat Ba Pathfinders), found pricing/inclusions, and suggested a second company (Cat Ba Climbing) for your two-company comparison — see suggestions.",
-          "done": false,
-          "created": "2026-09-23T11:24:47.683Z",
-          "updated": "2026-09-23T11:24:47.683Z"
-        }
-      ]
-    },
-    {
       "id": "getting-a-compound-microscope-muasrtsv",
       "title": "getting a compound microscope",
       "category": "Interested in",
