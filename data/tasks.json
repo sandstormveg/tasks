@@ -96,6 +96,20 @@
           "created": "2026-10-05T03:39:06.081Z",
           "updated": "2026-10-05T03:39:06.081Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-20261005-packing-list",
+          "text": "Made a Hanoi packing list in the same layout as your Japan one (2 pages: Packing checklist, then Organising and Travelling around). It builds in your plug adapter, zip pants, climbing shoes and novels notes, plus climbing and deep water solo gear, vegan snacks, Vietnamese cash for the Cat Ba transfer, eSIM, insurance and e-visa checks. Quantities and weather (about 22-30C, humid) are my estimates, and I couldn't confirm what the climbing operators supply, so check that before packing your own harness or helmet.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-10-05T04:45:00.000Z",
+          "updated": "2026-10-05T04:45:00.000Z",
+          "file": {
+            "path": "images/hanoi-climbing-trip/plan-what-to-take-in-backpack-mucb24b0-packing-list.pdf",
+            "name": "hanoi-packing-list.pdf"
+          }
+        }
       ]
     },
     {
