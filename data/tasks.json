@@ -296,7 +296,7 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-09-30",
       "notes": "",
-      "assist": true,
+      "assist": false,
       "noteItems": [
         {
           "id": "n-munheh45jnex",
