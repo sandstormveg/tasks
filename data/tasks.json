@@ -418,6 +418,14 @@
           "updated": "2026-10-02T05:20:05.748Z"
         }
       ]
+    },
+    {
+      "id": "intl-money-muutgegh",
+      "title": "Intl money?",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-10-05",
+      "notes": "",
+      "assist": false
     }
   ]
 }
