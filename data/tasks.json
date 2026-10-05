@@ -425,7 +425,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-10-05",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-muuu6xg2s3vt",
+          "text": "Login to Revolut and reorder card",
+          "done": false,
+          "created": "2026-10-05T05:56:17.234Z",
+          "updated": "2026-10-05T05:56:17.234Z"
+        }
+      ]
     },
     {
       "id": "vegan-food-guide-muutglpx",
