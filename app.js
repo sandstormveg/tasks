@@ -721,16 +721,42 @@ function tasksForSelectedCategory() {
   return state.selectedCategory === "__all__" ? topLevel : topLevel.filter((t) => t.category === state.selectedCategory);
 }
 
+// Search is a transient filter (not persisted): while the box has text it overrides the
+// selected category and lists every matching task flat, subtasks included.
+let searchQuery = "";
+
+function taskSearchText(t) {
+  const parts = [t.title, t.category, t.notes, t.scratchpad];
+  const texts = (list) => (Array.isArray(list) ? list.map((x) => (typeof x === "string" ? x : x && x.text)) : []);
+  parts.push(...texts(t.noteItems), ...texts(t.suggestions), ...texts(t.claudeNotes));
+  return parts.filter(Boolean).join("\n").toLowerCase();
+}
+
+function searchTasks(query) {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return state.tasks.filter((t) => {
+    const text = taskSearchText(t);
+    return terms.every((term) => text.includes(term));
+  });
+}
+
 function renderActiveTasksColumn() {
+  const searching = searchQuery.trim() !== "";
   const isAllTasks = state.selectedCategory === "__all__";
-  el("#active-tasks-title").textContent = isAllTasks ? "All tasks" : state.selectedCategory;
+  const found = searching ? searchTasks(searchQuery) : null;
+  el("#active-tasks-title").textContent = searching
+    ? `Search: ${found.length} result${found.length === 1 ? "" : "s"}`
+    : isAllTasks ? "All tasks" : state.selectedCategory;
   const headersToggle = el("#category-headers-toggle");
-  headersToggle.classList.toggle("hidden", !isAllTasks);
+  headersToggle.classList.toggle("hidden", !isAllTasks || searching);
   headersToggle.classList.toggle("on", state.showCategoryHeaders);
   const container = el("#active-task-list");
   container.innerHTML = "";
-  const tasks = tasksForSelectedCategory();
-  if (state.tasks.length === 0) {
+  const tasks = searching ? found : tasksForSelectedCategory();
+  if (searching) {
+    if (found.length === 0) container.innerHTML = `<div class="col-empty-hint">No tasks match.</div>`;
+    else found.forEach((task) => container.appendChild(taskCard(task, 0, 0)));
+  } else if (state.tasks.length === 0) {
     container.innerHTML = `<div class="col-empty-hint">Nothing on the list. Add something below.</div>`;
   } else if (tasks.length === 0) {
     container.innerHTML = `<div class="col-empty-hint">Nothing in this category yet.</div>`;
@@ -747,6 +773,18 @@ function renderActiveTasksColumn() {
     tasks.forEach((task) => appendTaskWithSubtasks(container, task, 0));
   }
 }
+
+el("#task-search").addEventListener("input", (e) => {
+  searchQuery = e.target.value;
+  renderActiveTasksColumn();
+});
+el("#task-search").addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.target.value = "";
+    searchQuery = "";
+    renderActiveTasksColumn();
+  }
+});
 
 el("#category-headers-toggle").addEventListener("click", () => {
   state.showCategoryHeaders = !state.showCategoryHeaders;

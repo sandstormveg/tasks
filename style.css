@@ -271,6 +271,13 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
 .section-title-toggle:hover { color: var(--text); border-color: var(--muted); }
 .section-title-toggle.on { color: var(--accent-2); border-color: var(--accent-2); }
 .section-title-toggle.hidden { display: none; }
+.task-search {
+  width: 100%; margin-bottom: 10px; padding: 7px 10px;
+  font-size: 13px; color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 6px; outline: none;
+}
+.task-search::placeholder { color: var(--muted); }
+.task-search:focus { border-color: var(--accent-2); }
 .active-cat-header {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--muted); margin: 14px 2px 6px;
