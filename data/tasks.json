@@ -413,49 +413,6 @@
       ]
     },
     {
-      "id": "intl-money-muutgegh",
-      "title": "Intl money?",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-10-05",
-      "notes": "",
-      "assist": true,
-      "noteItems": [
-        {
-          "id": "n-muuu6xg2s3vt",
-          "text": "Login to Revolut and reorder card",
-          "done": true,
-          "created": "2026-10-05T05:56:17.234Z",
-          "updated": "2026-10-05T06:01:49.052Z"
-        },
-        {
-          "id": "n-muuuer7fnb3r",
-          "text": "look up what to do for money exchange and where to do it",
-          "done": false,
-          "created": "2026-10-05T06:02:22.395Z",
-          "updated": "2026-10-05T06:02:22.395Z"
-        }
-      ],
-      "suggestions": [
-        "Short answer: use your Revolut card for ATM cash as the main plan, bring a small amount of AUD cash as a backup, and don't exchange at the airport. Vietnam is still very cash-based (the Cat Ba transfer on the 12th is pay on arrival, plus street food, small cafes and the DWS/climbing extras), so plan to carry dong, not rely on card tap.",
-        "Revolut limits (Australia, per the Revolut page, check your plan in the app): Standard has no Revolut ATM fee up to AU$350 or 5 withdrawals per rolling month, Premium up to AU$700, Metal up to AU$1,400; beyond that a 2% fee applies. The Vietnamese ATM bank can also add its own fee that Revolut can't stop. Since you reordered the card today, confirm it arrives before 9 Oct and your plan's free allowance covers what you expect to withdraw.",
-        "ATM tips: withdrawals are often capped at about 2-5 million VND per transaction (roughly 5 million at VPBank, which was listed as charging no fee), so you may need several small withdrawals. Always choose to be charged in Vietnamese dong, never AUD, when the ATM offers 'convert to your currency' (that dynamic currency conversion gives a worse rate). Use ATMs inside or at bank branches in daylight where you can.",
-        "Where to exchange AUD cash in Hanoi: licensed gold and jewellery shops in the Old Quarter, mainly Hang Bac and Ha Trung streets, usually beat banks, need no passport or forms, and take AUD. Airport counters are typically 7-9% worse than the city, so at most change about $50-100 at Noi Bai if you need dong for the transfer or a Grab on arrival. Counts the notes on the spot and compare two shops before swapping a larger amount. Bring clean, undamaged notes (torn or marked notes can be refused).",
-        "Cat Ba is the real risk for cash: the town has only a couple of ATMs (Agribank and a second bank), which are reported to have queues, fail, or run out of money, and gold shops there give card cash at about a 5% commission. So withdraw or exchange enough dong in Hanoi before the 12th to cover the Cat Ba stay (transfer, hotel if pay-on-arrival, food, climbing and DWS extras), and treat Cat Ba ATMs as a top-up, not the plan.",
-        "Suggested plan: 1) Before leaving, bring about AU$100-200 in cash as a backup. 2) Don't exchange in Singapore. 3) At Hanoi on the 10th, withdraw a first chunk with Revolut (decline conversion) and exchange a modest amount at an Old Quarter gold shop if the rate is good. 4) Before the 12th, make sure you hold enough dong for Cat Ba. 5) Keep a second card (your main bank card) as a backup in case Revolut is blocked or the card doesn't arrive.",
-        "Sources: vietnamtourism.com (exchanging money in Vietnam), onetripwithlocal.com (best places to exchange money in Hanoi), revolut.com/en-AU (Vietnamese dong card, Vietnam ATM limits), thaiest.com (ATM withdrawal and currency exchange in Cat Ba Town), goodmorningcatba.com and milehacker.com (Cat Ba travel tips). Rates and fees change, so check the Revolut app and the day's rate before you rely on any figure."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-20261005-intl-money",
-          "text": "Researched 2026-10-05: added a money plan to suggestions (Revolut for ATM cash, small AUD cash backup, avoid airport exchange, Old Quarter gold shops for exchange, and carry enough dong into Cat Ba because its ATMs are unreliable). Note the Revolut free-ATM limits and VND per-withdrawal caps come from web pages, so verify them in the app before relying on them.",
-          "author": "Claude Sonnet 5",
-          "done": false,
-          "created": "2026-10-05T07:20:00.000Z",
-          "updated": "2026-10-05T07:20:00.000Z"
-        }
-      ]
-    },
-    {
       "id": "vegan-food-guide-muutglpx",
       "title": "Vegan food guide?",
       "category": "Hanoi Climbing trip",
