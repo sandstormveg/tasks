@@ -1140,6 +1140,33 @@
         "Suggested plan: 1) Before leaving, bring about AU$100-200 in cash as a backup. 2) Don't exchange in Singapore. 3) At Hanoi on the 10th, withdraw a first chunk with Revolut (decline conversion) and exchange a modest amount at an Old Quarter gold shop if the rate is good. 4) Before the 12th, make sure you hold enough dong for Cat Ba. 5) Keep a second card (your main bank card) as a backup in case Revolut is blocked or the card doesn't arrive.",
         "Sources: vietnamtourism.com (exchanging money in Vietnam), onetripwithlocal.com (best places to exchange money in Hanoi), revolut.com/en-AU (Vietnamese dong card, Vietnam ATM limits), thaiest.com (ATM withdrawal and currency exchange in Cat Ba Town), goodmorningcatba.com and milehacker.com (Cat Ba travel tips). Rates and fees change, so check the Revolut app and the day's rate before you rely on any figure."
       ]
+    },
+    {
+      "id": "vietnam-e-sim-with-airalo-or-saily-muuuhqye",
+      "title": "vietnam e-sim with airalo or saily?",
+      "category": "Hanoi Climbing trip",
+      "completedDate": "2026-10-08",
+      "note": "",
+      "images": [],
+      "claudeNotes": [
+        {
+          "id": "n-agent-20261005-esim",
+          "text": "Researched 2026-10-05: Airalo and Saily are near-identical for Vietnam (Saily slightly cheaper on small plans). Suggest about 10 GB for 30 days (about US$18) from whichever app is cheaper on the day, install before leaving and activate on arrival. Prices come from comparison sites; check the app.",
+          "author": "Claude Sonnet 5",
+          "done": false,
+          "created": "2026-10-05T08:15:00.000Z",
+          "updated": "2026-10-05T08:15:00.000Z"
+        }
+      ],
+      "suggestions": [
+        "Short answer: they're near-identical for Vietnam, so pick by app and price on the day. Saily is slightly cheaper on small plans (1 GB about US$3.99 for 7 days vs Airalo US$4 for 3 days), and the two are within about US$1 on bigger plans (10 GB / 30 days: Saily about US$17.99, Airalo US$18; 20 GB: about US$28.99 vs US$29). Both use local Vietnamese networks and give 4G in Vietnam (not 5G). Prices are from comparison sites, so check the app for current rates.",
+        "How much data: for about 15 days in Vietnam (10 Oct to 25 Oct), mostly maps, Grab, messaging and some video calls, 10 GB is a safe pick; 5 GB would do if you lean on hotel wifi. Avoid 'unlimited' plans: both cap fast data (Airalo 3 GB/day, Saily 5 GB/day) and cost much more (Airalo about US$72 for 30 days).",
+        "Before buying: check your phone supports eSIM and is carrier-unlocked (Settings > About / Cellular on iPhone; Settings > Connections > SIM manager on Android). Your open note mentions this check. Buy and install the eSIM while you still have wifi at home, but set it to activate on arrival (most plans start counting when it first connects to a Vietnamese network, so confirm the plan's activation rule in the app before you buy).",
+        "Install steps: buy in the Airalo or Saily app, scan the QR or tap install while on wifi, label it 'Vietnam', leave it OFF for data until you land, then at Hanoi switch cellular data to the eSIM and turn data roaming on for that line. Keep your normal Australian SIM as primary for calls and SMS, and turn off its data roaming so you don't get bill shock.",
+        "Singapore layover (night of 9-10 Oct): Changi has free airport wifi and you'll be in a lounge, so no data plan is needed there. Your normal Australian plan covers the trip to the airport on the 9th.",
+        "Alternatives: Holafly and Nomad also sell Vietnam eSIMs; local Viettel or Vinaphone tourist SIMs at Noi Bai airport are cheaper per GB but need passport registration and queueing at a 6am arrival. Given the early arrival, an eSIM installed in advance is simpler.",
+        "Sources: nordvpn.com/blog/saily-vs-airalo, gizmodo.com/best-esim-provider/vietnam, jetpacglobal.com (best eSIM for Vietnam), travelsimasia.com (Vietnam eSIM prices 2026), backpackingislife.com (best eSIM Vietnam 2026)."
+      ]
     }
   ]
 }
