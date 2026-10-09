@@ -449,6 +449,15 @@
           "updated": "2026-10-09T01:50:00.000Z",
           "author": "Claude Sonnet 5"
         }
+      ],
+      "noteItems": [
+        {
+          "id": "n-mv08tppb89m2",
+          "text": "Also look for some nice vegan cafes and restaurants nearby this hotel",
+          "done": false,
+          "created": "2026-10-09T00:44:45.790Z",
+          "updated": "2026-10-09T00:44:45.790Z"
+        }
       ]
     }
   ]
