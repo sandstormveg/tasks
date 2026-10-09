@@ -109,16 +109,26 @@ async function loadPublicData() {
       console.warn("Public API read failed, falling back to published files:", err.message);
     }
   }
+  let failed = false;
   const [t, h, c] = await Promise.all([
-    fetch(`data/tasks.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ tasks: [] })),
+    fetch(`data/tasks.json?t=${Date.now()}`)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .catch(() => { failed = true; return { tasks: [] }; }),
     fetch(`data/history.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ entries: [] })),
     fetch(`data/categories.json?t=${Date.now()}`).then((r) => r.json()).catch(() => ({ categories: {} })),
   ]);
-  return { tasks: t.tasks || [], history: h.entries || [], categories: c.categories || {}, authoritative: false };
+  return { tasks: t.tasks || [], history: h.entries || [], categories: c.categories || {}, authoritative: false, failed };
 }
 
 async function loadData() {
   const pub = await loadPublicData();
+  if (pub.failed && restoreSnapshot()) {
+    state.offline = true;
+    mergePendingAdds();
+    renderAfterLoad();
+    return;
+  }
+  state.offline = false;
   let tasks = pub.tasks.map((t) => ({ ...t, _repo: "public" }));
   let history = pub.history.map((e) => ({ ...e, _repo: "public" }));
   state.categories = pub.categories;
@@ -145,13 +155,142 @@ async function loadData() {
 
   state.tasks = tasks;
   state.history = history;
+  if (!getToken() || (state.publicLoaded && state.privateLoaded)) saveSnapshot();
+  mergePendingAdds();
+  renderAfterLoad();
+  if (getPending().length) flushPending().then((ok) => ok && loadData());
+}
+
+function renderAfterLoad() {
   renderActive();
   renderTree();
   renderCategoryOptions();
   renderAssistList();
   renderAssistDetail();
   renderAssistTabCount();
+  updateOfflineBanner();
 }
+
+// ---------- offline support ----------
+// Reading offline: every complete online load leaves a copy in localStorage (this device
+// only, never synced anywhere), and a failed load falls back to it with a banner.
+// Writing offline: only adding a new task, because that is the one change that cannot
+// conflict with anyone else's edits. It is queued here and, once back online, appended to a
+// freshly fetched tasks.json (saveTasksAppend) with a unique id, so nothing already in the
+// file is ever overwritten and a retry after a half-finished sync cannot duplicate it.
+// Every other edit still needs a connection: replaying those later could silently overwrite
+// a newer change made elsewhere.
+const snapshotKey = "tasks_offline_snapshot";
+const pendingKey = "tasks_pending_adds";
+
+function saveSnapshot() {
+  try {
+    localStorage.setItem(snapshotKey, JSON.stringify({
+      savedAt: Date.now(),
+      tasks: state.tasks,
+      history: state.history,
+      categories: state.categories,
+      publicLoaded: state.publicLoaded,
+      privateLoaded: state.privateLoaded,
+    }));
+  } catch {
+    // Storage full or unavailable: offline reading just won't be available.
+  }
+}
+
+function restoreSnapshot() {
+  try {
+    const snap = JSON.parse(localStorage.getItem(snapshotKey) || "null");
+    if (!snap || !Array.isArray(snap.tasks)) return false;
+    state.tasks = snap.tasks;
+    state.history = snap.history || [];
+    state.categories = snap.categories || {};
+    state.publicLoaded = !!snap.publicLoaded;
+    state.privateLoaded = !!snap.privateLoaded;
+    state.savedAt = snap.savedAt;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getPending() {
+  try {
+    const list = JSON.parse(localStorage.getItem(pendingKey) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function setPending(list) {
+  try {
+    localStorage.setItem(pendingKey, JSON.stringify(list));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function mergePendingAdds() {
+  getPending().forEach(({ visibility, task }) => {
+    if (!state.tasks.some((t) => t._repo === visibility && t.id === task.id)) {
+      state.tasks.push({ ...task, _repo: visibility });
+    }
+  });
+}
+
+let flushingPending = false;
+async function flushPending() {
+  if (flushingPending || !getToken()) return false;
+  flushingPending = true;
+  try {
+    let next;
+    while ((next = getPending()[0])) {
+      try {
+        await saveTasksAppend(repoFor(next.visibility), next.task, `Add task: ${next.task.title}`);
+      } catch (err) {
+        console.warn("Queued task not synced yet:", err.message);
+        return false;
+      }
+      setPending(getPending().filter((p) => p.task.id !== next.task.id));
+    }
+    return true;
+  } finally {
+    flushingPending = false;
+    updateOfflineBanner();
+  }
+}
+
+function updateOfflineBanner() {
+  let banner = document.getElementById("offline-banner");
+  const waiting = getPending().length;
+  const offline = state.offline || !navigator.onLine;
+  if (!offline && !waiting) {
+    if (banner) banner.remove();
+    return;
+  }
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "offline-banner";
+    document.body.prepend(banner);
+  }
+  const parts = [];
+  if (offline) {
+    parts.push(state.offline && state.savedAt ? `Offline: showing the copy saved ${new Date(state.savedAt).toLocaleString()}.` : "Offline.");
+  }
+  if (waiting) parts.push(`${waiting} new task${waiting === 1 ? "" : "s"} waiting to sync.`);
+  else parts.push("You can still add new tasks; they sync when you're back online.");
+  banner.textContent = parts.join(" ");
+}
+
+window.addEventListener("offline", updateOfflineBanner);
+window.addEventListener("online", async () => {
+  const hadPending = getPending().length > 0;
+  const ok = await flushPending();
+  if (state.offline || (hadPending && ok)) loadData();
+  else updateOfflineBanner();
+});
 
 function taskKey(task) {
   return `${task._repo}::${task.id}`;
@@ -343,6 +482,7 @@ async function saveTasksAppend(repo, newTask, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/tasks.json");
   const currentTasks = JSON.parse(current.content).tasks;
+  if (currentTasks.some((t) => t.id === newTask.id)) return currentTasks.filter((t) => t.id !== newTask.id);
   const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: [...currentTasks, newTask] }, current.sha, message);
   state.shas[visibility].tasks = newSha;
   return currentTasks;
@@ -2014,11 +2154,7 @@ el("#add-form").addEventListener("submit", async (e) => {
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "", assist: state.newTaskAssist };
 
-  try {
-    assertLoaded(visibility);
-    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${title}`);
-    const otherRepos = state.tasks.filter((t) => t._repo !== visibility);
-    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: visibility })), { ...task, _repo: visibility }];
+  const afterAdd = () => {
     playBlip();
     renderActive();
     renderCategoryOptions();
@@ -2029,8 +2165,30 @@ el("#add-form").addEventListener("submit", async (e) => {
     applyDefaultCategory();
     state.newTaskAssist = false;
     renderAssistAddToggle();
+    updateOfflineBanner();
+  };
+  const queueOffline = () => {
+    if (!setPending([...getPending(), { visibility, task }])) {
+      alert("Couldn't save this task on the device (storage is full), so it was not added.");
+      return;
+    }
+    state.tasks = [...state.tasks, { ...task, _repo: visibility }];
+    afterAdd();
+  };
+
+  if (state.offline || !navigator.onLine) {
+    queueOffline();
+    return;
+  }
+  try {
+    assertLoaded(visibility);
+    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${title}`);
+    const otherRepos = state.tasks.filter((t) => t._repo !== visibility);
+    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: visibility })), { ...task, _repo: visibility }];
+    afterAdd();
   } catch (err) {
-    alert(`Couldn't save to GitHub: ${err.message}`);
+    if (err instanceof TypeError) queueOffline();
+    else alert(`Couldn't save to GitHub: ${err.message}`);
   }
 });
 
