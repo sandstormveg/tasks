@@ -740,12 +740,47 @@ function searchTasks(query) {
   });
 }
 
+function historySearchText(e) {
+  const parts = [e.title, e.category, e.note, e.completedDate];
+  const texts = (list) => (Array.isArray(list) ? list.map((x) => (typeof x === "string" ? x : x && x.text)) : []);
+  parts.push(...texts(e.noteItems), ...texts(e.suggestions), ...texts(e.claudeNotes));
+  return parts.filter(Boolean).join("\n").toLowerCase();
+}
+
+function searchHistory(query) {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return state.history
+    .filter((e) => {
+      const text = historySearchText(e);
+      return terms.every((term) => text.includes(term));
+    })
+    .sort((x, y) => (y.completedDate || "").localeCompare(x.completedDate || ""));
+}
+
+function historySearchResultEl(entry) {
+  const row = document.createElement("div");
+  row.className = "history-search-result";
+  row.innerHTML = `<div class="hsr-title"></div><div class="hsr-meta"></div>`;
+  row.querySelector(".hsr-title").textContent = entry.title;
+  row.querySelector(".hsr-meta").textContent = `${entry.category} · completed ${entry.completedDate}`;
+  row.addEventListener("click", () => {
+    expandedHistoryNodes.add(historyNodeKey(entry));
+    switchToTab("tree");
+    renderTree();
+    const node = [...document.querySelectorAll("#tree-groups .tree-node")].find((n) => n.dataset.key === historyNodeKey(entry));
+    if (node) node.scrollIntoView({ block: "center" });
+  });
+  return row;
+}
+
 function renderActiveTasksColumn() {
   const searching = searchQuery.trim() !== "";
   const isAllTasks = state.selectedCategory === "__all__";
   const found = searching ? searchTasks(searchQuery) : null;
+  const foundHistory = searching ? searchHistory(searchQuery) : [];
+  const totalFound = searching ? found.length + foundHistory.length : 0;
   el("#active-tasks-title").textContent = searching
-    ? `Search: ${found.length} result${found.length === 1 ? "" : "s"}`
+    ? `Search: ${totalFound} result${totalFound === 1 ? "" : "s"}`
     : isAllTasks ? "All tasks" : state.selectedCategory;
   const headersToggle = el("#category-headers-toggle");
   headersToggle.classList.toggle("hidden", !isAllTasks || searching);
@@ -754,8 +789,15 @@ function renderActiveTasksColumn() {
   container.innerHTML = "";
   const tasks = searching ? found : tasksForSelectedCategory();
   if (searching) {
-    if (found.length === 0) container.innerHTML = `<div class="col-empty-hint">No tasks match.</div>`;
-    else found.forEach((task) => container.appendChild(taskCard(task, 0, 0)));
+    if (found.length === 0 && foundHistory.length === 0) container.innerHTML = `<div class="col-empty-hint">Nothing matches.</div>`;
+    found.forEach((task) => container.appendChild(taskCard(task, 0, 0)));
+    if (foundHistory.length) {
+      const header = document.createElement("div");
+      header.className = "active-cat-header";
+      header.textContent = `Completed (${foundHistory.length})`;
+      container.appendChild(header);
+      foundHistory.forEach((entry) => container.appendChild(historySearchResultEl(entry)));
+    }
   } else if (state.tasks.length === 0) {
     container.innerHTML = `<div class="col-empty-hint">Nothing on the list. Add something below.</div>`;
   } else if (tasks.length === 0) {

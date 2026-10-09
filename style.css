@@ -1461,3 +1461,10 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .add-bar { margin: 0 -14px; padding: 8px 14px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   .add-bar .combo { flex: 0 1 220px; min-width: 140px; }
 }
+.history-search-result {
+  padding: 9px 10px; border-radius: 9px; margin-bottom: 4px; cursor: pointer;
+  background: var(--panel-2);
+}
+.history-search-result:hover { filter: brightness(1.15); }
+.hsr-title { font-size: 13.5px; color: var(--text); }
+.hsr-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
