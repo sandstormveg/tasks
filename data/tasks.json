@@ -444,9 +444,9 @@
         {
           "id": "n-agent-20261009-hanoi-transfer",
           "text": "Actioned 2026-10-09: added airport-to-hotel options (Grab/taxi, Bus 86, hotel pickup), the alley drop-off gotcha, and a pre-landing checklist in Suggestions. Prices and bus times are approximate and I couldn't verify them live, so check Grab and the hotel before you rely on them.",
-          "done": false,
+          "done": true,
           "created": "2026-10-09T01:50:00.000Z",
-          "updated": "2026-10-09T01:50:00.000Z",
+          "updated": "2026-10-09T00:46:38.600Z",
           "author": "Claude Sonnet 5"
         }
       ],
