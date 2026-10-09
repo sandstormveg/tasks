@@ -387,6 +387,14 @@
         {
           "text": "Before you land: have the Airalo/Saily eSIM active (so Grab works at arrivals), keep a few hundred thousand VND in small notes for tips, tolls and a taxi, and save the hotel's name and address in Vietnamese: Urban Fragrance, 30 Ngo Hang Huong, Hoan Kiem, Ha Noi. If you arrive late at night (after the buses stop), skip the bus and go straight to Grab or the official taxi desk.",
           "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Vegan food near the hotel (all in Hoan Kiem / Old Quarter, a short walk from Ngo Hang Huong; confirm opening hours and that each is still open on Google Maps before you go). From a web search, not tested by me: Hem Vegan (20 Cau Go, Hang Bac), Katze Vegan & Vegetarian Restaurant (28 Cau Go, highly rated), Met Vietnamese Restaurant & Vegan, Ngu Restaurant (Vietnamese + vegan), Ivegan Supershop (cafe / plant-based shop), The Veg - Organic Vego & Tea (bowls, coffee, pasta, pizza), and Chayfood (easy to walk past). Cau Go is the street by the lake end of the Old Quarter, so Hem Vegan and Katze are next door to each other.",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "text": "Ordering tips: search Google Maps for 'thuan chay' (fully vegan) or 'quan chay' / 'com chay' (vegetarian, often Buddhist-style). Many 'chay' places are vegetarian and may use egg or honey, so say 'Toi an thuan chay, khong trung, khong sua, khong mat ong'. Regular Vietnamese food often hides fish sauce (nuoc mam) and shrimp paste, so say 'khong nuoc mam'. HappyCow is the quickest filter for fully-vegan venues.",
+          "author": "Claude Sonnet 5"
         }
       ],
       "claudeNotes": [
@@ -396,6 +404,14 @@
           "done": true,
           "created": "2026-10-09T01:50:00.000Z",
           "updated": "2026-10-09T00:46:38.600Z",
+          "author": "Claude Sonnet 5"
+        },
+        {
+          "id": "n-agent-20261009-hanoi-vegan",
+          "text": "Actioned 2026-10-09: added a shortlist of vegan cafes and restaurants near the hotel (Cau Go / Hoan Kiem) plus ordering phrases, in Suggestions. Based on a web search, so check hours and that each is still open before going.",
+          "done": false,
+          "created": "2026-10-09T02:30:00.000Z",
+          "updated": "2026-10-09T02:30:00.000Z",
           "author": "Claude Sonnet 5"
         }
       ],
