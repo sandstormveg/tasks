@@ -92,9 +92,9 @@
         {
           "id": "n-agent-20261005-packing-pdf",
           "text": "Hanoi packing list (PDF), added at your request",
-          "done": false,
+          "done": true,
           "created": "2026-10-05T05:10:00.000Z",
-          "updated": "2026-10-05T05:10:00.000Z",
+          "updated": "2026-10-09T00:47:19.266Z",
           "file": {
             "path": "images/hanoi-climbing-trip/plan-what-to-take-in-backpack-mucb24b0-packing-list.pdf",
             "name": "hanoi-packing-list.pdf"
