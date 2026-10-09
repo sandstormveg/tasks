@@ -1196,6 +1196,58 @@
         "Practical conclusion: the DWS gap is smaller than it first looked. Buy a solid main policy (World Nomads Epic or similar) for everything else on the trip; rely on whichever DWS operator's built-in ~$4,000 cover for the DWS session itself; if you want it in writing, ask them directly (Pathfinders WhatsApp +84 388 044 501, or Cat Ba Climbing via catbaclimbing.com) for the actual policy terms/limits before you go, since a website claim isn't the same as reading the certificate yourself.",
         "Sources: worldnomads.com/usa/travel-insurance/activities/rock-climbing, ukclimbing.com/forums (deep water soloing travel insurance thread), thebmc.co.uk/en/rock-up-abroad-with-bmc-travel-insurance, worldnomads.com/au/travel-insurance/activities, catbaclimbing.com (100,000,000 VND/case figure), vietnamexpeditions.com/vne_tour/deep-water-soloing-leo-nui-nhay-bien-2"
       ]
+    },
+    {
+      "id": "plan-what-to-take-in-backpack-mucb24b0",
+      "title": "Trip/backpack preparation list",
+      "category": "Hanoi Climbing trip",
+      "completedDate": "2026-10-09",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mudfrjf3nl34",
+          "text": "Plug adapter",
+          "done": true,
+          "created": "2026-09-23T01:40:19.597Z",
+          "updated": "2026-10-07T04:36:50.867Z"
+        },
+        {
+          "id": "n-muoyo3dtguy3",
+          "text": "climbing shoes",
+          "done": true,
+          "created": "2026-10-01T03:14:59.489Z",
+          "updated": "2026-10-09T00:47:14.338Z"
+        },
+        {
+          "id": "n-muupai8xt3by",
+          "text": "download novels",
+          "done": true,
+          "created": "2026-10-05T03:39:06.081Z",
+          "updated": "2026-10-09T00:47:16.601Z"
+        },
+        {
+          "id": "n-agent-20261005-packing-pdf",
+          "text": "Hanoi packing list (PDF), added at your request",
+          "done": true,
+          "created": "2026-10-05T05:10:00.000Z",
+          "updated": "2026-10-09T00:47:19.266Z",
+          "file": {
+            "path": "images/hanoi-climbing-trip/plan-what-to-take-in-backpack-mucb24b0-packing-list.pdf",
+            "name": "hanoi-packing-list.pdf"
+          }
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-agent-20261005-packing-list",
+          "text": "Made a Hanoi packing list (2 pages, checkbox cards, backpack-only so carry-on size and weight, laundry on the way) and attached it to this task as a note. It builds in your plug adapter, zip pants, climbing shoes and novels notes, plus climbing and deep water solo gear, vegan snacks, Vietnamese cash for the Cat Ba transfer, eSIM, insurance and e-visa checks. Quantities and weather (about 22-30C, humid) are my estimates, and I couldn't confirm what the climbing operators supply, so check that before carrying your own harness or helmet.",
+          "author": "Claude Sonnet 5",
+          "done": true,
+          "created": "2026-10-05T04:45:00.000Z",
+          "updated": "2026-10-09T00:47:11.950Z"
+        }
+      ]
     }
   ]
 }
