@@ -306,7 +306,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-10-05",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mv1uzac1yq9n",
+          "text": "added screenshot of places saved in maps",
+          "done": false,
+          "created": "2026-10-10T03:52:43.536Z",
+          "updated": "2026-10-10T03:52:43.536Z"
+        }
+      ]
     },
     {
       "id": "hand-sanitiser-muxgic9z",
