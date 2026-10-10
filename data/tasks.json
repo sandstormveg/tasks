@@ -293,46 +293,6 @@
       ]
     },
     {
-      "id": "singapore-airport-plan-muq6tvsy",
-      "title": "Singapore airport plan",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-10-01",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-muq6ulb2q7vc",
-          "text": "should i do this and do i need to book it in online? https://www.agoda.com/activities/detail?activityId=1044174",
-          "done": true,
-          "created": "2026-10-01T23:51:45.758Z",
-          "updated": "2026-10-02T05:20:09.534Z"
-        },
-        {
-          "id": "n-muq6vjndinzp",
-          "text": "I've got like 5 hours of a booked lounge and so i have to plan what to do in Singapore between 7pm and my 6am flight to Hanoi.",
-          "done": true,
-          "created": "2026-10-01T23:52:30.265Z",
-          "updated": "2026-10-02T05:20:12.133Z"
-        }
-      ],
-      "suggestions": [
-        "RE: the Agoda activity (activityId 1044174): I couldn't open that listing (Agoda blocks automated fetches), so I can't tell you what it is, how long it runs, or whether it needs booking. Check three things on the page: the duration vs your time window, the meeting point (airport vs city), and the cancellation policy. General rule for a layover: only book it if you'd be back through Changi security by about 3:30am for a 6am flight (budget 2.5 hrs before departure, and Hanoi is international). If it ends after ~1am or needs a long transfer, skip it.",
-        "FREE alternative that needs no booking online: Changi's Free Singapore Tour (City Sights tour). Eligible if your layover is between 5.5 and 24 hours and you hold a boarding pass out. The evening City Sights tour departures are 6:00-8:30pm and 7:30-10:00pm. You sign up in person at the Free Singapore Tour booth in Terminal 2 or 3 transit (Level 2, Departure Transit Hall; booths open 8am-7pm) and registration closes 1 hour before the tour. So this only works if you land by about 6:30pm. Official page: https://www.changiairport.com/en/experience/tours/free-singapore-tour.html",
-        "Airport-only plan for 7pm-6am if you stay inside: Jewel Changi (Rain Vortex waterfall light-and-sound show runs in the evening, Shiseido Forest Valley trails, canopy bridge), then eat, then rest. Changi has free 24-hour Snooze Lounges (reclining seats, power points) in the transit halls of all 4 terminals for the quiet hours, and paid MetroNaps pods in Jewel at about $20/hr if you want a proper nap. Guides: https://www.sleepinginairports.net/layovers/things-to-do-on-a-layover-at-singapore-changi-airport.htm and https://www.sleepinginairports.net/sleep-guide/sleeping-in-singapore-changi-airport.htm",
-        "Suggested shape of the night: 7pm land/clear immigration (Australian passports are visa-free for Singapore) -> optional free evening tour or a Gardens by the Bay light show, back by ~11pm -> Jewel and food -> lounge and Snooze Lounge rest from ~midnight -> be at the Hanoi check-in/security by about 3:30-4am. One catch: if your bags are checked through to Hanoi you can leave the airport freely; if you need to collect/recheck them, confirm that with the airline first. Also confirm which terminal your 6am flight uses so you rest near it."
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-20261002-singapore-layover",
-          "text": "✓ Actioned 2026-10-02: couldn't open the Agoda listing (blocked), so gave a checklist to judge it plus the free Changi City Sights tour (evening slots, in-person sign-up, no online booking), an airport-only plan (Jewel, Snooze Lounges) and a suggested timeline back to check-in by ~3:30am. See suggestions.",
-          "author": "Claude Sonnet 5",
-          "done": true,
-          "created": "2026-10-02T00:00:00.000Z",
-          "updated": "2026-10-02T05:20:05.748Z"
-        }
-      ]
-    },
-    {
       "id": "vegan-food-guide-muutglpx",
       "title": "Vegan food guide?",
       "category": "Hanoi Climbing trip",
