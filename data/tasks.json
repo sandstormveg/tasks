@@ -325,67 +325,6 @@
       "created": "2026-10-07",
       "notes": "",
       "assist": false
-    },
-    {
-      "id": "how-do-i-get-from-hanoi-airport-to-my-hotel-urban-fragrance-30-ng-h-ng-h-ng-hoan-kiem-10000-hanoi-vietnam-mv08qrbe",
-      "title": "how do i get from Hanoi airport to my hotel: \"Urban Fragrance\n\n30 Ngõ Hàng Hương, Hoan Kiem, 10000 Hanoi, Vietnam\"",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-10-09",
-      "notes": "",
-      "assist": false,
-      "suggestions": [
-        {
-          "text": "Quickest, least hassle: Grab (car) or a metered/fixed-fare airport taxi. Noi Bai (HAN) to the Old Quarter is about 28-35 km, roughly 45-60 min depending on traffic, and typically somewhere around 300,000-450,000 VND; confirm the fare in the Grab app before you accept. Use the official taxi desk or the marked taxi/Grab pickup areas outside arrivals and avoid touts inside the hall who quote a flat price without a meter. Check current prices on Grab rather than trusting my numbers.",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "text": "Cheapest: Bus 86 (airport to Hanoi Railway Station via the Old Quarter/Hoan Kiem area), about 45,000 VND, buses every ~15-30 min, roughly 45-60 min. It stops near the lake side of the Old Quarter, and the hotel is then a short walk or a cheap Grab ride away. Check the first and last departure times before relying on it (it runs roughly 5am to late evening, not through the night). Fine with luggage, but slower than a car.",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "text": "Last-mile gotcha: the hotel address is Ngo Hang Huong, an alley (ngo) in the Old Quarter. Cars often can't enter or the driver will drop you at the alley mouth, so screenshot the address and drop a pin in Maps / Grab, and message the hotel (Urban Fragrance) your flight number and arrival time so they can arrange a pickup or tell you the exact entrance. Hotel pickups are often 400,000-600,000 VND, so compare with Grab before saying yes.",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "text": "Before you land: have the Airalo/Saily eSIM active (so Grab works at arrivals), keep a few hundred thousand VND in small notes for tips, tolls and a taxi, and save the hotel's name and address in Vietnamese: Urban Fragrance, 30 Ngo Hang Huong, Hoan Kiem, Ha Noi. If you arrive late at night (after the buses stop), skip the bus and go straight to Grab or the official taxi desk.",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "text": "Vegan food near the hotel (all in Hoan Kiem / Old Quarter, a short walk from Ngo Hang Huong; confirm opening hours and that each is still open on Google Maps before you go). From a web search, not tested by me: Hem Vegan (20 Cau Go, Hang Bac), Katze Vegan & Vegetarian Restaurant (28 Cau Go, highly rated), Met Vietnamese Restaurant & Vegan, Ngu Restaurant (Vietnamese + vegan), Ivegan Supershop (cafe / plant-based shop), The Veg - Organic Vego & Tea (bowls, coffee, pasta, pizza), and Chayfood (easy to walk past). Cau Go is the street by the lake end of the Old Quarter, so Hem Vegan and Katze are next door to each other.",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "text": "Ordering tips: search Google Maps for 'thuan chay' (fully vegan) or 'quan chay' / 'com chay' (vegetarian, often Buddhist-style). Many 'chay' places are vegetarian and may use egg or honey, so say 'Toi an thuan chay, khong trung, khong sua, khong mat ong'. Regular Vietnamese food often hides fish sauce (nuoc mam) and shrimp paste, so say 'khong nuoc mam'. HappyCow is the quickest filter for fully-vegan venues.",
-          "author": "Claude Sonnet 5"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-agent-20261009-hanoi-transfer",
-          "text": "Actioned 2026-10-09: added airport-to-hotel options (Grab/taxi, Bus 86, hotel pickup), the alley drop-off gotcha, and a pre-landing checklist in Suggestions. Prices and bus times are approximate and I couldn't verify them live, so check Grab and the hotel before you rely on them.",
-          "done": true,
-          "created": "2026-10-09T01:50:00.000Z",
-          "updated": "2026-10-09T00:46:38.600Z",
-          "author": "Claude Sonnet 5"
-        },
-        {
-          "id": "n-agent-20261009-hanoi-vegan",
-          "text": "Actioned 2026-10-09: added a shortlist of vegan cafes and restaurants near the hotel (Cau Go / Hoan Kiem) plus ordering phrases, in Suggestions. Based on a web search, so check hours and that each is still open before going.",
-          "done": false,
-          "created": "2026-10-09T02:30:00.000Z",
-          "updated": "2026-10-09T02:30:00.000Z",
-          "author": "Claude Sonnet 5"
-        }
-      ],
-      "noteItems": [
-        {
-          "id": "n-mv08tppb89m2",
-          "text": "Also look for some nice vegan cafes and restaurants nearby this hotel",
-          "done": false,
-          "created": "2026-10-09T00:44:45.790Z",
-          "updated": "2026-10-09T00:44:45.790Z"
-        }
-      ]
     }
   ]
 }
