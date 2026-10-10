@@ -225,6 +225,14 @@
       "assist": false
     },
     {
+      "id": "exchange-money-mv1uwlzk",
+      "title": "exchange money",
+      "category": "Hanoi Climbing trip",
+      "created": "2026-10-10",
+      "notes": "",
+      "assist": false
+    },
+    {
       "id": "find-other-things-to-do-in-cat-ba-when-not-climbing-munhdv0d",
       "title": "find other things to do in cat ba when not climbing",
       "category": "Hanoi Climbing trip",
@@ -382,14 +390,6 @@
       "title": "Book grab from hanoi airport",
       "category": "Hanoi Climbing trip",
       "created": "2026-10-09",
-      "notes": "",
-      "assist": false
-    },
-    {
-      "id": "exchange-money-mv1uwlzk",
-      "title": "exchange money",
-      "category": "Hanoi Climbing trip",
-      "created": "2026-10-10",
       "notes": "",
       "assist": false
     }
