@@ -314,7 +314,16 @@
       "category": "Hanoi Climbing trip",
       "created": "2026-10-11",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mv34o8wbpr1p",
+          "text": "Every half cafe",
+          "done": false,
+          "created": "2026-10-11T01:11:50.795Z",
+          "updated": "2026-10-11T01:11:50.795Z"
+        }
+      ]
     }
   ]
 }
