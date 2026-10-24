@@ -1,0 +1,15 @@
+{
+  "name": "Tasks",
+  "home": "../",
+  "tokenKey": "tasks_gh_token",
+  "defaults": {
+    "theme": "terminal",
+    "github": {
+      "owner": "sandstormveg",
+      "repo": "tasks-data",
+      "branch": "",
+      "folder": "journal"
+    }
+  },
+  "source": "sandstormveg/Journal_system@bf72bd5c4203"
+}

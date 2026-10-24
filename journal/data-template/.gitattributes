@@ -1,0 +1,4 @@
+media/** binary
+*.enc binary
+*.md text eol=lf
+*.yaml text eol=lf

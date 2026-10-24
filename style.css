@@ -170,6 +170,9 @@ body {
 }
 
 .assist-tab-btn { display: inline-flex; align-items: center; gap: 5px; }
+/* The Journal tab is a link (to journal/, its own app), styled like the tab buttons. */
+a.tab-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.journal-tab-glyph { font-size: 15px; color: var(--accent-2); }
 .assist-tab-star {
   font-size: 16px;
   color: var(--accent-2);
@@ -1403,6 +1406,11 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .topbar h1::before { content: none; } /* drop the decorative prefix to save width */
   .tabs { gap: 4px; }
   .tab-btn { padding: 6px 9px; font-size: 12px; }
+  /* Phones: the Journal tab shrinks to its ✎ (like ✦ Assist) and the tabs tighten a
+     little, so the ⚙ button is never pushed off the right edge. */
+  .journal-tab-label { display: none; }
+  .tabs { gap: 2px; }
+  .tab-btn { padding: 6px 5px; }
   .menu-btn, .topbar .icon-btn { width: 32px; height: 32px; }
   main.view { padding: 22px 14px 70px; }
   .assist-layout { grid-template-columns: 1fr; }

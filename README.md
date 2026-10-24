@@ -18,6 +18,7 @@ website or by telling Claude.
 - `data/tasks.json` — active public tasks, grouped by category
 - `data/history.json` — completed public tasks (what powers the level-up tree)
 - `images/` — screenshots attached to completed public tasks
+- `journal/` — the Journal tab (a generated copy of the Living Journal app; see below)
 - Private counterparts of all of the above live in `tasks-data`
 
 ## Website
@@ -27,6 +28,21 @@ Private tasks (and any editing, of either kind) need a **fine-grained personal a
 token** with **Contents: Read and write** on both `sandstormveg/tasks` and
 `sandstormveg/tasks-data` — paste it into Settings (⚙). It's stored only in your browser's
 localStorage and used solely to call GitHub's API directly from the page.
+
+## Journal
+
+The **Journal** tab opens [the Living Journal](https://github.com/sandstormveg/Journal_system),
+installed in `journal/` so it's part of this same home-screen app and uses the same token. Journal
+files sync into a `journal/` folder of `tasks-data` (it never touches anything else there, and
+refuses a public repo). `journal/` is generated — don't edit it here; update it from the journal
+repo with `node tools/install-into.mjs ../tasks/journal --host tasks`.
+
+Anything that can read `tasks-data` (including Claude sessions using the tasks skill) can read
+journal files that aren't sealed. Leave `tasks-data/journal/` alone unless you're asked to work on
+the journal; its own `journal/CLAUDE.md` has the rules for that.
+
+`.nojekyll` makes Pages serve files as-is (the journal ships a `.claude/` folder it copies into the
+data repo).
 
 ## Design guide
 

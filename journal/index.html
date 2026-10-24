@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Living Journal</title>
+<meta name="description" content="A private, local-first journal that keeps your words, connects them over time, and helps you reflect.">
+<meta name="theme-color" content="#f6f2ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131418" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tasks">
+<meta name="referrer" content="no-referrer">
+<!-- Scripts only from this origin; network only to the services you configure (GitHub, Anthropic, a transcription endpoint). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar" aria-label="Main">
+    <div class="brand" data-icon="brand"><span>Living Journal</span></div>
+    <a href="#/today" data-tab="today" data-icon="today">Today</a>
+    <a href="#/timeline" data-tab="timeline" data-icon="timeline">Timeline</a>
+    <a href="#/photos" data-tab="photos" data-icon="photos">Photos</a>
+    <a href="#/search" data-tab="search" data-icon="search">Search</a>
+    <a href="#/reflect" data-tab="reflect" data-icon="reflect">Reflect</a>
+    <a href="#/library" data-tab="library" data-icon="library">Library</a>
+    <a href="#/talk" data-tab="talk" data-icon="chat">Talk it through</a>
+    <div class="spacer"></div>
+    <a href="#/settings" data-tab="settings" data-icon="settings">Settings</a>
+    <div class="sync-line" id="sync-line"></div>
+  </nav>
+  <div class="main">
+    <header class="topbar" id="topbar">
+      <div id="topbar-back"></div>
+      <h1 id="topbar-title">Journal</h1>
+      <div class="row" id="topbar-actions"></div>
+      <button class="sync-pill" id="sync-pill" type="button" aria-label="Sync status"></button>
+      <button class="btn icon ghost only-mobile" id="more-btn" type="button" aria-label="More" data-icon="more"></button>
+    </header>
+    <main class="content" id="content" tabindex="-1">
+      <div class="empty" id="boot"><div class="spinner"></div><p>Opening your journal…</p></div>
+    </main>
+  </div>
+</div>
+<nav class="tabbar" aria-label="Main">
+  <a href="#/today" data-tab="today" data-icon="today"><span>Today</span></a>
+  <a href="#/timeline" data-tab="timeline" data-icon="timeline"><span>Timeline</span></a>
+  <a href="#/photos" data-tab="photos" data-icon="photos"><span>Photos</span></a>
+  <a href="#/search" data-tab="search" data-icon="search"><span>Search</span></a>
+  <a href="#/reflect" data-tab="reflect" data-icon="reflect"><span>Reflect</span></a>
+</nav>
+<noscript><p style="padding:24px">The journal needs JavaScript to run. Your entries live on this device and in your own private repository.</p></noscript>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
