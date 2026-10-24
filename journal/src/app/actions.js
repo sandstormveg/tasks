@@ -10,9 +10,13 @@ import { processPhoto } from "../media/images.js";
 import { toast } from "../ui/dom.js";
 
 const DRAFT_KEY = "draft:composer";
+// Today's unfinished entry lives under one key; each past day you're catching
+// up on keeps its own, so switching days never mixes them up.
+const draftKey = (day) => (day ? `draft:day:${day}` : DRAFT_KEY);
 
-export function loadDraft(ctx) {
-  const d = ctx.store.getKv(DRAFT_KEY, null);
+/** The unfinished entry for today (no day) or for a past day you're catching up on. */
+export function loadDraft(ctx, day = null) {
+  const d = ctx.store.getKv(draftKey(day), null);
   return d && d.id ? d : null;
 }
 
@@ -22,12 +26,15 @@ export function blankDraft(ctx, extra = {}) {
 }
 
 export async function saveDraft(ctx, draft) {
-  await ctx.store.setKv(DRAFT_KEY, draft);
+  await ctx.store.setKv(draftKey(draft.day), draft);
 }
 
-export async function clearDraft(ctx) {
-  await ctx.store.deleteKv(DRAFT_KEY);
+export async function clearDraft(ctx, day = null) {
+  await ctx.store.deleteKv(draftKey(day));
 }
+
+/** Does this draft hold anything worth keeping? */
+export const draftHasContent = (d) => !!(d && (String(d.body || "").trim() || (d.media || []).length));
 
 /** Process photo files and store them under the given entry id/day. */
 export async function storePhotos(ctx, { entryId, day, sealed = false }, files, onProgress) {

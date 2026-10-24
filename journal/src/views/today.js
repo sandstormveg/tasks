@@ -1,37 +1,96 @@
 // Today: "What would you like to capture or reflect on right now?"
 // A writing area first; voice and photos one tap away; everything else
 // (day rating, moments, a reflective question) optional and quiet.
+//
+// The same page serves any past day (#/day/2026-10-23) for catching up: then
+// everything on it — heading, composer, rating and moments — is about that day,
+// and it helps you remember: what your records say (tasks, calendar, the days
+// either side) and a short walk through the day, morning to night (core/recall.js).
 
 import { html, raw, on, debounce, autosize, toast, sheet, pickFiles, errorToast } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
 import { entryCard, eventCard, whyList, privacyBadge } from "../ui/components.js";
 import { dayPanelHtml, wireDayPanel } from "../ui/day-panel.js";
-import { formatDayLong, formatDay, addDays, relativeDayLabel, compareDays, daysBetween } from "../core/dates.js";
+import { formatDay, addDays, relativeDayLabel, compareDays, daysBetween } from "../core/dates.js";
 import { todayPrompts, PROMPT_KINDS, withFeedback } from "../core/prompts.js";
 import { onThisDay } from "../core/stats.js";
 import { PRIVACY_LEVELS } from "../core/model.js";
 import { plainExcerpt } from "../core/markdown.js";
-import { loadDraft, blankDraft, saveDraft, clearDraft, saveDraftAsEntry, storePhotos } from "../app/actions.js";
+import { loadDraft, blankDraft, saveDraft, clearDraft, saveDraftAsEntry, storePhotos, draftHasContent } from "../app/actions.js";
+import { RECALL_STEPS, assembleWalkthrough, taskCuesForDay, neighbourCues } from "../core/recall.js";
 
 const PROMPT_STATE = "prompt-state";
 
+/** "today", "yesterday", "Friday" (this past week) or "23 Oct". */
+export function dayWord(day, today) {
+  const label = relativeDayLabel(day, today);
+  return label === "Today" || label === "Yesterday" ? label.toLowerCase() : label;
+}
+
 export async function mount(el, ctx, route, ui) {
-  ui.setTitle("Today");
   const today = ctx.today();
-  let draft = loadDraft(ctx) || blankDraft(ctx);
+  // #/day/<today> is just Today; old links (#/today?day=…) open the day's own page.
+  const routed = route.params?.[0] || null;
+  const legacy = !routed && /^\d{4}-\d{2}-\d{2}$/.test(route.query.day || "") ? route.query.day : null;
+  if (routed === today || (legacy && legacy !== today)) {
+    const keep = new URLSearchParams(Object.entries(route.query).filter(([k]) => k !== "day")).toString();
+    ctx.navigate(`${routed === today ? "#/today" : `#/day/${legacy}`}${keep ? `?${keep}` : ""}`, { replace: true });
+    return;
+  }
+  const day = routed || today;
+  const isToday = day === today;
+  const future = compareDays(day, today) > 0;
+  const word = dayWord(day, today);
+  if (isToday) ui.setTitle("Today");
+  else {
+    ui.setTitle(relativeDayLabel(day, today), { back: "history" });
+    // Named neighbours ("‹ Wed", "Fri ›") so they can't be mistaken for the back button.
+    const prev = addDays(day, -1);
+    const next = addDays(day, 1);
+    const short = (d) => (d === today ? "Today" : formatDay(d, { weekday: "short" }));
+    ui.setActions(html`<a class="btn ghost small day-step" href="#/day/${prev}" aria-label="Previous day">${raw(icon("back"))}${short(prev)}</a><a class="btn ghost small day-step" href="${next === today ? "#/today" : `#/day/${next}`}" aria-label="Next day">${short(next)}${raw(icon("chevron"))}</a>`);
+  }
+
+  let draft = loadDraft(ctx, isToday ? null : day);
+  if (isToday && draft?.day && draft.day !== today) {
+    // An unfinished entry for another day (from before days had their own pages): move it
+    // there — joined to that day's own draft if it has one, so nothing is lost.
+    const other = draft.day;
+    if (draftHasContent(draft)) {
+      const there = loadDraft(ctx, other);
+      const merged = draftHasContent(there)
+        ? { ...there, body: [there.body, draft.body].map((b) => String(b || "").trim()).filter(Boolean).join("\n\n"), media: [...(there.media || []), ...(draft.media || [])] }
+        : draft;
+      await saveDraft(ctx, { ...merged, day: other });
+      toast(`Your unfinished entry for ${dayWord(other, today)} is waiting on its own page.`, { action: "Open", onAction: () => ctx.navigate(`#/day/${other}`), timeout: 8000 });
+    }
+    await clearDraft(ctx);
+    draft = null;
+  }
+  draft = draft || blankDraft(ctx, { day: isToday ? null : day });
   if (route.query.q && !draft.body) draft = { ...draft, questionId: route.query.q };
   if (route.query.prefill && !draft.body) draft = { ...draft, body: route.query.prefill };
   if (route.query.prompt && !draft.body) draft = { ...draft, questionText: route.query.prompt };
-  if (route.query.day && /^\d{4}-\d{2}-\d{2}$/.test(route.query.day) && !draft.body) draft = { ...draft, day: route.query.day === today ? null : route.query.day };
   const prefs = ctx.prefs();
-  const simple = !!prefs.simple_today;
-  const chapter = ctx.chapters().find((c) => c.from && c.to && compareDays(today, c.from) >= 0 && compareDays(today, c.to) <= 0);
+  const simple = !!prefs.simple_today && isToday;
+  const chapter = ctx.chapters().find((c) => c.from && c.to && compareDays(day, c.from) >= 0 && compareDays(day, c.to) <= 0);
+  const ago = daysBetween(day, today);
+
+  if (future) {
+    // A day still to come: only what's planned (imported calendar events).
+    const events = ctx.store.all("event").filter((e) => e.day === day);
+    el.innerHTML = String(html`<div class="today-head"><div class="date">${formatDay(day, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+      <div class="sub">In ${-ago} day${ago === -1 ? "" : "s"}</div></div>
+      ${events.length ? html`<div class="section-title">Planned</div>${events.map((e) => eventCard(e))}` : html`<p class="muted">Nothing here yet.</p>`}`);
+    return;
+  }
 
   el.innerHTML = String(html`
     <div class="today-head">
-      <div class="date">${formatDay(today, { weekday: "long", day: "numeric", month: "long" })}</div>
-      <div class="sub">${chapter ? html`${chapter.name} · day ${daysBetween(chapter.from, today) + 1} · ` : ""}What would you like to capture or reflect on?</div>
+      <div class="date">${formatDay(day, { weekday: "long", day: "numeric", month: "long", year: day.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric" })}</div>
+      <div class="sub">${chapter ? html`${chapter.name} · day ${daysBetween(chapter.from, day) + 1} · ` : ""}${isToday ? "What would you like to capture or reflect on?" : html`${ago === 1 ? "Yesterday" : `${ago} days ago`} · What do you remember?`}</div>
     </div>
+    ${isToday ? "" : html`<div class="recall card flat" id="cues"></div>`}
     <div class="composer" id="composer">
       <div id="qchip"></div>
       <label class="sr-only" for="compose">Write</label>
@@ -41,13 +100,14 @@ export async function mount(el, ctx, route, ui) {
       <div class="composer-bar">
         <button class="btn ghost" data-act="speak" title="Record a voice note">${raw(icon("mic"))}<span>Speak</span></button>
         <button class="btn ghost" data-act="photos" title="Add photos">${raw(icon("camera"))}<span>Photos</span></button>
-        <button class="btn ghost" data-act="talk" title="Talk it through">${raw(icon("chat"))}<span class="only-desktop">Talk</span></button>
+        ${isToday ? html`<button class="btn ghost" data-act="talk" title="Talk it through">${raw(icon("chat"))}<span class="only-desktop">Talk</span></button>` : ""}
         <div class="grow"></div>
         <button class="btn primary" data-act="save" id="save-btn">Save</button>
       </div>
     </div>
     <div id="nudge"></div>
-    <div id="prompts" class="${simple ? "hidden" : ""}" style="margin-top:14px"></div>
+    <div id="prompts" class="${simple || !isToday ? "hidden" : ""}" style="margin-top:14px"></div>
+    <div id="walk"></div>
     <div class="day-panel" id="daypanel"></div>
     <div id="list"></div>
     <div id="otd"></div>
@@ -75,8 +135,7 @@ export async function mount(el, ctx, route, ui) {
   }
 
   function renderMeta() {
-    const day = draft.day || today;
-    el.querySelector("#cmeta").innerHTML = String(html`<span>For</span><button type="button" data-act="day">${day === today ? "today" : relativeDayLabel(day, today)}</button>
+    el.querySelector("#cmeta").innerHTML = String(html`<span>For</span><button type="button" data-act="day">${word}</button>
       <span>·</span><button type="button" data-act="privacy">${PRIVACY_LEVELS[draft.privacy || "normal"].label}</button>${privacyBadge(draft.privacy)}`);
   }
 
@@ -93,8 +152,8 @@ export async function mount(el, ctx, route, ui) {
     try {
       const entry = await saveDraftAsEntry(ctx, draft);
       if (!entry) return;
-      draft = blankDraft(ctx);
-      await clearDraft(ctx);
+      draft = blankDraft(ctx, { day: isToday ? null : day });
+      await clearDraft(ctx, isToday ? null : day);
       ta.value = "";
       fit();
       renderQuestion(); renderMeta(); renderMedia();
@@ -109,7 +168,7 @@ export async function mount(el, ctx, route, ui) {
   }
   function renderPrompts() {
     const box = el.querySelector("#prompts");
-    if (simple) return;
+    if (simple || !isToday) return;
     const entries = ctx.store.entriesBetween(addDays(today, -21), today);
     const cards = todayPrompts({
       today, nowHour: new Date().getHours(), entries, questions: ctx.store.all("question"),
@@ -140,29 +199,30 @@ export async function mount(el, ctx, route, ui) {
   }
 
   // ---------- day panel, list, memories ----------
+  function isEvening() { return new Date().getHours() >= (ctx.prefs().prompts?.evening_hour ?? 19); }
   function renderDay() {
-    const evening = new Date().getHours() >= (ctx.prefs().prompts?.evening_hour ?? 19);
-    el.querySelector("#daypanel").innerHTML = String(html`<div class="section-title">About today</div>${dayPanelHtml(ctx, today, { evening, simple: simple && !expanded })}`);
+    el.querySelector("#daypanel").innerHTML = String(html`<div class="section-title">About ${word}</div>${dayPanelHtml(ctx, day, { evening: isToday && isEvening(), simple: simple && !expanded })}`);
   }
   let expanded = false;
 
   function renderList() {
-    const entries = ctx.store.entriesForDay(today);
-    const events = ctx.store.all("event").filter((e) => e.day === today);
+    const entries = ctx.store.entriesForDay(day);
+    const events = ctx.store.all("event").filter((e) => e.day === day);
     const items = [...entries.map((e) => ({ t: e.created, h: entryCard(e) })), ...events.map((e) => ({ t: e.start, h: eventCard(e) }))]
       .sort((a, b) => String(a.t).localeCompare(String(b.t)));
     el.querySelector("#list").innerHTML = items.length
-      ? String(html`<div class="section-title">Moments from today</div>${items.map((i) => i.h)}`)
-      : "";
+      ? String(html`<div class="section-title">Moments from ${word}</div>${items.map((i) => i.h)}`)
+      : isToday ? "" : String(html`<div class="section-title">Moments from ${word}</div><p class="muted small">Nothing written for this day yet — and that's fine.</p>`);
     ctx.media.hydrate(el.querySelector("#list"));
   }
 
   function renderMemories() {
     const box = el.querySelector("#otd");
     if (ctx.prefs().prompts?.on_this_day === false) { box.innerHTML = ""; return; }
-    const mem = onThisDay(ctx.store.all("entry"), today).filter((e) => !e.sealed).slice(0, 3);
+    const mem = onThisDay(ctx.store.all("entry"), day).filter((e) => !e.sealed).slice(0, 3);
+    const yrs = (e) => Number(day.slice(0, 4)) - Number(e.day.slice(0, 4));
     box.innerHTML = mem.length ? String(html`<div class="section-title">On this day</div>${mem.map((e) => html`<a class="entry-card" href="#/entry/${e.id}">
-      <div class="meta">${raw(icon("history"))}<span>${Number(today.slice(0, 4)) - Number(e.day.slice(0, 4))} year${Number(today.slice(0, 4)) - Number(e.day.slice(0, 4)) === 1 ? "" : "s"} ago · ${formatDay(e.day, { year: "numeric" })}</span></div>
+      <div class="meta">${raw(icon("history"))}<span>${yrs(e)} year${yrs(e) === 1 ? "" : "s"} ${isToday ? "ago" : "before"} · ${formatDay(e.day, { year: "numeric" })}</span></div>
       <div class="excerpt">${plainExcerpt(e.body || e.title || "", 180) || "(photos)"}</div></a>`)}`) : "";
   }
 
@@ -175,11 +235,118 @@ export async function mount(el, ctx, route, ui) {
     } else box.innerHTML = "";
   }
 
-  renderQuestion(); renderMeta(); renderMedia(); renderPrompts(); renderDay(); renderList(); renderMemories(); renderNudge();
-  wireDayPanel(el.querySelector("#daypanel"), ctx, today, { onExpand: () => { expanded = true; renderDay(); } });
+  // ---------- helping you remember (past days) ----------
+  let cues = { tasks: [], neighbours: [], events: [], loading: !isToday, failed: 0 };
+  function cueQuestion(c) {
+    if (c.kind === "done") return `You finished “${c.title}” that day. How did it go?`;
+    if (c.kind === "added") return `You added “${c.title}” to your tasks that day. What brought it up?`;
+    if (c.kind === "note") return `You noted something about “${c.title}”. What was going on?`;
+    if (c.kind === "event") return `“${c.title}” — how was it?`;
+    return null;
+  }
+  function renderCues() {
+    const box = el.querySelector("#cues");
+    if (!box) return;
+    const events = ctx.store.all("event").filter((e) => e.day === day).sort((a, b) => String(a.start).localeCompare(String(b.start)));
+    const hasPhotos = ctx.store.entriesForDay(day).some((e) => (e.media || []).some((m) => m.type === "photo"));
+    const rows = [
+      ...cues.tasks.map((c, i) => html`<li><button type="button" class="cue" data-act="cue" data-cue="t${i}">${raw(icon(c.kind === "done" ? "check" : c.kind === "note" ? "edit" : "plus"))}<span>${c.kind === "done" ? "Finished" : c.kind === "note" ? "Note on" : "Added"} <b>${c.title}</b>${c.kind === "note" && c.text ? html`: “${c.text}”` : ""}${c.kind === "done" && c.text ? html` — “${c.text}”` : ""}${c.category ? html` <span class="faint">· ${c.category}</span>` : ""}</span></button></li>`),
+      ...events.map((e, i) => html`<li><button type="button" class="cue" data-act="cue" data-cue="e${i}">${raw(icon("calendar"))}<span>${e.all_day ? "" : html`${String(e.start || "").slice(11, 16)} `}<b>${e.title || "Event"}</b>${e.location ? html` <span class="faint">· ${e.location}</span>` : ""}</span></button></li>`),
+      ...cues.neighbours.map((n) => html`<li><a class="cue" href="#/day/${n.day}">${raw(icon("history"))}<span>${n.when === "before" ? "The day before" : "The day after"} (${dayWord(n.day, today)}) you wrote: ${n.bits.map((b, k) => html`${k ? " · " : ""}“${b}”`)}</span></a></li>`),
+    ];
+    box.innerHTML = String(html`<div class="section-title" style="margin-top:0">To help you remember</div>
+      ${rows.length ? html`<ul class="cue-list">${rows}</ul>` : cues.loading ? "" : html`<p class="small muted" style="margin:0">No records for this day — start wherever you woke up, or walk through it below.</p>`}
+      ${cues.loading ? html`<p class="small faint" style="margin:6px 0 0">Looking in your tasks…</p>` : ""}
+      ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below.</p>` : ""}
+      ${cues.tasks.length || cues.failed ? html`<p class="tiny faint" style="margin:8px 0 0">${cues.tasks.length ? "From your tasks — records, not memories: use what helps. Tasks dates are in UTC, so something done before 7am may show a day early. " : ""}${cues.failed ? "Couldn't reach your tasks just now." : ""}</p>` : ""}`);
+    box._events = events;
+  }
+  async function loadCues() {
+    if (isToday) return;
+    cues.neighbours = neighbourCues(day, { entries: ctx.store.all("entry"), days: ctx.store.all("day") });
+    renderCues();
+    try {
+      const { loadTaskSources } = await import("../integrations/tasks.js");
+      const { sources, failed } = await loadTaskSources(ctx);
+      if (!ui.alive()) return;
+      cues.tasks = taskCuesForDay(day, sources, { tz: ctx.tz(), rolloverHour: ctx.prefs().rollover_hour ?? 4 }).slice(0, 12);
+      cues.failed = failed;
+    } catch { cues.failed = 1; }
+    cues.loading = false;
+    renderCues();
+  }
+
+  function renderWalk() {
+    const box = el.querySelector("#walk");
+    const show = !isToday || isEvening();
+    const started = ctx.store.getKv(`walk:${day}`, null);
+    box.innerHTML = show ? String(html`<div class="walk-card">
+      <div class="grow"><div class="title">${started ? "Continue walking through" : "Walk through"} ${word}</div>
+      <div class="small muted">A few short questions, from waking up to the evening. Your answers land in the box above for you to read over and save.</div></div>
+      <button class="btn small ${isToday ? "" : "primary"}" data-act="walk">${started ? "Continue" : "Start"}</button></div>`) : "";
+  }
+
+  async function walkThrough() {
+    const key = `walk:${day}`;
+    const saved = ctx.store.getKv(key, null) || {};
+    const answers = { ...(saved.answers || {}) };
+    let i = Math.min(saved.step || 0, RECALL_STEPS.length - 1);
+    const last = RECALL_STEPS.length - 1;
+    const hints = [...new Set([...cues.tasks.map((c) => c.title), ...(el.querySelector("#cues")?._events || []).map((e) => e.title)].filter(Boolean))].slice(0, 6);
+    const result = await sheet({
+      title: `Walk through ${word}`,
+      body: html`<div data-walk></div>`,
+      foot: html`<button class="btn ghost" data-back>Back</button><span class="grow"></span><button class="btn" data-finish>Finish now</button><button class="btn primary" data-next>Next</button>`,
+      setup: (d, close) => {
+        const box = d.querySelector("[data-walk]");
+        // Read the box into the current step's answer, then remember where you are.
+        const keep = () => {
+          const a = box.querySelector("[data-a]");
+          if (a) answers[RECALL_STEPS[i].id] = a.value;
+          ctx.store.setKv(key, { answers, step: i });
+        };
+        const go = (to) => { keep(); i = to; ctx.store.setKv(key, { answers, step: i }); render(); };
+        const render = () => {
+          const s = RECALL_STEPS[i];
+          box.innerHTML = String(html`<div class="tiny faint">${i + 1} of ${RECALL_STEPS.length} · ${s.label}</div>
+            <p class="walk-q">${s.q}</p>
+            <textarea class="textarea" data-a rows="4" placeholder="A few words is plenty — or leave it empty.">${answers[s.id] || ""}</textarea>
+            ${hints.length ? html`<p class="tiny faint">From your records: ${hints.join(" · ")}</p>` : ""}`);
+          d.querySelector("[data-next]").textContent = i === last ? "Finish" : "Next";
+          d.querySelector("[data-finish]").classList.toggle("hidden", i === last);
+          d.querySelector("[data-back]").toggleAttribute("disabled", i === 0);
+          const a = box.querySelector("[data-a]");
+          a.addEventListener("input", debounce(keep, 300));
+          setTimeout(() => a.focus(), 30);
+        };
+        d.querySelector("[data-next]").addEventListener("click", () => { if (i === last) { keep(); close(answers); } else go(i + 1); });
+        d.querySelector("[data-finish]").addEventListener("click", () => { keep(); close(answers); });
+        d.querySelector("[data-back]").addEventListener("click", () => { if (i > 0) go(i - 1); });
+        render();
+      },
+    });
+    renderWalk();
+    if (!result) return; // closed early: your answers wait for "Continue"
+    const text = assembleWalkthrough(result);
+    await ctx.store.deleteKv(key);
+    renderWalk();
+    if (!text) return;
+    // Into the composer, in your words only, to read over before saving.
+    ta.value = ta.value.trim() ? `${ta.value.trim()}\n\n${text}` : text;
+    draft.body = ta.value;
+    if (!draft.questionId && !draft.questionText) draft.questionText = `Walk through ${word}`;
+    persist(); fit(); updateSave(); renderQuestion();
+    ta.scrollIntoView({ behavior: "smooth", block: "center" });
+    toast("Your walk-through is in the box — read it over, then Save.");
+  }
+
+  renderQuestion(); renderMeta(); renderMedia(); renderPrompts(); renderWalk(); renderDay(); renderList(); renderMemories(); renderNudge();
+  loadCues();
+  wireDayPanel(el.querySelector("#daypanel"), ctx, day, { onExpand: () => { expanded = true; renderDay(); } });
   ui.onStore((c) => {
     if (c.op === "kv" && c.key?.startsWith("draft")) return;
     renderList(); renderDay(); renderNudge();
+    if (!isToday && (c.types?.includes("entry") || c.types?.includes("event") || c.op === "synced")) { cues.neighbours = neighbourCues(day, { entries: ctx.store.all("entry"), days: ctx.store.all("day") }); renderCues(); }
     if (c.types?.includes("question") || c.types?.includes("config") || c.op === "synced") renderPrompts();
   });
 
@@ -191,9 +358,21 @@ export async function mount(el, ctx, route, ui) {
       if (act === "talk") return ctx.navigate("#/talk");
       if (act === "drop-q") { draft.questionId = null; draft.questionText = null; renderQuestion(); persist(); return; }
       if (act === "nudge-x") { await ctx.store.setKv("nudge-sync-dismissed", true); return renderNudge(); }
+      if (act === "walk") return walkThrough();
+      if (act === "cue") {
+        const ref = btn.dataset.cue;
+        const c = ref[0] === "t" ? cues.tasks[Number(ref.slice(1))] : { kind: "event", title: (el.querySelector("#cues")._events || [])[Number(ref.slice(1))]?.title || "" };
+        const q = c && cueQuestion(c);
+        if (!q) return;
+        draft.questionText = q; draft.questionId = null;
+        renderQuestion(); persist();
+        ta.focus();
+        ta.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
       if (act === "speak") {
         const { captureVoice } = await import("../voice/capture.js");
-        const entry = await captureVoice(ctx, { day: draft.day || today, privacy: draft.privacy, questionId: draft.questionId });
+        const entry = await captureVoice(ctx, { day, privacy: draft.privacy, questionId: draft.questionId });
         if (entry) toast("Voice note saved", { action: "Open", onAction: () => ctx.navigate(`#/entry/${entry.id}`) });
         return;
       }
@@ -202,7 +381,7 @@ export async function mount(el, ctx, route, ui) {
         if (!files.length) return;
         if (draft.privacy === "sealed" && ctx.store.isLocked()) throw new Error("Unlock sealed entries first.");
         btn.setAttribute("disabled", "");
-        const media = await storePhotos(ctx, { entryId: draft.id, day: draft.day || today, sealed: draft.privacy === "sealed" }, files);
+        const media = await storePhotos(ctx, { entryId: draft.id, day, sealed: draft.privacy === "sealed" }, files);
         btn.removeAttribute("disabled");
         draft.media = [...(draft.media || []), ...media];
         await saveDraft(ctx, draft);
@@ -248,7 +427,7 @@ export async function mount(el, ctx, route, ui) {
   });
 
   async function pickDay() {
-    const cur = draft.day || today;
+    const cur = day;
     const v = await sheet({
       title: "Which day is this for?",
       body: html`<div class="chips" style="margin-bottom:12px">
@@ -262,12 +441,23 @@ export async function mount(el, ctx, route, ui) {
         d.querySelector("[data-ok]").addEventListener("click", () => close(d.querySelector("[data-date]").value));
       },
     });
-    if (!v) return;
-    if ((draft.media || []).length && v !== (draft.day || today)) {
-      toast("Photos already added stay filed under their original month; the entry moves to the new day.");
+    if (!v || v === day) return;
+    if (compareDays(v, today) > 0) return toast("That day hasn't happened yet.");
+    // The page follows the day: take what you've written along, unless that day has its own unfinished entry.
+    const target = v === today ? null : v;
+    persist.cancel();
+    draft.body = ta.value;
+    if (draftHasContent(draft)) {
+      if (draftHasContent(loadDraft(ctx, target))) {
+        toast(`${dayWord(v, today)[0].toUpperCase()}${dayWord(v, today).slice(1)} already has an unfinished entry — opening it; this one stays here.`, { timeout: 6000 });
+        await saveDraft(ctx, draft);
+      } else {
+        if ((draft.media || []).length) toast("Photos already added stay filed under their original month; the entry moves to the new day.");
+        await clearDraft(ctx, isToday ? null : day);
+        await saveDraft(ctx, { ...draft, day: target });
+      }
     }
-    draft.day = v === today ? null : v;
-    renderMeta(); persist();
+    ctx.navigate(target ? `#/day/${target}` : "#/today");
   }
 
   async function pickPrivacy() {

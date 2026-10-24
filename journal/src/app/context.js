@@ -30,7 +30,8 @@ export const DEFAULT_SETTINGS = {
     autoApproveShort: true,
   },
   integrations: {
-    tasks: { repo: "sandstormveg/tasks-data", path: "data/tasks.json", category: "From journal" },
+    // cues: show what you did in Tasks when you catch up on a past day (read-only).
+    tasks: { repo: "sandstormveg/tasks-data", path: "data/tasks.json", category: "From journal", cues: true, publicRepo: "sandstormveg/tasks" },
     atlas: { repo: "sandstormveg/epistemic-atlas", paths: ["concepts", "claims", "models", "questions", "agents"], siteUrl: "" },
   },
   sealing: { autoLockMinutes: 15 },

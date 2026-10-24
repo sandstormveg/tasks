@@ -92,7 +92,10 @@ export class GitHubRemote {
   async getRepoInfo() {
     const r = await this.request("GET", `/repos/${this.owner}/${this.repo}`);
     if (!this.branch) this.branch = r.default_branch || "main";
-    return { private: r.private === true, visibility: r.visibility, defaultBranch: r.default_branch, canPush: !!r.permissions?.push, fullName: r.full_name, empty: r.size === 0 };
+    // canPush is null when GitHub doesn't say (it may omit permissions for some tokens):
+    // then we just try, and a refused write explains itself.
+    const canPush = r.permissions && typeof r.permissions.push === "boolean" ? r.permissions.push : null;
+    return { private: r.private === true, visibility: r.visibility, defaultBranch: r.default_branch, canPush, fullName: r.full_name, empty: r.size === 0 };
   }
 
   /** {commit, tree} of the branch head, or null if the repo/branch is empty. */

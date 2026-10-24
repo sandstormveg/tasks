@@ -9,7 +9,7 @@ import { $, $$, html, raw, sheet, toast, agoLabel } from "./ui/dom.js";
 
 const ROUTES = [
   [/^today$/, "today", "today"],
-  [/^day\/(\d{4}-\d{2}-\d{2})$/, "day", "timeline"],
+  [/^day\/(\d{4}-\d{2}-\d{2})$/, "today", "timeline"], // a past day: the Today page, for that day
   [/^entry\/([^/]+)$/, "entry", null],
   [/^timeline$/, "timeline", "timeline"],
   [/^photos$/, "photos", "photos"],
@@ -116,7 +116,8 @@ async function boot() {
   setInterval(() => renderSyncPill(ctx), 30_000);
   renderSyncPill(ctx);
   $("#sync-pill").addEventListener("click", () => {
-    if (!ctx.sync.configured()) ctx.navigate("#/settings/sync");
+    // Not set up, or a problem: open Sync settings, which show the exact message.
+    if (!ctx.sync.configured() || ctx.sync.status.state === "error") ctx.navigate("#/settings/sync");
     else ctx.sync.syncNow();
   });
   $("#more-btn").addEventListener("click", () => moreMenu(ctx));
@@ -131,7 +132,9 @@ async function boot() {
     if (b && actionHandler) actionHandler(e, b);
   });
 
+  let routesSeen = 0;
   async function route() {
+    routesSeen++;
     const r = parseHash();
     const my = ++token;
     if (current?.cleanup) { try { current.cleanup(); } catch (e) { console.error(e); } }
@@ -151,7 +154,8 @@ async function boot() {
         $("#more-btn").classList.toggle("hidden", !!back);
         // Top-level pages inside a host app get the way back to it instead.
         b.innerHTML = back ? `<a class="btn icon ghost back" href="${back}" aria-label="Back">${icon("back")}</a>` : String(hostLink(ctx, "btn ghost small host-home only-mobile"));
-        if (back === "history") b.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); history.back(); });
+        // "history": back to the previous journal page, or to Today if this is the first one.
+        if (back === "history") b.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); if (routesSeen > 1) history.back(); else ctx.navigate("#/today"); });
       },
       setActions(markup) { $("#topbar-actions").innerHTML = markup ? String(markup) : ""; fillIcons($("#topbar-actions")); },
       onStore(fn) { const off = ctx.store.on(fn); cleanups.push(off); return off; },
