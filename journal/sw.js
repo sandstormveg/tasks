@@ -3,7 +3,8 @@
 // - App files are precached from asset-manifest.json at install, so every
 //   view works offline from the first visit.
 // - Same-origin GETs are network-first (a deploy shows up on the next load)
-//   with the cache as fallback.
+//   with the cache as fallback. They revalidate with the server ("no-cache")
+//   so a deploy never mixes fresh and HTTP-cached modules (Pages caches ~10 min).
 // - Nothing else is touched: GitHub, Anthropic and transcription requests go
 //   straight to the network, and journal data lives in IndexedDB, not here.
 // - Other apps on this origin (e.g. Tasks, when the journal lives at
@@ -43,7 +44,8 @@ self.addEventListener("fetch", (e) => {
   const isNav = req.mode === "navigate";
   e.respondWith((async () => {
     try {
-      const res = await fetch(req);
+      // A navigation request can't be re-made with options; its URL can.
+      const res = await fetch(isNav ? req.url : req, { cache: "no-cache" });
       if (res.ok && res.type === "basic") {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(isNav ? "index.html" : req, copy)).catch(() => {});

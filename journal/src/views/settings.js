@@ -92,6 +92,7 @@ function sync(ctx) {
     <p class="view-sub">Your journal lives on this device first. Sync keeps a private, versioned copy in a GitHub repository you own — readable Markdown files, with full history — and shares it between your phone and computer.</p>
     ${conf ? html`<div class="notice ${st.state === "error" ? "danger" : "ok"}">${raw(icon(st.state === "error" ? "warn" : "cloud"))}<div class="grow">
         ${st.state === "error" ? html`<b>Sync problem:</b> ${st.error}` : st.state === "syncing" ? "Syncing…" : html`Synced ${st.lastSync ? new Date(st.lastSync).toLocaleString() : "—"} with <b>${s.github.owner}/${s.github.repo}${s.github.folder ? `/${s.github.folder.replace(/^\/+|\/+$/g, "")}` : ""}</b>.`}
+        ${st.state === "error" && sec.githubTokenFrom && ["not-found", "forbidden", "auth"].includes(st.errorCode) ? html`<div class="small" style="margin-top:4px">This is the token saved in ${sec.githubTokenFrom}. On GitHub (Settings → Developer settings → Fine-grained tokens), give it <b>${s.github.owner}/${s.github.repo}</b> with <b>Contents: Read and write</b> — or paste a journal-only token below. Your entries are safe on this device meanwhile.</div>` : ""}
         <div class="small">${ctx.sync.pendingCount()} change${ctx.sync.pendingCount() === 1 ? "" : "s"} waiting on this device.</div></div>
         <button class="btn small" data-act="sync-now">Sync now</button></div>` : ""}
     ${(st.conflicts || []).length ? html`<div class="notice warn" style="margin-top:8px">${raw(icon("warn"))}<div>${st.conflicts.map((c) => html`<div class="small">${c.message} <a href="#/entry/${c.id}">Open</a></div>`)}</div></div>` : ""}
@@ -254,6 +255,8 @@ function integrations(ctx) {
       <label class="field"><span>File</span><input class="input" data-set="integrations.tasks.path" value="${s.tasks.path}" autocomplete="off"></label>
       <label class="field"><span>Category for new tasks</span><input class="input" data-set="integrations.tasks.category" value="${s.tasks.category}" autocomplete="off"></label>
       <p class="hint">Uses the sync token — give it access to this repository too.</p>
+      ${sw('data-set="integrations.tasks.cues"', s.tasks.cues !== false, "Use my tasks as memory cues", "When you catch up on a past day, show what you finished, added or noted in Tasks that day. Read-only, only when you open that day, never sent to AI")}
+      <label class="field"><span>Public tasks repository (also read for cues)</span><input class="input" data-set="integrations.tasks.publicRepo" value="${s.tasks.publicRepo || ""}" placeholder="none" autocomplete="off"></label>
     </div>
     <div class="section-title">Knowledge system (Atlas)</div>
     <div class="card flat">
@@ -294,7 +297,7 @@ async function act(ctx, name, b, el, render) {
       await sheet({ title: "That repository is public", body: html`<p><b>${info.fullName}</b> is public. Your journal will only sync to a private repository. Make it private on GitHub (Settings → General → Danger zone), or create a new private one.</p>`, foot: html`<button class="btn primary" data-close>OK</button>` });
       return;
     }
-    if (!info.canPush) return toast("This token can read the repository but not write. Give it Contents: Read and write.", { error: true });
+    if (info.canPush === false) return toast("This token can read the repository but not write. Give it Contents: Read and write.", { error: true });
     toast(`Connected to ${info.fullName} (private). Syncing…`);
     const r = await ctx.sync.syncNow();
     if (r) toast(`Synced: ${r.pushed} up, ${r.pulled} down${r.pendingMedia ? `, ${r.pendingMedia} media still uploading` : ""}.`);

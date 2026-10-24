@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Journal_system@bf72bd5c4203",
+ "source": "sandstormveg/Journal_system@9be3d1deb836",
  "files": [
   "data-template/.claude/skills/journal-steward/SKILL.md",
   "data-template/.gitattributes",
@@ -39,6 +39,7 @@
   "src/core/model.js",
   "src/core/notion.js",
   "src/core/prompts.js",
+  "src/core/recall.js",
   "src/core/search.js",
   "src/core/stats.js",
   "src/core/zip.js",
@@ -59,7 +60,6 @@
   "src/ui/lightbox.js",
   "src/views/claim.js",
   "src/views/concept.js",
-  "src/views/day.js",
   "src/views/document-new.js",
   "src/views/entry.js",
   "src/views/import.js",

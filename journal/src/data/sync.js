@@ -46,7 +46,7 @@ export class SyncEngine {
     if (!info.private) {
       throw new SyncError(`${info.fullName || this.remote.label} is a public repository. The journal only syncs to private repositories — make it private on GitHub, or choose another.`, { code: "public-repo" });
     }
-    if (!info.canPush) throw new SyncError("The token can read this repository but not write to it.", { code: "forbidden" });
+    if (info.canPush === false) throw new SyncError(`The token can read ${info.fullName || this.remote.label} but not write to it. Give it "Contents: Read and write" on that repository.`, { code: "forbidden" });
 
     for (let attempt = 0; attempt < 4; attempt++) {
       let head = await this.remote.getHead();

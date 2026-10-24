@@ -36,9 +36,11 @@ export function on(root, type, selector, handler, opts) {
 
 export function debounce(fn, ms) {
   let t;
-  const d = (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
-  d.flush = (...a) => { clearTimeout(t); fn(...a); };
-  d.cancel = () => clearTimeout(t);
+  let pending = null; // the arguments of a call still waiting, or null
+  const d = (...a) => { clearTimeout(t); pending = a; t = setTimeout(() => { pending = null; fn(...a); }, ms); };
+  // Run a waiting call now; nothing to do if none is waiting (e.g. it was cancelled).
+  d.flush = () => { clearTimeout(t); if (pending) { const a = pending; pending = null; fn(...a); } };
+  d.cancel = () => { clearTimeout(t); pending = null; };
   return d;
 }
 

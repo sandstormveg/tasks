@@ -59,3 +59,35 @@ export async function sendToTasks(ctx, entry) {
   } catch (err) { errorToast(err); }
 }
 
+
+// ---------- reading your tasks back, as memory cues ----------
+// When you catch up on a past day, what you finished, added or noted in Tasks
+// that day can help you remember it. Read-only, fetched only when you open a
+// past day, kept in memory for a few minutes, and never sent to any AI.
+
+let cueCache = { key: "", at: 0, value: null };
+
+/** [{ label: "private"|"public", tasks, history }] from your tasks repos, plus how many couldn't be read. */
+export async function loadTaskSources(ctx) {
+  const cfg = ctx.settings().integrations.tasks;
+  const token = ctx.secrets().githubToken;
+  if (cfg.cues === false || !token) return { sources: [], failed: 0, off: true };
+  const key = `${cfg.repo}|${cfg.publicRepo}|${cfg.path}|${token.slice(-6)}`;
+  if (cueCache.value && cueCache.key === key && Date.now() - cueCache.at < 5 * 60_000) return cueCache.value;
+  const dir = String(cfg.path || "data/tasks.json").replace(/[^/]*$/, "");
+  const repos = [[cfg.repo, "private"], [cfg.publicRepo, "public"]].filter(([r]) => /^[\w.-]+\/[\w.-]+$/.test(String(r || "")));
+  let failed = 0;
+  const sources = (await Promise.all(repos.map(async ([full, label]) => {
+    const [owner, repo] = full.split("/");
+    const gh = new GitHubRemote({ token, owner, repo });
+    const read = async (p) => {
+      try { return JSON.parse((await gh.getFile(p)).text); } catch { return null; }
+    };
+    const [t, h] = await Promise.all([read(`${dir}tasks.json`), read(`${dir}history.json`)]);
+    if (!t && !h) { failed++; return null; }
+    return { label, tasks: Array.isArray(t?.tasks) ? t.tasks : [], history: Array.isArray(h?.entries) ? h.entries : [] };
+  }))).filter(Boolean);
+  const value = { sources, failed, off: false };
+  if (sources.length) cueCache = { key, at: Date.now(), value };
+  return value;
+}

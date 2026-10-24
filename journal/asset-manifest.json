@@ -1,5 +1,5 @@
 {
- "version": "2efff529d7dd",
+ "version": "1418304ad6d6",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -40,6 +40,7 @@
   "src/core/model.js",
   "src/core/notion.js",
   "src/core/prompts.js",
+  "src/core/recall.js",
   "src/core/search.js",
   "src/core/stats.js",
   "src/core/zip.js",
@@ -60,7 +61,6 @@
   "src/ui/lightbox.js",
   "src/views/claim.js",
   "src/views/concept.js",
-  "src/views/day.js",
   "src/views/document-new.js",
   "src/views/entry.js",
   "src/views/import.js",
