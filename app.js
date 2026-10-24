@@ -3200,7 +3200,9 @@ function switchToTab(tab) {
   }
 }
 
-document.querySelectorAll(".tab-btn").forEach((btn) => {
+// Only real tabs switch views here; the Journal tab is a plain link to journal/
+// (a separate app on this same site, so it shares the token and home-screen icon).
+document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
   btn.addEventListener("click", () => switchToTab(btn.dataset.tab));
 });
 
