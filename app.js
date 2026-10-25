@@ -21,6 +21,11 @@ const state = {
   // what's actually on GitHub. Comparing against the sha from our last load catches
   // "someone else committed since I loaded this page" instead of silently clobbering it.
   shas: { public: { tasks: null, history: null }, private: { tasks: null, history: null } },
+  // Connection + sync (see "offline support + sync"). dataLoaded: something is on screen,
+  // from GitHub or the saved copy. savedAt: set while showing the saved copy. staleView:
+  // a background refresh found changes but held them back from under a draft.
+  offline: false, probing: false, syncing: false, syncError: null, justSynced: 0,
+  dataLoaded: false, savedAt: null, staleView: false,
 };
 
 // Remembers which tab/category/task you were looking at, so a refresh picks
@@ -120,22 +125,29 @@ async function loadPublicData() {
   return { tasks: t.tasks || [], history: h.entries || [], categories: c.categories || {}, authoritative: false, failed };
 }
 
-async function loadData() {
+// `quiet` is for background refreshes (coming back to the page, reconnecting): it only
+// re-renders when something actually changed, and never under a half-typed note.
+async function loadData({ quiet = false } = {}) {
   const pub = await loadPublicData();
-  if (pub.failed && restoreSnapshot()) {
-    state.offline = true;
-    mergePendingAdds();
-    renderAfterLoad();
+  if (pub.failed) {
+    markOffline();
+    // Whatever is already on screen is at least as fresh as the saved copy, so the copy
+    // is only for opening the page with no connection.
+    if (!state.dataLoaded && restoreSnapshot()) {
+      state.dataLoaded = true;
+      applyOutbox();
+      renderAfterLoad();
+    } else {
+      renderSyncStatus();
+    }
     return;
   }
-  state.offline = false;
   let tasks = pub.tasks.map((t) => ({ ...t, _repo: "public" }));
   let history = pub.history.map((e) => ({ ...e, _repo: "public" }));
-  state.categories = pub.categories;
-  state.publicLoaded = pub.authoritative;
-  state.privateLoaded = false;
-  state.shas.public.tasks = pub.tasksSha || null;
-  state.shas.public.history = pub.historySha || null;
+  const categories = pub.categories;
+  let publicLoaded = pub.authoritative;
+  let privateLoaded = false;
+  const shas = { public: { tasks: pub.tasksSha || null, history: pub.historySha || null }, private: { tasks: null, history: null } };
 
   if (getToken()) {
     try {
@@ -145,57 +157,100 @@ async function loadData() {
       ]);
       tasks = tasks.concat((JSON.parse(privT.content).tasks || []).map((t) => ({ ...t, _repo: "private" })));
       history = history.concat((JSON.parse(privH.content).entries || []).map((e) => ({ ...e, _repo: "private" })));
-      state.privateLoaded = true;
-      state.shas.private.tasks = privT.sha;
-      state.shas.private.history = privH.sha;
+      privateLoaded = true;
+      shas.private.tasks = privT.sha;
+      shas.private.history = privH.sha;
     } catch (err) {
       console.warn("Couldn't load private tasks:", err.message);
     }
   }
 
-  state.tasks = tasks;
-  state.history = history;
-  if (!getToken() || (state.publicLoaded && state.privateLoaded)) saveSnapshot();
-  mergePendingAdds();
-  renderAfterLoad();
-  if (getPending().length) flushPending().then((ok) => ok && loadData());
+  // Reading Pages without a token never goes through ghFetch, so a load that worked is
+  // what says we're back online. This load is the resync, so don't start another.
+  markOnline({ resync: false });
+  const before = viewFingerprint();
+  Object.assign(state, { tasks, history, categories, publicLoaded, privateLoaded, shas, dataLoaded: true, savedAt: null });
+  if (!getToken() || (publicLoaded && privateLoaded)) saveSnapshot();
+  applyOutbox();
+  if (!quiet || viewFingerprint() !== before) renderWhenSafe(quiet);
+  else renderSyncStatus();
+  if (getOutbox().length && !state.syncError) flushOutbox().then((ok) => ok && loadData({ quiet: true }));
 }
 
 function renderAfterLoad() {
+  state.staleView = false;
   renderActive();
   renderTree();
   renderCategoryOptions();
   renderAssistList();
   renderAssistDetail();
   renderAssistTabCount();
-  updateOfflineBanner();
+  renderSyncStatus();
 }
 
-// ---------- offline support ----------
-// Reading offline: every complete online load leaves a copy in localStorage (this device
-// only, never synced anywhere), and a failed load falls back to it with a banner.
-// Writing offline: only adding a new task, because that is the one change that cannot
-// conflict with anyone else's edits. It is queued here and, once back online, appended to a
-// freshly fetched tasks.json (saveTasksAppend) with a unique id, so nothing already in the
-// file is ever overwritten and a retry after a half-finished sync cannot duplicate it.
-// Every other edit still needs a connection: replaying those later could silently overwrite
-// a newer change made elsewhere.
+function viewFingerprint() {
+  return JSON.stringify([state.tasks, state.history, state.categories]);
+}
+
+// A background refresh re-renders the lists and the open task, which would wipe a note
+// you're halfway through typing. If one is open, hold the new data back and offer it in
+// the status bar instead.
+function hasDraftInput() {
+  return [...document.querySelectorAll("#active-view input, #active-view textarea, #assist-view input, #assist-view textarea")]
+    .filter((f) => !f.closest("#add-form") && f.id !== "task-search" && !["checkbox", "radio", "hidden", "button", "submit"].includes(f.type))
+    .some((f) => f === document.activeElement || (f.type === "file" ? f.files.length > 0 : f.value.trim() !== ""));
+}
+
+function renderWhenSafe(quiet) {
+  if (quiet && hasDraftInput()) {
+    state.staleView = true;
+    renderSyncStatus();
+    return;
+  }
+  renderAfterLoad();
+}
+
+// ---------- offline support + sync ----------
+// Online or offline is simply whether the last request reached GitHub. navigator.onLine and
+// the online/offline events are only hints: phones often never fire "online", and patchy
+// data can claim to be online while every request fails. So any request that can't connect
+// marks us offline, any that gets an answer marks us online again, and while offline a cheap
+// probe retries with backoff and whenever the page comes back into view.
+//
+// Reading offline: every complete online load (and every save after it) leaves a copy in
+// localStorage (this device only, never synced anywhere), and opening the page with no
+// connection falls back to it. That copy can be days old, so whole-list writes (reordering,
+// category renames, moving a task between public and private) are refused until a fresh load:
+// rebuilding a list from it could overwrite newer work.
+//
+// Writing offline: changes to one task (add, complete, rename, notes, assist, category,
+// subtask, delete) are ops in an outbox. An op is replayed later against a freshly fetched
+// file, by task/note id, never by rebuilding a whole list, so it can't clobber anything that
+// changed elsewhere meanwhile, and replaying one twice is harmless. Online, the very same ops
+// run straight away, so there is one save path whether or not there's signal.
 const snapshotKey = "tasks_offline_snapshot";
-const pendingKey = "tasks_pending_adds";
+// The name predates ops other than adding a task; adds queued back then ({ visibility, task })
+// still read fine.
+const outboxKey = "tasks_pending_adds";
 
 function saveSnapshot() {
+  // While ops are waiting, state includes their local effects; the copy should stay the last
+  // state GitHub confirmed, so discarding an op offline can fall back to it.
+  if (getOutbox().length) return;
   try {
     localStorage.setItem(snapshotKey, JSON.stringify({
       savedAt: Date.now(),
       tasks: state.tasks,
       history: state.history,
       categories: state.categories,
-      publicLoaded: state.publicLoaded,
-      privateLoaded: state.privateLoaded,
     }));
   } catch {
     // Storage full or unavailable: offline reading just won't be available.
   }
+}
+
+function saveSnapshotAfterWrite() {
+  if (state.publicLoaded && state.privateLoaded) saveSnapshot();
 }
 
 function restoreSnapshot() {
@@ -205,8 +260,9 @@ function restoreSnapshot() {
     state.tasks = snap.tasks;
     state.history = snap.history || [];
     state.categories = snap.categories || {};
-    state.publicLoaded = !!snap.publicLoaded;
-    state.privateLoaded = !!snap.privateLoaded;
+    // Never a basis for whole-list writes; see the comment above.
+    state.publicLoaded = false;
+    state.privateLoaded = false;
     state.savedAt = snap.savedAt;
     return true;
   } catch {
@@ -214,82 +270,476 @@ function restoreSnapshot() {
   }
 }
 
-function getPending() {
+function getOutbox() {
   try {
-    const list = JSON.parse(localStorage.getItem(pendingKey) || "[]");
-    return Array.isArray(list) ? list : [];
+    const list = JSON.parse(localStorage.getItem(outboxKey) || "[]");
+    return Array.isArray(list) ? list.filter((op) => op && (op.kind || op.task)).map(normalizeOp) : [];
   } catch {
     return [];
   }
 }
 
-function setPending(list) {
+function setOutbox(list) {
   try {
-    localStorage.setItem(pendingKey, JSON.stringify(list));
+    localStorage.setItem(outboxKey, JSON.stringify(list));
     return true;
   } catch {
     return false;
   }
 }
 
-function mergePendingAdds() {
-  getPending().forEach(({ visibility, task }) => {
-    if (!state.tasks.some((t) => t._repo === visibility && t.id === task.id)) {
-      state.tasks.push({ ...task, _repo: visibility });
-    }
+function normalizeOp(op) {
+  if (op.kind) return op;
+  return { id: `add-${op.task.id}`, kind: "add", visibility: op.visibility, task: op.task, label: `Add task: ${op.task.title}`, queuedAt: Date.now() };
+}
+
+function makeOp(kind, visibility, fields) {
+  return { id: `${kind}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, kind, visibility, queuedAt: Date.now(), ...fields };
+}
+
+// null in `fields` removes that field (e.g. un-nesting a subtask drops parentId).
+function withFields(t, fields) {
+  const out = { ...t, ...fields };
+  Object.keys(fields).forEach((k) => fields[k] === null && delete out[k]);
+  return out;
+}
+
+// Notes merge by id: ours replace theirs, deleted ids go, and notes added elsewhere stay.
+// Also drops the legacy scratchpad fields (see saveNoteItems).
+function withNotes(t, upserts, deletes) {
+  const { scratchpad, scratchpadUpdated, ...rest } = t;
+  const ours = new Map(upserts.map((n) => [n.id, n]));
+  const kept = noteItems(t).filter((n) => !deletes.includes(n.id)).map((n) => ours.get(n.id) || n);
+  const added = upserts.filter((n) => !kept.some((k) => k.id === n.id));
+  return { ...rest, noteItems: [...kept, ...added] };
+}
+
+// Applies an op to the in-memory lists, so the UI shows it before (or without) GitHub.
+// Idempotent: re-applying all waiting ops after every load or save is how they stay visible.
+function applyOpLocally(op) {
+  const v = op.visibility;
+  const isIt = (t) => t._repo === v && t.id === op.taskId;
+  switch (op.kind) {
+    case "add":
+      if (!state.tasks.some((t) => t._repo === v && t.id === op.task.id)) state.tasks.push({ ...op.task, _repo: v });
+      break;
+    case "complete":
+      state.tasks = state.tasks.filter((t) => !isIt(t));
+      if (!state.history.some((h) => h._repo === v && h.id === op.entry.id)) state.history.push({ ...op.entry, _repo: v });
+      break;
+    case "fields":
+      state.tasks = state.tasks.map((t) => (isIt(t) ? withFields(t, op.fields) : t));
+      break;
+    case "notes":
+      state.tasks = state.tasks.map((t) => (isIt(t) ? withNotes(t, op.upserts, op.deletes) : t));
+      break;
+    case "delete":
+      state.tasks = state.tasks.filter((t) => !isIt(t));
+      break;
+    case "historyNote":
+      state.history = state.history.map((h) => (h._repo === v && h.id === op.entryId ? { ...h, note: op.note } : h));
+      break;
+  }
+}
+
+function applyOutbox() {
+  getOutbox().forEach(applyOpLocally);
+}
+
+// Keys of tasks with a change still waiting, so their cards can say so.
+function waitingTaskKeys() {
+  return new Set(getOutbox().map((op) => `${op.visibility}::${op.kind === "add" ? op.task.id : op.taskId}`));
+}
+
+// Runs one op against freshly fetched files. Returns false when its task no longer exists
+// (completed or deleted elsewhere), so there was nothing to apply it to.
+async function runOp(op) {
+  const repo = repoFor(op.visibility);
+  const has = (list, id) => list.some((t) => t.id === id);
+  switch (op.kind) {
+    case "add":
+      syncRepoTasks(op.visibility, [...(await saveTasksAppend(repo, op.task, op.label)), op.task]);
+      return true;
+    case "complete":
+      // History first, then removal, same as completing online always has.
+      await saveHistoryAppend(repo, op.entry, `Log history: ${op.entry.title}`);
+      await saveTaskMutation(repo, op.taskId, () => null, op.label);
+      return true;
+    case "fields":
+      return has(await saveTaskMutation(repo, op.taskId, (t) => withFields(t, op.fields), op.label), op.taskId);
+    case "notes":
+      return has(await saveTaskMutation(repo, op.taskId, (t) => withNotes(t, op.upserts, op.deletes), op.label), op.taskId);
+    case "delete":
+      await saveTaskMutation(repo, op.taskId, () => null, op.label);
+      return true;
+    case "historyNote":
+      return has(await saveHistoryMutation(repo, op.entryId, (h) => ({ ...h, note: op.note }), op.label), op.entryId);
+    default:
+      throw new Error(`Unknown change type "${op.kind}"`);
+  }
+}
+
+function reportGone(op) {
+  const lost = op.kind === "notes" ? op.upserts.map((n) => n.text).filter(Boolean).join(" / ") : op.kind === "historyNote" ? op.note : "";
+  showToast({
+    message: `"${op.label}" wasn't applied: that task was completed or deleted elsewhere.${lost ? ` Your text: ${lost}` : ""}`,
+    duration: lost ? 30000 : 9000,
   });
 }
 
-let flushingPending = false;
-async function flushPending() {
-  if (flushingPending || !getToken()) return false;
-  flushingPending = true;
+// The one way a one-task change is saved: straight away if GitHub is reachable, otherwise
+// into the outbox. Resolves to "saved", "queued", or "gone" (the task no longer exists).
+// Anything already waiting goes first, so a note on a task added offline can't run before
+// the task itself exists.
+async function saveOrQueue(op) {
+  if (!state.offline && !getOutbox().length) {
+    try {
+      const ok = await runOp(op);
+      if (!ok) reportGone(op);
+      return ok ? "saved" : "gone";
+    } catch (err) {
+      if (!err.offline) throw err;
+    }
+  }
+  if (!setOutbox([...getOutbox(), op])) throw new Error("This device's storage is full, so the change couldn't be kept for later.");
+  applyOpLocally(op);
+  renderSyncStatus();
+  if (!state.offline) flushOutbox();
+  return "queued";
+}
+
+let flushing = null;
+function flushOutbox() {
+  if (!flushing) flushing = runOutbox().finally(() => { flushing = null; });
+  return flushing;
+}
+
+// Replays waiting ops in order, stopping at the first one that fails, since later ones may
+// depend on it. A lost connection just pauses; any other error is shown and keeps the op
+// for a retry or discard from the status bar.
+async function runOutbox() {
+  if (!getToken() || !getOutbox().length) return true;
+  state.syncing = true;
+  state.syncError = null;
+  renderSyncStatus();
+  let synced = 0;
   try {
-    let next;
-    while ((next = getPending()[0])) {
+    let op;
+    while ((op = getOutbox()[0])) {
+      let ok;
       try {
-        await saveTasksAppend(repoFor(next.visibility), next.task, `Add task: ${next.task.title}`);
+        try {
+          ok = await runOp(op);
+        } catch (err) {
+          // 409: someone else wrote between our read and write. Re-reading once is enough.
+          if (err.status !== 409) throw err;
+          ok = await runOp(op);
+        }
       } catch (err) {
-        console.warn("Queued task not synced yet:", err.message);
+        if (!err.offline) {
+          state.syncError = err.message;
+          setOutbox(getOutbox().map((o) => (o.id === op.id ? { ...o, error: err.message } : o)));
+        }
         return false;
       }
-      setPending(getPending().filter((p) => p.task.id !== next.task.id));
+      if (!ok) reportGone(op);
+      setOutbox(getOutbox().filter((o) => o.id !== op.id));
+      synced++;
     }
+    state.justSynced = Date.now();
     return true;
   } finally {
-    flushingPending = false;
-    updateOfflineBanner();
+    state.syncing = false;
+    if (synced) {
+      renderActive();
+      renderTree();
+      renderAssistList();
+      renderAssistDetail();
+      renderAssistTabCount();
+    }
+    renderSyncStatus();
   }
 }
 
-function updateOfflineBanner() {
-  let banner = document.getElementById("offline-banner");
-  const waiting = getPending().length;
-  const offline = state.offline || !navigator.onLine;
-  if (!offline && !waiting) {
-    if (banner) banner.remove();
+// Back to the last state GitHub confirmed plus whatever is still waiting: after discarding an
+// op, its local effect has to go too.
+function rebuildView() {
+  if (!state.offline) return loadData();
+  if (restoreSnapshot()) applyOutbox();
+  renderAfterLoad();
+}
+
+function discardOp(id) {
+  setOutbox(getOutbox().filter((o) => o.id !== id));
+  state.syncError = null;
+  rebuildView();
+}
+
+// ---------- connection state ----------
+function offlineError(message) {
+  return Object.assign(new Error(message || "You're offline, so this didn't reach GitHub."), { offline: true });
+}
+
+async function fetchWithTimeout(url, opts = {}, ms = 30000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Every GitHub API call goes through here, so connection state follows what actually
+// happened. A request that hangs on a dead connection counts as offline after a while,
+// instead of leaving "Saving…" on screen forever.
+async function ghFetch(url, opts, ms) {
+  let res;
+  try {
+    res = await fetchWithTimeout(url, opts, ms);
+  } catch {
+    markOffline();
+    throw offlineError();
+  }
+  markOnline();
+  return res;
+}
+
+const PROBE_DELAYS = [5000, 10000, 20000, 40000, 60000];
+let probeTimer = null;
+let probeAttempt = 0;
+
+function markOffline() {
+  if (!state.offline) {
+    state.offline = true;
+    probeAttempt = 0;
+    renderSyncStatus();
+  }
+  scheduleProbe();
+}
+
+function markOnline({ resync = true } = {}) {
+  if (!state.offline) return;
+  state.offline = false;
+  clearTimeout(probeTimer);
+  probeTimer = null;
+  renderSyncStatus();
+  if (!resync) return;
+  // Send whatever waited, then replace anything read from the saved copy with fresh data.
+  setTimeout(async () => {
+    await flushOutbox();
+    await loadData({ quiet: true });
+  }, 0);
+}
+
+function scheduleProbe() {
+  if (probeTimer) return;
+  const delay = PROBE_DELAYS[Math.min(probeAttempt++, PROBE_DELAYS.length - 1)];
+  probeTimer = setTimeout(() => {
+    probeTimer = null;
+    // A hidden page waits for visibilitychange instead of polling in the background.
+    if (!document.hidden) probe();
+  }, delay);
+}
+
+async function probe() {
+  clearTimeout(probeTimer);
+  probeTimer = null;
+  if (state.probing) return;
+  state.probing = true;
+  renderSyncStatus();
+  let reached = false;
+  try {
+    // rate_limit doesn't count against the rate limit. Without a token, Pages is all we read.
+    await fetchWithTimeout(getToken() ? "https://api.github.com/rate_limit" : `data/categories.json?t=${Date.now()}`, { cache: "no-store" }, 8000);
+    reached = true;
+  } catch {
+    // Still offline; scheduleProbe below tries again later.
+  }
+  state.probing = false;
+  if (reached) {
+    markOnline();
+  } else {
+    scheduleProbe();
+    renderSyncStatus();
+  }
+}
+
+window.addEventListener("offline", markOffline);
+window.addEventListener("online", () => state.offline && probe());
+
+// Coming back to the page: retry right away if offline, otherwise pick up changes made
+// elsewhere (a phone left open for days would otherwise show, and save from, stale data).
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    hiddenAt = Date.now();
     return;
   }
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "offline-banner";
-    document.body.prepend(banner);
+  if (state.offline) probe();
+  else if (state.dataLoaded && Date.now() - hiddenAt > 60000) loadData({ quiet: true });
+});
+
+// ---------- sync status ----------
+// One line under the tab bar saying what's happening to your changes. It slides open for
+// anything worth knowing (offline, syncing, a problem, newer data held back) and closes once
+// everything is saved. The HUD's channel readout and the task cards say the same thing.
+let syncedHideTimer = null;
+let lastSyncKind = "";
+
+function renderSyncStatus() {
+  const bar = document.getElementById("sync-bar");
+  if (!bar) return;
+  const n = getOutbox().length;
+  const changes = `${n} change${n === 1 ? "" : "s"}`;
+  let kind = "";
+  let text = "";
+  let action = null;
+  if (state.syncError) {
+    kind = "error";
+    text = `⚠ A change couldn't sync: ${state.syncError}`;
+    action = ["Review", openOutboxDialog];
+  } else if (state.offline) {
+    kind = "offline";
+    text = `● Offline${state.savedAt ? ` · showing your copy saved ${formatWhen(state.savedAt)}` : ""}`
+      + (n ? ` · ${changes} waiting` : " · changes you make will wait here")
+      + (state.probing ? " · checking…" : "");
+    action = n ? ["Review", openOutboxDialog] : ["Retry", probe];
+  } else if (state.syncing) {
+    kind = "syncing";
+    text = `⟳ Syncing ${changes}…`;
+  } else if (n) {
+    kind = "waiting";
+    text = `${changes} waiting to sync`;
+    action = ["Sync now", flushOutbox];
+  } else if (state.staleView) {
+    kind = "info";
+    text = "Newer changes from GitHub are ready";
+    action = ["Show", renderAfterLoad];
+  } else if (state.justSynced && Date.now() - state.justSynced < 2500) {
+    kind = "synced";
+    text = "✓ All changes synced";
+    clearTimeout(syncedHideTimer);
+    syncedHideTimer = setTimeout(renderSyncStatus, 2600);
   }
-  const parts = [];
-  if (offline) {
-    parts.push(state.offline && state.savedAt ? `Offline: showing the copy saved ${new Date(state.savedAt).toLocaleString()}.` : "Offline.");
+
+  // Keep the last colour while closing, so it fades out instead of flashing blank.
+  if (kind) lastSyncKind = kind;
+  bar.className = `sync-bar ${lastSyncKind}${kind ? " show" : ""}`;
+  if (kind) {
+    bar.replaceChildren();
+    const span = document.createElement("span");
+    span.className = "sync-bar-text";
+    span.textContent = text;
+    bar.appendChild(span);
+    if (action) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sync-bar-action";
+      btn.textContent = action[0];
+      btn.addEventListener("click", () => action[1]());
+      bar.appendChild(btn);
+    }
   }
-  if (waiting) parts.push(`${waiting} new task${waiting === 1 ? "" : "s"} waiting to sync.`);
-  else parts.push("You can still add new tasks; they sync when you're back online.");
-  banner.textContent = parts.join(" ");
+
+  const hud = document.getElementById("hud-link");
+  if (hud) {
+    hud.textContent = `CH.01 // ${state.offline ? "OFFLINE" : state.syncing ? "SYNCING" : "ONLINE"}`;
+    hud.classList.toggle("offline", !!state.offline);
+    hud.classList.toggle("syncing", !state.offline && !!state.syncing);
+  }
+  document.body.classList.toggle("is-offline", !!state.offline);
+  updateJournalTab();
+  if (el("#outbox-dialog").open) renderOutboxDialog();
 }
 
-window.addEventListener("offline", updateOfflineBanner);
-window.addEventListener("online", async () => {
-  const hadPending = getPending().length > 0;
-  const ok = await flushPending();
-  if (state.offline || (hadPending && ok)) loadData();
-  else updateOfflineBanner();
+function openOutboxDialog() {
+  renderOutboxDialog();
+  el("#outbox-dialog").showModal();
+}
+
+function renderOutboxDialog() {
+  const ops = getOutbox();
+  el("#outbox-summary").textContent = !ops.length
+    ? "Nothing waiting: everything is saved to GitHub."
+    : state.offline
+      ? "Saved on this device. They'll sync to GitHub in this order as soon as there's a connection."
+      : "These sync to GitHub in this order. One that fails stops the rest, since later ones may depend on it.";
+  const list = el("#outbox-list");
+  list.replaceChildren();
+  ops.forEach((op) => {
+    const li = document.createElement("li");
+    li.className = "outbox-item" + (op.error ? " has-error" : "");
+    const label = document.createElement("div");
+    label.className = "outbox-label";
+    label.textContent = op.label;
+    const meta = document.createElement("div");
+    meta.className = "outbox-meta";
+    meta.textContent = `${op.visibility} · ${formatWhen(op.queuedAt)}`;
+    li.append(label, meta);
+    if (op.error) {
+      const err = document.createElement("div");
+      err.className = "outbox-error";
+      err.textContent = op.error;
+      li.appendChild(err);
+    }
+    // Discarding throws your change away for good, so it takes a second tap.
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "outbox-discard";
+    btn.textContent = "Discard";
+    btn.addEventListener("click", () => {
+      if (!btn.classList.contains("confirm")) {
+        btn.classList.add("confirm");
+        btn.textContent = "Tap again to discard";
+        return;
+      }
+      discardOp(op.id);
+      renderOutboxDialog();
+    });
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+  el("#outbox-retry").hidden = !ops.length;
+}
+
+el("#outbox-close").addEventListener("click", () => el("#outbox-dialog").close());
+el("#outbox-retry").addEventListener("click", () => {
+  state.syncError = null;
+  if (state.offline) probe();
+  else flushOutbox();
+});
+
+// ---------- Journal tab ----------
+// The Journal (journal/) is its own app, with its own service worker and offline copy. That
+// copy used to exist only once the journal had been opened online, so tapping its tab
+// offline before then hit the browser's "no connection" page: a dead end inside the
+// home-screen app. Registering its worker from here (same worker, same scope, so it's the
+// journal's own registration) keeps its copy current whenever Tasks is open online. With no
+// copy at all yet, the tab is dimmed and says why instead.
+function warmJournal() {
+  if (!("serviceWorker" in navigator) || state.offline) return;
+  navigator.serviceWorker.register("journal/sw.js", { scope: "journal/" }).catch(() => {});
+}
+
+async function journalWorksOffline() {
+  if (!("serviceWorker" in navigator)) return false;
+  const reg = await navigator.serviceWorker.getRegistration("journal/").catch(() => null);
+  return !!(reg && reg.active && reg.scope.endsWith("/journal/"));
+}
+
+async function updateJournalTab() {
+  const tab = document.querySelector(".journal-tab-btn");
+  if (!tab) return;
+  const unavailable = !!state.offline && !(await journalWorksOffline());
+  tab.classList.toggle("unavailable", unavailable);
+  tab.title = unavailable ? "Journal: needs a connection the first time" : "Journal";
+}
+
+document.querySelector(".journal-tab-btn").addEventListener("click", (e) => {
+  if (!e.currentTarget.classList.contains("unavailable")) return;
+  e.preventDefault();
+  showToast({ message: "The Journal isn't saved on this device yet. Open it once with a connection and it'll work offline from then on.", duration: 7000 });
 });
 
 function taskKey(task) {
@@ -403,9 +853,12 @@ function setupCategoryCombo() {
 }
 
 // ---------- GitHub write-back ----------
+// no-store: the API marks responses cacheable for 60s, and a "fresh" read that was really
+// a minute old is exactly what these read-then-write saves can't afford.
 async function ghGetFile(repo, path) {
-  const res = await fetch(`${apiBase(repo)}/${path}`, {
+  const res = await ghFetch(`${apiBase(repo)}/${path}`, {
     headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github+json" },
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`Failed to read ${path}: ${res.status}`);
   const json = await res.json();
@@ -419,7 +872,7 @@ async function ghPutFile(repo, path, contentObj, sha, message) {
     content: btoa(unescape(encodeURIComponent(JSON.stringify(contentObj, null, 2) + "\n"))),
     sha,
   };
-  const res = await fetch(`${apiBase(repo)}/${path}`, {
+  const res = await ghFetch(`${apiBase(repo)}/${path}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${getToken()}`,
@@ -428,13 +881,13 @@ async function ghPutFile(repo, path, contentObj, sha, message) {
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Failed to write ${path}: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw Object.assign(new Error(`Failed to write ${path}: ${res.status} ${await res.text()}`), { status: res.status });
   const json = await res.json();
   return json.content.sha;
 }
 
 async function ghPutImage(repo, path, base64Data, message) {
-  const res = await fetch(`${apiBase(repo)}/${path}`, {
+  const res = await ghFetch(`${apiBase(repo)}/${path}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${getToken()}`,
@@ -442,7 +895,7 @@ async function ghPutImage(repo, path, base64Data, message) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ message, content: base64Data }),
-  });
+  }, 90000);
   if (!res.ok) throw new Error(`Failed to upload image: ${res.status} ${await res.text()}`);
 }
 
@@ -494,16 +947,22 @@ async function saveTasksAppend(repo, newTask, message) {
 // concurrent change" and clobber that content from a stale list. So whenever a helper
 // advances the sha it must also resync the in-memory copy of that repo to what it wrote.
 // Repos keep their load order (public first) so the merged "All tasks" order doesn't shuffle.
+// Changes still waiting in the outbox are laid back on top, or they'd vanish from view until
+// they sync, and the offline copy is refreshed so reopening with no signal shows this save.
 function syncRepoTasks(visibility, tasks) {
   const mine = tasks.map((t) => ({ ...t, _repo: visibility }));
   const others = state.tasks.filter((t) => t._repo !== visibility);
   state.tasks = visibility === "public" ? [...mine, ...others] : [...others, ...mine];
+  applyOutbox();
+  saveSnapshotAfterWrite();
 }
 
 function syncRepoHistory(visibility, entries) {
   const mine = entries.map((e) => ({ ...e, _repo: visibility }));
   const others = state.history.filter((e) => e._repo !== visibility);
   state.history = visibility === "public" ? [...mine, ...others] : [...others, ...mine];
+  applyOutbox();
+  saveSnapshotAfterWrite();
 }
 
 async function saveHistory(repo, newEntries, message) {
@@ -516,11 +975,17 @@ async function saveHistory(repo, newEntries, message) {
 
 // Same reasoning as saveTasksAppend: completing a task only adds one history entry, so it
 // doesn't need to agree with our in-memory copy about anything else that changed history.json
-// in the meantime. Fetch fresh, append, write that.
+// in the meantime. Fetch fresh, append, write that. An entry already there (a completion
+// replayed from the outbox after a half-finished sync) isn't written twice.
 async function saveHistoryAppend(repo, newEntry, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
   const currentEntries = JSON.parse(current.content).entries;
+  if (currentEntries.some((e) => e.id === newEntry.id)) {
+    state.shas[visibility].history = current.sha;
+    syncRepoHistory(visibility, currentEntries);
+    return currentEntries;
+  }
   const updated = [...currentEntries, newEntry];
   const newSha = await ghPutFile(repo, "data/history.json", { entries: updated }, current.sha, message);
   state.shas[visibility].history = newSha;
@@ -532,11 +997,18 @@ async function saveHistoryAppend(repo, newEntry, message) {
 // in-memory copy about every other task, only that this one task's identity still exists.
 // So fetch tasks.json fresh, apply mutateFn to just that task within the fresh list (return
 // null/undefined from mutateFn to delete it), and write that back — sidestepping the same
-// false-positive conflict saveTasksAppend avoids for pure appends.
+// false-positive conflict saveTasksAppend avoids for pure appends. If the task is already
+// gone (completed or deleted elsewhere) there's nothing to write; callers can tell from the
+// returned pre-write list.
 async function saveTaskMutation(repo, taskId, mutateFn, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/tasks.json");
   const currentTasks = JSON.parse(current.content).tasks;
+  if (!currentTasks.some((t) => t.id === taskId)) {
+    state.shas[visibility].tasks = current.sha;
+    syncRepoTasks(visibility, currentTasks);
+    return currentTasks;
+  }
   const updated = currentTasks.map((t) => (t.id === taskId ? mutateFn(t) : t)).filter(Boolean);
   const newSha = await ghPutFile(repo, "data/tasks.json", { tasks: updated }, current.sha, message);
   state.shas[visibility].tasks = newSha;
@@ -552,6 +1024,11 @@ async function saveHistoryMutation(repo, entryId, mutateFn, message) {
   const visibility = visibilityForRepo(repo);
   const current = await ghGetFile(repo, "data/history.json");
   const currentEntries = JSON.parse(current.content).entries;
+  if (!currentEntries.some((h) => h.id === entryId)) {
+    state.shas[visibility].history = current.sha;
+    syncRepoHistory(visibility, currentEntries);
+    return currentEntries;
+  }
   const updated = currentEntries.map((h) => (h.id === entryId ? mutateFn(h) : h)).filter(Boolean);
   const newSha = await ghPutFile(repo, "data/history.json", { entries: updated }, current.sha, message);
   state.shas[visibility].history = newSha;
@@ -690,7 +1167,13 @@ function repoFor(visibility) {
 
 // Every write rebuilds a repo's whole task list from what's in memory, so writing a
 // repo we failed to fully read would silently delete the tasks we never saw. Refuse.
+// Offline, what's in memory came from the saved copy, so these writes wait for a connection
+// (one-task changes don't come through here: they queue, see saveOrQueue).
 function assertLoaded(visibility) {
+  if (state.offline) {
+    probe();
+    throw offlineError("This change needs a connection, and you're offline. Nothing was changed.");
+  }
   const ok = visibility === "private" ? state.privateLoaded : state.publicLoaded;
   if (!ok) {
     throw new Error(
@@ -1194,14 +1677,11 @@ function taskDescendantIds(task) {
 async function setTaskParent(task, parentId) {
   if (!requireToken()) return;
   try {
-    assertLoaded(task._repo);
-    const repo = repoFor(task._repo);
-    await saveTaskMutation(
-      repo,
-      task.id,
-      (t) => ({ ...t, parentId: parentId || undefined }),
-      parentId ? `Make subtask: ${task.title}` : `Un-nest: ${task.title}`
-    );
+    await saveOrQueue(makeOp("fields", task._repo, {
+      taskId: task.id,
+      fields: { parentId: parentId || null },
+      label: parentId ? `Make subtask: ${task.title}` : `Un-nest: ${task.title}`,
+    }));
     task.parentId = parentId || undefined;
     renderActive();
   } catch (err) {
@@ -1212,9 +1692,7 @@ async function setTaskParent(task, parentId) {
 async function setTaskCategory(task, category) {
   if (!requireToken()) return;
   try {
-    assertLoaded(task._repo);
-    const repo = repoFor(task._repo);
-    await saveTaskMutation(repo, task.id, (t) => ({ ...t, category }), `Move to category "${category}": ${task.title}`);
+    await saveOrQueue(makeOp("fields", task._repo, { taskId: task.id, fields: { category }, label: `Move to category "${category}": ${task.title}` }));
     task.category = category;
     renderActive();
     renderCategoryOptions();
@@ -1376,6 +1854,8 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
 
   const key = taskKey(task);
   if (state.selectedActiveTaskKey === key) card.classList.add("selected");
+  const waiting = waitingTaskKeys().has(key);
+  if (waiting) card.classList.add("waiting-sync");
   const subtasksCollapsed = subtaskCount > 0 && collapsedSubtaskParents.has(key);
 
   card.innerHTML = `
@@ -1394,8 +1874,9 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </div>
       </div>
     </div>
-    ${task.assist || task._repo === "private" ? `
+    ${task.assist || task._repo === "private" || waiting ? `
       <span class="task-card-badges">
+        ${waiting ? `<span class="sync-badge" title="Saved on this device, waiting to sync">⟳</span>` : ""}
         ${task.assist ? `<span class="assist-badge" title="AI assistance on">✦</span>` : ""}
         ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
       </span>` : ""}
@@ -1557,9 +2038,7 @@ function renameTaskInline(task, titleEl, { onBeforeEdit, onDone, inputClassName 
       return;
     }
     try {
-      assertLoaded(task._repo);
-      const repo = repoFor(task._repo);
-      await saveTaskMutation(repo, task.id, (t) => ({ ...t, title: newTitle }), `Rename task: ${task.title} → ${newTitle}`);
+      await saveOrQueue(makeOp("fields", task._repo, { taskId: task.id, fields: { title: newTitle }, label: `Rename task: ${task.title} → ${newTitle}` }));
       task.title = newTitle;
       onDone();
     } catch (err) {
@@ -1602,9 +2081,7 @@ async function toggleAssist(task, btnEl) {
   const next = !task.assist;
   btnEl.disabled = true;
   try {
-    assertLoaded(task._repo);
-    const repo = repoFor(task._repo);
-    await saveTaskMutation(repo, task.id, (t) => ({ ...t, assist: next }), `${next ? "Enable" : "Disable"} assistance: ${task.title}`);
+    await saveOrQueue(makeOp("fields", task._repo, { taskId: task.id, fields: { assist: next }, label: `${next ? "Enable" : "Disable"} assistance: ${task.title}` }));
     task.assist = next;
     if (!next && state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
     renderActive();
@@ -1669,7 +2146,6 @@ async function toggleVisibility(task, btnEl) {
 // optional and offered afterward via the toast, so adding one is a choice, not a toll.
 async function completeTask(task, checkBtn) {
   if (!requireToken()) return;
-  const repo = repoFor(task._repo);
   // The task being completed may be showing in more places than just wherever the
   // click came from — e.g. its Active-list card next to its own open detail panel —
   // so animate every check button for it, not just the one that was clicked.
@@ -1683,7 +2159,6 @@ async function completeTask(task, checkBtn) {
   if (card) card.classList.add("completing");
 
   try {
-    assertLoaded(task._repo);
     // Carry the task's own notes and the agent's suggestions into history — otherwise
     // completing a task silently threw away everything that had been built up on it.
     const carriedNotes = noteItems(task);
@@ -1700,10 +2175,9 @@ async function completeTask(task, checkBtn) {
       ...((task.suggestions || []).length ? { suggestions: task.suggestions } : {}),
     };
 
-    // History first, then removal — if the second write fails the task is still on the
-    // list and can be ticked again, rather than erased with no record of completion.
-    await saveHistoryAppend(repo, entry, `Log history: ${task.title}`);
-    await saveTaskMutation(repo, task.id, () => null, `Complete task: ${task.title}`);
+    // History first, then removal (see runOp) — if the second write fails the task is
+    // still on the list and can be ticked again, rather than erased with no record.
+    const outcome = await saveOrQueue(makeOp("complete", task._repo, { taskId: task.id, entry, label: `Complete task: ${task.title}` }));
 
     if (state.selectedAssistKey === taskKey(task)) state.selectedAssistKey = null;
     if (card) setTimeout(() => renderActive(), 350);
@@ -1715,7 +2189,7 @@ async function completeTask(task, checkBtn) {
     renderAssistTabCount();
 
     showToast({
-      message: `✓ Completed "${task.title}"`,
+      message: outcome === "queued" ? `✓ Completed "${task.title}" (syncs when you're back online)` : `✓ Completed "${task.title}"`,
       actionLabel: "Add note",
       onAction: () => openNoteDialog({ ...entry, _repo: task._repo }),
       duration: 7000,
@@ -1769,14 +2243,13 @@ el("#complete-form").addEventListener("submit", async (e) => {
   saveBtn.textContent = "Saving…";
 
   try {
-    assertLoaded(entry._repo);
-
     // Save the note text first and independently of any image — a failed photo upload
-    // should never be able to cost you the words you already wrote.
+    // should never be able to cost you the words you already wrote. Offline, the words
+    // wait in the outbox like any other one-task change; the photo needs a connection.
     let images = entry.images || [];
-    await saveHistoryMutation(repo, entry.id, (h) => ({ ...h, note, images }), `Update note: ${entry.title}`);
+    await saveOrQueue(makeOp("historyNote", entry._repo, { entryId: entry.id, note, label: `Update note: ${entry.title}` }));
     state.history = state.history.map((h) =>
-      h.id === entry.id && h._repo === entry._repo ? { ...h, note, images } : h
+      h.id === entry.id && h._repo === entry._repo ? { ...h, note } : h
     );
     renderTree();
     el("#complete-dialog").close();
@@ -1815,13 +2288,6 @@ const DELETE_UNDO_MS = 6000;
 
 async function deleteTask(task, card) {
   if (!requireToken()) return;
-  try {
-    assertLoaded(task._repo);
-  } catch (err) {
-    alert(err.message);
-    return;
-  }
-
   const prevTasks = state.tasks;
   if (card) card.classList.add("completing");
   state.tasks = state.tasks.filter((t) => !(t.id === task.id && t._repo === task._repo));
@@ -1853,8 +2319,7 @@ async function deleteTask(task, card) {
   setTimeout(async () => {
     if (undone) return;
     try {
-      const repo = repoFor(task._repo);
-      await saveTaskMutation(repo, task.id, () => null, `Delete task: ${task.title}`);
+      await saveOrQueue(makeOp("delete", task._repo, { taskId: task.id, label: `Delete task: ${task.title}` }));
     } catch (err) {
       state.tasks = prevTasks;
       renderActive();
@@ -2150,7 +2615,6 @@ el("#add-form").addEventListener("submit", async (e) => {
   }
 
   const visibility = state.newTaskVisibility;
-  const repo = repoFor(visibility);
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title, category, created: new Date().toISOString().slice(0, 10), notes: "", assist: state.newTaskAssist };
 
@@ -2165,30 +2629,13 @@ el("#add-form").addEventListener("submit", async (e) => {
     applyDefaultCategory();
     state.newTaskAssist = false;
     renderAssistAddToggle();
-    updateOfflineBanner();
-  };
-  const queueOffline = () => {
-    if (!setPending([...getPending(), { visibility, task }])) {
-      alert("Couldn't save this task on the device (storage is full), so it was not added.");
-      return;
-    }
-    state.tasks = [...state.tasks, { ...task, _repo: visibility }];
-    afterAdd();
   };
 
-  if (state.offline || !navigator.onLine) {
-    queueOffline();
-    return;
-  }
   try {
-    assertLoaded(visibility);
-    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${title}`);
-    const otherRepos = state.tasks.filter((t) => t._repo !== visibility);
-    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: visibility })), { ...task, _repo: visibility }];
+    await saveOrQueue(makeOp("add", visibility, { task, label: `Add task: ${title}` }));
     afterAdd();
   } catch (err) {
-    if (err instanceof TypeError) queueOffline();
-    else alert(`Couldn't save to GitHub: ${err.message}`);
+    alert(`Couldn't save to GitHub: ${err.message}`);
   }
 });
 
@@ -2327,7 +2774,7 @@ const ATTACHMENT_TYPES = {
 async function privateAttachmentUrl(path) {
   if (attachmentBlobUrls.has(path)) return attachmentBlobUrls.get(path);
   if (!getToken()) throw new Error("Add your GitHub token in Settings to open private attachments.");
-  const res = await fetch(`${apiBase(PRIVATE_REPO)}/${path}`, {
+  const res = await ghFetch(`${apiBase(PRIVATE_REPO)}/${path}`, {
     headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github.raw" },
   });
   if (!res.ok) throw new Error(`Couldn't read ${path}: ${res.status}`);
@@ -2599,21 +3046,11 @@ async function deleteHistoryEntry(entry, nodeEl) {
 // attempt at the task, not a copy of the old one's record.
 async function duplicateHistoryEntry(entry) {
   if (!requireToken()) return;
-  try {
-    assertLoaded(entry._repo);
-  } catch (err) {
-    alert(err.message);
-    return;
-  }
-
-  const repo = repoFor(entry._repo);
   const id = entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now().toString(36);
   const task = { id, title: entry.title, category: entry.category, created: new Date().toISOString().slice(0, 10), notes: "" };
 
   try {
-    const freshTasks = await saveTasksAppend(repo, task, `Add task: ${entry.title}`);
-    const otherRepos = state.tasks.filter((t) => t._repo !== entry._repo);
-    state.tasks = [...otherRepos, ...freshTasks.map((t) => ({ ...t, _repo: entry._repo })), { ...task, _repo: entry._repo }];
+    await saveOrQueue(makeOp("add", entry._repo, { task, label: `Add task: ${entry.title}` }));
     playBlip();
     renderActive();
     renderCategoryOptions();
@@ -2686,18 +3123,14 @@ function newNoteId() {
 
 // Every note write also drops the legacy scratchpad fields, so a task migrates to the
 // new shape the first time anyone touches its notes — no separate migration step needed.
-async function saveNoteItems(task, newItems, message) {
-  assertLoaded(task._repo);
-  const repo = repoFor(task._repo);
-  await saveTaskMutation(
-    repo,
-    task.id,
-    (t) => {
-      const { scratchpad, scratchpadUpdated, ...rest } = t;
-      return { ...rest, noteItems: newItems };
-    },
-    message
-  );
+// Only what changed relative to `base` (the notes as they were before this edit) is sent,
+// and merged by id into the task's current notes: a stale page can't wipe a note added on
+// another device, and the same change can wait in the outbox while offline.
+async function saveNoteItems(task, newItems, message, base = noteItems(task)) {
+  const before = new Map(base.map((n) => [n.id, JSON.stringify(n)]));
+  const upserts = newItems.filter((n) => before.get(n.id) !== JSON.stringify(n));
+  const deletes = base.filter((n) => !newItems.some((m) => m.id === n.id)).map((n) => n.id);
+  await saveOrQueue(makeOp("notes", task._repo, { taskId: task.id, upserts, deletes, label: message }));
   task.noteItems = newItems;
   delete task.scratchpad;
   delete task.scratchpadUpdated;
@@ -3034,12 +3467,6 @@ async function toggleNoteDone(task, id) {
 // Same instant + undo pattern as everywhere else deletion happens in this app.
 async function deleteNoteItem(task, id, liEl) {
   if (!requireToken()) return;
-  try {
-    assertLoaded(task._repo);
-  } catch (err) {
-    alert(err.message);
-    return;
-  }
   const prevItems = noteItems(task);
   liEl.classList.add("completing");
   const optimistic = prevItems.filter((n) => n.id !== id);
@@ -3065,7 +3492,7 @@ async function deleteNoteItem(task, id, liEl) {
   setTimeout(async () => {
     if (undone) return;
     try {
-      await saveNoteItems(task, optimistic, `Delete note: ${task.title}`);
+      await saveNoteItems(task, optimistic, `Delete note: ${task.title}`, prevItems);
     } catch (err) {
       task.noteItems = prevItems;
       renderAssistList();
@@ -3436,6 +3863,7 @@ setInterval(updateHudClock, 1000);
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
+  window.addEventListener("load", () => setTimeout(warmJournal, 3000));
 }
 
 // Restore the last-viewed tab/category/task before the initial load, so a

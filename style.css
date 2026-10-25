@@ -1402,6 +1402,9 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .col-resize-handle { display: none; }
   .expand-toggle { display: none; } /* detail is already a full-screen page here */
   .topbar { padding: 12px 14px; gap: 8px; flex-wrap: nowrap; }
+  /* The flex row is .topbar-inner; its desktop 24px gaps pushed ⚙ off a 375px screen
+     once the ✦ tab showed a count. */
+  .topbar-inner { gap: 10px; }
   .topbar h1 { font-size: 15px; }
   .topbar h1::before { content: none; } /* drop the decorative prefix to save width */
   .tabs { gap: 4px; }
@@ -1467,6 +1470,7 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .detail-back:active { color: var(--accent-2); }
 
   .add-bar { margin: 0 -14px; padding: 8px 14px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .sync-bar.show { margin-top: 10px; font-size: 12px; }
   .add-bar .combo { flex: 0 1 220px; min-width: 140px; }
 }
 .history-search-result {
@@ -1476,8 +1480,50 @@ dialog textarea { min-height: 70px; resize: vertical; }
 .history-search-result:hover { filter: brightness(1.15); }
 .hsr-title { font-size: 13.5px; color: var(--text); }
 .hsr-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-#offline-banner {
-  position: sticky; top: 0; z-index: 1000;
-  padding: 6px 12px; font-size: 12.5px; text-align: center;
-  background: #3a2a05; color: #ffd27a; border-bottom: 1px solid #ffb86b;
+/* Sync status: slides open under the tab bar while there's something to say. */
+.sync-bar {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  max-width: 1100px; margin: 0 auto;
+  max-height: 0; opacity: 0; overflow: hidden;
+  padding: 0 12px; border: 0 solid transparent; border-radius: 9px;
+  font-size: 12.5px;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease, padding 0.25s ease;
 }
+.sync-bar.show { max-height: 80px; opacity: 1; margin-top: 12px; padding: 6px 12px; border-width: 1px; }
+.sync-bar.offline { background: #3a2a05; color: #ffd27a; border-color: #ffb86b; }
+.sync-bar.syncing, .sync-bar.waiting, .sync-bar.info { background: rgba(29, 233, 182, 0.08); color: var(--accent-2); border-color: rgba(29, 233, 182, 0.45); }
+.sync-bar.synced { background: rgba(29, 233, 182, 0.12); color: var(--good); border-color: var(--good); }
+.sync-bar.error { background: rgba(255, 46, 99, 0.12); color: #ff8fab; border-color: var(--accent); }
+.sync-bar-text { min-width: 0; text-align: center; overflow-wrap: anywhere; }
+.sync-bar-action {
+  flex-shrink: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
+  border: 1px solid currentColor; border-radius: 999px; padding: 2px 10px;
+}
+.sync-bar.syncing .sync-bar-text { animation: sync-pulse 1.2s ease-in-out infinite; }
+@keyframes sync-pulse { 50% { opacity: 0.55; } }
+
+.hud-readout.hud-bl { transition: color 0.3s ease; }
+.hud-readout.hud-bl.offline { color: #ffb86b; text-shadow: 0 0 4px rgba(255, 184, 107, 0.4); }
+.hud-readout.hud-bl.syncing { color: var(--accent-2); }
+
+/* A task with a change saved on this device but not on GitHub yet. */
+.task-card.waiting-sync { border-style: dashed; border-color: #ffb86b; }
+.sync-badge { color: #ffb86b; font-size: 13px; }
+
+/* Offline, before the Journal has an offline copy on this device. */
+.journal-tab-btn.unavailable { opacity: 0.4; }
+
+.outbox-list { list-style: none; padding: 0; margin: 0 0 14px; max-height: 50vh; overflow-y: auto; }
+.outbox-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center;
+  padding: 9px 10px; margin-bottom: 6px; border-radius: 9px; background: var(--panel-2);
+}
+.outbox-item.has-error { border: 1px solid var(--accent); }
+.outbox-label { font-size: 13.5px; color: var(--text); overflow-wrap: anywhere; }
+.outbox-meta { font-size: 11.5px; color: var(--muted); grid-column: 1; }
+.outbox-error { font-size: 12px; color: #ff8fab; grid-column: 1 / -1; overflow-wrap: anywhere; }
+.outbox-discard {
+  grid-column: 2; grid-row: 1 / span 2; background: transparent; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer;
+}
+.outbox-discard.confirm { color: #ff8fab; border-color: var(--accent); }

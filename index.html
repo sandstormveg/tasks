@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="manifest" href="manifest.json" />
-<link rel="stylesheet" href="style.css?v=32" />
+<link rel="stylesheet" href="style.css?v=33" />
 </head>
 <body>
   <div class="hud-frame" aria-hidden="true">
@@ -19,7 +19,7 @@
   </div>
   <div class="hud-readout hud-tl" aria-hidden="true">SYS://TASKS</div>
   <div class="hud-readout hud-tr" id="hud-clock" aria-hidden="true"></div>
-  <div class="hud-readout hud-bl" aria-hidden="true">CH.01 // ONLINE</div>
+  <div class="hud-readout hud-bl" id="hud-link" aria-hidden="true">CH.01 // ONLINE</div>
   <div class="hud-readout hud-br" aria-hidden="true"><span class="hud-rec-dot"></span>REC</div>
   <canvas id="fx-canvas"></canvas>
   <div id="toast-container" class="toast-container"></div>
@@ -36,6 +36,7 @@
       </nav>
       <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
     </div>
+    <div id="sync-bar" class="sync-bar" role="status" aria-live="polite"></div>
   </header>
 
   <main id="active-view" class="view columns-view">
@@ -107,6 +108,16 @@
     </form>
   </dialog>
 
+  <dialog id="outbox-dialog">
+    <h3>Waiting to sync</h3>
+    <p class="hint" id="outbox-summary"></p>
+    <ul id="outbox-list" class="outbox-list"></ul>
+    <div class="dialog-actions">
+      <button type="button" id="outbox-close">Close</button>
+      <button type="button" id="outbox-retry">Retry now</button>
+    </div>
+  </dialog>
+
   <dialog id="settings-dialog">
     <form method="dialog" id="settings-form">
       <h3>Settings</h3>
@@ -138,6 +149,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=37"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>
