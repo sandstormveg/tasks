@@ -24,7 +24,7 @@ const state = {
   // Connection + sync (see "offline support + sync"). dataLoaded: something is on screen,
   // from GitHub or the saved copy. savedAt: set while showing the saved copy. staleView:
   // a background refresh found changes but held them back from under a draft.
-  offline: false, probing: false, syncing: false, syncError: null, justSynced: 0,
+  offline: false, probing: false, syncing: false, syncError: null, tokenRejected: false, justSynced: 0,
   dataLoaded: false, savedAt: null, staleView: false,
 };
 
@@ -437,7 +437,12 @@ async function runOutbox() {
         }
       } catch (err) {
         if (!err.offline) {
-          state.syncError = err.message;
+          // 401: GitHub no longer accepts the token (fine-grained tokens expire). Nothing is
+          // wrong with the change itself, so say what to do rather than show the raw error.
+          state.tokenRejected = err.status === 401;
+          state.syncError = state.tokenRejected
+            ? "GitHub didn't accept your token (it may have expired). Your changes are safe on this device; paste a new token in ⚙ and they'll sync."
+            : err.message;
           setOutbox(getOutbox().map((o) => (o.id === op.id ? { ...o, error: err.message } : o)));
         }
         return false;
@@ -597,8 +602,8 @@ function renderSyncStatus() {
   let action = null;
   if (state.syncError) {
     kind = "error";
-    text = `⚠ A change couldn't sync: ${state.syncError}`;
-    action = ["Review", openOutboxDialog];
+    text = state.tokenRejected ? `⚠ ${state.syncError}` : `⚠ A change couldn't sync: ${state.syncError}`;
+    action = state.tokenRejected ? ["Update token", () => el("#settings-btn").click()] : ["Review", openOutboxDialog];
   } else if (state.offline) {
     kind = "offline";
     text = `● Offline${state.savedAt ? ` · showing your copy saved ${formatWhen(state.savedAt)}` : ""}`
@@ -860,7 +865,7 @@ async function ghGetFile(repo, path) {
     headers: { Authorization: `Bearer ${getToken()}`, Accept: "application/vnd.github+json" },
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`Failed to read ${path}: ${res.status}`);
+  if (!res.ok) throw Object.assign(new Error(`Failed to read ${path}: ${res.status}`), { status: res.status });
   const json = await res.json();
   const content = decodeURIComponent(escape(atob(json.content)));
   return { sha: json.sha, content };
@@ -3737,6 +3742,9 @@ el("#settings-clear").addEventListener("click", () => {
 });
 el("#settings-form").addEventListener("submit", () => {
   localStorage.setItem(tokenKey, el("#settings-token").value.trim());
+  // A new token is the fix for a rejected one, so let the waiting changes try again.
+  state.syncError = null;
+  state.tokenRejected = false;
   loadData();
 });
 
