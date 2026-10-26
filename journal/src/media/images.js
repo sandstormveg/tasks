@@ -3,13 +3,23 @@
 // the journal keeps a 1600px copy (~200–400 KB) so years of photos fit
 // comfortably in a git repository.
 
-import { readExif, exifTakenIso } from "../core/exif.js";
+import { readExif, exifTakenIso, jpegSize } from "../core/exif.js";
 
 export const MAX_EDGE = 1600;
 export const THUMB_EDGE = 420;
 
-async function decode(file) {
+/**
+ * Decode an image, already shrunk when we know its size. A phone photo is
+ * 12–50 megapixels: decoding it at full size takes 50–200 MB, and a few in a
+ * row can exhaust a phone browser's image memory (the decode then fails).
+ * Asking for the target width up front keeps it small. `width` is the width
+ * after EXIF rotation; only the width is given so the aspect ratio is always kept.
+ */
+async function decode(file, width) {
   if (typeof createImageBitmap === "function") {
+    if (width) {
+      try { return await createImageBitmap(file, { imageOrientation: "from-image", resizeWidth: width, resizeQuality: "high" }); } catch { /* try full size */ }
+    }
     try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch { /* fall back */ }
   }
   const url = URL.createObjectURL(file);
@@ -61,12 +71,21 @@ function localOffset(date = new Date()) {
  */
 export async function processPhoto(file, { maxEdge = MAX_EDGE } = {}) {
   let taken = null;
+  let width = 0;
   try {
     const head = new Uint8Array(await file.slice(0, 256 * 1024).arrayBuffer());
-    taken = exifTakenIso(readExif(head), localOffset());
-  } catch { /* no EXIF */ }
+    const exif = readExif(head);
+    taken = exifTakenIso(exif, localOffset());
+    const size = jpegSize(head);
+    if (size) {
+      const turned = (exif?.orientation || 1) >= 5; // 5–8: rotated a quarter turn
+      const w = turned ? size.height : size.width;
+      const scale = Math.min(1, maxEdge / Math.max(size.width, size.height));
+      if (scale < 1) width = Math.max(1, Math.round(w * scale));
+    }
+  } catch { /* no EXIF or size: decode at full size */ }
   let bitmap;
-  try { bitmap = await decode(file); } catch {
+  try { bitmap = await decode(file, width); } catch {
     throw new Error(`This browser can't open ${file.name || "this image"} (${file.type || "unknown format"}). Try exporting it as JPEG.`);
   }
   const full = await resize(bitmap, maxEdge, 0.84);

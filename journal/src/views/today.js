@@ -258,7 +258,7 @@ export async function mount(el, ctx, route, ui) {
     box.innerHTML = String(html`<div class="section-title" style="margin-top:0">To help you remember</div>
       ${rows.length ? html`<ul class="cue-list">${rows}</ul>` : cues.loading ? "" : html`<p class="small muted" style="margin:0">No records for this day — start wherever you woke up, or walk through it below.</p>`}
       ${cues.loading ? html`<p class="small faint" style="margin:6px 0 0">Looking in your tasks…</p>` : ""}
-      ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below, or the first photo of each day you're catching up on: <button type="button" class="linkish" data-act="photo-days">Photos for several days</button>.</p>` : ""}
+      ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below, or pick a batch from several days and <button type="button" class="linkish" data-act="photo-days">sort them into their days</button>.</p>` : ""}
       ${cues.tasks.length || cues.failed ? html`<p class="tiny faint" style="margin:8px 0 0">${cues.tasks.length ? "From your tasks — records, not memories: use what helps. Tasks dates are in UTC, so something done before 7am may show a day early. " : ""}${cues.failed ? "Couldn't reach your tasks just now." : ""}</p>` : ""}`);
     box._events = events;
   }

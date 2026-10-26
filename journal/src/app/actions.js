@@ -36,8 +36,12 @@ export async function clearDraft(ctx, day = null) {
 /** Does this draft hold anything worth keeping? */
 export const draftHasContent = (d) => !!(d && (String(d.body || "").trim() || (d.media || []).length));
 
-/** Process photo files and store them under the given entry id/day. */
-export async function storePhotos(ctx, { entryId, day, sealed = false }, files, onProgress) {
+/**
+ * Process photo files and store them under the given entry id/day. A photo that
+ * can't be resized is kept as the original file, unless keepOriginal is false
+ * (batch imports): then it's skipped and its name added to `failed`.
+ */
+export async function storePhotos(ctx, { entryId, day, sealed = false }, files, onProgress, { keepOriginal = true, failed = null } = {}) {
   const out = [];
   let i = 0;
   for (const file of files) {
@@ -51,8 +55,9 @@ export async function storePhotos(ctx, { entryId, day, sealed = false }, files, 
       const thumb = mediaPath(day, mid, "jpg", { thumb: true, sealed });
       await ctx.store.putBlob(path, p.blob, { mime: "image/jpeg", sealed });
       await ctx.store.putBlob(thumb, p.thumb, { mime: "image/jpeg", sealed });
-      out.push({ id: mid, type: "photo", mime: "image/jpeg", path, thumb, taken: p.taken || undefined, width: p.width, height: p.height, bytes: p.blob.size, original_name: p.originalName || undefined, entry: entryId });
+      out.push({ id: mid, type: "photo", mime: "image/jpeg", path, thumb, taken: p.taken || undefined, width: p.width, height: p.height, bytes: p.blob.size, original_name: p.originalName || undefined, original_bytes: p.originalBytes || undefined, entry: entryId });
     } catch (err) {
+      if (!keepOriginal) { failed?.push(file.name || "a photo"); continue; }
       // Keep the original file rather than losing it.
       const ext = MIME_EXT[file.type] || (file.name.split(".").pop() || "bin").toLowerCase();
       const path = mediaPath(day, mid, ext, { sealed });
@@ -64,18 +69,87 @@ export async function storePhotos(ctx, { entryId, day, sealed = false }, files, 
   return out;
 }
 
+/** "Is this photo already in the journal?": its file name and when it was taken (or its size). */
+export function photoKey(name, taken, bytes) {
+  return `${name || ""}|${String(taken || "").slice(0, 19) || `size:${bytes || ""}`}`;
+}
+
+export function journalPhotoKeys(ctx) {
+  const keys = new Set();
+  for (const e of ctx.store.all("entry")) {
+    if (e.deleted) continue;
+    for (const m of e.media || []) if (m.type === "photo" && m.original_name) keys.add(photoKey(m.original_name, m.taken, m.original_bytes));
+  }
+  return keys;
+}
+
+const IMPORTED = new Set(["photo-import", "first-photo-of-day"]);
+
 /**
- * One photo entry for a day — used by "the first photo of each day". The entry
- * is written now; the photo keeps when it was taken.
+ * Add photos to a day — into that day's imported-photos entry (made if needed),
+ * in the order they were taken. One at a time, pausing between them so a phone
+ * can free each photo's memory. Photos that can't be opened are skipped and
+ * reported, never stored full-size. Returns { added, failed: [name] }.
  */
-export async function addDayPhoto(ctx, day, file) {
-  const id = newId("e", ctx.now());
-  const media = (await storePhotos(ctx, { entryId: id, day }, [file])).map(({ entry, ...m }) => m);
-  if (!media.length) return null;
-  return ctx.store.put(makeEntry({
-    id, kind: "photo", day, created: ctx.now(), body: "", media, privacy: "normal",
-    source: { system: "living-journal", device: ctx.deviceName(), via: "first-photo-of-day" },
-  }, { tz: ctx.tz() }));
+export async function addPhotosToDay(ctx, day, files, { onPhoto, stopped = () => false } = {}) {
+  const media = [];
+  const failed = [];
+  for (const f of files) {
+    if (stopped()) break;
+    const [m] = await storePhotos(ctx, { entryId: null, day }, [f], null, { keepOriginal: false, failed });
+    if (m) { const { entry, ...rest } = m; media.push(rest); }
+    onPhoto?.(f);
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  if (!media.length) return { added: 0, failed };
+  const byTaken = (a, b) => String(a.taken || "").localeCompare(String(b.taken || ""));
+  const existing = ctx.store.entriesForDay(day).find((e) => IMPORTED.has(e.source?.via) && !e.sealed);
+  if (existing) {
+    await ctx.store.put({ ...existing, media: [...(existing.media || []), ...media].sort(byTaken) }, { reason: "photos-added" });
+  } else {
+    await ctx.store.put(makeEntry({
+      id: newId("e", ctx.now()), kind: "photo", day, created: ctx.now(), body: "", media: media.sort(byTaken), privacy: "normal",
+      source: { system: "living-journal", device: ctx.deviceName(), via: "photo-import" },
+    }, { tz: ctx.tz() }));
+  }
+  return { added: media.length, failed };
+}
+
+const keptFullSize = (m) => m.type === "photo" && /^image\/(jpeg|png|webp)$/.test(m.mime || "") && /kept as original/.test(m.note || "");
+
+/**
+ * Photos that couldn't be resized when they were added were kept full-size
+ * (several MB each, synced as such). Where this device has them and can now
+ * open them, replace each with the usual 1600px copy and a thumbnail.
+ * Returns how many were shrunk.
+ */
+export async function shrinkKeptOriginals(ctx) {
+  let fixed = 0;
+  for (const e of ctx.store.all("entry")) {
+    if (e.deleted || e.sealed || !(e.media || []).some(keptFullSize)) continue;
+    let changed = false;
+    const media = [];
+    for (const m of e.media) {
+      if (!keptFullSize(m)) { media.push(m); continue; }
+      try {
+        const blob = await ctx.store.getBlob(m.path);
+        if (!blob) { media.push(m); continue; }
+        const p = await processPhoto(blob);
+        const path = mediaPath(e.day, m.id, "jpg");
+        const thumb = mediaPath(e.day, m.id, "jpg", { thumb: true });
+        await ctx.store.putBlob(path, p.blob, { mime: "image/jpeg" });
+        await ctx.store.putBlob(thumb, p.thumb, { mime: "image/jpeg" });
+        if (path !== m.path) await ctx.store.removeBlob(m.path);
+        const { note, ...rest } = m;
+        media.push({ ...rest, mime: "image/jpeg", path, thumb, taken: m.taken || p.taken || undefined, width: p.width, height: p.height, bytes: p.blob.size, original_bytes: m.original_bytes || m.bytes });
+        changed = true;
+        fixed++;
+      } catch { media.push(m); }
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    if (changed) await ctx.store.put({ ...e, media }, { reason: "photos-shrunk" });
+  }
+  return fixed;
 }
 
 /** Store an audio recording for an entry. */

@@ -305,10 +305,16 @@ hr.soft { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
 .cue b { font-weight: 600; }
 .walk-card { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding: 13px 14px; border-radius: var(--radius); background: var(--surface); border: 1px dashed var(--line); }
 .walk-card .title { font-weight: 650; }
-/* "Photos for several days": one row per day in the preview. */
+/* "Sort photos into days": one row per day in the preview, then a progress bar. */
 .photo-days { display: grid; gap: 6px; }
 .photo-day { display: flex; gap: 12px; align-items: center; padding: 6px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; }
-.photo-day img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; background: var(--surface-2); }
+.photo-day .thumbs { display: flex; gap: 3px; flex: none; }
+.photo-day .thumbs img, .photo-day .no-thumb { width: 46px; height: 46px; object-fit: cover; border-radius: 7px; background: var(--surface-2); }
+.photo-day .no-thumb { display: grid; place-items: center; color: var(--ink-3); }
+.photo-day .no-thumb svg { width: 20px; height: 20px; }
+.photo-day input:disabled + .thumbs { opacity: 0.45; }
+.progress { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin: 6px 0 10px; }
+.progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
 .photo-day .grow { display: flex; flex-direction: column; gap: 1px; }
 .photo-day input { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
 .linkish { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }

@@ -41,7 +41,7 @@ export async function mount(el, ctx, route, ui) {
     }
     let idx = 0;
     el.innerHTML = String(html`
-      <div class="row wrap" style="margin:4px 0 2px; gap:6px 10px"><span class="small muted" style="flex:1 1 220px">Catching up? Add the first photo you took on each day.</span>${photoDaysButton()}</div>
+      <div class="row wrap" style="margin:4px 0 2px; gap:6px 10px"><span class="small muted" style="flex:1 1 220px">Catching up? Pick photos from several days and each lands on the day it was taken.</span>${photoDaysButton()}</div>
       <div class="chips scroll" style="margin:6px -16px 8px">
         <button class="chip ${!chapterId ? "on" : ""}" data-act="ch" data-id="">All</button>
         ${chapters.map((c) => html`<button class="chip ${c.id === chapterId ? "on" : ""}" data-act="ch" data-id="${c.id}">${c.name}</button>`)}

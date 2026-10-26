@@ -1,6 +1,5 @@
-// "The first photo of each day": from a batch of photos you pick (say, a week of
-// your camera roll), choose one per day — the first one taken that day — so
-// the timeline gets a picture for every day you were out, in one go.
+// Sorting a batch of photos you pick (say, two weeks of your camera roll) onto
+// the days they were taken — all of them, or just the first of each day.
 //
 // Which day a photo belongs to comes from when it was taken (EXIF), read as the
 // wall-clock time where it was taken, with the journal's rollover: a photo at
@@ -36,10 +35,11 @@ export function placeWallTime(iso, rolloverHour = 4) {
 
 /**
  * items: [{ key, taken: ISO wall time or null, modified: ms or null }]
- * Returns { days: [{ day, key, time, guessed, count }], undated: [key] }, days in
- * date order. Within a day, a photo with a real date beats any guess.
+ * Returns { days: [{ day, photos: [{ key, time, guessed }] }], undated: [key] }:
+ * days in date order, each day's photos in the order they were taken — photos
+ * with a real date first, then any placed only by their file date.
  */
-export function firstPhotoPerDay(items, { tz, rolloverHour = 4 } = {}) {
+export function photosByDay(items, { tz, rolloverHour = 4 } = {}) {
   const byDay = new Map();
   const undated = [];
   for (const it of items) {
@@ -50,16 +50,20 @@ export function firstPhotoPerDay(items, { tz, rolloverHour = 4 } = {}) {
       guessed = true;
     }
     if (!at) { undated.push(it.key); continue; }
-    const cur = byDay.get(at.day) || { day: at.day, best: null, count: 0 };
-    cur.count++;
-    const better = !cur.best
-      || (cur.best.guessed && !guessed)
-      || (cur.best.guessed === guessed && at.sort < cur.best.sort);
-    if (better) cur.best = { key: it.key, time: at.time, sort: at.sort, guessed };
-    byDay.set(at.day, cur);
+    if (!byDay.has(at.day)) byDay.set(at.day, []);
+    byDay.get(at.day).push({ key: it.key, time: at.time, sort: at.sort, guessed });
   }
-  const days = [...byDay.values()]
-    .sort((a, b) => a.day.localeCompare(b.day))
-    .map((d) => ({ day: d.day, key: d.best.key, time: d.best.time, guessed: d.best.guessed, count: d.count }));
+  const days = [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, ps]) => ({
+      day,
+      photos: ps.sort((a, b) => (a.guessed - b.guessed) || a.sort.localeCompare(b.sort)).map(({ sort, ...p }) => p),
+    }));
   return { days, undated };
+}
+
+/** Just the first photo of each day (a real date beats a guess). */
+export function firstPhotoPerDay(items, opts = {}) {
+  const { days, undated } = photosByDay(items, opts);
+  return { days: days.map((d) => ({ day: d.day, ...d.photos[0], count: d.photos.length })), undated };
 }

@@ -219,6 +219,11 @@ async function boot() {
   await route();
 
   ctx.sync.start();
+  // Photos once kept full-size (they couldn't be resized then): shrink them now, quietly.
+  setTimeout(() => import("./app/actions.js")
+    .then((m) => m.shrinkKeptOriginals(ctx))
+    .then((n) => { if (n) toast(`Shrank ${n} photo${n === 1 ? "" : "s"} that had been saved at full size.`, { timeout: 6000 }); })
+    .catch(() => {}), 6000);
   if (ctx.volatile) toast("Private browsing or storage is blocked: entries won't be kept after you close this tab.", { timeout: 12000, error: true });
   else if (navigator.storage?.persist) navigator.storage.persisted().then((p) => { if (!p) navigator.storage.persist().catch(() => {}); });
 
