@@ -4,6 +4,8 @@
 
 import { createContext } from "./app/context.js";
 import { loadHost } from "./app/host.js";
+import { enableSwipe } from "./ui/swipe.js";
+import { addDays, compareDays } from "./core/dates.js";
 import { icon } from "./ui/icons.js";
 import { $, $$, html, raw, sheet, toast, agoLabel } from "./ui/dom.js";
 
@@ -24,6 +26,24 @@ const ROUTES = [
   [/^concept\/([^/]+)$/, "concept", null],
   [/^tag\/([^/]+)$/, "search", "search"],
 ];
+
+// The pages a sideways swipe moves between, in tab-bar order.
+const SWIPE_TABS = ["today", "timeline", "photos", "search", "reflect"];
+
+/** Where a right (prev) / left (next) swipe goes from the current page. */
+function swipeNeighbours(ctx) {
+  const r = parseHash();
+  const day = /^day\/(\d{4}-\d{2}-\d{2})$/.exec(r.path)?.[1];
+  if (day) {
+    // A past day's page: the days either side, up to today.
+    const today = ctx.today();
+    const next = addDays(day, 1);
+    return { prev: `#/day/${addDays(day, -1)}`, next: next === today ? "#/today" : compareDays(next, today) < 0 ? `#/day/${next}` : null };
+  }
+  const i = SWIPE_TABS.indexOf(r.path.split("/")[0]);
+  if (i < 0) return {}; // entries, settings, tags…: no sideways swipe
+  return { prev: i > 0 ? `#/${SWIPE_TABS[i - 1]}` : null, next: i < SWIPE_TABS.length - 1 ? `#/${SWIPE_TABS[i + 1]}` : null };
+}
 
 function parseHash() {
   const h = decodeURIComponent((location.hash || "#/today").replace(/^#\/?/, ""));
@@ -133,6 +153,12 @@ async function boot() {
   });
 
   let routesSeen = 0;
+  let enterFrom = null; // set by a swipe: the new page slides in from that side
+  enableSwipe({
+    content,
+    neighbours: () => swipeNeighbours(ctx),
+    go: (target, dir) => { enterFrom = dir === "next" ? "right" : "left"; location.hash = target; },
+  });
   async function route() {
     routesSeen++;
     const r = parseHash();
@@ -172,6 +198,12 @@ async function boot() {
       const mod = await import(`./views/${r.view}.js`);
       if (my !== token) return;
       content.innerHTML = "";
+      if (enterFrom) {
+        const cls = `enter-${enterFrom}`;
+        viewEl.classList.add(cls);
+        viewEl.addEventListener("animationend", () => viewEl.classList.remove(cls), { once: true });
+        enterFrom = null;
+      }
       content.appendChild(viewEl);
       window.scrollTo(0, 0);
       current = { cleanup: () => cleanups.forEach((f) => f()) };
@@ -195,7 +227,9 @@ async function boot() {
       reg.addEventListener("updatefound", () => {
         const w = reg.installing;
         w?.addEventListener("statechange", () => {
-          if (w.state === "installed" && navigator.serviceWorker.controller) {
+          // Only an update replaces a working copy. The first install (perhaps started by the
+          // host app, while the host's own worker controls this page) is not "a new version".
+          if (w.state === "installed" && reg.active && reg.active !== w) {
             toast("A new version of the journal is ready.", { action: "Reload", onAction: () => location.reload(), timeout: 0 });
           }
         });
