@@ -1,5 +1,5 @@
 {
- "version": "1418304ad6d6",
+ "version": "08b54f3407f4",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -59,6 +59,7 @@
   "src/ui/dom.js",
   "src/ui/icons.js",
   "src/ui/lightbox.js",
+  "src/ui/swipe.js",
   "src/views/claim.js",
   "src/views/concept.js",
   "src/views/document-new.js",

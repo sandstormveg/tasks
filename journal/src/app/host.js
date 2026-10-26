@@ -15,11 +15,13 @@ export async function loadHost() {
   }
 }
 
-/** Keep only well-formed fields: the back link must stay on this site. */
+const sameSite = (u) => (typeof u === "string" && /^(\.\.?\/|\/(?!\/))[\w./#?=&%-]*$/.test(u) ? u : "");
+
+/** Keep only well-formed fields: links back must stay on this site. */
 export function normalizeHost(h) {
   if (!h || typeof h !== "object") return null;
   const name = typeof h.name === "string" ? h.name.trim().slice(0, 40) : "";
-  const home = typeof h.home === "string" && /^(\.\.?\/|\/(?!\/))[\w./#?=&%-]*$/.test(h.home) ? h.home : "";
+  const home = sameSite(h.home);
   const tokenKey = typeof h.tokenKey === "string" && /^[\w.-]{1,64}$/.test(h.tokenKey) ? h.tokenKey : "";
   const defaults = h.defaults && typeof h.defaults === "object" && !Array.isArray(h.defaults) ? h.defaults : null;
   if (!name) return null;
