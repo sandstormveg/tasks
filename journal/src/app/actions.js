@@ -64,6 +64,20 @@ export async function storePhotos(ctx, { entryId, day, sealed = false }, files, 
   return out;
 }
 
+/**
+ * One photo entry for a day — used by "the first photo of each day". The entry
+ * is written now; the photo keeps when it was taken.
+ */
+export async function addDayPhoto(ctx, day, file) {
+  const id = newId("e", ctx.now());
+  const media = (await storePhotos(ctx, { entryId: id, day }, [file])).map(({ entry, ...m }) => m);
+  if (!media.length) return null;
+  return ctx.store.put(makeEntry({
+    id, kind: "photo", day, created: ctx.now(), body: "", media, privacy: "normal",
+    source: { system: "living-journal", device: ctx.deviceName(), via: "first-photo-of-day" },
+  }, { tz: ctx.tz() }));
+}
+
 /** Store an audio recording for an entry. */
 export async function storeAudio(ctx, { day, sealed = false }, blob, { duration } = {}) {
   const mid = newId("m", ctx.now());

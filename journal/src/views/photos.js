@@ -4,6 +4,7 @@
 import { html, raw, on } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
 import { formatMonth, monthKey, compareDays } from "../core/dates.js";
+import { photoDaysButton, addPhotosForDays } from "../ui/photo-days.js";
 
 const PAGE = 120;
 
@@ -40,6 +41,7 @@ export async function mount(el, ctx, route, ui) {
     }
     let idx = 0;
     el.innerHTML = String(html`
+      <div class="row wrap" style="margin:4px 0 2px; gap:6px 10px"><span class="small muted" style="flex:1 1 220px">Catching up? Add the first photo you took on each day.</span>${photoDaysButton()}</div>
       <div class="chips scroll" style="margin:6px -16px 8px">
         <button class="chip ${!chapterId ? "on" : ""}" data-act="ch" data-id="">All</button>
         ${chapters.map((c) => html`<button class="chip ${c.id === chapterId ? "on" : ""}" data-act="ch" data-id="${c.id}">${c.name}</button>`)}
@@ -60,6 +62,7 @@ export async function mount(el, ctx, route, ui) {
     if (act === "ch") { chapterId = b.dataset.id; limit = PAGE; return render(); }
     if (act === "uncap") { uncaptioned = !uncaptioned; return render(); }
     if (act === "more") { limit += PAGE; return render(); }
+    if (act === "photo-days") return addPhotosForDays(ctx); // straight away: the file picker needs the tap
     if (act === "open") {
       const { openLightbox } = await import("../ui/lightbox.js");
       openLightbox(ctx, el._photos, Number(b.dataset.i));
