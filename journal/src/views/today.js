@@ -18,6 +18,7 @@ import { PRIVACY_LEVELS } from "../core/model.js";
 import { plainExcerpt } from "../core/markdown.js";
 import { loadDraft, blankDraft, saveDraft, clearDraft, saveDraftAsEntry, storePhotos, draftHasContent } from "../app/actions.js";
 import { RECALL_STEPS, assembleWalkthrough, taskCuesForDay, neighbourCues } from "../core/recall.js";
+import { addPhotosForDays } from "../ui/photo-days.js";
 
 const PROMPT_STATE = "prompt-state";
 
@@ -257,7 +258,7 @@ export async function mount(el, ctx, route, ui) {
     box.innerHTML = String(html`<div class="section-title" style="margin-top:0">To help you remember</div>
       ${rows.length ? html`<ul class="cue-list">${rows}</ul>` : cues.loading ? "" : html`<p class="small muted" style="margin:0">No records for this day — start wherever you woke up, or walk through it below.</p>`}
       ${cues.loading ? html`<p class="small faint" style="margin:6px 0 0">Looking in your tasks…</p>` : ""}
-      ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below.</p>` : ""}
+      ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below, or the first photo of each day you're catching up on: <button type="button" class="linkish" data-act="photo-days">Photos for several days</button>.</p>` : ""}
       ${cues.tasks.length || cues.failed ? html`<p class="tiny faint" style="margin:8px 0 0">${cues.tasks.length ? "From your tasks — records, not memories: use what helps. Tasks dates are in UTC, so something done before 7am may show a day early. " : ""}${cues.failed ? "Couldn't reach your tasks just now." : ""}</p>` : ""}`);
     box._events = events;
   }
@@ -359,6 +360,7 @@ export async function mount(el, ctx, route, ui) {
       if (act === "drop-q") { draft.questionId = null; draft.questionText = null; renderQuestion(); persist(); return; }
       if (act === "nudge-x") { await ctx.store.setKv("nudge-sync-dismissed", true); return renderNudge(); }
       if (act === "walk") return walkThrough();
+      if (act === "photo-days") return addPhotosForDays(ctx); // straight away: the file picker needs the tap
       if (act === "cue") {
         const ref = btn.dataset.cue;
         const c = ref[0] === "t" ? cues.tasks[Number(ref.slice(1))] : { kind: "event", title: (el.querySelector("#cues")._events || [])[Number(ref.slice(1))]?.title || "" };
