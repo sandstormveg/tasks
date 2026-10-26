@@ -7,6 +7,7 @@ export class MediaService {
     this.ctx = ctx;
     this.urls = new Map();
     this.pending = new Map();
+    this.failed = new Set(); // paths that exist in an entry but can't be shown here
     this.io = typeof IntersectionObserver !== "undefined"
       ? new IntersectionObserver((items) => {
         for (const it of items) if (it.isIntersecting) { this.io.unobserve(it.target); this.load(it.target); }
@@ -36,8 +37,25 @@ export class MediaService {
     const fallback = img.dataset.fallback;
     let u = await this.url(path);
     if (!u && fallback) u = await this.url(fallback);
-    if (u) { img.src = u; img.classList.add("loaded"); }
-    else { img.alt = img.alt || "Not available on this device yet"; img.classList.add("missing"); }
+    const missing = () => {
+      img.removeAttribute("src");
+      // Saved on another device and not downloaded yet isn't broken: it'll arrive.
+      const meta = this.ctx.store.blobMeta.get(path);
+      if (meta && !meta.local && meta.remoteSha) {
+        img.alt = "Not on this device yet — it downloads when you're online";
+        img.classList.add("elsewhere");
+        return;
+      }
+      img.alt = "This photo can't be shown — it was never fully saved";
+      img.classList.add("missing");
+      this.failed.add(path);
+      img.dispatchEvent(new CustomEvent("media-missing", { bubbles: true, detail: { path } }));
+    };
+    if (!u) return missing();
+    // A stored file that can't be decoded (e.g. it was never fully saved) fails here.
+    img.addEventListener("error", missing, { once: true });
+    img.src = u;
+    img.classList.add("loaded");
   }
 
   /** Lazy-load every <img data-media="…"> inside root. */
@@ -56,5 +74,6 @@ export class MediaService {
     const u = this.urls.get(path);
     if (u) URL.revokeObjectURL(u);
     this.urls.delete(path);
+    this.failed.delete(path);
   }
 }

@@ -410,6 +410,19 @@ details.layer > div { padding-bottom: 14px; }
 .photo-grid button { aspect-ratio: 1; border: 0; padding: 0; background: var(--surface-2); overflow: hidden; cursor: zoom-in; position: relative; }
 @media (min-width: 640px) { .photo-grid button { border-radius: 8px; } }
 .photo-grid img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s; }
+/* A photo that can't be shown; selecting photos to delete. */
+.photo-grid button:has(img.missing)::after { content: "Can't load"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.78rem; color: var(--ink-3); border: 1px dashed var(--line); }
+.photo-grid img.missing { visibility: hidden; }
+.photo-grid.selecting button { cursor: pointer; }
+.photo-grid .pick-mark { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.25); display: grid; place-items: center; color: transparent; box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+.photo-grid .pick-mark svg { width: 15px; height: 15px; }
+.photo-grid button.selected .pick-mark { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.photo-grid button.selected img { opacity: 0.7; transform: scale(0.92); transition: transform 0.15s, opacity 0.15s; }
+.select-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + var(--safe-b)); z-index: 25; display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line); }
+@media (min-width: 960px) { .select-bar { bottom: 0; left: 232px; } }
+.chip.warn-chip { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+.chip.warn-chip svg { width: 14px; height: 14px; }
+.lightbox .lb-missing { max-width: 320px; text-align: center; color: #cfc8bd; line-height: 1.5; }
 .photo-grid .cap-dot { position: absolute; bottom: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 2px rgba(0,0,0,0.6); }
 .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(10, 8, 6, 0.94); display: flex; flex-direction: column; color: #f3eee6; }
 .lightbox .lb-top { display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-t) + 8px) 12px 8px; }
@@ -534,3 +547,5 @@ kbd { font-family: var(--font-mono); font-size: 0.8em; padding: 1px 5px; border:
 .row > .field { margin-top: 0; }
 .composer textarea:focus-visible, .chat-input textarea:focus-visible { box-shadow: none; }
 .composer:focus-within { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+/* Room for the select bar under the last row of photos. */
+body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 96px); }

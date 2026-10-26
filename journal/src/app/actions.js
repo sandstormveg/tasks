@@ -216,6 +216,62 @@ export async function setDayFields(ctx, date, patch) {
 }
 
 /** Delete with an undo window: keeps the record and its media bytes in memory briefly. */
+/**
+ * Delete photos — refs: [{ entryId, mediaId }] — with an Undo. A photo-only
+ * entry left with no photos goes too; an entry with words keeps its words.
+ * The files leave this device now and the repository on the next sync (their
+ * originals stay on your phone). Returns how many were deleted.
+ */
+export async function deletePhotosWithUndo(ctx, refs) {
+  const byEntry = new Map();
+  for (const r of refs) {
+    if (!byEntry.has(r.entryId)) byEntry.set(r.entryId, new Set());
+    byEntry.get(r.entryId).add(r.mediaId);
+  }
+  const undo = [];
+  let n = 0;
+  for (const [id, ids] of byEntry) {
+    const e = ctx.store.get(id);
+    if (!e || e.deleted) continue;
+    const gone = (e.media || []).filter((m) => ids.has(m.id));
+    if (!gone.length) continue;
+    const blobs = [];
+    for (const m of gone) {
+      for (const p of [m.path, m.thumb]) {
+        if (p) blobs.push({ p, b: await ctx.store.rawBlob(p).catch(() => null), meta: ctx.store.blobMeta.get(p) });
+      }
+    }
+    const copy = structuredClone({ ...e, _sync: undefined, _rev: undefined });
+    const keep = (e.media || []).filter((m) => !ids.has(m.id));
+    if (!keep.length && !String(e.body || "").trim() && !e.title) await ctx.store.remove(id, { reason: "photos-deleted" });
+    else await ctx.store.put({ ...e, media: keep }, { reason: "photos-deleted" });
+    for (const { p } of blobs) {
+      ctx.media?.forget(p);
+      await ctx.store.removeBlob(p);
+    }
+    undo.push({ copy, blobs });
+    n += gone.length;
+  }
+  if (!n) return 0;
+  toast(n === 1 ? "Photo deleted" : `${n} photos deleted`, {
+    action: "Undo",
+    timeout: 8000,
+    onAction: async () => {
+      for (const { copy, blobs } of undo) {
+        for (const { p, b, meta } of blobs) {
+          if (!b && !meta) continue;
+          const row = { ...(meta || {}), key: p, deleted: undefined, local: !!b };
+          await ctx.store.backend.put("blobs", b ? { ...row, blob: b } : row);
+          ctx.store.blobMeta.set(p, row);
+        }
+        await ctx.store.put(copy, { reason: "undo-delete" });
+      }
+      toast("Restored");
+    },
+  });
+  return n;
+}
+
 export async function deleteEntryWithUndo(ctx, entry) {
   const copy = structuredClone({ ...entry, _sync: undefined, _rev: undefined });
   const blobs = [];
