@@ -239,7 +239,16 @@
       "category": "Groceries",
       "created": "2026-10-27",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mvrc9eu4t7hj",
+          "text": "🛒 Added to Woolworths cart 2026-10-28: 12 × Woolworths Soy Long Life Milk UHT 1L — $1.75 each ($21.00). Not yet checked out.",
+          "done": false,
+          "created": "2026-10-27T23:50:43.804Z",
+          "updated": "2026-10-27T23:50:43.804Z"
+        }
+      ]
     },
     {
       "id": "chips-mvqdo415",
