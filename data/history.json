@@ -1483,6 +1483,23 @@
       "completedDate": "2026-10-27",
       "note": "",
       "images": []
+    },
+    {
+      "id": "chips-mvqdo415",
+      "title": "corn chips",
+      "category": "Groceries",
+      "completedDate": "2026-10-28",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mvrc67auds85",
+          "text": "🛒 Added to Woolworths cart 2026-10-28: CC's Corn Chips Original 175g — $2.50 (half price). Not yet checked out.",
+          "done": false,
+          "created": "2026-10-27T23:48:14.070Z",
+          "updated": "2026-10-27T23:48:14.070Z"
+        }
+      ]
     }
   ]
 }
