@@ -265,6 +265,30 @@
           "updated": "2026-10-29T08:33:32.095Z",
           "image": "images/shopping-/buy-this-a-magcase-google-pixel-mvtabi7z-n-mvtadlfjoi5b.jpg"
         }
+      ],
+      "suggestions": [
+        {
+          "text": "The stand in your photo is the Ulanzi MA60 Foldable Magnetic Phone Tripod (aluminium, 65 g, 14 N magnet). Cheapest in Australia is about $31.99 on Amazon AU from the official ULANZI AU store: https://www.amazon.com.au/dp/B0FD3K723V. eBay AU has it for about $44. Ulanzi also sells it direct: https://www.ulanzi.com/products/ma60-foldable-magnetic-phone-tripod",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "text": "Pixel fit: a Pixel 10, 10 Pro or 10 Pro XL has built-in Qi2 magnets (Pixelsnap), so the stand snaps on with no case. Pixel 9 or older: buy a MagSafe/Qi2 magnetic case for your exact model (e.g. Spigen, ESR, Torras, around $25–40), or use the magnetic ring sticker that comes with the MA60.",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "text": "Which Pixel model do you have? Tell me and I will pick a specific magnetic case.",
+          "author": "Claude Opus 5.5"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-magcase",
+          "text": "30 Oct: identified the stand from your photo as the Ulanzi MA60 and added where to buy it (Amazon AU about $32) plus what your Pixel needs for it to stick. Waiting on your Pixel model to pick a case.",
+          "done": false,
+          "created": "2026-10-30T01:20:00",
+          "updated": "2026-10-30T01:20:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
