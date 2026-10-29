@@ -278,6 +278,10 @@
         {
           "text": "Which Pixel model do you have? Tell me and I will pick a specific magnetic case.",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "text": "Pixel 6 (no built-in magnets): get a MagSafe-compatible Pixel 6 case. Options: FNDMIL magnetic, translucent matte, military drop-rated, about $32 (https://www.amazon.com/dp/B0CY5C94XR); TIANNIUKE magnetic with kickstand (https://www.amazon.com/dp/B0DQDR43FT); RUNGOS leather, about $20. Search \"Pixel 6 magsafe case\" on amazon.com.au. Check it says Pixel 6, not 6 Pro or 6a. Cheapest route: the MA60 comes with a magnetic ring sticker, which you can put on your current case.",
+          "author": "Claude Opus 5.5"
         }
       ],
       "claudeNotes": [
@@ -287,6 +291,14 @@
           "done": false,
           "created": "2026-10-30T01:20:00",
           "updated": "2026-10-30T01:20:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-magcase2",
+          "text": "30 Oct: Silica has a Pixel 6, so I added Pixel 6 magnetic case options.",
+          "done": false,
+          "created": "2026-10-30T01:35:00",
+          "updated": "2026-10-30T01:35:00",
           "author": "Claude Opus 5.5"
         }
       ]
