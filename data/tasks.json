@@ -215,7 +215,16 @@
       "category": "Life Admin",
       "created": "2026-10-26",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mvuy64nn1xoe",
+          "text": "https://effectivealtruism.org.au/get-involved/eagx/",
+          "done": false,
+          "created": "2026-10-30T12:27:20.723Z",
+          "updated": "2026-10-30T12:27:20.723Z"
+        }
+      ]
     },
     {
       "id": "ikea-couch-fold-out-table-with-storage-mvovhy6u",
