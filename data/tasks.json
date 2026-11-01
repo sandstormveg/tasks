@@ -324,7 +324,16 @@
       "category": "Design",
       "created": "2026-11-01",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mvycy9xlrjjn",
+          "text": "this is the one i have https://www.ikea.com/au/en/p/brimnes-day-bed-w-2-drawers-2-mattresses-white-vannareid-extra-firm-s79409034/",
+          "done": false,
+          "created": "2026-11-01T21:44:27.081Z",
+          "updated": "2026-11-01T21:44:27.081Z"
+        }
+      ]
     }
   ]
 }
