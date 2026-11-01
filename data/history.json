@@ -1517,6 +1517,23 @@
           "updated": "2026-10-27T23:50:43.804Z"
         }
       ]
+    },
+    {
+      "id": "apply-to-eagx-mvooskna",
+      "title": "apply to eagx",
+      "category": "Life Admin",
+      "completedDate": "2026-11-01",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mvuy64nn1xoe",
+          "text": "https://effectivealtruism.org.au/get-involved/eagx/",
+          "done": false,
+          "created": "2026-10-30T12:27:20.723Z",
+          "updated": "2026-10-30T12:27:20.723Z"
+        }
+      ]
     }
   ]
 }
