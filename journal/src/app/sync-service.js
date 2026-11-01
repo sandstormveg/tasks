@@ -9,8 +9,12 @@ import { SyncEngine } from "../data/sync.js";
 export const DATA_TEMPLATE = ["README.md", "CLAUDE.md", ".gitattributes", ".claude/skills/journal-steward/SKILL.md", "tools/journal.mjs"];
 
 export class SyncService {
-  constructor(ctx) {
+  /** template: the files seeded into a new data repo or folder, fetched from templateDir (Research has its own). */
+  constructor(ctx, { template = DATA_TEMPLATE, templateDir = "data-template", label = "journal" } = {}) {
     this.ctx = ctx;
+    this.template = template;
+    this.templateDir = templateDir;
+    this.label = label;
     this.status = { state: "off", lastSync: ctx.store.getKv("last-sync", null), error: null, problems: [], conflicts: [] };
     this.listeners = new Set();
     this._engine = null;
@@ -35,9 +39,9 @@ export class SyncService {
   async seedFiles() {
     if (this._seed) return this._seed;
     const files = [];
-    for (const p of DATA_TEMPLATE) {
+    for (const p of this.template) {
       try {
-        const res = await fetch(`data-template/${p}`, { cache: "no-store" });
+        const res = await fetch(`${this.templateDir}/${p}`, { cache: "no-store" });
         if (res.ok) files.push({ path: p, content: await res.text() });
       } catch { /* offline: seed later */ }
     }
@@ -78,7 +82,7 @@ export class SyncService {
     if (!files.length) throw new Error("Couldn't load the template files (offline?).");
     const head = await engine.remote.getHead();
     if (!head) return this.syncNow();
-    await engine.remote.commit({ baseTree: head.tree, parent: head.commit, changes: files, message: "Update journal format notes and steward tools" });
+    await engine.remote.commit({ baseTree: head.tree, parent: head.commit, changes: files, message: `Update ${this.label} format notes and tools` });
     return this.syncNow({ quiet: true });
   }
 

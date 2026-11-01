@@ -11,5 +11,6 @@
       "folder": "journal"
     }
   },
-  "source": "sandstormveg/Journal_system@a5923e4ea83c"
+  "app": "journal",
+  "source": "sandstormveg/Journal_system@7035249a543b"
 }

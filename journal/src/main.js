@@ -7,7 +7,8 @@ import { loadHost } from "./app/host.js";
 import { enableSwipe } from "./ui/swipe.js";
 import { addDays, compareDays } from "./core/dates.js";
 import { icon } from "./ui/icons.js";
-import { $, $$, html, raw, sheet, toast, agoLabel } from "./ui/dom.js";
+import { $, $$, html, raw, sheet, toast } from "./ui/dom.js";
+import { applyTheme, fillIcons, renderSyncPill, hostLink, registerServiceWorker } from "./ui/shell.js";
 
 const ROUTES = [
   [/^today$/, "today", "today"],
@@ -54,48 +55,6 @@ function parseHash() {
     if (m) return { view, tab, params: m.slice(1), query: qs, path };
   }
   return { view: "today", tab: "today", params: [], query: qs, path: "today" };
-}
-
-function applyTheme(ctx) {
-  const s = ctx.settings();
-  const root = document.documentElement;
-  // data-app-theme, not data-theme: a host page may own data-theme (light/dark) for itself.
-  if (s.theme && s.theme !== "auto") root.dataset.appTheme = s.theme; else delete root.dataset.appTheme;
-  root.style.setProperty("--text-scale", String(s.textScale || 1));
-  const bg = getComputedStyle(root).getPropertyValue("--bg").trim();
-  for (const m of $$('meta[name="theme-color"]')) m.setAttribute("content", bg);
-}
-
-function fillIcons(root = document) {
-  for (const el of root.querySelectorAll("[data-icon]")) {
-    if (el.dataset.iconDone) continue;
-    el.insertAdjacentHTML("afterbegin", icon(el.dataset.icon));
-    el.dataset.iconDone = "1";
-  }
-}
-
-function renderSyncPill(ctx) {
-  const pill = $("#sync-pill");
-  const line = $("#sync-line");
-  const st = ctx.sync.status;
-  const pending = ctx.sync.pendingCount();
-  let label, ic, cls = "";
-  if (!ctx.sync.configured()) { label = ctx.volatile ? "Not saving!" : "On this device"; ic = "cloudOff"; cls = ctx.volatile ? "error" : ""; }
-  else if (st.state === "syncing") { label = "Syncing…"; ic = "sync"; }
-  else if (st.state === "error") { label = "Sync problem"; ic = "warn"; cls = "error"; }
-  else if (st.state === "offline") { label = pending ? `Offline · ${pending} waiting` : "Offline"; ic = "cloudOff"; cls = pending ? "pending" : ""; }
-  else if (pending) { label = `${pending} to sync`; ic = "cloud"; cls = "pending"; }
-  else { label = st.lastSync ? `Synced ${agoLabel(st.lastSync)}` : "Synced"; ic = "cloud"; }
-  pill.className = `sync-pill ${cls}`;
-  pill.innerHTML = `${icon(ic)}<span class="only-desktop">${label}</span>`;
-  pill.title = st.error || label;
-  if (line) line.textContent = st.error ? `Sync: ${st.error}` : label;
-}
-
-/** "‹ Tasks" when the journal lives inside a host app: the way back to the rest of it. */
-function hostLink(ctx, cls) {
-  const h = ctx.host;
-  return h?.home ? html`<a class="${cls}" href="${h.home}" data-host-home>${raw(icon("back"))}<span>${h.name}</span></a>` : "";
 }
 
 async function moreMenu(ctx) {
@@ -227,20 +186,7 @@ async function boot() {
   if (ctx.volatile) toast("Private browsing or storage is blocked: entries won't be kept after you close this tab.", { timeout: 12000, error: true });
   else if (navigator.storage?.persist) navigator.storage.persisted().then((p) => { if (!p) navigator.storage.persist().catch(() => {}); });
 
-  if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    navigator.serviceWorker.register("sw.js").then((reg) => {
-      reg.addEventListener("updatefound", () => {
-        const w = reg.installing;
-        w?.addEventListener("statechange", () => {
-          // Only an update replaces a working copy. The first install (perhaps started by the
-          // host app, while the host's own worker controls this page) is not "a new version".
-          if (w.state === "installed" && reg.active && reg.active !== w) {
-            toast("A new version of the journal is ready.", { action: "Reload", onAction: () => location.reload(), timeout: 0 });
-          }
-        });
-      });
-    }).catch((err) => console.warn("service worker not registered", err));
-  }
+  registerServiceWorker("the journal");
 
   // Auto-lock sealed entries after inactivity.
   let lastActive = Date.now();

@@ -19,6 +19,7 @@ website or by telling Claude.
 - `data/history.json` — completed public tasks (what powers the level-up tree)
 - `images/` — screenshots attached to completed public tasks
 - `journal/` — the Journal tab (a generated copy of the Living Journal app; see below)
+- `research/` — the Research tab (a generated copy of the Research app, from the same repo; see below)
 - Private counterparts of all of the above live in `tasks-data`
 
 ## Website
@@ -41,8 +42,24 @@ Anything that can read `tasks-data` (including Claude sessions using the tasks s
 journal files that aren't sealed. Leave `tasks-data/journal/` alone unless you're asked to work on
 the journal; its own `journal/CLAUDE.md` has the rules for that.
 
-`.nojekyll` makes Pages serve files as-is (the journal ships a `.claude/` folder it copies into the
-data repo).
+## Research
+
+The **§ Research** tab opens Research, a private reading library (from the same
+[Journal_system](https://github.com/sandstormveg/Journal_system) repo, see its `docs/RESEARCH.md`),
+installed in `research/`. Save a link by sharing it to **Tasks** from any app on Android (the
+manifest's `share_target` opens `research/` with it), with the bookmark button in Research →
+Settings on a computer, or by pasting a link, DOI or arXiv link. Sources move Inbox → To read →
+Reading → Read (or Dropped), with ⭐, your own tags, why you saved it, what you expected, what
+surprised you, notes and quotes. Files sync into a `research/` folder of `tasks-data`, one
+Markdown file per source, and nothing else there is touched. `research/` is generated — update it
+with `node tools/install-into.mjs ../tasks/research --host tasks --app research`.
+
+Claude can read it: `tasks-data/research/CLAUDE.md` has the rules and
+`node tools/research.mjs` (run inside `tasks-data/research/`) lists, searches and shows sources.
+It may add sources and change status, ⭐ and tags, but never writes your own words.
+
+`.nojekyll` makes Pages serve files as-is (the journal and Research ship a `.claude/` folder they copy
+into the data repo).
 
 ## Design guide
 

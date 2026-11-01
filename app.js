@@ -654,7 +654,7 @@ function renderSyncStatus() {
     hud.classList.toggle("syncing", !state.offline && !!state.syncing);
   }
   document.body.classList.toggle("is-offline", !!state.offline);
-  updateJournalTab();
+  updateAppTabs();
   if (el("#outbox-dialog").open) renderOutboxDialog();
 }
 
@@ -715,37 +715,44 @@ el("#outbox-retry").addEventListener("click", () => {
   else flushOutbox();
 });
 
-// ---------- Journal tab ----------
-// The Journal (journal/) is its own app, with its own service worker and offline copy. That
-// copy used to exist only once the journal had been opened online, so tapping its tab
-// offline before then hit the browser's "no connection" page: a dead end inside the
-// home-screen app. Registering its worker from here (same worker, same scope, so it's the
-// journal's own registration) keeps its copy current whenever Tasks is open online. With no
-// copy at all yet, the tab is dimmed and says why instead.
-function warmJournal() {
+// ---------- Journal and Research tabs ----------
+// The Journal (journal/) and Research (research/) are their own apps, each with its own
+// service worker and offline copy. That copy used to exist only once an app had been opened
+// online, so tapping its tab offline before then hit the browser's "no connection" page: a
+// dead end inside the home-screen app. Registering each app's worker from here (same worker,
+// same scope, so it's the app's own registration) keeps its copy current whenever Tasks is
+// open online. With no copy at all yet, the tab is dimmed and says why instead.
+const APP_TABS = () => [...document.querySelectorAll(".app-tab-btn[data-app]")];
+
+function warmApps() {
   if (!("serviceWorker" in navigator) || state.offline) return;
-  navigator.serviceWorker.register("journal/sw.js", { scope: "journal/" }).catch(() => {});
+  for (const tab of APP_TABS()) {
+    const app = tab.dataset.app;
+    navigator.serviceWorker.register(`${app}/sw.js`, { scope: `${app}/` }).catch(() => {});
+  }
 }
 
-async function journalWorksOffline() {
+async function appWorksOffline(app) {
   if (!("serviceWorker" in navigator)) return false;
-  const reg = await navigator.serviceWorker.getRegistration("journal/").catch(() => null);
-  return !!(reg && reg.active && reg.scope.endsWith("/journal/"));
+  const reg = await navigator.serviceWorker.getRegistration(`${app}/`).catch(() => null);
+  return !!(reg && reg.active && reg.scope.endsWith(`/${app}/`));
 }
 
-async function updateJournalTab() {
-  const tab = document.querySelector(".journal-tab-btn");
-  if (!tab) return;
-  const unavailable = !!state.offline && !(await journalWorksOffline());
-  tab.classList.toggle("unavailable", unavailable);
-  tab.title = unavailable ? "Journal: needs a connection the first time" : "Journal";
+async function updateAppTabs() {
+  for (const tab of APP_TABS()) {
+    const unavailable = !!state.offline && !(await appWorksOffline(tab.dataset.app));
+    tab.classList.toggle("unavailable", unavailable);
+    tab.title = unavailable ? `${tab.dataset.name}: needs a connection the first time` : tab.dataset.name;
+  }
 }
 
-document.querySelector(".journal-tab-btn").addEventListener("click", (e) => {
-  if (!e.currentTarget.classList.contains("unavailable")) return;
-  e.preventDefault();
-  showToast({ message: "The Journal isn't saved on this device yet. Open it once with a connection and it'll work offline from then on.", duration: 7000 });
-});
+for (const tab of APP_TABS()) {
+  tab.addEventListener("click", (e) => {
+    if (!e.currentTarget.classList.contains("unavailable")) return;
+    e.preventDefault();
+    showToast({ message: `${tab.dataset.name} isn't saved on this device yet. Open it once with a connection and it'll work offline from then on.`, duration: 7000 });
+  });
+}
 
 function taskKey(task) {
   return `${task._repo}::${task.id}`;
@@ -3632,8 +3639,9 @@ function switchToTab(tab) {
   }
 }
 
-// Only real tabs switch views here; the Journal tab is a plain link to journal/
-// (a separate app on this same site, so it shares the token and home-screen icon).
+// Only real tabs switch views here; the Journal and Research tabs are plain links to
+// journal/ and research/ (separate apps on this same site, so they share the token and
+// home-screen icon).
 document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
   btn.addEventListener("click", () => switchToTab(btn.dataset.tab));
 });
@@ -3871,7 +3879,7 @@ setInterval(updateHudClock, 1000);
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
-  window.addEventListener("load", () => setTimeout(warmJournal, 3000));
+  window.addEventListener("load", () => setTimeout(warmApps, 3000));
 }
 
 // Restore the last-viewed tab/category/task before the initial load, so a

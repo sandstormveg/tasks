@@ -2,9 +2,9 @@
 // you're online you get the latest files, the cache is just the fallback. Data
 // (data/*.json, images, GitHub API calls) is never cached here: stale task data
 // would be worse than none; app.js keeps its own saved copy and labels it offline.
-// journal/ is a separate app on this same site with its own service worker and
-// cache: this one leaves its requests and its cache alone (Tasks registers that
-// worker too, so the journal is saved for offline even before you first open it).
+// journal/ and research/ are separate apps on this same site, each with its own
+// service worker and cache: this one leaves their requests and caches alone (Tasks
+// registers those workers too, so each is saved for offline before you first open it).
 //
 // One cache entry per file, keyed without its ?v= query, and every page under the
 // shell shares one "index.html" entry. Keying by the full URL (v1) could keep an old
@@ -36,26 +36,30 @@ self.addEventListener("activate", (event) => {
 function isShellRequest(req, url) {
   if (req.method !== "GET" || url.origin !== self.location.origin) return false;
   const path = url.pathname;
-  if (/\/(data|images|files|journal)\//.test(path)) return false;
+  if (/\/(data|images|files|journal|research)\//.test(path)) return false;
   return req.mode === "navigate" || /\.(html|js|css|json|svg|png)$/.test(path) || path.endsWith("/");
 }
 
-// Only reached when the journal's own worker isn't installed yet (it handles journal/ once
-// it is). Online that's just the network; offline it's this page instead of a dead end.
-const JOURNAL_OFFLINE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>Journal offline</title>
+// Only reached when an app's own worker isn't installed yet (it handles journal/ or
+// research/ once it is). Online that's just the network; offline it's this page instead
+// of a dead end.
+const APPS = { journal: "The Journal", research: "Research" };
+const offlinePage = (name) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${name} offline</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070a;color:#dcffe1;
 font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:24px;box-sizing:border-box;text-align:center}
 a{color:#1de9b6}p{max-width:34em}</style></head><body><div>
-<p>The Journal isn't saved on this device yet, so it can't open offline.</p>
+<p>${name} isn't saved on this device yet, so it can't open offline.</p>
 <p>Open it once with a connection and it'll work offline from then on.</p>
 <p><a href="../">‹ Back to Tasks</a></p></div></body></html>`;
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  if (req.method === "GET" && req.mode === "navigate" && url.origin === self.location.origin && /\/journal\//.test(url.pathname)) {
-    event.respondWith(fetch(req).catch(() => new Response(JOURNAL_OFFLINE_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } })));
+  const app = req.method === "GET" && req.mode === "navigate" && url.origin === self.location.origin
+    && /\/(journal|research)\//.exec(url.pathname)?.[1];
+  if (app) {
+    event.respondWith(fetch(req).catch(() => new Response(offlinePage(APPS[app]), { headers: { "Content-Type": "text/html; charset=utf-8" } })));
     return;
   }
   if (!isShellRequest(req, url)) return;

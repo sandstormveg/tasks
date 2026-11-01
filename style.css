@@ -170,9 +170,9 @@ body {
 }
 
 .assist-tab-btn { display: inline-flex; align-items: center; gap: 5px; }
-/* The Journal tab is a link (to journal/, its own app), styled like the tab buttons. */
+/* The Journal and Research tabs are links (to journal/ and research/, their own apps), styled like the tab buttons. */
 a.tab-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
-.journal-tab-glyph { font-size: 15px; color: var(--accent-2); }
+.app-tab-glyph { font-size: 15px; color: var(--accent-2); }
 .assist-tab-star {
   font-size: 16px;
   color: var(--accent-2);
@@ -1409,9 +1409,9 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .topbar h1::before { content: none; } /* drop the decorative prefix to save width */
   .tabs { gap: 4px; }
   .tab-btn { padding: 6px 9px; font-size: 12px; }
-  /* Phones: the Journal tab shrinks to its ✎ (like ✦ Assist) and the tabs tighten a
+  /* Phones: the Journal and Research tabs shrink to ✎ and § (like ✦ Assist) and the tabs tighten a
      little, so the ⚙ button is never pushed off the right edge. */
-  .journal-tab-label { display: none; }
+  .app-tab-label { display: none; }
   .tabs { gap: 2px; }
   .tab-btn { padding: 6px 5px; }
   .menu-btn, .topbar .icon-btn { width: 32px; height: 32px; }
@@ -1473,6 +1473,15 @@ dialog textarea { min-height: 70px; resize: vertical; }
   .sync-bar.show { margin-top: 10px; font-size: 12px; }
   .add-bar .combo { flex: 0 1 220px; min-width: 140px; }
 }
+/* Narrow phones (360px is common on Android): with § Research next to ✎ and a count on ✦,
+   the tabs needed ~5px more than there was. Tighter tab padding wins that back; on the
+   narrowest screens (320px, folded phones) the "Tasks" title steps aside too. */
+@media (max-width: 380px) {
+  .tab-btn { padding: 6px 3px; }
+}
+@media (max-width: 350px) {
+  .topbar h1 { display: none; }
+}
 .history-search-result {
   padding: 9px 10px; border-radius: 9px; margin-bottom: 4px; cursor: pointer;
   background: var(--panel-2);
@@ -1510,8 +1519,8 @@ dialog textarea { min-height: 70px; resize: vertical; }
 .task-card.waiting-sync { border-style: dashed; border-color: #ffb86b; }
 .sync-badge { color: #ffb86b; font-size: 13px; }
 
-/* Offline, before the Journal has an offline copy on this device. */
-.journal-tab-btn.unavailable { opacity: 0.4; }
+/* Offline, before the Journal or Research has an offline copy on this device. */
+.app-tab-btn.unavailable { opacity: 0.4; }
 
 .outbox-list { list-style: none; padding: 0; margin: 0 0 14px; max-height: 50vh; overflow-y: auto; }
 .outbox-item {

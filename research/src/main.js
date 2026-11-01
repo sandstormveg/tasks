@@ -1,0 +1,200 @@
+// Boot: open the local store, apply settings, start the router and sync.
+// Views are loaded on demand; each one gets a `ui` object to set the top bar
+// and to react to store changes, and is cleaned up on navigation.
+
+import { createContext } from "./app/context.js";
+import { loadHost } from "./app/host.js";
+import { enableSwipe } from "./ui/swipe.js";
+import { addDays, compareDays } from "./core/dates.js";
+import { icon } from "./ui/icons.js";
+import { $, $$, html, raw, sheet, toast } from "./ui/dom.js";
+import { applyTheme, fillIcons, renderSyncPill, hostLink, registerServiceWorker } from "./ui/shell.js";
+
+const ROUTES = [
+  [/^today$/, "today", "today"],
+  [/^day\/(\d{4}-\d{2}-\d{2})$/, "today", "timeline"], // a past day: the Today page, for that day
+  [/^entry\/([^/]+)$/, "entry", null],
+  [/^timeline$/, "timeline", "timeline"],
+  [/^photos$/, "photos", "photos"],
+  [/^search$/, "search", "search"],
+  [/^reflect(?:\/([a-z-]+))?$/, "reflect", "reflect"],
+  [/^claim\/([^/]+)$/, "claim", "reflect"],
+  [/^library$/, "library", "library"],
+  [/^document\/new$/, "document-new", "library"],
+  [/^talk$/, "talk", "talk"],
+  [/^import(?:\/([a-z-]+))?$/, "import", "settings"],
+  [/^settings(?:\/([a-z-]+))?$/, "settings", "settings"],
+  [/^concept\/([^/]+)$/, "concept", null],
+  [/^tag\/([^/]+)$/, "search", "search"],
+];
+
+// The pages a sideways swipe moves between, in tab-bar order.
+const SWIPE_TABS = ["today", "timeline", "photos", "search", "reflect"];
+
+/** Where a right (prev) / left (next) swipe goes from the current page. */
+function swipeNeighbours(ctx) {
+  const r = parseHash();
+  const day = /^day\/(\d{4}-\d{2}-\d{2})$/.exec(r.path)?.[1];
+  if (day) {
+    // A past day's page: the days either side, up to today.
+    const today = ctx.today();
+    const next = addDays(day, 1);
+    return { prev: `#/day/${addDays(day, -1)}`, next: next === today ? "#/today" : compareDays(next, today) < 0 ? `#/day/${next}` : null };
+  }
+  const i = SWIPE_TABS.indexOf(r.path.split("/")[0]);
+  if (i < 0) return {}; // entries, settings, tags…: no sideways swipe
+  return { prev: i > 0 ? `#/${SWIPE_TABS[i - 1]}` : null, next: i < SWIPE_TABS.length - 1 ? `#/${SWIPE_TABS[i + 1]}` : null };
+}
+
+function parseHash() {
+  const h = decodeURIComponent((location.hash || "#/today").replace(/^#\/?/, ""));
+  const [path, query = ""] = h.split("?");
+  const qs = Object.fromEntries(new URLSearchParams(query));
+  for (const [re, view, tab] of ROUTES) {
+    const m = re.exec(path);
+    if (m) return { view, tab, params: m.slice(1), query: qs, path };
+  }
+  return { view: "today", tab: "today", params: [], query: qs, path: "today" };
+}
+
+async function moreMenu(ctx) {
+  const items = [
+    ...(ctx.host?.home ? [[ctx.host.home, "back", ctx.host.name, `Back to ${ctx.host.name}`]] : []),
+    ["#/talk", "chat", "Talk it through", "A gentle conversation that becomes an entry"],
+    ["#/library", "library", "Library", "Documents, notes from others, imported conversations"],
+    ["#/import", "upload", "Import", "Notion journal, calendar, pasted text"],
+    ["#/settings", "settings", "Settings", "Sync, AI, voice, privacy, prompts, data"],
+  ];
+  await sheet({
+    title: "More",
+    body: html`<div class="stack-sm">${items.map(([href, ic, t, d]) => html`<a class="entry-card row" href="${href}" data-close>${raw(icon(ic))}<div class="grow"><div class="title">${t}</div><div class="small muted">${d}</div></div></a>`)}</div>`,
+    setup: (d, close) => d.addEventListener("click", (e) => { if (e.target.closest("a")) close(); }),
+  });
+}
+async function boot() {
+  let ctx;
+  try {
+    ctx = await createContext({ host: await loadHost() });
+  } catch (err) {
+    $("#content").innerHTML = `<div class="empty"><h3>The journal couldn't open its storage</h3><p>${String(err.message || err)}</p></div>`;
+    return;
+  }
+  window.__journal = ctx; // handy for debugging from the console
+  applyTheme(ctx);
+  if (ctx.host?.home) $(".sidebar .brand").insertAdjacentHTML("beforebegin", String(hostLink(ctx, "host-home")));
+  fillIcons();
+  ctx.store.on((c) => { if (c.op === "kv" && c.key === "settings") applyTheme(ctx); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyTheme(ctx));
+
+  // Topbar shadow on scroll.
+  const topbar = $("#topbar");
+  addEventListener("scroll", () => topbar.classList.toggle("scrolled", scrollY > 4), { passive: true });
+
+  ctx.sync.on(() => renderSyncPill(ctx));
+  ctx.store.on(() => renderSyncPill(ctx));
+  setInterval(() => renderSyncPill(ctx), 30_000);
+  renderSyncPill(ctx);
+  $("#sync-pill").addEventListener("click", () => {
+    // Not set up, or a problem: open Sync settings, which show the exact message.
+    if (!ctx.sync.configured() || ctx.sync.status.state === "error") ctx.navigate("#/settings/sync");
+    else ctx.sync.syncNow();
+  });
+  $("#more-btn").addEventListener("click", () => moreMenu(ctx));
+
+  let current = null;
+  let token = 0;
+  let actionHandler = null;
+  const content = $("#content");
+  // Top-bar buttons belong to the active view: one delegated listener routes them.
+  $("#topbar-actions").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (b && actionHandler) actionHandler(e, b);
+  });
+
+  let routesSeen = 0;
+  let enterFrom = null; // set by a swipe: the new page slides in from that side
+  enableSwipe({
+    content,
+    neighbours: () => swipeNeighbours(ctx),
+    go: (target, dir) => { enterFrom = dir === "next" ? "right" : "left"; location.hash = target; },
+  });
+  async function route() {
+    routesSeen++;
+    const r = parseHash();
+    const my = ++token;
+    if (current?.cleanup) { try { current.cleanup(); } catch (e) { console.error(e); } }
+    const cleanups = [];
+    actionHandler = null;
+    // Each view gets a fresh element, so its listeners die with it.
+    const viewEl = document.createElement("div");
+    viewEl.className = "view";
+    const ui = {
+      el: viewEl,
+      route: r,
+      setTitle(title, { back } = {}) {
+        $("#topbar-title").textContent = title || "";
+        document.title = title ? `${title} · Journal` : "Living Journal";
+        const b = $("#topbar-back");
+        // Detail pages have a back button and their own menu; hide the global one there.
+        $("#more-btn").classList.toggle("hidden", !!back);
+        // Top-level pages inside a host app get the way back to it instead.
+        b.innerHTML = back ? `<a class="btn icon ghost back" href="${back}" aria-label="Back">${icon("back")}</a>` : String(hostLink(ctx, "btn ghost small host-home only-mobile"));
+        // "history": back to the previous journal page, or to Today if this is the first one.
+        if (back === "history") b.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); if (routesSeen > 1) history.back(); else ctx.navigate("#/today"); });
+      },
+      setActions(markup) { $("#topbar-actions").innerHTML = markup ? String(markup) : ""; fillIcons($("#topbar-actions")); },
+      onStore(fn) { const off = ctx.store.on(fn); cleanups.push(off); return off; },
+      onAction(fn) { actionHandler = fn; },
+      wide(on = true) { content.classList.toggle("wide", on); },
+      cleanup(fn) { cleanups.push(fn); },
+      alive: () => my === token,
+    };
+    ui.setActions("");
+    ui.setTitle("");
+    for (const a of $$("[data-tab]")) a.classList.toggle("active", a.dataset.tab === r.tab);
+    content.classList.remove("wide");
+    try {
+      const mod = await import(`./views/${r.view}.js`);
+      if (my !== token) return;
+      content.innerHTML = "";
+      if (enterFrom) {
+        const cls = `enter-${enterFrom}`;
+        viewEl.classList.add(cls);
+        viewEl.addEventListener("animationend", () => viewEl.classList.remove(cls), { once: true });
+        enterFrom = null;
+      }
+      content.appendChild(viewEl);
+      window.scrollTo(0, 0);
+      current = { cleanup: () => cleanups.forEach((f) => f()) };
+      const ret = await mod.mount(viewEl, ctx, r, ui);
+      if (typeof ret === "function") cleanups.push(ret);
+      fillIcons(content);
+    } catch (err) {
+      console.error(err);
+      content.innerHTML = `<div class="empty"><h3>Couldn't open this page</h3><p class="muted">${String(err.message || err).replace(/</g, "&lt;")}</p><p><a href="#/today">Back to Today</a></p></div>`;
+    }
+  }
+  addEventListener("hashchange", route);
+  await route();
+
+  ctx.sync.start();
+  // Photos once kept full-size (they couldn't be resized then): shrink them now, quietly.
+  setTimeout(() => import("./app/actions.js")
+    .then((m) => m.shrinkKeptOriginals(ctx))
+    .then((n) => { if (n) toast(`Shrank ${n} photo${n === 1 ? "" : "s"} that had been saved at full size.`, { timeout: 6000 }); })
+    .catch(() => {}), 6000);
+  if (ctx.volatile) toast("Private browsing or storage is blocked: entries won't be kept after you close this tab.", { timeout: 12000, error: true });
+  else if (navigator.storage?.persist) navigator.storage.persisted().then((p) => { if (!p) navigator.storage.persist().catch(() => {}); });
+
+  registerServiceWorker("the journal");
+
+  // Auto-lock sealed entries after inactivity.
+  let lastActive = Date.now();
+  for (const ev of ["pointerdown", "keydown"]) addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true });
+  setInterval(() => {
+    const mins = ctx.settings().sealing?.autoLockMinutes || 15;
+    if (!ctx.store.isLocked() && Date.now() - lastActive > mins * 60_000) { ctx.store.lock(); toast("Sealed entries locked."); }
+  }, 30_000);
+}
+
+boot();
