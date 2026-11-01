@@ -27,11 +27,14 @@ const FIELD_ORDER = {
     "created", "updated", "snooze_until", "last_shown", "shown_count", "answers", "feedback", "source"],
   interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "source"],
   report: ["id", "type", "kind", "created", "summary"],
+  // Research: one file per thing you saved to read (src/core/sources.js).
+  source: ["id", "type", "kind", "title", "url", "doi", "authors", "year", "site", "status", "favourite", "tags",
+    "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "visibility", "captured"],
 };
 
 const SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
 
-const BODY_TYPES = new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question"]);
+const BODY_TYPES = new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question", "source"]);
 
 /** Repo path for a record (or null if the record can't be placed safely). */
 export function pathFor(rec) {
@@ -51,12 +54,17 @@ export function pathFor(rec) {
     case "question": return `meta/questions/${rec.id}.md`;
     case "interpretation": return `interpretations/${(rec.created || "0000").slice(0, 4)}/${rec.id}.md`;
     case "report": return `imports/${rec.id}.md`;
+    case "source": {
+      // Filed by the month it was saved, read from the id (s-YYYYMMDD-…) so the path never moves.
+      const m = /^s-(\d{4})(\d{2})\d{2}-/.exec(rec.id);
+      return m ? `sources/${m[1]}/${m[2]}/${rec.id}.md` : null;
+    }
     case "config": return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default: return null;
   }
 }
 
-const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "config/"];
+const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "config/"];
 
 /** Is this repo path one the app owns as a text record? */
 export function isRecordPath(p) {
@@ -181,6 +189,7 @@ export function inferType(path) {
   if (path.startsWith("meta/questions/")) return "question";
   if (path.startsWith("interpretations/")) return "interpretation";
   if (path.startsWith("imports/")) return "report";
+  if (path.startsWith("sources/")) return "source";
   if (path.startsWith("config/")) return "config";
   return null;
 }

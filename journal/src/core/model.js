@@ -9,7 +9,7 @@
 import { isoLocal, dayKey, deviceTimeZone, DEFAULT_ROLLOVER_HOUR } from "./dates.js";
 import { newId } from "./ids.js";
 
-export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report"];
+export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source"];
 
 export const ENTRY_KINDS = {
   text: "Writing",
@@ -234,6 +234,10 @@ export function validateRecord(rec) {
         const v = Number(rec.rating);
         if (!Number.isFinite(v) || v < 0 || v > s) errors.push(`rating ${rec.rating} outside scale ${s}`);
       }
+      break;
+    case "source":
+      if (!rec.title && !rec.url) errors.push("source needs a title or a link");
+      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
       break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);

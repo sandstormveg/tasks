@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:887639e2a60f93e7
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:9b25510a46a4968b
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
 import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // vendor/js-yaml.js
 function _e(e) {
@@ -1114,10 +1115,35 @@ var FIELD_ORDER = {
     "source"
   ],
   interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "source"],
-  report: ["id", "type", "kind", "created", "summary"]
+  report: ["id", "type", "kind", "created", "summary"],
+  // Research: one file per thing you saved to read (src/core/sources.js).
+  source: [
+    "id",
+    "type",
+    "kind",
+    "title",
+    "url",
+    "doi",
+    "authors",
+    "year",
+    "site",
+    "status",
+    "favourite",
+    "tags",
+    "added",
+    "updated",
+    "started",
+    "finished",
+    "why",
+    "expect",
+    "surprised",
+    "quotes",
+    "visibility",
+    "captured"
+  ]
 };
 var SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
-var BODY_TYPES = /* @__PURE__ */ new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question"]);
+var BODY_TYPES = /* @__PURE__ */ new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question", "source"]);
 function pathFor(rec) {
   if (!rec || !isSafeId(rec.id)) return null;
   switch (rec.type) {
@@ -1141,13 +1167,17 @@ function pathFor(rec) {
       return `interpretations/${(rec.created || "0000").slice(0, 4)}/${rec.id}.md`;
     case "report":
       return `imports/${rec.id}.md`;
+    case "source": {
+      const m = /^s-(\d{4})(\d{2})\d{2}-/.exec(rec.id);
+      return m ? `sources/${m[1]}/${m[2]}/${rec.id}.md` : null;
+    }
     case "config":
       return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default:
       return null;
   }
 }
-var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "config/"];
+var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "config/"];
 function isRecordPath(p) {
   if (!TEXT_PREFIXES.some((pre) => p.startsWith(pre))) return false;
   return p.startsWith("config/") ? p.endsWith(".yaml") : p.endsWith(".md");
@@ -1255,6 +1285,7 @@ function inferType(path2) {
   if (path2.startsWith("meta/questions/")) return "question";
   if (path2.startsWith("interpretations/")) return "interpretation";
   if (path2.startsWith("imports/")) return "report";
+  if (path2.startsWith("sources/")) return "source";
   if (path2.startsWith("config/")) return "config";
   return null;
 }
@@ -1342,7 +1373,7 @@ function compareDays(a, b2) {
 }
 
 // src/core/model.js
-var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report"];
+var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source"];
 var ENTRY_KINDS = {
   text: "Writing",
   voice: "Voice note",
@@ -1449,6 +1480,10 @@ function validateRecord(rec) {
         const v2 = Number(rec.rating);
         if (!Number.isFinite(v2) || v2 < 0 || v2 > s) errors.push(`rating ${rec.rating} outside scale ${s}`);
       }
+      break;
+    case "source":
+      if (!rec.title && !rec.url) errors.push("source needs a title or a link");
+      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
       break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);
@@ -1897,7 +1932,7 @@ var HELP = `journal \u2014 tools for a Living Journal data repository
 
   --data <dir>   journal repository (default: current directory)
   --tz <zone>    timezone for "today" (default: this machine's)`;
-var isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
+var isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   try {
     main();

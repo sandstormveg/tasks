@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS = {
   sealing: { autoLockMinutes: 15 },
 };
 
-function deepMerge(base, over) {
+export function deepMerge(base, over) {
   if (!over || typeof over !== "object" || Array.isArray(over)) return over === undefined ? base : over;
   const out = { ...base };
   for (const [k, v] of Object.entries(over)) {
@@ -58,7 +58,7 @@ function guessDeviceName() {
 }
 
 /** The host app's saved GitHub token, if it keeps one where we can read it. */
-function hostToken(host) {
+export function hostToken(host) {
   if (!host?.tokenKey) return "";
   try { return (globalThis.localStorage?.getItem(host.tokenKey) || "").trim(); } catch { return ""; }
 }
