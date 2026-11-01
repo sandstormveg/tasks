@@ -334,6 +334,16 @@
           "created": "2026-11-01T21:44:27.081Z",
           "updated": "2026-11-01T21:44:27.081Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-daybed1",
+          "text": "Design for the BRIMNES (the ends are already raised; the long wall side is open, and the bottom section pulls out the front for a double, so the backing goes on the wall side and won't block the pull-out).\nBest option: mount the table top on the wall, not the bed frame. The frame's back rail is thin particleboard and won't take leverage from someone leaning back, but wall studs will.\n1. Measure the inside length between the end panels (roughly 200 cm) and the height from the top mattress to where your shoulders sit (about 45-55 cm). Cut or trim the table top to about 195 x 45 cm. Bunnings will cut it if needed.\n2. Mount it horizontally on the wall, with the bottom edge just above the top mattress so the bed can still slide in and out. Use a stud finder and two to three L-brackets or a French cleat into the studs.\n3. Pad it with 2-3 long cushions or a foam strip (about 5 cm) wrapped in fabric and stapled on the back. Velcro strips let you remove the covers to wash them.\n4. Optional: keep the table legs for a matching side table at the end of the daybed.\nSimpler fallback if you rent and can't drill: stand the panel on the floor behind the bed, wedged between the bed and the wall, with felt pads. The bed's weight holds it in place.\nFirst step: measure the length between the end panels and the shoulder height, and check what the table top is made of. Solid wood or ply is fine; thin MDF may need a batten on the back.",
+          "done": false,
+          "created": "2026-11-02T10:20:00",
+          "updated": "2026-11-02T10:20:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
