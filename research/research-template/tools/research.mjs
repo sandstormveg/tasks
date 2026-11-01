@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:f170e00f340a454e
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:139123461280a21d
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs

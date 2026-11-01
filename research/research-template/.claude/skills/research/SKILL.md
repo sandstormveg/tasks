@@ -10,5 +10,6 @@ Work from this folder (`research/` in tasks-data) and follow `CLAUDE.md` here.
 1. Orient: `node tools/research.mjs stats` and `node tools/research.mjs tags`.
 2. Find: `list` (by status, tag, ⭐, kind) or `search`; then `show <id>` for the full record.
 3. Answer with sources cited by title and id; keep their notes and your inferences clearly apart.
-4. To save a link they give you: `node tools/research.mjs add <link> --title "…" --tags … --why "…"`.
-5. Never write their own words (why, expect, surprised, notes, quotes); commit only this folder.
+4. To save a link they give you: `node tools/research.mjs add <link> --title "…" --tags …` — with
+   `--why "…"` only if they said why, in their exact words.
+5. Never write their own words for them (why, expect, surprised, notes, quotes); commit only this folder.
