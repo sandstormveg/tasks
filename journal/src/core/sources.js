@@ -6,8 +6,10 @@
 import { newId } from "./ids.js";
 import { fold } from "./search.js";
 
-export const STATUSES = { inbox: "Inbox", "to-read": "To read", reading: "Reading", read: "Read", dropped: "Dropped" };
-export const KINDS = { article: "Article", paper: "Paper", book: "Book", video: "Video", podcast: "Podcast", image: "Image", other: "Other" };
+// "inbox" is the Deposit: anything dropped in lands there first. "filed" is a thought
+// that now lives on a board or in a piece of writing (links keep a reading status).
+export const STATUSES = { inbox: "Deposit", "to-read": "To read", reading: "Reading", read: "Read", dropped: "Dropped", filed: "Filed" };
+export const KINDS = { article: "Article", paper: "Paper", book: "Book", video: "Video", podcast: "Podcast", image: "Image", thought: "Thought", other: "Other" };
 
 const TRACKING = /^(utm_\w+|fbclid|gclid|dclid|mc_cid|mc_eid|igshid|si|ref_src|ref_url|_hsenc|_hsmi|mkt_tok|spm|share_source)$/i;
 

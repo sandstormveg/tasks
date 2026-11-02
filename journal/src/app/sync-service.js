@@ -67,6 +67,7 @@ export class SyncService {
     const remote = this.remote();
     this._engine = new SyncEngine(this.ctx.store, remote, {
       deviceName: this.ctx.deviceName(),
+      appName: this.label.charAt(0).toUpperCase() + this.label.slice(1),
       onProgress: (p) => this.set({ progress: p }),
     });
     this._key = key;

@@ -9,7 +9,7 @@
 import { isoLocal, dayKey, deviceTimeZone, DEFAULT_ROLLOVER_HOUR } from "./dates.js";
 import { newId } from "./ids.js";
 
-export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source"];
+export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece"];
 
 export const ENTRY_KINDS = {
   text: "Writing",
@@ -237,7 +237,29 @@ export function validateRecord(rec) {
       break;
     case "source":
       if (!rec.title && !rec.url) errors.push("source needs a title or a link");
-      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped", "filed"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      break;
+    case "board":
+      if (!rec.title) errors.push("board needs a title");
+      break;
+    case "pin":
+      if (!rec.board) errors.push("pin needs its board");
+      if (!["note", "card", "source", "quote", "link", "frame"].includes(rec.kind)) errors.push(`unknown pin kind "${rec.kind}"`);
+      for (const k of ["x", "y"]) if (rec[k] != null && !Number.isFinite(rec[k])) errors.push(`pin ${k} is not a number`);
+      if (rec.kind === "card" && !rec.card) errors.push("card pin needs its card");
+      break;
+    case "string":
+      if (!rec.board || !rec.from || !rec.to) errors.push("string needs its board and both ends");
+      if (rec.from && rec.from === rec.to) errors.push("string joins a pin to itself");
+      if (!["red", "synthesised"].includes(rec.state)) errors.push(`unknown string state "${rec.state}"`);
+      if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
+      break;
+    case "card":
+      if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q…)");
+      break;
+    case "piece":
+      if (!rec.title) errors.push("piece needs a title");
+      if (rec.status && !["idea", "drafting", "review", "done"].includes(rec.status)) errors.push(`unknown piece status "${rec.status}"`);
       break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);

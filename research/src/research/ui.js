@@ -8,17 +8,20 @@ import {
   STATUSES, KINDS, makeSource, statusPatch, formatAuthors, findDuplicate, parseShared, cleanTags, tagCounts, guessTitle,
 } from "../core/sources.js";
 import { lookupDoi } from "./lookup.js";
+import { makePin, makeString, placeNear, defaultSize, boardParts } from "../core/boards.js";
+import { suggestHomes, homesFrom } from "../core/deposit.js";
 
 // What a card offers, by status: the next step in reading, without opening it.
 const NEXT = {
   inbox: [["to-read", "To read"], ["read", "Read"], ["dropped", "Drop"]],
+  filed: [],
   "to-read": [["reading", "Start"], ["read", "Read"]],
   reading: [["read", "Done"]],
   read: [],
   dropped: [["to-read", "To read"]],
 };
 
-export function sourceCard(s, { actions = true } = {}) {
+export function sourceCard(s, { actions = true, extra = "" } = {}) {
   const by = [formatAuthors(s.authors), s.year].filter(Boolean).join(", ");
   return html`<div class="src-card" data-id="${s.id}">
     <a class="src-main" href="#/source/${s.id}">
@@ -26,8 +29,10 @@ export function sourceCard(s, { actions = true } = {}) {
       <div class="src-meta">${[s.site, by, s.kind && s.kind !== "article" ? KINDS[s.kind] : ""].filter(Boolean).join(" · ")}</div>
       ${s.tags?.length ? html`<div class="src-tags">${s.tags.map((t) => html`<span class="tag">#${t}</span>`)}</div>` : ""}
       ${s.why ? html`<div class="src-why">${s.why}</div>` : ""}
+      ${s.kind === "thought" && s.body ? html`<div class="src-thought">${s.body.slice(0, 280)}${s.body.length > 280 ? "…" : ""}</div>` : ""}
     </a>
     ${actions && NEXT[s.status]?.length ? html`<div class="src-actions">${NEXT[s.status].map(([st, label]) => html`<button class="btn small ${st === "dropped" ? "ghost" : ""}" data-act="move" data-id="${s.id}" data-to="${st}">${label}</button>`)}</div>` : ""}
+    ${extra}
   </div>`;
 }
 
@@ -67,7 +72,7 @@ async function fillFromDoi(ctx, id, { replaceTitle }) {
  */
 export async function capture(ctx, params, extra = {}) {
   const shared = parseShared(params);
-  if (!shared.url && !shared.title && !shared.doi) return { source: null };
+  if (!shared.url && !shared.doi) return captureThought(ctx, params, extra);
   const existing = findDuplicate(ctx.sources(), { url: shared.url, doi: shared.doi });
   if (existing) return { source: existing, existing: true };
   const rec = makeSource({
@@ -81,6 +86,78 @@ export async function capture(ctx, params, extra = {}) {
   // extra.title is typed in the Add sheet; anything else came with the link.
   if (saved.doi) fillFromDoi(ctx, saved.id, { replaceTitle: extra.title ? undefined : saved.title }).catch(() => {});
   return { source: saved };
+}
+
+/**
+ * Something with no link — a quote, a half-thought, shared text: it goes in the
+ * Deposit as a thought. Its first line is its title; the rest is kept whole.
+ */
+async function captureThought(ctx, params, extra = {}) {
+  const text = [params.title, params.text].map((t) => String(t || "").trim()).filter(Boolean).join("\n").trim();
+  if (!text && !extra.title) return { source: null };
+  const first = (extra.title || text.split("\n")[0]).trim();
+  const title = first.length > 120 ? `${first.slice(0, 117).replace(/\s+\S*$/, "")}…` : first;
+  const rest = text === first ? "" : text;
+  const rec = makeSource({ ...extra, kind: "thought", title, body: first.length > 120 ? text : rest }, { now: ctx.now(), device: ctx.deviceName(), via: params.via || "share" });
+  return { source: await ctx.store.put(rec) };
+}
+
+/** Where a deposited item could go: the boards and pieces it shares the most with. */
+export function homesFor(ctx, source) {
+  const cards = Object.fromEntries(ctx.cards().map((c) => [c.id, c]));
+  const sources = Object.fromEntries(ctx.sources().map((s) => [s.id, s]));
+  return suggestHomes(source, homesFrom(ctx.records(), { cards, sources }));
+}
+
+/**
+ * File a deposited item: pin it to a board — next to the pins it shares the most
+ * with, tied to them by red string (noticed, not synthesised) — or link it to a
+ * piece of writing. A thought becomes "filed"; a link waiting in the Deposit moves to To read.
+ */
+export async function fileTo(ctx, sourceId, home) {
+  const s = ctx.store.get(sourceId);
+  if (!s) return null;
+  const now = ctx.now();
+  let pinId = null;
+  if (home.kind === "board") {
+    const { pins } = boardParts(ctx.records(), home.id);
+    const near = (home.near || []).map((n) => pins.find((p) => p.id === n.id)).filter(Boolean);
+    const size = defaultSize("source");
+    const spot = placeNear(pins, { anchor: near[0] || null, ...size });
+    const pin = makePin({ board: home.id, kind: "source", source: s.id, title: s.title, ...spot }, { now });
+    await ctx.store.put(pin);
+    pinId = pin.id;
+    for (const n of home.near || []) {
+      if (!pins.some((p) => p.id === n.id)) continue;
+      await ctx.store.put(makeString({ board: home.id, from: pin.id, to: n.id, label: n.shared?.length ? `shares: ${n.shared.slice(0, 3).join(", ")}` : undefined }, { now }));
+    }
+  } else if (home.kind === "piece") {
+    const p = ctx.store.get(home.id);
+    if (p) await ctx.store.put({ ...p, sources: [...new Set([...(p.sources || []), s.id])], updated: now });
+  }
+  if (s.status === "inbox") await ctx.store.put({ ...ctx.store.get(s.id), ...(s.kind === "thought" ? { status: "filed" } : statusPatch(s, "to-read", now)) });
+  const title = home.title || ctx.store.get(home.id)?.title || "";
+  toast(home.kind === "board" ? `Pinned to “${title}”${home.near?.length ? ` with ${home.near.length} red string${home.near.length === 1 ? "" : "s"}` : ""}` : `Linked to “${title}”`, {
+    action: "Open", onAction: () => ctx.navigate(home.kind === "board" ? `#/board/${home.id}?focus=${pinId}` : `#/piece/${home.id}`),
+  });
+  return pinId;
+}
+
+/** Pick any board or piece to file something to (when the suggestions aren't it). */
+export async function fileElsewhere(ctx, sourceId) {
+  const boards = ctx.boards().sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
+  const pieces = ctx.pieces();
+  const pick = await sheet({
+    title: "File it to…",
+    body: html`${boards.length ? html`<div class="pick-head">Boards</div>${boards.map((b) => html`<button type="button" class="pick" data-k="board" data-id="${b.id}"><b>${b.title}</b></button>`)}` : ""}
+      ${pieces.length ? html`<div class="pick-head">Writing</div>${pieces.map((p) => html`<button type="button" class="pick" data-k="piece" data-id="${p.id}"><b>${p.title}</b></button>`)}` : ""}
+      ${!boards.length && !pieces.length ? html`<p class="faint">No boards or pieces yet — make one under Boards or Writing.</p>` : ""}`,
+    foot: html`<button class="btn" data-close>Cancel</button>`,
+    setup: (d, close) => on(d, "click", "[data-id]", (e, b) => close({ kind: b.dataset.k, id: b.dataset.id })),
+  });
+  if (!pick) return null;
+  const suggested = homesFor(ctx, ctx.store.get(sourceId)).find((h) => h.id === pick.id);
+  return fileTo(ctx, sourceId, suggested || pick);
 }
 
 /** A tag field: type, then Enter or comma; your existing tags are offered as you type. */
@@ -126,7 +203,7 @@ export async function addSheet(ctx, { status = "inbox", text = "" } = {}) {
   let found = null;
   const result = await sheet({
     title: "Add to Research",
-    body: html`<label class="field"><span>Link, DOI or arXiv link</span><input class="input" data-link autofocus value="${text}" placeholder="https://… or 10.1234/…" autocomplete="off" autocapitalize="off" inputmode="url"></label>
+    body: html`<label class="field"><span>A link, DOI or arXiv link — or just a thought</span><textarea class="textarea" data-link rows="2" autofocus placeholder="https://…, 10.1234/…, or whatever's on your mind" autocomplete="off">${text}</textarea></label>
       <p class="small faint" data-found style="margin:-4px 0 8px"></p>
       <label class="field"><span>Title</span><input class="input" data-title autocomplete="off" placeholder="Filled in when we can — edit freely"></label>
       <label class="field"><span>Why are you saving it? <span class="faint">(optional)</span></span><input class="input" data-why autocomplete="off" placeholder="One line for future you"></label>

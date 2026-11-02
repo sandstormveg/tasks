@@ -44,19 +44,28 @@ the journal; its own `journal/CLAUDE.md` has the rules for that.
 
 ## Research
 
-The **§ Research** tab opens Research, a private reading library (from the same
+The **§ Research** tab opens Research (from the same
 [Journal_system](https://github.com/sandstormveg/Journal_system) repo, see its `docs/RESEARCH.md`),
-installed in `research/`. Save a link by sharing it to **Tasks** from any app on Android (the
-manifest's `share_target` opens `research/` with it), with the bookmark button in Research →
-Settings on a computer, or by pasting a link, DOI or arXiv link. Sources move Inbox → To read →
-Reading → Read (or Dropped), with ⭐, your own tags, why you saved it, what you expected, what
-surprised you, notes and quotes. Files sync into a `research/` folder of `tasks-data`, one
-Markdown file per source, and nothing else there is touched. `research/` is generated — update it
-with `node tools/install-into.mjs ../tasks/research --host tasks --app research`.
+installed in `research/`:
 
-Claude can read it: `tasks-data/research/CLAUDE.md` has the rules and
-`node tools/research.mjs` (run inside `tasks-data/research/`) lists, searches and shows sources.
-It may add sources and change status, ⭐ and tags, but never writes your own words.
+- **Deposit** — share anything to **Tasks** from any app on Android (the manifest's `share_target` opens
+  `research/` with it), use the bookmark button in Research → Settings on a computer, or tap Add: a link,
+  a DOI, an arXiv link, or just a thought. Each item suggests the board or piece it belongs with.
+- **Reading** — To read → Reading → Read (or Dropped), with ⭐, tags, why you saved it, what you
+  expected, what surprised you, notes and quotes.
+- **Writing** — pieces (a grant proposal, an essay), each with its own corkboard.
+- **Boards** — corkboards: pin notes, sources and Infodex cards, tie red string between what connects,
+  synthesise it in your words; zoom into a card to open its page; the curator checks connections
+  against the Atlas's rules.
+
+Everything syncs into a `research/` folder of `tasks-data`, one Markdown file per item, and nothing
+else there is touched. `research/` is generated — update it with
+`node tools/install-into.mjs ../tasks/research --host tasks --app research`.
+
+Claude can read it: `tasks-data/research/CLAUDE.md` has the rules and `node tools/research.mjs`
+(run inside `tasks-data/research/`) lists, searches and shows sources, boards and writing. It may add
+sources, change status, ⭐ and tags, and pin to boards with red string (marked as its own) — but never
+writes your words or synthesises a connection.
 
 `.nojekyll` makes Pages serve files as-is (the journal and Research ship a `.claude/` folder they copy
 into the data repo).

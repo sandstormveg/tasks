@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Research</title>
-<meta name="description" content="A private reading library: what you mean to read, are reading and found valuable — and what you thought about it.">
+<meta name="description" content="A private research library: a deposit for anything you find, reading lists, writing, and corkboards where ideas are pinned and connected.">
 <meta name="theme-color" content="#f6f2ea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131418" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
@@ -13,21 +13,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Tasks">
 <meta name="referrer" content="no-referrer">
-<!-- Scripts only from this origin; network only to GitHub (sync) and Crossref/DataCite (paper details). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- Scripts only from this origin; network to GitHub (sync), Crossref/DataCite (paper details) and Wikidata/Wikipedia (Infodex cards); card pictures from Wikimedia Commons. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://commons.wikimedia.org https://upload.wikimedia.org; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="styles/app.css">
 <link rel="stylesheet" href="styles/research.css">
+<link rel="stylesheet" href="styles/corkboard.css">
 </head>
 <body class="research">
 <div class="app">
   <nav class="sidebar" aria-label="Main">
     <div class="brand" data-icon="section"><span>Research</span></div>
-    <a href="#/inbox" data-tab="inbox" data-icon="inbox">Inbox</a>
+    <a href="#/inbox" data-tab="inbox" data-icon="inbox">Deposit</a>
     <a href="#/queue" data-tab="queue" data-icon="bookmark">To read</a>
     <a href="#/read" data-tab="read" data-icon="check">Read</a>
+    <a href="#/writing" data-tab="writing" data-icon="edit">Writing</a>
+    <a href="#/boards" data-tab="boards" data-icon="map">Boards</a>
     <a href="#/search" data-tab="search" data-icon="search">Search</a>
     <div class="spacer"></div>
     <a href="#/settings" data-tab="settings" data-icon="settings">Settings</a>
@@ -38,6 +41,7 @@
       <div id="topbar-back"></div>
       <h1 id="topbar-title">Research</h1>
       <div class="row" id="topbar-actions"></div>
+      <a class="btn icon ghost only-mobile" id="search-btn" href="#/search" aria-label="Search" data-icon="search"></a>
       <button class="sync-pill" id="sync-pill" type="button" aria-label="Sync status"></button>
       <a class="btn icon ghost only-mobile" id="settings-btn" href="#/settings" aria-label="Settings" data-icon="settings"></a>
     </header>
@@ -46,11 +50,12 @@
     </main>
   </div>
 </div>
-<nav class="tabbar four" aria-label="Main">
-  <a href="#/inbox" data-tab="inbox" data-icon="inbox"><span>Inbox</span></a>
+<nav class="tabbar" aria-label="Main">
+  <a href="#/inbox" data-tab="inbox" data-icon="inbox"><span>Deposit</span></a>
   <a href="#/queue" data-tab="queue" data-icon="bookmark"><span>To read</span></a>
   <a href="#/read" data-tab="read" data-icon="check"><span>Read</span></a>
-  <a href="#/search" data-tab="search" data-icon="search"><span>Search</span></a>
+  <a href="#/writing" data-tab="writing" data-icon="edit"><span>Writing</span></a>
+  <a href="#/boards" data-tab="boards" data-icon="map"><span>Boards</span></a>
 </nav>
 <noscript><p style="padding:24px">Research needs JavaScript to run.</p></noscript>
 <script type="module" src="src/research/main.js"></script>

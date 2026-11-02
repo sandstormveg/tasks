@@ -20,12 +20,13 @@ const STATE_KEY = "sync-state";
 export function syncStateKey(remote) { return `${STATE_KEY}:${remote.label}`; }
 
 export class SyncEngine {
-  constructor(store, remote, { seedFiles = [], maxBlobUploads = 25, deviceName = "device", onProgress } = {}) {
+  constructor(store, remote, { seedFiles = [], maxBlobUploads = 25, deviceName = "device", appName = "Journal", onProgress } = {}) {
     this.store = store;
     this.remote = remote;
     this.seedFiles = seedFiles;
     this.maxBlobUploads = maxBlobUploads;
     this.deviceName = deviceName;
+    this.appName = appName; // commit messages say which app synced: "Research sync from Android phone: …"
     this.onProgress = onProgress || (() => {});
     this.running = null;
   }
@@ -273,7 +274,7 @@ export class SyncEngine {
     if (r.pushed) bits.push(`${r.pushed} record${r.pushed === 1 ? "" : "s"}`);
     if (r.uploadedMedia) bits.push(`${r.uploadedMedia} media`);
     if (r.deleted) bits.push(`${r.deleted} deletion${r.deleted === 1 ? "" : "s"}`);
-    return `Journal sync from ${this.deviceName}: ${bits.join(", ") || "update"}`;
+    return `${this.appName} sync from ${this.deviceName}: ${bits.join(", ") || "update"}`;
   }
 
   /** Download one media file on demand (for lazy loading on a new device). */

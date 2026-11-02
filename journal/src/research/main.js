@@ -1,7 +1,7 @@
-// Research: boot, routes and capture. A link shared from your phone (the Tasks
+// Research: boot, routes and capture. Anything shared from your phone (the Tasks
 // app's share target), or sent by the bookmarklet on your computer, arrives as
-// ?url=…&title=…&text=… — it's saved to the Inbox straight away and opened so
-// you can add why. Views live in ./views and get the same `ui` object as the
+// ?url=…&title=…&text=… — it's saved to the Deposit straight away (a link, or a
+// thought if there's no link) and opened so you can add why. Views live in ./views and get the same `ui` object as the
 // journal's: a title, top-bar actions, store listeners that die with the view.
 
 import { createResearchContext } from "./context.js";
@@ -12,12 +12,16 @@ import { applyTheme, fillIcons, renderSyncPill, hostLink, registerServiceWorker 
 import { enableSwipe } from "../ui/swipe.js";
 import { capture } from "./ui.js";
 
-const TABS = ["inbox", "queue", "read", "search"];
+const TABS = ["inbox", "queue", "read", "writing", "boards"];
 const ROUTES = [
   [/^inbox$/, "list", "inbox"],
   [/^queue$/, "list", "queue"],
   [/^read$/, "list", "read"],
   [/^search$/, "search", "search"],
+  [/^writing$/, "writing", "writing"],
+  [/^piece\/([^/]+)$/, "piece", "writing"],
+  [/^boards$/, "boards", "boards"],
+  [/^board\/([^/]+)$/, "board", "boards"],
   [/^tag\/([^/]+)$/, "search", "search"],
   [/^source\/([^/]+)$/, "source", null],
   [/^settings$/, "settings", "settings"],
@@ -41,8 +45,8 @@ async function takeShared(ctx) {
   const via = q.get("via") === "bookmarklet" ? "bookmarklet" : "share";
   history.replaceState(null, "", location.pathname + (location.hash || "#/inbox"));
   const { source, existing } = await capture(ctx, { url: q.get("url") || "", text: q.get("text") || "", title: q.get("title") || "", via });
-  if (!source) { toast("Nothing to save — the share didn't include a link.", { error: true }); return null; }
-  toast(existing ? "Already in your library" : "Saved to your Inbox — add why, or a tag", { timeout: 5000 });
+  if (!source) { toast("Nothing to save — the share was empty.", { error: true }); return null; }
+  toast(existing ? "Already in your library" : source.kind === "thought" ? "Saved to your Deposit as a thought" : "Saved to your Deposit — add why, or a tag", { timeout: 5000 });
   return source;
 }
 
@@ -139,7 +143,7 @@ async function boot() {
       fillIcons(content);
     } catch (err) {
       console.error(err);
-      content.innerHTML = `<div class="empty"><h3>Couldn't open this page</h3><p class="muted">${String(err.message || err).replace(/</g, "&lt;")}</p><p><a href="#/inbox">Back to the Inbox</a></p></div>`;
+      content.innerHTML = `<div class="empty"><h3>Couldn't open this page</h3><p class="muted">${String(err.message || err).replace(/</g, "&lt;")}</p><p><a href="#/inbox">Back to the Deposit</a></p></div>`;
     }
   }
   addEventListener("hashchange", route);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:9b25510a46a4968b
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:a4f182e483940e51
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1140,10 +1140,90 @@ var FIELD_ORDER = {
     "quotes",
     "visibility",
     "captured"
-  ]
+  ],
+  // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
+  // A pin's body is its note; a string's body is your synthesis — how the two connect.
+  board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],
+  pin: [
+    "id",
+    "type",
+    "board",
+    "kind",
+    "title",
+    "x",
+    "y",
+    "w",
+    "h",
+    "color",
+    "card",
+    "source",
+    "url",
+    "address",
+    "author",
+    "created",
+    "updated"
+  ],
+  string: [
+    "id",
+    "type",
+    "board",
+    "from",
+    "to",
+    "label",
+    "state",
+    "tier",
+    "holds_in",
+    "breaks_at",
+    "author",
+    "created",
+    "updated",
+    "synthesised",
+    "synthesised_by"
+  ],
+  // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
+  card: [
+    "id",
+    "type",
+    "qid",
+    "label",
+    "desc",
+    "kind",
+    "subtitle",
+    "rarity",
+    "sitelinks",
+    "finish",
+    "insight",
+    "img",
+    "lineage",
+    "stats",
+    "flavor",
+    "questions",
+    "bridges",
+    "links",
+    "by",
+    "minted",
+    "added",
+    "updated"
+  ],
+  // A piece of writing (src/core/writing.js); the body is your draft.
+  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"]
 };
 var SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
-var BODY_TYPES = /* @__PURE__ */ new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question", "source"]);
+var BODY_TYPES = /* @__PURE__ */ new Set([
+  "entry",
+  "day",
+  "claim",
+  "interpretation",
+  "report",
+  "proposal",
+  "question",
+  "source",
+  "board",
+  "pin",
+  "string",
+  "card",
+  "piece"
+]);
 function pathFor(rec) {
   if (!rec || !isSafeId(rec.id)) return null;
   switch (rec.type) {
@@ -1171,13 +1251,23 @@ function pathFor(rec) {
       const m = /^s-(\d{4})(\d{2})\d{2}-/.exec(rec.id);
       return m ? `sources/${m[1]}/${m[2]}/${rec.id}.md` : null;
     }
+    case "board":
+      return `boards/${rec.id}.md`;
+    case "pin":
+      return isSafeId(rec.board) ? `boards/${rec.board}/pins/${rec.id}.md` : null;
+    case "string":
+      return isSafeId(rec.board) ? `boards/${rec.board}/strings/${rec.id}.md` : null;
+    case "card":
+      return `cards/${rec.id}.md`;
+    case "piece":
+      return `writing/${rec.id}.md`;
     case "config":
       return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default:
       return null;
   }
 }
-var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "config/"];
+var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "config/"];
 function isRecordPath(p) {
   if (!TEXT_PREFIXES.some((pre) => p.startsWith(pre))) return false;
   return p.startsWith("config/") ? p.endsWith(".yaml") : p.endsWith(".md");
@@ -1286,6 +1376,9 @@ function inferType(path2) {
   if (path2.startsWith("interpretations/")) return "interpretation";
   if (path2.startsWith("imports/")) return "report";
   if (path2.startsWith("sources/")) return "source";
+  if (path2.startsWith("boards/")) return /^boards\/[^/]+\/pins\//.test(path2) ? "pin" : /^boards\/[^/]+\/strings\//.test(path2) ? "string" : "board";
+  if (path2.startsWith("cards/")) return "card";
+  if (path2.startsWith("writing/")) return "piece";
   if (path2.startsWith("config/")) return "config";
   return null;
 }
@@ -1373,7 +1466,7 @@ function compareDays(a, b2) {
 }
 
 // src/core/model.js
-var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source"];
+var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece"];
 var ENTRY_KINDS = {
   text: "Writing",
   voice: "Voice note",
@@ -1483,7 +1576,29 @@ function validateRecord(rec) {
       break;
     case "source":
       if (!rec.title && !rec.url) errors.push("source needs a title or a link");
-      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      if (rec.status && !["inbox", "to-read", "reading", "read", "dropped", "filed"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      break;
+    case "board":
+      if (!rec.title) errors.push("board needs a title");
+      break;
+    case "pin":
+      if (!rec.board) errors.push("pin needs its board");
+      if (!["note", "card", "source", "quote", "link", "frame"].includes(rec.kind)) errors.push(`unknown pin kind "${rec.kind}"`);
+      for (const k2 of ["x", "y"]) if (rec[k2] != null && !Number.isFinite(rec[k2])) errors.push(`pin ${k2} is not a number`);
+      if (rec.kind === "card" && !rec.card) errors.push("card pin needs its card");
+      break;
+    case "string":
+      if (!rec.board || !rec.from || !rec.to) errors.push("string needs its board and both ends");
+      if (rec.from && rec.from === rec.to) errors.push("string joins a pin to itself");
+      if (!["red", "synthesised"].includes(rec.state)) errors.push(`unknown string state "${rec.state}"`);
+      if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
+      break;
+    case "card":
+      if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q\u2026)");
+      break;
+    case "piece":
+      if (!rec.title) errors.push("piece needs a title");
+      if (rec.status && !["idea", "drafting", "review", "done"].includes(rec.status)) errors.push(`unknown piece status "${rec.status}"`);
       break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);

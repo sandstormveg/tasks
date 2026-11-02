@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS = {
   // Your research lives in research/ of your private tasks data, next to (never touching) your tasks.
   github: { owner: "sandstormveg", repo: "tasks-data", branch: "", folder: "research" },
   autoSync: true,
+  // Your Infodex (the Atlas site), for "open in Infodex" on card pages; set in Settings.
+  infodexUrl: "",
 };
 
 function guessDeviceName() {
@@ -69,6 +71,11 @@ export async function createResearchContext({ backend, host = null } = {}) {
       if (replace) window.dispatchEvent(new HashChangeEvent("hashchange"));
     },
     sources() { return store.all("source").filter((s) => !s.deleted); },
+    boards() { return store.all("board").filter((b) => !b.deleted); },
+    pieces() { return store.all("piece").filter((p) => !p.deleted); },
+    cards() { return store.all("card").filter((c) => !c.deleted); },
+    /** Everything for the corkboard and the Deposit, in one list. */
+    records() { return ["board", "pin", "string", "card", "piece", "source"].flatMap((t) => store.all(t)); },
   };
   ctx.sync = new SyncService(ctx, { template: RESEARCH_TEMPLATE, templateDir: "research-template", label: "research" });
   return ctx;
