@@ -214,7 +214,26 @@
       "category": "Shopping 🛍️",
       "created": "2026-09-28",
       "notes": "",
-      "assist": false
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mvyx8bl088q3",
+          "text": "find me a good rice cooker on amazon or somewhere local",
+          "done": false,
+          "created": "2026-11-02T07:12:08.100Z",
+          "updated": "2026-11-02T07:12:22.207Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-rice1",
+          "text": "Three picks, all sold in Australia with a 240V plug and a local warranty (2026 prices):\n1. Best value: Tiger JAX-S, 5.5 cup, about A$329. Microcomputer 'fuzzy logic' cooking, a reliable first good cooker that does white, brown and porridge well. Sold at Minimaru (minimaru.com) and on Amazon AU.\n2. Feature pick: Cuckoo pressure cooker (mid-range, roughly A$400-600). Turbo cook, GABA brown rice mode, voice guide. Good if you eat a lot of brown or mixed grains.\n3. Splurge: Zojirushi NW-QAQ induction, about A$829. The one enthusiasts buy, with the most even results.\nIf you just want cheap and simple: a basic on/off cooker from Big W/Kmart/JB Hi-Fi (about A$30-90) cooks white rice fine but can scorch or dry out brown rice.\nMy call: the Tiger JAX-S, unless you cook rice daily and want the Zojirushi. Check Amazon AU for a sale first, and get the 5.5 cup size unless you meal-prep big batches.\nSources: minimaru.com/blogs/guides/best-induction-rice-cookers-australia, minimaru.com/blogs/guides/zojirushi-vs-tiger-rice-cooker, mycookware.com.au buying guide.",
+          "done": false,
+          "created": "2026-11-02T18:20:00",
+          "updated": "2026-11-02T18:20:00",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     },
     {
       "id": "ikea-couch-fold-out-table-with-storage-mvovhy6u",
@@ -222,14 +241,6 @@
       "category": "Shopping 🛍️",
       "created": "2026-10-26",
       "notes": "",
-      "assist": false
-    },
-    {
-      "id": "turn-on-windows-auto-sign-in-after-updates-rp3qafjo",
-      "title": "Turn on Windows auto sign-in after updates (ARSO)",
-      "category": "Development",
-      "created": "2026-10-27",
-      "notes": "Settings > Accounts > Sign-in options > turn on 'Use my sign-in info to automatically finish setting up after an update'. This lets the always-on PC come back on its own after a Windows Update restart; a restart on 10-14 left it off until 10-25 and stopped iQwant and the director.",
       "assist": false
     },
     {
@@ -305,10 +316,108 @@
     {
       "id": "pull-apart-table-and-add-it-to-the-day-bed-as-a-backing-mvx2boxk",
       "title": "Pull apart table and add it to the day bed as a backing",
-      "category": "Life Admin",
+      "category": "Design",
       "created": "2026-10-31",
       "notes": "",
+      "assist": false,
+      "parentId": "design-how-to-make-a-back-rest-on-the-daybed-from-ikea-mvycrzks"
+    },
+    {
+      "id": "sultanas-mvx8y8wz",
+      "title": "sultanas",
+      "category": "Shopping 🛍️",
+      "created": "2026-11-01",
+      "notes": "",
       "assist": false
+    },
+    {
+      "id": "design-how-to-make-a-back-rest-on-the-daybed-from-ikea-mvycrzks",
+      "title": "Design how to make a back rest on the daybed from ikea",
+      "category": "Design",
+      "created": "2026-11-01",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mvycy9xlrjjn",
+          "text": "this is the one i have https://www.ikea.com/au/en/p/brimnes-day-bed-w-2-drawers-2-mattresses-white-vannareid-extra-firm-s79409034/",
+          "done": false,
+          "created": "2026-11-01T21:44:27.081Z",
+          "updated": "2026-11-01T21:44:27.081Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-daybed1",
+          "text": "Design for the BRIMNES (the ends are already raised; the long wall side is open, and the bottom section pulls out the front for a double, so the backing goes on the wall side and won't block the pull-out).\nBest option: mount the table top on the wall, not the bed frame. The frame's back rail is thin particleboard and won't take leverage from someone leaning back, but wall studs will.\n1. Measure the inside length between the end panels (roughly 200 cm) and the height from the top mattress to where your shoulders sit (about 45-55 cm). Cut or trim the table top to about 195 x 45 cm. Bunnings will cut it if needed.\n2. Mount it horizontally on the wall, with the bottom edge just above the top mattress so the bed can still slide in and out. Use a stud finder and two to three L-brackets or a French cleat into the studs.\n3. Pad it with 2-3 long cushions or a foam strip (about 5 cm) wrapped in fabric and stapled on the back. Velcro strips let you remove the covers to wash them.\n4. Optional: keep the table legs for a matching side table at the end of the daybed.\nSimpler fallback if you rent and can't drill: stand the panel on the floor behind the bed, wedged between the bed and the wall, with felt pads. The bed's weight holds it in place.\nFirst step: measure the length between the end panels and the shoulder height, and check what the table top is made of. Solid wood or ply is fine; thin MDF may need a batten on the back.",
+          "done": false,
+          "created": "2026-11-02T10:20:00",
+          "updated": "2026-11-02T10:20:00",
+          "author": "Claude Opus 5.5"
+        }
+      ]
+    },
+    {
+      "id": "coefficient-giving-note-on-model-personas-mvykt6vn",
+      "title": "Coefficient giving note on model personas",
+      "category": "Research §",
+      "created": "2026-11-02",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mvyktxkatu2w",
+          "text": "Luke Muehlhauser: A totally different thing that’s much more general is an AI character evaluator organisation. Because it’s this weird thing where AIs, the way they’re built now, they actually have a moral character, and they differ from each other.\n\nThe character is things like: how strong is its tendency to lie, when that’s a convenient thing to do? Or where does it seem to be on the political spectrum? Or, when you ask it to help you seize power or do some crimes, does it help you or not? There’s just a lot of AI safety that comes down to something kind of like moral character. So we kind of have to do the equivalent of human behavioural science or psychology on these models and figure out what their behavioural tendencies are.\n\nThis would be an organisation that sort of evaluates:\n\nFirst of all, does the behaviour of this latest model and does its character and habits and so on conform roughly to the model spec that the AI company was trying to make it conform to? That’s one really big question.\nThen: how is the character of the models changing over time, and what can they do about that? What training choices make certain differences to the character of the AI?\nLuisa Rodriguez: Yeah. That one I find interesting, because I think even one-year-ago me would have heard that and been like, “Really? Is that a thing that is actually going to make AI safety better? It sounds kind of silly.” I think partly I didn’t fully have the intuition that the models really varied in character.\n\nLuke Muehlhauser: I think they vary a bit more now than they did a couple of years ago. I think there’s more variety in the training processes between Anthropic and OpenAI and DeepMind and Grok, for example. There’s different things that those companies are even aiming for.\n\nFor example, Anthropic’s approach is much more like character and values and a self-consistent persona of an AI, or something like that. OpenAI’s approach is more deontological: here’s a list of rules; you have to stay within these bounds. There’s debate about which approach is better. But it also leads to significantly different character per se, when you put them in different kind of high-stakes situations.\n\nLuisa Rodriguez: You also mentioned political leanings, and I think it just wasn’t clear a couple of years ago that there were going to be big variations. It seemed like maybe they’d try to kind of stay neutral. And increasingly it just seems clear that even though it’s kind of subtle, the variations are there and meaningful, and it matters not only to societal stuff — like are they going to be epistemically virtuous — but also to safety stuff.\n\nLuke Muehlhauser: I think it matters for things like how likely are they to hack out of their sandbox and do a bunch of crimes on the internet.\n\nLuisa Rodriguez: Totally. Yeah.\n\nLuke Muehlhauser: That’s substantially a question of moral character, per se\n\nhttps://80000hours.org/podcast/episodes/luke-muehlhauser-ai-safety-grantmaking-founding/",
+          "done": false,
+          "created": "2026-11-02T01:25:01.354Z",
+          "updated": "2026-11-02T01:25:01.354Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-rlib-mvykt6vn",
+          "text": "Added the 80,000 Hours link to your § Research Inbox (s-20261102-1608-mbxg, #ai-safety #grantmaking).",
+          "done": false,
+          "created": "2026-11-02T16:10:00",
+          "updated": "2026-11-02T16:10:00",
+          "author": "Claude Opus 5.5"
+        }
+      ]
+    },
+    {
+      "id": "how-can-i-integrate-this-task-menu-with-my-research-system-mvykx50o",
+      "title": "How can i integrate this task category with my research system?",
+      "category": "Research §",
+      "created": "2026-11-02",
+      "notes": "",
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mvykykvhocv3",
+          "text": "I guess i could just have this be monitored like usual for things to add into my research system?",
+          "done": false,
+          "created": "2026-11-02T01:28:38.188Z",
+          "updated": "2026-11-02T01:28:38.188Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-rsys1",
+          "text": "Yes, that works, and it's cheap, because the hourly director pass already reads both trackers. Proposal (assuming 'research system' means the Epistemic Atlas):\n1. Each pass, the director checks for new tasks or new notes in any category ending in '§' (so you can mark other categories the same way later).\n2. For each new item, it uses the atlas skill to add it as an object (or to the Atlas inputs queue if it needs a closer look), then leaves a claudeNote on the task saying what it added and where.\n3. It never marks tasks done or moves them. You stay in control of the tracker side.\n4. A capture costs one small Atlas edit, and it shows up in the next notification as 'Atlas: added X'.\nReply 'yes' (here or in the director chat) and I'll add it to the director's routine. If the research system is something else, such as Infodex or a doc, say which and I'll point it there instead.",
+          "done": false,
+          "created": "2026-11-02T13:20:00",
+          "updated": "2026-11-02T13:20:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-rlib-mvykx50o",
+          "text": "Correction: you meant the § Research tab, not the Atlas. It's set up now: each hourly director pass checks open Research § tasks, adds any new links to your Research Inbox, and notes it on the task. Your why/expect/notes stay for you to fill in. Tasks without a link are left alone. First batch: 3 links added.",
+          "done": false,
+          "created": "2026-11-02T16:10:00",
+          "updated": "2026-11-02T16:10:00",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     }
   ]
 }
