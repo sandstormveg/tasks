@@ -361,6 +361,16 @@
           "created": "2026-11-02T01:25:01.354Z",
           "updated": "2026-11-02T01:25:01.354Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-rlib-mvykt6vn",
+          "text": "Added the 80,000 Hours link to your § Research Inbox (s-20261102-1608-mbxg, #ai-safety #grantmaking).",
+          "done": false,
+          "created": "2026-11-02T16:10:00",
+          "updated": "2026-11-02T16:10:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     },
     {
@@ -386,6 +396,14 @@
           "done": false,
           "created": "2026-11-02T13:20:00",
           "updated": "2026-11-02T13:20:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-rlib-mvykx50o",
+          "text": "Correction: you meant the § Research tab, not the Atlas. It's set up now: each hourly director pass checks open Research § tasks, adds any new links to your Research Inbox, and notes it on the task. Your why/expect/notes stay for you to fill in. Tasks without a link are left alone. First batch: 3 links added.",
+          "done": false,
+          "created": "2026-11-02T16:10:00",
+          "updated": "2026-11-02T16:10:00",
           "author": "Claude Opus 5.5"
         }
       ]
