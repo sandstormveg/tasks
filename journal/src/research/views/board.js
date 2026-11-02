@@ -515,7 +515,7 @@ export async function mount(el, ctx, route, ui) {
     const a = p.address || {};
     const res = await sheet({
       title: "Frame",
-      body: html`<p class="small muted" style="margin-top:0">A frame is a region: what you place inside it is part of it. Its address says where its contents hold — the curator uses it to spot connections that cross a boundary.</p>
+      body: html`<p class="small muted" style="margin-top:0">A frame is a region: what you place inside it is part of it. Give it a domain and it becomes a boundary — the curator then asks connections that cross it to say what kind of connection they are, where they hold and where they break. Without one it's just a grouping.</p>
         <label class="field"><span>Name</span><input class="input" data-t value="${p.title || ""}" autocomplete="off"></label>
         <div class="row wrap"><label class="field grow"><span>Domain</span><input class="input" data-a="domain" value="${a.domain || ""}" placeholder="e.g. psychology" autocomplete="off"></label>
         <label class="field grow"><span>Perspective</span><input class="input" data-a="perspective" value="${a.perspective || ""}" placeholder="e.g. clinical" autocomplete="off"></label></div>

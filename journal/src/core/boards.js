@@ -183,14 +183,14 @@ export function framesOf(pin, pins) {
 }
 
 /**
- * Where a pin "lives": the address of its innermost frame that has one (or the
- * frame's title as its domain), else an Infodex card's type, else unknown.
+ * Where a pin "lives": the address of its innermost frame that declares a domain,
+ * else an Infodex card's type, else unknown. A frame without an address is just a
+ * grouping ("People", "To do"): it holds things, but sets no boundary.
  */
 export function addressOf(pin, pins, cardsById = {}) {
   if (pin.kind === "frame" && pin.address) return { ...pin.address, frame: pin.id };
   for (const f of framesOf(pin, pins)) {
     if (f.address?.domain) return { ...f.address, frame: f.id };
-    if (f.title) return { domain: f.title, frame: f.id };
   }
   const card = pin.kind === "card" ? cardsById[pin.card] : null;
   if (card?.kind && card.kind !== "WILD") return { domain: card.kind.charAt(0) + card.kind.slice(1).toLowerCase(), from: "card type" };

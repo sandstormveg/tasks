@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:29f995c45bd80456
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:a863e4a08ddebffb
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1844,7 +1844,6 @@ function addressOf(pin, pins, cardsById = {}) {
   if (pin.kind === "frame" && pin.address) return { ...pin.address, frame: pin.id };
   for (const f of framesOf(pin, pins)) {
     if (f.address?.domain) return { ...f.address, frame: f.id };
-    if (f.title) return { domain: f.title, frame: f.id };
   }
   const card = pin.kind === "card" ? cardsById[pin.card] : null;
   if (card?.kind && card.kind !== "WILD") return { domain: card.kind.charAt(0) + card.kind.slice(1).toLowerCase(), from: "card type" };
