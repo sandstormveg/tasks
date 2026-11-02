@@ -214,7 +214,16 @@
       "category": "Shopping 🛍️",
       "created": "2026-09-28",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mvyx8bl088q3",
+          "text": "find me a good rice cooker on amazon",
+          "done": false,
+          "created": "2026-11-02T07:12:08.100Z",
+          "updated": "2026-11-02T07:12:08.100Z"
+        }
+      ]
     },
     {
       "id": "ikea-couch-fold-out-table-with-storage-mvovhy6u",
