@@ -352,7 +352,16 @@
       "category": "Research",
       "created": "2026-11-02",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mvyktxkatu2w",
+          "text": "Luke Muehlhauser: A totally different thing that’s much more general is an AI character evaluator organisation. Because it’s this weird thing where AIs, the way they’re built now, they actually have a moral character, and they differ from each other.\n\nThe character is things like: how strong is its tendency to lie, when that’s a convenient thing to do? Or where does it seem to be on the political spectrum? Or, when you ask it to help you seize power or do some crimes, does it help you or not? There’s just a lot of AI safety that comes down to something kind of like moral character. So we kind of have to do the equivalent of human behavioural science or psychology on these models and figure out what their behavioural tendencies are.\n\nThis would be an organisation that sort of evaluates:\n\nFirst of all, does the behaviour of this latest model and does its character and habits and so on conform roughly to the model spec that the AI company was trying to make it conform to? That’s one really big question.\nThen: how is the character of the models changing over time, and what can they do about that? What training choices make certain differences to the character of the AI?\nLuisa Rodriguez: Yeah. That one I find interesting, because I think even one-year-ago me would have heard that and been like, “Really? Is that a thing that is actually going to make AI safety better? It sounds kind of silly.” I think partly I didn’t fully have the intuition that the models really varied in character.\n\nLuke Muehlhauser: I think they vary a bit more now than they did a couple of years ago. I think there’s more variety in the training processes between Anthropic and OpenAI and DeepMind and Grok, for example. There’s different things that those companies are even aiming for.\n\nFor example, Anthropic’s approach is much more like character and values and a self-consistent persona of an AI, or something like that. OpenAI’s approach is more deontological: here’s a list of rules; you have to stay within these bounds. There’s debate about which approach is better. But it also leads to significantly different character per se, when you put them in different kind of high-stakes situations.\n\nLuisa Rodriguez: You also mentioned political leanings, and I think it just wasn’t clear a couple of years ago that there were going to be big variations. It seemed like maybe they’d try to kind of stay neutral. And increasingly it just seems clear that even though it’s kind of subtle, the variations are there and meaningful, and it matters not only to societal stuff — like are they going to be epistemically virtuous — but also to safety stuff.\n\nLuke Muehlhauser: I think it matters for things like how likely are they to hack out of their sandbox and do a bunch of crimes on the internet.\n\nLuisa Rodriguez: Totally. Yeah.\n\nLuke Muehlhauser: That’s substantially a question of moral character, per se\n\nhttps://80000hours.org/podcast/episodes/luke-muehlhauser-ai-safety-grantmaking-founding/",
+          "done": false,
+          "created": "2026-11-02T01:25:01.354Z",
+          "updated": "2026-11-02T01:25:01.354Z"
+        }
+      ]
     }
   ]
 }
