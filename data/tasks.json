@@ -418,6 +418,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "build-a-stats-page-in-tasks-mvzwjcir",
+      "title": "build a stats page in tasks",
+      "category": "Development",
+      "created": "2026-11-02",
+      "notes": "",
+      "assist": false
     }
   ]
 }
