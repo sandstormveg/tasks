@@ -1534,6 +1534,14 @@
           "updated": "2026-10-30T12:27:20.723Z"
         }
       ]
+    },
+    {
+      "id": "turn-on-windows-auto-sign-in-after-updates-rp3qafjo",
+      "title": "Turn on Windows auto sign-in after updates (ARSO)",
+      "category": "Development",
+      "completedDate": "2026-11-02",
+      "note": "",
+      "images": []
     }
   ]
 }
