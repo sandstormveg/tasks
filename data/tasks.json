@@ -369,7 +369,16 @@
       "category": "Research §",
       "created": "2026-11-02",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mvykykvhocv3",
+          "text": "I guess i could just have this be monitored like usual for things to add into my research system?",
+          "done": false,
+          "created": "2026-11-02T01:28:38.188Z",
+          "updated": "2026-11-02T01:28:38.188Z"
+        }
+      ]
     }
   ]
 }
