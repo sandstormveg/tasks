@@ -1,7 +1,7 @@
 // Camera-verified reps (Cali_pro's sk_vision, rebuilt): MoveNet finds your
 // joints on the device, RepCounter (core/reps.js) counts. Nothing from the
 // camera leaves the phone — no frames are saved or sent; only the count is.
-// The pose model (~3 MB vendored code + weights from Google's model hub) loads
+// The pose model (vendored code + weights in vendor/movenet, ~8 MB) loads
 // only when you open this sheet.
 
 import { sheet, html, toast } from "../ui/dom.js";
