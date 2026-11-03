@@ -407,7 +407,16 @@
       "category": "Development",
       "created": "2026-11-03",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw0qqz7org9c",
+          "text": "i did a strength one, with 20 pullups and got not one point in the strength stat, why? is it because the log didn't have that association?",
+          "done": false,
+          "created": "2026-11-03T13:46:13.572Z",
+          "updated": "2026-11-03T13:46:13.572Z"
+        }
+      ]
     }
   ]
 }
