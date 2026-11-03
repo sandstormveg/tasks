@@ -45,6 +45,10 @@ export async function mount(el, ctx, route, ui) {
           : plan?.rest ? html`<p class="muted">Rest day — three training days in a row earn one. Quests from the rest of your life still count toward the test.</p>`
           : el2.eligible ? html`<p class="muted">Nothing set: you've hit every target. Sit the test when you're ready.</p>`
           : html`<p class="muted">Nothing set today.</p>`}
+        <div class="free-sets">
+          <span class="muted small">Free set, any day, counted by the camera:</span>
+          ${FREE.map((ex) => html`<button class="btn" data-free="${ex}">◉ ${ex}s</button>`)}
+        </div>
       </section>
       ${record.length ? html`<section class="train-record"><h3>Test record</h3>${record.map(attemptRow)}</section>` : ""}
       <details class="footnote"><summary>How grades work</summary>
@@ -60,6 +64,8 @@ export async function mount(el, ctx, route, ui) {
     const m = e.target.closest("[data-mission]");
     if (m) return runMission(ctx, ctx.quests().find((q) => q.id === m.dataset.mission));
     if (e.target.closest("[data-sit]")) return sitTest(ctx);
+    const f = e.target.closest("[data-free]");
+    if (f) return runMission(ctx, freeSet(ctx, f.dataset.free));
   });
 }
 
@@ -121,6 +127,17 @@ function attemptRow(a) {
     <span class="grow small">${a.sets.map((s) => `${NAME[s.exercise] || s.exercise} ${s.reps}/${s.target}`).join(" · ")}</span>
     <b>${a.passed ? "Passed" : "Not yet"}</b>
   </div>`;
+}
+
+// Free sets are max sets you start yourself: they count as training and as your best,
+// so the trainer's targets follow them, but they're never posted to the board.
+const FREE = ["pushup", "squat", "situp"];
+
+function freeSet(ctx, ex) {
+  const now = ctx.now();
+  return { id: `free-${now.replace(/[^0-9]/g, "").slice(0, 14)}-${ex}`, title: `Free set: ${ex}s`, status: "accepted", origin: "training", giver: "trainer", author: "trainer",
+    kind: "max", taskIds: [], difficulty: "normal", attributes: { str: ex === "situp" ? 0.5 : 1, vit: ex === "situp" ? 0.5 : 0 },
+    proof: { type: "reps", exercise: ex, count: 1 }, posted: now };
 }
 
 async function count(q, opts) {

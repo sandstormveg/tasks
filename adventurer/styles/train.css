@@ -32,3 +32,5 @@
 .grade-chip { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; font-size: .78rem; font-weight: bold; }
 
 @media (max-width: 520px) { .mission { flex-wrap: wrap; } .mission .btn { width: 100%; } }
+.free-sets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.free-sets .muted { flex-basis: 100%; }
