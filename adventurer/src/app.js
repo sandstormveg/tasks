@@ -111,6 +111,11 @@ export function createContext(host) {
       }
     },
     payout,
+    /** An accepted quest whose linked tasks were all finished in Tasks: its XP is waiting on a turn-in. */
+    taskDone(q) {
+      return q.status === "accepted" && q.taskIds.length > 0
+        && q.taskIds.every((id) => store.tasks.history.some((h) => h.id === id) && !store.tasks.active.some((t) => t.id === id));
+    },
     taskTitle(id) {
       const t = [...store.tasks.active, ...store.tasks.history].find((x) => x.id === id);
       return t ? t.title : null;

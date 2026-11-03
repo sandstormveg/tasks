@@ -20,6 +20,7 @@ const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
 
 export async function mount(el, ctx, route, ui) {
   let filter = "open";
+  let nudged = false;
   const draw = () => {
     const d = ctx.derived();
     const quests = ctx.quests().filter((q) => q.giver !== "trainer"); // the trainer's sets live on the Train tab
@@ -35,6 +36,12 @@ export async function mount(el, ctx, route, ui) {
     };
     const shown = quests.filter((q) => filter === "open" ? OPEN.has(q.status) : filter === "requested" ? q.status === "requested" : !OPEN.has(q.status) && q.status !== "requested").sort(boardOrder);
     const active = shown.filter((q) => q.status === "accepted"), posted = shown.filter((q) => q.status === "posted");
+    // A task finished in Tasks doesn't turn its quest in (only proof does), so say so once per visit.
+    const ready = quests.filter((q) => ctx.taskDone(q));
+    if (ready.length && !nudged) {
+      nudged = true;
+      toast(ready.length === 1 ? `“${ready[0].title}” — its task is done in Tasks. Turn the quest in to claim the XP.` : `${ready.length} quests have their tasks done in Tasks. Turn them in to claim the XP.`, { timeout: 7000 });
+    }
     el.innerHTML = String(html`
       ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness, seed: seedOf(today) })) : ""}
       <div class="board-head">
@@ -77,7 +84,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="quest-title">${q.title}</div>
         ${q.origin === "inferred" && q.why ? html`<div class="why">${q.why}</div>` : q.brief ? html`<div class="brief">${q.brief}</div>` : ""}
         <div class="quest-foot"><span>${PROOF_LABEL[q.proof.type]}</span>${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
-          ${q.status !== "posted" ? html`<span class="status">${q.status}</span>` : ""}</div>
+          ${ctx.taskDone(q) ? html`<span class="status ready">✓ task done · turn in</span>` : q.status !== "posted" ? html`<span class="status">${q.status}</span>` : ""}</div>
       </button>`;
     }
   };
@@ -177,6 +184,7 @@ async function openQuest(ctx, q) {
       ${q.origin === "inferred" && s.relay ? html`<p class="relay-line">${s.relayName}: ${inferredIntro(q)}</p>` : ""}
       ${q.brief ? html`<p>${q.brief}</p>` : ""}
       ${q.detail ? html`<p class="muted pre">${q.detail}</p>` : ""}
+      ${ctx.taskDone(q) ? html`<p class="notice">You finished its task in Tasks. Turn it in below to claim the XP.</p>` : ""}
       <dl class="facts">
         <dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>
         <dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>
