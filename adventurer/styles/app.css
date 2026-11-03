@@ -78,6 +78,7 @@ a { color: var(--accent-2); }
 .quest.inferred { border-left-color: var(--amber); }
 .quest.accepted { border-left-color: var(--accent-2); box-shadow: 0 0 10px rgba(29, 233, 182, .15); }
 .quest.done, .quest.declined, .quest.expired { opacity: .6; }
+.quest-foot .status.ready { color: var(--accent-2); font-weight: bold; }
 .quest-top, .quest-foot { display: flex; gap: 10px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); align-items: center; }
 .quest-title { font-size: 1.02rem; margin: 5px 0 3px; font-weight: bold; }
 .brief, .why { font-size: .88rem; color: var(--muted); margin-bottom: 6px; }
