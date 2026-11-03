@@ -279,6 +279,7 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 .cam-hud { position: absolute; top: 8px; left: 10px; display: flex; gap: 6px; align-items: baseline; text-shadow: 0 0 6px #000; }
 .cam-count { font-size: 4rem; font-weight: bold; color: var(--accent-2); }
 .cam-angle { margin-left: 10px; color: var(--amber); }
+.cam-engine { margin-left: 10px; font-size: .75rem; color: var(--muted, #8aa); }
 .cam-status { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: rgba(0, 0, 0, .7); font-size: 1.35rem; font-weight: bold; line-height: 1.25; }
 
 /* Turn-in stamp */
