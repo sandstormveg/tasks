@@ -11,7 +11,7 @@
 // page around under one address (from before the Journal tab, say) and serve it offline,
 // next to a newer app.js. Fetches revalidate with the server ("no-cache") so the copy
 // saved is never one GitHub Pages' ~10 minute HTTP cache was still holding.
-const SHELL_CACHE = "tasks-shell-v2";
+const SHELL_CACHE = "tasks-shell-v3";
 const SHELL_FILES = ["index.html", "style.css", "app.js", "manifest.json", "favicon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 const scopeUrl = (path) => new URL(path, self.registration.scope).href;
 
@@ -36,14 +36,14 @@ self.addEventListener("activate", (event) => {
 function isShellRequest(req, url) {
   if (req.method !== "GET" || url.origin !== self.location.origin) return false;
   const path = url.pathname;
-  if (/\/(data|images|files|journal|research)\//.test(path)) return false;
+  if (/\/(data|images|files|journal|research|adventurer)\//.test(path)) return false;
   return req.mode === "navigate" || /\.(html|js|css|json|svg|png)$/.test(path) || path.endsWith("/");
 }
 
 // Only reached when an app's own worker isn't installed yet (it handles journal/ or
 // research/ once it is). Online that's just the network; offline it's this page instead
 // of a dead end.
-const APPS = { journal: "The Journal", research: "Research" };
+const APPS = { journal: "The Journal", research: "Research", adventurer: "The Guild" };
 const offlinePage = (name) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${name} offline</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070a;color:#dcffe1;
@@ -57,7 +57,7 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
   const app = req.method === "GET" && req.mode === "navigate" && url.origin === self.location.origin
-    && /\/(journal|research)\//.exec(url.pathname)?.[1];
+    && /\/(journal|research|adventurer)\//.exec(url.pathname)?.[1];
   if (app) {
     event.respondWith(fetch(req).catch(() => new Response(offlinePage(APPS[app]), { headers: { "Content-Type": "text/html; charset=utf-8" } })));
     return;

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Adventurer</title>
+<meta name="description" content="The guild quest board: quests built from your tasks, GPS check-ins and camera-verified reps, with a status screen that ranks you against real population data.">
+<meta name="theme-color" content="#05070a">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tasks">
+<meta name="referrer" content="no-referrer">
+<!-- Scripts only from this origin. Network: GitHub (sync), Wikipedia (scouting nearby landmarks), Google's model hub (pose model weights). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: mediastream:; connect-src 'self' https:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+<div class="hud" aria-hidden="true"></div>
+<header class="topbar">
+  <div id="host-home"></div>
+  <h1><span class="glyph">⚔</span> Guild</h1>
+  <button class="sync-pill" id="sync-pill" type="button" aria-label="Sync status"></button>
+</header>
+<nav class="tabs" aria-label="Main">
+  <a href="#/board" data-tab="board">⚔ <span>Board</span></a>
+  <a href="#/stats" data-tab="stats">◈ <span>Stats</span></a>
+  <a href="#/log" data-tab="log" title="Log" aria-label="Log">🗓️</a>
+  <a href="#/settings" data-tab="settings" title="Settings" aria-label="Settings">⚙</a>
+</nav>
+<main class="content" id="content" tabindex="-1"><div class="empty"><p>Opening the guild…</p></div></main>
+<noscript><p style="padding:24px">Adventurer needs JavaScript to run.</p></noscript>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

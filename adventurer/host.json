@@ -1,0 +1,13 @@
+{
+  "name": "Tasks",
+  "home": "../",
+  "tokenKey": "tasks_gh_token",
+  "defaults": {
+    "owner": "sandstormveg",
+    "repo": "tasks-data",
+    "publicRepo": "tasks",
+    "folder": "quests"
+  },
+  "app": "adventurer",
+  "source": "sandstormveg/Adventurer@93719da2caaa"
+}
