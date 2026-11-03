@@ -418,6 +418,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "20-pushups-mw0adnoj",
+      "title": "20 pushups",
+      "category": "Guild Quests",
+      "created": "2026-11-03",
+      "notes": "",
+      "assist": false
     }
   ]
 }
