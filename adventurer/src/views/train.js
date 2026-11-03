@@ -20,6 +20,8 @@ const who = (p) => `${p.sex === "female" ? "women" : "men"} ${(p.ageBand || "20-
 
 export async function mount(el, ctx, route, ui) {
   postToday(ctx);
+  // Warm the pose model now (download + GPU setup) so the camera draws straight away.
+  import("../vision/reps-sheet.js").then((m) => m.preloadPose()).catch(() => {});
   const draw = () => {
     const today = ctx.today();
     const quests = ctx.quests();
