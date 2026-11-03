@@ -1,12 +1,13 @@
 // Achievements: the trophy cabinet. Two kinds, shown together:
 // - the guild's own catalog, earned automatically from evidence (turned-in
-//   quests, finished tasks, streaks, ranks, tiers, skill levels), each showing
+//   quests, finished tasks, streaks, grades, tiers, skill levels), each showing
 //   progress until it's won — "the ones you will make";
 // - personal trophies, Silica's real-life achievements (earned, with a date)
 //   and life goals (still ahead), kept in quests/showcase.json.
 // Pure: everything here is computed from data handed in.
 
-import { RANKS, TIERS } from "./stats.js";
+import { TIERS } from "./stats.js";
+import { GRADES, attempts } from "./grades.js";
 
 export const TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
 
@@ -29,24 +30,31 @@ function streakDates(days) {
 /** Facts the catalog is checked against. */
 export function facts({ quests = [], history = [], attributes = [], skills = [] }) {
   const done = quests.filter((q) => q.status === "done").sort((a, b) => (a.completed || "").localeCompare(b.completed || ""));
+  // The trainer's daily sets and grade tests are quests too, but counting them would turn
+  // "Turn in 50 quests" into a month of push-ups: they count for reps and streaks only.
+  const quested = done.filter((q) => q.giver !== "trainer");
   const dates = (qs) => qs.map((q) => day(q.completed));
   const tasks = [...new Map(history.map((h) => [h.id, h])).values()].map((h) => h.completedDate).filter(Boolean).sort();
-  // XP over time, for when each rank was reached.
-  const events = [...done.map((q) => [day(q.completed), q.xp || 0]), ...tasks.map((d) => [d, 15])].sort((a, b) => a[0].localeCompare(b[0]));
-  let sum = 0;
-  const xpAt = events.map(([d, x]) => [d, (sum += x)]);
+  // The day each grade was first passed, in order (you can't skip one).
+  const passed = attempts(quests).filter((a) => a.passed);
+  const gradeDays = {};
+  for (const g of GRADES.slice(1)) {
+    const d = passed.filter((a) => a.grade === g.id).map((a) => a.day).sort()[0];
+    if (!d) break;
+    gradeDays[g.id] = d;
+  }
   let reps = 0;
   const repDates = [];
   for (const q of done) if (q.evidence?.type === "reps") { reps += q.evidence.reps || 0; repDates.push([day(q.completed), reps]); }
   return {
-    done: dates(done),
+    done: dates(quested),
     reps: dates(done.filter((q) => q.evidence?.type === "reps")),
     gps: dates(done.filter((q) => q.evidence?.type === "gps")),
-    inferred: dates(done.filter((q) => q.origin === "inferred")),
-    epic: dates(done.filter((q) => q.difficulty === "epic")),
+    inferred: dates(quested.filter((q) => q.origin === "inferred")),
+    epic: dates(quested.filter((q) => q.difficulty === "epic")),
     tasks,
     repTotal: reps, repDates,
-    xp: sum, xpAt,
+    grade: Object.keys(gradeDays).length, gradeDays,
     streak: streakDates([...dates(done), ...tasks]),
     bestTier: Math.max(-1, ...attributes.map((a) => TIERS.findIndex((t) => t.id === a.tier?.id))),
     bestSkill: Math.max(0, ...skills.map((s) => s.level)),
@@ -54,10 +62,7 @@ export function facts({ quests = [], history = [], attributes = [], skills = [] 
 }
 
 const count = (key, n) => (f) => ({ value: f[key].length, target: n, date: f[key][n - 1] || null });
-const rank = (id) => (f) => {
-  const min = RANKS.find((r) => r.id === id).min;
-  return { value: f.xp, target: min, date: f.xpAt.find(([, x]) => x >= min)?.[0] || null };
-};
+const grade = (id) => (f) => ({ value: f.grade, target: GRADES.findIndex((g) => g.id === id), date: f.gradeDays[id] || null });
 const streak = (n) => (f) => ({ value: f.streak.best, target: n, date: f.streak.reached[n] || null });
 
 export const CATALOG = [
@@ -79,9 +84,9 @@ export const CATALOG = [
   { id: "tasks-10", title: "Getting Things Done", desc: "Finish 10 tasks.", tier: "bronze", icon: "✓", check: count("tasks", 10) },
   { id: "tasks-100", title: "Taskmaster", desc: "Finish 100 tasks.", tier: "silver", icon: "✓", check: count("tasks", 100) },
   { id: "tasks-500", title: "Architect of Days", desc: "Finish 500 tasks.", tier: "gold", icon: "✓", check: count("tasks", 500) },
-  { id: "rank-c", title: "Bronze Vanguard", desc: "Reach guild rank C.", tier: "silver", icon: "◆", check: rank("C") },
-  { id: "rank-a", title: "Golden Sovereign", desc: "Reach guild rank A.", tier: "gold", icon: "◆", check: rank("A") },
-  { id: "rank-s", title: "Mythic Vanguard", desc: "Reach guild rank S.", tier: "mythic", icon: "◆", check: rank("S") },
+  { id: "rank-c", title: "Bronze Vanguard", desc: "Pass the C-grade test.", tier: "silver", icon: "◆", check: grade("C") },
+  { id: "rank-a", title: "Golden Sovereign", desc: "Pass the A-grade test.", tier: "gold", icon: "◆", check: grade("A") },
+  { id: "rank-s", title: "Mythic Vanguard", desc: "Pass the S-grade test.", tier: "mythic", icon: "◆", check: grade("S") },
   { id: "tier-a", title: "Elite Trait", desc: "Any attribute at tier A.", tier: "gold", icon: "◈", check: (f) => ({ value: Math.max(0, f.bestTier), target: 5, date: null }) },
   { id: "tier-ss", title: "Legendary Trait", desc: "Any attribute at tier SS.", tier: "mythic", icon: "◈", check: (f) => ({ value: Math.max(0, f.bestTier), target: 7, date: null }) },
   { id: "skill-5", title: "Adept", desc: "Any skill at Lv 5.", tier: "silver", icon: "✧", check: (f) => ({ value: f.bestSkill, target: 5, date: null }) },

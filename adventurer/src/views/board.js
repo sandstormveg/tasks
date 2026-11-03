@@ -14,14 +14,14 @@ import { relayCounter } from "../ui/relay.js";
 import { newlyEarned } from "../core/achievements.js";
 import { uploadPhoto } from "../data/media.js";
 
-const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted" };
+const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted", training: "Trainer", test: "Grade test" };
 const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
 
 export async function mount(el, ctx, route, ui) {
   let filter = "open";
   const draw = () => {
     const d = ctx.derived();
-    const quests = ctx.quests();
+    const quests = ctx.quests().filter((q) => q.giver !== "trainer"); // the trainer's sets live on the Train tab
     const s = ctx.settings();
     const today = ctx.today();
     const soon = new Date(Date.parse(today) + 2 * 864e5).toISOString().slice(0, 10);

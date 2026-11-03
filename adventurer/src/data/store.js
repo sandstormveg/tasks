@@ -14,7 +14,7 @@ import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
 const TEMPLATE = ["README.md", "CLAUDE.md", ".claude/skills/quests/SKILL.md", "tools/quests.mjs"];
-const STAGE = { requested: 0, posted: 1, declined: 2, expired: 2, accepted: 3, done: 4 };
+const STAGE = { requested: 0, posted: 1, declined: 2, expired: 2, accepted: 3, failed: 3.5, done: 4 }; // a retried set that passes beats the failed one
 
 function load(k, fallback) {
   try { const v = localStorage.getItem(KEY + k); return v == null ? fallback : JSON.parse(v); } catch { return fallback; }

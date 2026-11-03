@@ -1,4 +1,4 @@
-// The status screen: level, guild rank and XP up top; a radar of the seven
+// The status screen: level, guild grade and XP up top; a radar of the seven
 // attributes by percentile; then one row per attribute with its tier, value and
 // a distribution curve showing where you sit. Tap a row and Relay explains it;
 // "Measure" types in a new value. Below them: Skills and the Achievements
@@ -29,7 +29,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="grow">
           <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span></div>
           <div class="xpbar" role="progressbar" aria-valuenow="${d.level.into}" aria-valuemax="${d.level.need}" aria-label="XP to next level"><i style="width:${xpPct}%"></i></div>
-          <div class="muted small">${d.level.into}/${d.level.need} XP to Lv ${d.level.level + 1} · ${d.xp} total${d.rank.next ? ` · rank ${d.rank.next.id} at ${d.rank.next.min}` : ""}${d.streak ? ` · ${d.streak}-day streak` : ""}</div>
+          <div class="muted small">${d.level.into}/${d.level.need} XP to Lv ${d.level.level + 1} · ${d.xp} total${d.rank.next ? ` · grade ${d.rank.next.id} by test (Train tab)` : ""}${d.streak ? ` · ${d.streak}-day streak` : ""}</div>
         </div>
       </section>
       ${!prof.ageBand ? html`<p class="notice">Set your age band in <a href="#/settings">Settings</a> so strength is compared with people your age.</p>` : ""}

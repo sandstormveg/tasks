@@ -1,12 +1,14 @@
-// Adventurer: boot, routes and the shell. Four tabs — the quest Board, Stats,
-// the 🗓️ Log of turned-in quests, and Settings — each a module in ./views with
-// mount(el, ctx, route, ui). The ui object's listeners die with the view.
+// Adventurer: boot, routes and the shell. Five tabs — the quest Board, Train
+// (grades and the trainer), Stats, the 🗓️ Log of turned-in quests, and
+// Settings — each a module in ./views with mount(el, ctx, route, ui). The ui
+// object's listeners die with the view.
 
 import { createContext, loadHost } from "./app.js";
 import { $, $$, html, toast } from "./ui/dom.js";
 
 const VIEWS = {
   board: () => import("./views/board.js"),
+  train: () => import("./views/train.js"),
   stats: () => import("./views/stats.js"),
   log: () => import("./views/log.js"),
   settings: () => import("./views/settings.js"),

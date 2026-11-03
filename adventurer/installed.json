@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@96ad50188636",
+ "source": "sandstormveg/Adventurer@71d801bded28",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -11,6 +11,7 @@
   "src/app.js",
   "src/core/achievements.js",
   "src/core/geo.js",
+  "src/core/grades.js",
   "src/core/norms.js",
   "src/core/quests.js",
   "src/core/relay.js",
@@ -30,8 +31,10 @@
   "src/views/settings.js",
   "src/views/showcase.js",
   "src/views/stats.js",
+  "src/views/train.js",
   "src/vision/reps-sheet.js",
   "styles/app.css",
+  "styles/train.css",
   "vendor/pose.js",
   "sw.js",
   "host.json",

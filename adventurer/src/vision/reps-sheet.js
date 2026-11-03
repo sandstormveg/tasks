@@ -11,15 +11,18 @@ const BONES = [["left_shoulder", "left_elbow"], ["left_elbow", "left_wrist"], ["
   ["left_shoulder", "right_shoulder"], ["left_shoulder", "left_hip"], ["right_shoulder", "right_hip"], ["left_hip", "right_hip"],
   ["left_hip", "left_knee"], ["left_knee", "left_ankle"], ["right_hip", "right_knee"], ["right_knee", "right_ankle"]];
 
-/** Resolves {reps} when you finish, or null if closed early. */
-export function countReps(exercise, target) {
+/**
+ * Resolves {reps} when you finish, or null if closed early. `max: true` is an
+ * all-out set (the trainer's assessment and weekly max): no target, just count.
+ */
+export function countReps(exercise, target, { max = false, title } = {}) {
   const rule = EXERCISE_RULES[exercise];
   return sheet({
-    title: `${target} ${exercise}s`,
+    title: title || (max ? `Max set: ${exercise}s` : `${target} ${exercise}s`),
     wide: true,
     body: html`<div class="cam">
         <video playsinline muted></video><canvas></canvas>
-        <div class="cam-hud"><span class="cam-count">0</span><span class="cam-of">/ ${target}</span><span class="cam-angle"></span></div>
+        <div class="cam-hud"><span class="cam-count">0</span><span class="cam-of">${max ? "max" : `/ ${target}`}</span><span class="cam-angle"></span></div>
         <div class="cam-status">Loading the pose model…</div>
       </div>
       <p class="muted small">${rule.cue} Frames stay on this device.</p>`,
@@ -51,10 +54,10 @@ export function countReps(exercise, target) {
               if (counter.update(kp, performance.now())) {
                 count.textContent = counter.reps;
                 navigator.vibrate?.(30);
-                if (counter.reps === target) status.textContent = "Target reached. Keep going or tap Done.";
+                if (!max && counter.reps === target) status.textContent = "Target reached. Keep going or tap Done.";
               }
               ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
-              if (counter.reps < target) status.textContent = counter.angle == null ? "Can't see the joints — step back." : counter.stage === "DOWN" ? "Down… now up." : "Go.";
+              if (max || counter.reps < target) status.textContent = counter.angle == null ? "Can't see the joints — step back." : counter.stage === "DOWN" ? "Down… now up." : "Go.";
             }
             raf = requestAnimationFrame(loop);
           };
