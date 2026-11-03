@@ -1,0 +1,220 @@
+// The quest Board: Relay at the counter, then the quests — accepted first,
+// inferred and guild-master quests next. Tapping one opens its sheet: what it
+// is, which tasks it's built on, accept/decline, and turn-in with the proof it
+// asks for (GPS check-in, camera-verified reps, photo, journal day, or your word).
+
+import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
+import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
+import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf } from "../core/relay.js";
+import { checkIn } from "../core/geo.js";
+import { geosearchUrl, scoutQuests } from "../core/scout.js";
+import { relayCounter } from "../ui/relay.js";
+import { uploadPhoto } from "../data/media.js";
+
+const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted" };
+const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
+
+export async function mount(el, ctx, route, ui) {
+  let filter = "open";
+  const draw = () => {
+    const d = ctx.derived();
+    const quests = ctx.quests();
+    const s = ctx.settings();
+    const today = ctx.today();
+    const soon = new Date(Date.parse(today) + 2 * 864e5).toISOString().slice(0, 10);
+    const board = {
+      fresh: quests.filter((q) => q.status === "posted" && (q.posted || "").slice(0, 10) >= new Date(Date.parse(today) - 3 * 864e5).toISOString().slice(0, 10)).length,
+      inferred: quests.filter((q) => q.status === "posted" && q.origin === "inferred").length,
+      accepted: quests.filter((q) => q.status === "accepted").length,
+      expiringSoon: quests.filter((q) => OPEN.has(q.status) && q.expires && q.expires <= soon).length,
+      streak: d.streak,
+    };
+    const shown = quests.filter((q) => filter === "open" ? OPEN.has(q.status) : filter === "requested" ? q.status === "requested" : !OPEN.has(q.status) && q.status !== "requested").sort(boardOrder);
+    el.innerHTML = String(html`
+      ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness, seed: seedOf(today) })) : ""}
+      <div class="board-head">
+        <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span><span class="muted">Lv ${d.level.level} · ${d.xp} XP</span></div>
+        <div class="row wrap">
+          ${Object.entries(FILTERS).map(([k, v]) => html`<button class="chip ${filter === k ? "on" : ""}" data-filter="${k}">${v}</button>`)}
+        </div>
+        <div class="row wrap actions">
+          <button class="btn small" data-act="scout">⌖ Scout nearby</button>
+          <button class="btn small" data-act="request">✉ File a request</button>
+          <button class="btn small ghost" data-act="new">+ Post my own</button>
+        </div>
+      </div>
+      <div class="quests">
+        ${shown.length ? shown.map(card) : html`<div class="empty"><p>${filter === "open" ? "No open quests. Scout nearby, file a request, or wait for the guild master's next pass." : "Nothing here."}</p></div>`}
+      </div>`);
+    function card(q) {
+      const tasks = q.taskIds.map((id) => ctx.taskTitle(id)).filter(Boolean);
+      return html`<button class="quest ${q.status} ${q.origin}" data-id="${q.id}">
+        <div class="quest-top"><span class="tag">${ORIGIN_TAG[q.origin] || q.origin}</span><span class="diff d-${q.difficulty}">${DIFFICULTY[q.difficulty].label}</span>
+          <span class="reward">+${payout(q)} XP</span></div>
+        <div class="quest-title">${q.title}</div>
+        ${q.origin === "inferred" && q.why ? html`<div class="why">${q.why}</div>` : q.brief ? html`<div class="brief">${q.brief}</div>` : ""}
+        <div class="quest-foot"><span>${PROOF_LABEL[q.proof.type]}</span>${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
+          ${q.status !== "posted" ? html`<span class="status">${q.status}</span>` : ""}</div>
+      </button>`;
+    }
+  };
+  draw();
+  ui.onStore((c) => { if (["quest", "sync", "sync-end", "settings", "stats"].includes(c.op)) draw(); });
+
+  el.addEventListener("click", async (e) => {
+    const f = e.target.closest("[data-filter]");
+    if (f) { filter = f.dataset.filter; draw(); return; }
+    const card = e.target.closest(".quest[data-id]");
+    if (card) return openQuest(ctx, ctx.quests().find((q) => q.id === card.dataset.id));
+    const act = e.target.closest("[data-act]")?.dataset.act;
+    if (act === "scout") return scout(ctx);
+    if (act === "request") return fileRequest(ctx);
+    if (act === "new") return postOwn(ctx);
+  });
+}
+
+async function scout(ctx) {
+  try {
+    const pos = await position({ highAccuracy: false });
+    const res = await fetch(geosearchUrl(pos));
+    const data = await res.json();
+    const found = scoutQuests(data?.query?.geosearch, { taken: ctx.store.ids(), now: ctx.now() });
+    if (!found.length) return toast("No new landmarks within 5 km. Try again somewhere else.");
+    for (const q of found) ctx.store.put(q);
+    toast(`${found.length} scouting quest${found.length > 1 ? "s" : ""} posted.`);
+    ctx.syncNow();
+  } catch (err) { errorToast(err, "Couldn't scout"); }
+}
+
+async function fileRequest(ctx) {
+  const text = await promptSheet({ title: `${ctx.settings().relayName}: intake`, label: "What do you want to do?", multiline: true, placeholder: "e.g. get back into climbing; read more fiction; see the coast", confirm: "File it", hint: "The guild master shapes it into a quest on the next pass." });
+  if (!text?.trim()) return;
+  const title = text.trim().split("\n")[0].slice(0, 90);
+  ctx.store.put({ id: newId(`req-${title}`, ctx.store.ids()), title, detail: text.trim(), status: "requested", origin: "request", giver: "relay", author: "self", taskIds: [], difficulty: "normal", attributes: {}, proof: { type: "honor" }, posted: ctx.now() });
+  toast(filedRequest(Date.now()));
+  ctx.syncNow();
+}
+
+async function postOwn(ctx) {
+  const opts = (list, labels) => list.map((v) => html`<option value="${v}">${labels?.[v] || v}</option>`);
+  const tasks = ctx.store.tasks.active.slice().sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+  const out = await sheet({
+    title: "Post a quest",
+    body: html`<form class="form" data-f>
+      <label class="field"><span>Title</span><input class="input" name="title" required autofocus></label>
+      <label class="field"><span>Brief</span><input class="input" name="brief"></label>
+      <div class="grid2">
+        <label class="field"><span>Difficulty</span><select class="input" name="difficulty">${opts(Object.keys(DIFFICULTY))}</select></label>
+        <label class="field"><span>Proof</span><select class="input" name="proof">${opts(PROOFS, PROOF_LABEL)}</select></label>
+        <label class="field"><span>Exercise (reps)</span><select class="input" name="exercise">${opts(EXERCISES)}</select></label>
+        <label class="field"><span>Reps</span><input class="input" name="count" type="number" min="1" value="20"></label>
+        <label class="field"><span>Attribute</span><select class="input" name="attr">${opts(["", "str", "vit", "agi", "int", "wis", "cha", "wil"])}</select></label>
+        <label class="field"><span>Expires</span><input class="input" name="expires" type="date"></label>
+      </div>
+      <label class="field"><span>Built on a task</span><select class="input" name="task"><option value="">—</option>${tasks.map((t) => html`<option value="${t.id}">${t.title}</option>`)}</select></label>
+    </form>`,
+    foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Post</button>`,
+    setup: (d, close) => d.querySelector("[data-ok]").addEventListener("click", () => {
+      const f = d.querySelector("[data-f]");
+      if (!f.reportValidity()) return;
+      close(Object.fromEntries(new FormData(f)));
+    }),
+  });
+  if (!out) return;
+  if (out.proof === "gps") return toast("GPS quests come from Scout nearby or the guild master — they need a public place.", { error: true });
+  const proof = out.proof === "reps" ? { type: "reps", exercise: out.exercise, count: Number(out.count) } : { type: out.proof };
+  try {
+    ctx.store.put({ id: newId(out.title, ctx.store.ids()), title: out.title.trim(), brief: out.brief?.trim() || undefined, status: "posted", origin: out.task ? "task" : "self", giver: "self", author: "self",
+      taskIds: out.task ? [out.task] : [], difficulty: out.difficulty, attributes: out.attr ? { [out.attr]: 1 } : out.proof === "reps" ? { str: 1 } : {}, proof, posted: ctx.now(), expires: out.expires || undefined });
+    ctx.syncNow();
+  } catch (err) { errorToast(err); }
+}
+
+function position({ highAccuracy = true } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("This device can't share its location."));
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      (e) => reject(new Error(e.code === 1 ? "Location permission was refused." : "Couldn't get a location fix.")),
+      { enableHighAccuracy: highAccuracy, timeout: 20000, maximumAge: highAccuracy ? 0 : 300000 },
+    );
+  });
+}
+
+async function openQuest(ctx, q) {
+  if (!q) return;
+  const s = ctx.settings();
+  const tasks = q.taskIds.map((id) => ({ id, title: ctx.taskTitle(id) }));
+  const ev = q.evidence;
+  const act = await sheet({
+    title: q.title,
+    body: html`
+      ${q.origin === "inferred" && s.relay ? html`<p class="relay-line">${s.relayName}: ${inferredIntro(q)}</p>` : ""}
+      ${q.brief ? html`<p>${q.brief}</p>` : ""}
+      ${q.detail ? html`<p class="muted pre">${q.detail}</p>` : ""}
+      <dl class="facts">
+        <dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>
+        <dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>
+        ${Object.keys(q.attributes).length ? html`<dt>Trains</dt><dd>${Object.keys(q.attributes).map((a) => a.toUpperCase()).join(" · ")}</dd>` : ""}
+        ${q.expires ? html`<dt>Closes</dt><dd>${q.expires}</dd>` : ""}
+        <dt>Posted by</dt><dd>${q.giver === "guildmaster" ? "the guild master" : q.giver === "relay" ? s.relayName : q.giver === "board" ? "the board" : "you"}</dd>
+        ${tasks.length ? html`<dt>Tasks</dt><dd>${tasks.map((t) => html`<div>⛓ ${t.title || t.id}</div>`)}</dd>` : ""}
+        ${q.link ? html`<dt>About</dt><dd><a href="${q.link}" target="_blank" rel="noopener">Read about it</a></dd>` : ""}
+        ${ev ? html`<dt>Turned in</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
+      </dl>
+      ${OPEN.has(q.status) && s.relay ? html`<p class="relay-line">${s.relayName}: ${askProof(q)}</p>` : ""}`,
+    foot: html`${q.status === "posted" ? html`<button class="btn" data-a="decline">Decline</button><button class="btn" data-a="accept">Accept</button>` : ""}
+      ${OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
+      ${q.status === "declined" || q.status === "expired" ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}`,
+    setup: (d, close) => d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); }),
+  });
+  try {
+    if (act === "accept") ctx.store.put({ ...q, status: "accepted", accepted: ctx.now() });
+    else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
+    else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
+    else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
+    else if (act === "honor") await turnIn(ctx, q, "honor");
+    else return;
+    ctx.syncNow();
+  } catch (err) { errorToast(err); }
+}
+
+async function turnIn(ctx, q, type) {
+  let evidence;
+  if (type === "gps") {
+    const pos = await position();
+    const t = q.proof.target;
+    const r = checkIn(pos, t, t.radius || 60, pos.accuracy);
+    if (!r.inRange) return toast(`Not there yet: ${r.distance} m ${r.direction}. Get within ${r.allowed} m.`, { timeout: 7000 });
+    evidence = { distance: r.distance }; // never your coordinates
+  } else if (type === "reps") {
+    const { countReps } = await import("../vision/reps-sheet.js");
+    const res = await countReps(q.proof.exercise, q.proof.count);
+    if (!res) return;
+    if (res.reps < q.proof.count) return toast(`${res.reps}/${q.proof.count} counted. Not enough for the stamp — try again when you're ready.`, { timeout: 7000 });
+    evidence = { exercise: q.proof.exercise, reps: res.reps, verified: true };
+  } else if (type === "photo") {
+    const path = await uploadPhoto(ctx, q.id);
+    if (!path) return;
+    evidence = { photo: path };
+  } else if (type === "journal") {
+    const day = await promptSheet({ title: "Which journal day?", type: "date", value: ctx.today(), confirm: "Link it", hint: "Only the date is saved; the entry isn't read." });
+    if (!day) return;
+    evidence = { journalDay: day };
+  } else {
+    const note = await promptSheet({ title: "How did it go?", multiline: true, confirm: "Turn in", hint: "Optional. Your word pays a bit over half." });
+    if (note == null) return;
+    evidence = note.trim() ? { note: note.trim() } : {};
+  }
+  const done = complete(q, { proofType: type, evidence, at: ctx.now() });
+  ctx.store.put(done);
+  toast(stamped(done, done.xp, Date.now()), { timeout: 5000 });
+  celebrate();
+}
+
+function celebrate() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.body.classList.add("stamp");
+  setTimeout(() => document.body.classList.remove("stamp"), 900);
+}
+

@@ -31,11 +31,12 @@
       <nav class="tabs">
         <button class="tab-btn active" data-tab="active">Active</button>
         <button class="tab-btn assist-tab-btn" data-tab="assist" title="Assistance" aria-label="Assistance"><span class="assist-tab-star">✦</span></button>
-        <button class="tab-btn" data-tab="tree">History</button>
+        <button class="tab-btn history-tab-btn" data-tab="tree" title="History" aria-label="History"><span aria-hidden="true">🗓️</span></button>
         <a class="tab-btn app-tab-btn" href="journal/" data-app="journal" data-name="Journal" title="Journal" aria-label="Journal"><span class="app-tab-glyph" aria-hidden="true">✎</span><span class="app-tab-label">Journal</span></a>
         <a class="tab-btn app-tab-btn" href="research/" data-app="research" data-name="Research" title="Research" aria-label="Research"><span class="app-tab-glyph" aria-hidden="true">§</span><span class="app-tab-label">Research</span></a>
+        <a class="tab-btn app-tab-btn" href="adventurer/" data-app="adventurer" data-name="Guild" title="Guild" aria-label="Guild"><span class="app-tab-glyph" aria-hidden="true">⚔</span><span class="app-tab-label">Guild</span></a>
       </nav>
-      <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+      <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
     </div>
     <div id="sync-bar" class="sync-bar" role="status" aria-live="polite"></div>
   </header>
@@ -122,27 +123,20 @@
   <dialog id="settings-dialog">
     <form method="dialog" id="settings-form">
       <h3>Settings</h3>
-      <p class="hint">
-        Paste a GitHub fine-grained personal access token with <strong>Contents: Read and write</strong>
-        to let this page load and save your tasks. One token is used for every repo you can
-        access — scope it to whichever you need:
-      </p>
-      <ul class="hint">
-        <li><code>sandstormveg/tasks</code> (public) for the Active/History/Assistance tabs to work at all.</li>
-        <li><code>sandstormveg/tasks-data</code> (private) too, if you also want private tasks to load and be editable.</li>
-      </ul>
-      <p class="hint">
-        To give someone edit access to only the public tasks — never the private ones —
-        create a <em>separate</em> fine-grained token scoped only to
-        <code>sandstormveg/tasks</code> and have them paste that into their own browser's
-        Settings here. They don't need your token at all. Calls to the private repo will
-        just fail for them and those tasks won't show — no code change needed, it's purely
-        which repo(s) the token itself can see.
-      </p>
-      <p class="hint">
-        Your token is stored only in your browser (localStorage), never sent anywhere except GitHub's API.
-      </p>
-      <input id="settings-token" type="password" placeholder="github_pat_…" />
+      <details class="settings-section" open>
+        <summary>Access / Key</summary>
+        <p class="hint">A GitHub fine-grained token with <strong>Contents: Read and write</strong> on
+          <code>sandstormveg/tasks</code>, plus <code>sandstormveg/tasks-data</code> for private tasks, ✎ Journal,
+          § Research and ⚔ Guild. Stored only in this browser; sent only to GitHub.</p>
+        <label class="settings-label" for="settings-token">Key</label>
+        <input id="settings-token" type="password" placeholder="github_pat_…" autocomplete="off" />
+        <details class="settings-more">
+          <summary>Sharing edit access with someone else</summary>
+          <p class="hint">Make them a <em>separate</em> token scoped only to <code>sandstormveg/tasks</code> and have them
+            paste it here in their own browser. Private calls just fail for them and private tasks don't show —
+            it's purely which repos the token can see.</p>
+        </details>
+      </details>
       <div class="dialog-actions">
         <button type="button" id="settings-clear">Clear</button>
         <button type="submit">Save</button>
