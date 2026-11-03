@@ -425,6 +425,14 @@
           "created": "2026-11-04T01:20:00",
           "updated": "2026-11-04T01:20:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-adventurer-strfix",
+          "text": "✓ Fixed and live (2026-11-04). What happened: STR’s tier comes from your best push-up set measured against population norms, not from XP. The quest’s 15 XP did reach STR (Stats › XP earned here), but a quest turned in on your word (“Fine”) wasn’t counted as a set, so the tier never moved. Now a push-up quest turned in without the camera counts as your word for that set, the same as typing it into Measure, and a higher camera-counted set still wins. Your earlier 20-push-up turn-in counts too, so open Stats to see STR. The turn-in toast now lists XP per attribute and any tier change, e.g. “STR +15 XP (tier – → C)”. One thing to check: that quest was push-ups, not pull-ups. There’s no pull-up measure yet; say if you want one.",
+          "done": false,
+          "created": "2026-11-03T14:18:34.115Z",
+          "updated": "2026-11-03T14:18:34.115Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
