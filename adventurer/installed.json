@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@71d801bded28",
+ "source": "sandstormveg/Adventurer@fab5160a4bc5",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -10,6 +10,7 @@
   "quests-template/tools/quests.mjs",
   "src/app.js",
   "src/core/achievements.js",
+  "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",
   "src/core/norms.js",

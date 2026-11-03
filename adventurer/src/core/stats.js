@@ -112,7 +112,9 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
   const derived = {
     pushups: () => {
       const reps = done.filter((q) => q.evidence?.type === "reps" && q.evidence.exercise === "pushup" && (q.completed || "") >= yearAgo).map((q) => q.evidence.reps || 0);
-      const typed = measurements.filter((m) => m.metric === "pushups" && (m.date || "") >= yearAgo).map((m) => m.value);
+      // A push-up quest turned in without the camera is your word for the set, like a typed measurement.
+      const word = done.filter((q) => q.evidence?.type !== "reps" && q.proof?.type === "reps" && q.proof.exercise === "pushup" && (q.completed || "") >= yearAgo).map((q) => Number(q.proof.count) || 0);
+      const typed = [...measurements.filter((m) => m.metric === "pushups" && (m.date || "") >= yearAgo).map((m) => m.value), ...word];
       const all = [...reps, ...typed];
       return all.length ? { value: Math.max(...all), from: reps.length && Math.max(...reps) >= Math.max(...typed, 0) ? "verified" : "typed" } : null;
     },
@@ -138,6 +140,14 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
       xp: Math.round(done.reduce((s, q) => s + (q.xp || 0) * (Number(q.attributes?.[a.id]) || 0), 0)),
     };
   });
+}
+
+/** What a turn-in did to each attribute: XP earned there, and any tier change. For the turn-in toast. */
+export function attributeGains(before, after) {
+  return after.map((a) => {
+    const b = before.find((x) => x.id === a.id) || {};
+    return { id: a.id, name: a.name, xp: (a.xp || 0) - (b.xp || 0), from: b.tier?.id || null, to: a.tier?.id || null };
+  }).filter((g) => g.xp > 0 || g.from !== g.to);
 }
 
 /** Total XP from evidence only. */
