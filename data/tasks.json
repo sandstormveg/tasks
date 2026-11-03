@@ -416,6 +416,16 @@
           "created": "2026-11-03T13:46:13.572Z",
           "updated": "2026-11-03T13:46:13.572Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-statfix",
+          "text": "Checked (2026-11-04): the 20 pushups quest did carry the association (STR weight 1, 15 XP paid), so it is not your log. The turn-in paid XP but never fed it into the STR stat. That is an app bug or gap. Relayed to the Adventurer session to fix, so quest XP raises the weighted attributes and the turn-in toast shows the change.",
+          "done": false,
+          "created": "2026-11-04T01:20:00",
+          "updated": "2026-11-04T01:20:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
