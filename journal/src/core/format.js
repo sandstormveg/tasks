@@ -30,11 +30,26 @@ const FIELD_ORDER = {
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: ["id", "type", "kind", "title", "url", "doi", "authors", "year", "site", "status", "favourite", "tags",
     "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "visibility", "captured"],
+  // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
+  // A pin's body is its note; a string's body is your synthesis — how the two connect.
+  board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],
+  pin: ["id", "type", "board", "kind", "title", "x", "y", "w", "h", "color", "card", "source", "url", "address",
+    "author", "created", "updated"],
+  string: ["id", "type", "board", "from", "to", "label", "state", "tier", "holds_in", "breaks_at", "author",
+    "created", "updated", "synthesised", "synthesised_by"],
+  // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
+  // `source: atlas` cards are Atlas entries (src/core/atlas.js); the rest are made from Wikidata.
+  card: ["id", "type", "source", "atlas", "qid", "label", "desc", "kind", "subtitle", "address", "status", "standing",
+    "credence", "review", "path", "edges", "sprite", "atlas_version", "rarity", "sitelinks", "finish", "insight", "img",
+    "lineage", "stats", "flavor", "questions", "bridges", "links", "by", "minted", "added", "updated"],
+  // A piece of writing (src/core/writing.js); the body is your draft.
+  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
 };
 
 const SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
 
-const BODY_TYPES = new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question", "source"]);
+const BODY_TYPES = new Set(["entry", "day", "claim", "interpretation", "report", "proposal", "question", "source",
+  "board", "pin", "string", "card", "piece"]);
 
 /** Repo path for a record (or null if the record can't be placed safely). */
 export function pathFor(rec) {
@@ -59,12 +74,17 @@ export function pathFor(rec) {
       const m = /^s-(\d{4})(\d{2})\d{2}-/.exec(rec.id);
       return m ? `sources/${m[1]}/${m[2]}/${rec.id}.md` : null;
     }
+    case "board": return `boards/${rec.id}.md`;
+    case "pin": return isSafeId(rec.board) ? `boards/${rec.board}/pins/${rec.id}.md` : null;
+    case "string": return isSafeId(rec.board) ? `boards/${rec.board}/strings/${rec.id}.md` : null;
+    case "card": return `cards/${rec.id}.md`;
+    case "piece": return `writing/${rec.id}.md`;
     case "config": return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default: return null;
   }
 }
 
-const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "config/"];
+const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "config/"];
 
 /** Is this repo path one the app owns as a text record? */
 export function isRecordPath(p) {
@@ -190,6 +210,9 @@ export function inferType(path) {
   if (path.startsWith("interpretations/")) return "interpretation";
   if (path.startsWith("imports/")) return "report";
   if (path.startsWith("sources/")) return "source";
+  if (path.startsWith("boards/")) return /^boards\/[^/]+\/pins\//.test(path) ? "pin" : /^boards\/[^/]+\/strings\//.test(path) ? "string" : "board";
+  if (path.startsWith("cards/")) return "card";
+  if (path.startsWith("writing/")) return "piece";
   if (path.startsWith("config/")) return "config";
   return null;
 }

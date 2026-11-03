@@ -1,37 +1,71 @@
 # Research — rules for Claude
 
-This folder is the user's private research library (written by the Research app). Use it to answer
-questions about what they've saved, read and thought, and to add things when they ask.
+This folder is the user's private research system (written by the Research app, the § tab in Tasks):
+a **library** of sources, a **Deposit** where anything lands first, **writing** (pieces such as a grant
+proposal), and **corkboards** where ideas, sources and Infodex cards are pinned and tied with string.
+Use it to answer questions about their research, and to add things when they ask.
 
-## Reading
-
-Use the tool rather than opening files one by one:
+## Reading — use the tool, not the files
 
 ```sh
-node tools/research.mjs stats
-node tools/research.mjs list --status read --tag s-risk       # also --fav, --kind paper, --status inbox|to-read|reading|dropped
+node tools/research.mjs stats                                 # start here: what's in the library
+node tools/research.mjs boards                                # every corkboard, with red/synthesised counts
+node tools/research.mjs pieces                                # their writing
+node tools/research.mjs list --status read --tag s-risk       # also --fav, --kind paper, --status inbox|to-read|reading|dropped|filed
 node tools/research.mjs search moral circle #ethics           # words and #tags, accents and case ignored
 node tools/research.mjs show <id or words>                    # one source in full
-node tools/research.mjs tags
+node tools/research.mjs board <id or words>                   # one board: frames, pins, strings, curator's findings
+node tools/research.mjs piece <id or words>                   # one piece, with its draft
+node tools/research.mjs card [Q…]                             # cards (list, or one Wikidata card)
+node tools/research.mjs atlas <words>                         # search the Atlas's small index (needs a clone of atlas_infodex
+                                                              # next to tasks-data, or --atlas-dir) — never read the Atlas repo whole
 ```
 
-Add `--json` for structured output.
+Add `--json` for structured output. Read only what the question needs: `stats`, `boards` and `pieces`
+are one line per item; open a single board or piece only when it's relevant.
 
 ## Answering questions about their research
 
 - Cite sources by title and id, e.g. *Risks of astronomical future suffering* (`s-20261101-0930-k7q2`).
-- Keep **what their notes say** separate from **your own reading or inference** — label the second.
-- Quote only what's in `quotes` or their notes, word for word. Don't invent page numbers.
+- Keep **what their notes, drafts and syntheses say** separate from **your own reading or inference** — label the second.
+- Quote only what's in `quotes`, their notes or their draft, word for word. Don't invent page numbers.
 - `why`, `expect` and `surprised` are their thinking at the time; treat them as such, not as facts.
+- On a board, a **red string** is a connection noticed but not yet worked out; a **synthesised** one carries
+  their words for how the two connect (and maybe a tier, where it holds, where it breaks). Don't present a
+  red string as an established link.
 - Don't fetch the linked pages unless they ask; links can change or disappear.
 
 ## Changing things
 
 - **Add** a source when asked: `node tools/research.mjs add <link> --title "…" --tags a,b`
-  (it lands in the Inbox; the tool refuses duplicates). Add `--why "…"` only when they told you why
+  (it lands in the Deposit; the tool refuses duplicates). Add `--why "…"` only when they told you why
   in the same request, and then in their exact words — never one you wrote.
+- **Deposit** something for them to file later: `node tools/research.mjs deposit "<text or link>"`.
 - **Change** status, ⭐ or tags when asked: `node tools/research.mjs set <id> --status read --fav true --tags +a,-b`.
-- **Never** write or edit their words — `why` (beyond quoting them as above), `expect`, `surprised`,
-  notes or quotes. Suggest them in chat instead; they'll add what they want in the app.
-- Suggestions for tags or connections between sources go in chat, not into the files (for now).
-- Commit with a plain message, e.g. `research: add "<title>"`, and push. Touch only this folder.
+- **Boards** (when asked, or by a routine that owns a board):
+  - `new-board "<title>" --about "…"`, `pin <board> --title "…" --text "…" [--kind link --url …] [--near <pin>]`,
+    `pin <board> --kind source --source <s-id>`, `pin <board> --kind card --atlas <entry-id>` (an Atlas
+    entry; find ids with `atlas <words>`), or `card Q…` then `pin <board> --kind card --card Q…` (Wikidata).
+  - `connect <board> <pin> <pin> --label "…"` ties a **red** string. Label it with the specific reason you
+    think they connect, so it's checkable.
+  - Your pins and strings are marked as Claude's (`author: claude`) and shown that way in the app.
+  - **Never synthesise a string.** Synthesis is their act: their words for how two things connect. The tool
+    has no command for it, on purpose. Suggest a synthesis in chat if useful.
+- **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
+  **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.
+- **Never** write or edit their words: `why` (beyond quoting them as above), `expect`, `surprised`, notes,
+  quotes, drafts, card entries, syntheses, or pins they made.
+- Run `node tools/research.mjs validate` before committing. Commit with a plain message, e.g.
+  `research: add "<title>"` or `research: AI safety landscape — 4 pins`, and push. Touch only this folder.
+
+## The curator
+
+`board` and `curate` print the curator's findings — the Atlas's rules applied to the board:
+
+- A string between pins in **frames with different domains** is a bridge: to synthesise it the user gives a
+  tier (formal isomorphism … resonance), where it holds and where it breaks.
+- **Chains don't carry across boundaries**: A–B holding in one place and B–C in another doesn't make A–C hold.
+- A **contradiction** across different addresses (domain, scale, time) may only be a difference of scope.
+- **Surprise** ranks synthesised links between things that looked far apart.
+
+Mention findings when they bear on the question; they're prompts for the user, not verdicts.
