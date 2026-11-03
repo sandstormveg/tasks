@@ -400,6 +400,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "improve-the-stat-updates-per-mission-mw0qpk2f",
+      "title": "Improve the stat updates per mission",
+      "category": "Development",
+      "created": "2026-11-03",
+      "notes": "",
+      "assist": false
     }
   ]
 }
