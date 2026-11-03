@@ -127,3 +127,14 @@ export function serialize(q) {
   for (const k of Object.keys(q).sort()) if (!(k in out) && q[k] !== undefined && !k.startsWith("_")) out[k] = q[k];
   return JSON.stringify(out, null, 2) + "\n";
 }
+
+/**
+ * The local calendar day of an ISO timestamp, to match ctx.today(). Slicing the UTC
+ * string put a morning set on yesterday east of Greenwich. A bare date stays as is.
+ */
+export function localDay(iso) {
+  const s = String(iso || "");
+  if (s.length <= 10) return s;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s.slice(0, 10) : d.toLocaleDateString("en-CA");
+}

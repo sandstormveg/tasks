@@ -11,6 +11,7 @@
 // as unranked, never as F.
 
 import { METRICS, ATTRIBUTES } from "./norms.js";
+import { localDay } from "./quests.js";
 
 export const TIERS = [
   { id: "F", min: 0, label: "Unawakened" },
@@ -159,7 +160,7 @@ export function totalXp({ quests = [], history = [] }) {
 /** Days in a row (ending today or yesterday) with a quest turned in or a task finished. */
 export function streak({ quests = [], history = [], today }) {
   const days = new Set([
-    ...quests.filter((q) => q.status === "done" && q.completed).map((q) => q.completed.slice(0, 10)),
+    ...quests.filter((q) => q.status === "done" && q.completed).map((q) => localDay(q.completed)),
     ...history.map((h) => h.completedDate).filter(Boolean),
   ]);
   let d = new Date(today + "T12:00:00Z");

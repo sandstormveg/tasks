@@ -8,10 +8,11 @@
 
 import { TIERS } from "./stats.js";
 import { GRADES, attempts } from "./grades.js";
+import { localDay } from "./quests.js";
 
 export const TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
 
-const day = (iso) => (iso || "").slice(0, 10);
+const day = localDay;
 
 /** Longest run of consecutive days in a set of YYYY-MM-DD strings, and the day it reached n. */
 function streakDates(days) {

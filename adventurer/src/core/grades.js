@@ -21,6 +21,7 @@
 
 import { METRICS } from "./norms.js";
 import { valueAt } from "./stats.js";
+import { localDay } from "./quests.js";
 
 export const GRADES = [
   { id: "E", title: "Novice Pathfinder" },
@@ -57,7 +58,7 @@ const MAX_EVERY_DAYS = 7;
 const PER_DAY = 2;
 
 const DAY = 864e5;
-const dayOf = (iso) => String(iso || "").slice(0, 10);
+const dayOf = localDay;
 const addDays = (day, n) => new Date(Date.parse(`${day}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / DAY);
 

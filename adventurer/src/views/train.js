@@ -11,10 +11,10 @@
 // nothing at all — missing is not zero.
 
 import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
-import { complete } from "../core/quests.js";
+import { complete, localDay } from "../core/quests.js";
 import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPlan, testSets, attempts } from "../core/grades.js";
 
-const dayOf = (iso) => String(iso || "").slice(0, 10);
+const dayOf = localDay;
 const NAME = { pushup: "Push-ups", squat: "Squats", situp: "Sit-ups" };
 const who = (p) => `${p.sex === "female" ? "women" : "men"} ${(p.ageBand || "20-29").replace("-", "–")}`;
 
