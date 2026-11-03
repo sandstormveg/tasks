@@ -5,7 +5,7 @@
 // only when you open this sheet.
 
 import { sheet, html, toast } from "../ui/dom.js";
-import { RepCounter, EXERCISE_RULES } from "../core/reps.js";
+import { RepCounter, EXERCISE_RULES, MIN_SCORE } from "../core/reps.js";
 
 const BONES = [["left_shoulder", "left_elbow"], ["left_elbow", "left_wrist"], ["right_shoulder", "right_elbow"], ["right_elbow", "right_wrist"],
   ["left_shoulder", "right_shoulder"], ["left_shoulder", "left_hip"], ["right_shoulder", "right_hip"], ["left_hip", "right_hip"],
@@ -46,9 +46,11 @@ export function countReps(exercise, target, { max = false, title } = {}) {
           const loop = async () => {
             if (stopped) return;
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            const poses = await detector.estimatePoses(video).catch(() => []);
+            let poses = [];
+            try { poses = await detector.estimatePoses(video); } catch (err) { status.textContent = `Pose model error: ${err.message}`; }
             g.clearRect(0, 0, canvas.width, canvas.height);
             const kp = poses[0]?.keypoints;
+            if (!kp && !/error/.test(status.textContent)) status.textContent = "No one in view yet.";
             if (kp) {
               draw(g, kp);
               if (counter.update(kp, performance.now())) {
@@ -57,7 +59,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
                 if (!max && counter.reps === target) status.textContent = "Target reached. Keep going or tap Done.";
               }
               ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
-              if (max || counter.reps < target) status.textContent = counter.angle == null ? "Can't see the joints — step back." : counter.stage === "DOWN" ? "Down… now up." : "Go.";
+              if (max || counter.reps < target) status.textContent = counter.hint || (counter.angle == null ? "Can't see the joints — step back." : null) || (counter.stage === "DOWN" ? "Down… now up." : "Go.");
             }
             raf = requestAnimationFrame(loop);
           };
@@ -76,7 +78,7 @@ function draw(g, kp) {
   g.strokeStyle = "#1de9b6"; g.lineWidth = 3; g.fillStyle = "#ff2e63";
   for (const [a, b] of BONES) {
     const p = by[a], q = by[b];
-    if (p?.score > 0.3 && q?.score > 0.3) { g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); }
+    if (p?.score >= MIN_SCORE && q?.score >= MIN_SCORE) { g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); }
   }
-  for (const k of kp) if (k.score > 0.3) { g.beginPath(); g.arc(k.x, k.y, 4, 0, 7); g.fill(); }
+  for (const k of kp) if (k.score >= MIN_SCORE) { g.beginPath(); g.arc(k.x, k.y, 4, 0, 7); g.fill(); }
 }
