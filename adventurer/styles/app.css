@@ -271,11 +271,14 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 
 /* Camera */
 .cam { position: relative; background: #000; border-radius: 6px; overflow: hidden; aspect-ratio: 4 / 3; }
+/* Red until it can see your joints, then green: readable from across the room. */
+.cam::after { content: ""; position: absolute; inset: 0; border: 8px solid #ff2e63; border-radius: 6px; pointer-events: none; z-index: 2; }
+.cam.seen::after { border-color: var(--accent-2); }
 .cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 .cam-hud { position: absolute; top: 8px; left: 10px; display: flex; gap: 6px; align-items: baseline; text-shadow: 0 0 6px #000; }
-.cam-count { font-size: 2.4rem; font-weight: bold; color: var(--accent-2); }
+.cam-count { font-size: 4rem; font-weight: bold; color: var(--accent-2); }
 .cam-angle { margin-left: 10px; color: var(--amber); }
-.cam-status { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: rgba(0, 0, 0, .6); font-size: .85rem; }
+.cam-status { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: rgba(0, 0, 0, .7); font-size: 1.35rem; font-weight: bold; line-height: 1.25; }
 
 /* Turn-in stamp */
 body.stamp .content { animation: stamp .9s ease-out; }
