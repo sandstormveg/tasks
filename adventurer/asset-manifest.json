@@ -1,5 +1,5 @@
 {
- "version": "f6d5105b749e",
+ "version": "ff356085b9c3",
  "files": [
   "./",
   "icons/icon.svg",
@@ -11,6 +11,7 @@
   "quests-template/tools/quests.mjs",
   "src/app.js",
   "src/core/achievements.js",
+  "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",
   "src/core/norms.js",

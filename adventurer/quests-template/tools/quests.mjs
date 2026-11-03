@@ -5,10 +5,10 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync
 import path from "node:path";
 
 // src/core/quests.js
-var STATUSES = ["requested", "posted", "accepted", "done", "declined", "expired"];
+var STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 var OPEN = /* @__PURE__ */ new Set(["posted", "accepted"]);
-var ORIGINS = ["task", "inferred", "request", "guild", "local", "self"];
-var GIVERS = ["guildmaster", "relay", "board", "self"];
+var ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
+var GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
 var PROOFS = ["gps", "reps", "photo", "journal", "honor"];
 var EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];
 var DIFFICULTY = {
@@ -95,6 +95,9 @@ function serialize(q) {
     "attributes",
     "skills",
     "proof",
+    "kind",
+    "grade",
+    "testId",
     "posted",
     "expires",
     "accepted",
@@ -123,23 +126,194 @@ function validateSkill(s) {
   return errs;
 }
 
+// src/core/norms.js
+var PUSHUPS = {
+  male: { "20-29": [16, 21, 28, 35, 36], "30-39": [11, 16, 21, 29, 30], "40-49": [9, 12, 16, 24, 25], "50-59": [6, 9, 12, 20, 21], "60-69": [4, 7, 10, 17, 18] },
+  female: { "20-29": [9, 14, 20, 29, 30], "30-39": [7, 12, 19, 26, 27], "40-49": [4, 10, 14, 23, 24], "50-59": [1, 6, 10, 20, 21], "60-69": [1, 4, 11, 16, 17] }
+};
+function pushupCdf({ sex = "male", ageBand = "20-29" } = {}) {
+  const t = (PUSHUPS[sex] || PUSHUPS.male)[ageBand] || PUSHUPS.male["20-29"];
+  return [[0, 1], [t[0], 20], [t[1], 40], [t[2], 60], [t[3], 80], [Math.round(t[4] * 1.6), 98], [t[4] * 2.5, 99.7]];
+}
+var METRICS = {
+  pushups: {
+    label: "Push-ups in one set",
+    unit: "reps",
+    scale: "population",
+    cdf: pushupCdf,
+    source: "Canadian Physical Activity, Fitness & Lifestyle Approach push-up norms, as reprinted in ACSM's Guidelines for Exercise Testing and Prescription. Category cut-offs by age and sex; percentiles between them are interpolated."
+  },
+  steps: {
+    label: "Average steps a day",
+    unit: "steps",
+    scale: "population",
+    cdf: () => [[0, 0], [1500, 6], [3e3, 22], [5e3, 50], [7500, 76], [1e4, 90], [12500, 96], [16e3, 99]],
+    source: "Althoff et al. (2017), Nature 547: smartphone data from 717,000 people in 111 countries, worldwide mean \u2248 4,961 steps a day. The spread around that mean is an assumed right-skewed shape, not their published distribution."
+  },
+  books: {
+    label: "Books finished in the last 12 months",
+    unit: "books",
+    scale: "population",
+    cdf: () => [[0, 23], [1, 30], [3, 42], [5, 50], [12, 72], [24, 87], [50, 96], [100, 99.5]],
+    source: "Pew Research Center (2021), US adults: 23% read no book in the past year, median 5, mean 14. Points between are interpolated to fit those figures."
+  },
+  activeMinutes: {
+    label: "Moderate-to-vigorous minutes a week",
+    unit: "min/week",
+    scale: "population",
+    cdf: () => [[0, 8], [30, 15], [75, 22], [150, 31], [300, 62], [450, 82], [600, 91], [900, 98]],
+    source: "WHO (2022): 31% of adults worldwide don't meet the 150 min/week guideline (Lancet Global Health, Strain et al. 2024). Above that, the shape is assumed."
+  },
+  places: {
+    label: "New places explored (GPS check-ins)",
+    unit: "places",
+    scale: "game",
+    cdf: () => [[0, 0], [1, 10], [3, 30], [6, 50], [10, 70], [20, 85], [35, 95], [60, 99]],
+    source: "Guild ladder: no population data. Counts distinct check-in quests."
+  },
+  reflections: {
+    label: "Reflection quests done",
+    unit: "quests",
+    scale: "game",
+    cdf: () => [[0, 0], [1, 10], [3, 30], [6, 50], [12, 70], [24, 85], [40, 95], [70, 99]],
+    source: "Guild ladder: no population data. Counts finished quests weighted to WIS. The journal itself is never read for this."
+  },
+  social: {
+    label: "Social quests done",
+    unit: "quests",
+    scale: "game",
+    cdf: () => [[0, 0], [1, 10], [3, 30], [6, 50], [12, 70], [24, 85], [40, 95], [70, 99]],
+    source: "Guild ladder: no population data. Counts finished quests weighted to CHA."
+  },
+  tasksPerWeek: {
+    label: "Tasks finished a week (last 8 weeks)",
+    unit: "tasks/week",
+    scale: "game",
+    cdf: () => [[0, 0], [0.5, 10], [1, 30], [2, 50], [4, 70], [7, 85], [12, 95], [20, 99]],
+    source: "Guild ladder: no population data. From the completed history in both task repos."
+  }
+};
+
 // src/core/stats.js
-var RANKS = [
-  { id: "E", title: "Novice Pathfinder", min: 0 },
-  { id: "D", title: "Iron Wayfarer", min: 200 },
-  { id: "C", title: "Bronze Vanguard", min: 600 },
-  { id: "B", title: "Silver Scoutmaster", min: 1400 },
-  { id: "A", title: "Golden Sovereign", min: 2800 },
-  { id: "S", title: "Mythic Vanguard", min: 5e3 }
+function valueAt(p, cdf) {
+  if (p <= cdf[0][1]) return cdf[0][0];
+  for (let i = 1; i < cdf.length; i++) {
+    const [x1, p1] = cdf[i];
+    if (p <= p1) {
+      const [x0, p0] = cdf[i - 1];
+      return p1 === p0 ? x1 : x0 + (p - p0) / (p1 - p0) * (x1 - x0);
+    }
+  }
+  return cdf[cdf.length - 1][0];
+}
+
+// src/core/grades.js
+var GRADES = [
+  { id: "E", title: "Novice Pathfinder" },
+  { id: "D", title: "Iron Wayfarer" },
+  { id: "C", title: "Bronze Vanguard" },
+  { id: "B", title: "Silver Scoutmaster" },
+  { id: "A", title: "Golden Sovereign" },
+  { id: "S", title: "Mythic Vanguard" }
 ];
+var PUSHUP_PERCENTILE = { D: 30, C: 50, B: 70, A: 85, S: 95 };
+var LADDER = {
+  squat: { D: 20, C: 30, B: 40, A: 55, S: 70 },
+  situp: { D: 15, C: 22, B: 30, A: 40, S: 50 }
+};
+var TEST_EXERCISES = { D: ["pushup", "squat"], C: ["pushup", "squat", "situp"], B: ["pushup", "squat", "situp"], A: ["pushup", "squat", "situp"], S: ["pushup", "squat", "situp"] };
+var PREREQ = {
+  D: { sessions: 4, life: 2 },
+  C: { sessions: 8, life: 4 },
+  B: { sessions: 12, life: 6 },
+  A: { sessions: 16, life: 8 },
+  S: { sessions: 20, life: 10 }
+};
+var RETAKE_DAYS = 3;
+var DAY = 864e5;
+var dayOf = (iso) => String(iso || "").slice(0, 10);
+var addDays = (day, n) => new Date(Date.parse(`${day}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
+var gradeIndex = (id) => GRADES.findIndex((g) => g.id === id);
+var nextGrade = (id) => GRADES[gradeIndex(id) + 1] || null;
+function testTargets(grade2, profile = {}) {
+  const out = {};
+  for (const ex of TEST_EXERCISES[grade2] || []) {
+    out[ex] = ex === "pushup" ? Math.ceil(valueAt(PUSHUP_PERCENTILE[grade2], METRICS.pushups.cdf(profile))) : LADDER[ex][grade2];
+  }
+  return out;
+}
+var isTrainer = (q) => q.origin === "training" || q.origin === "test";
+var verifiedReps = (q) => q.evidence?.type === "reps" && q.evidence.verified ? Number(q.evidence.reps) || 0 : null;
+var trained = (q) => q.origin === "training" && ["done", "failed"].includes(q.status) && (verifiedReps(q) ?? 0) > 0;
+function attempts(quests2) {
+  const by = /* @__PURE__ */ new Map();
+  for (const q of quests2) {
+    if (q.origin !== "test" || !q.testId || !["done", "failed"].includes(q.status)) continue;
+    const a = by.get(q.testId) || { testId: q.testId, grade: q.grade, day: dayOf(q.completed || q.posted), sets: [] };
+    const reps = verifiedReps(q) ?? 0;
+    a.sets.push({ exercise: q.proof?.exercise, target: q.proof?.count, reps, passed: q.status === "done" && reps >= (q.proof?.count || Infinity) });
+    if (dayOf(q.completed) > a.day) a.day = dayOf(q.completed);
+    by.set(q.testId, a);
+  }
+  return [...by.values()].map((a) => ({ ...a, passed: a.sets.length >= (TEST_EXERCISES[a.grade] || []).length && a.sets.every((s) => s.passed) })).sort((x, y) => y.day.localeCompare(x.day) || y.testId.localeCompare(x.testId));
+}
+function gradeOf(quests2) {
+  const passed = attempts(quests2).filter((a) => a.passed);
+  let current = GRADES[0];
+  let since = null;
+  for (const g of GRADES.slice(1)) {
+    const a = passed.filter((x) => x.grade === g.id).sort((x, y) => x.day.localeCompare(y.day))[0];
+    if (!a) break;
+    current = g;
+    since = a.day;
+  }
+  return { ...current, since, next: nextGrade(current.id) };
+}
+function bestSet(quests2, exercise, today, days2 = 30) {
+  const from = addDays(today, -days2);
+  let best = null;
+  for (const q of quests2) {
+    if (!isTrainer(q) || q.proof?.exercise !== exercise) continue;
+    const r = verifiedReps(q);
+    if (r == null || dayOf(q.completed) < from) continue;
+    if (best == null || r > best) best = r;
+  }
+  return best;
+}
+function eligibility(quests2, { profile = {}, today }) {
+  const grade2 = gradeOf(quests2);
+  const next = grade2.next;
+  if (!next) return { grade: grade2, next: null, eligible: false, done: true };
+  const since = grade2.since || "0000-00-00";
+  const after = (q) => dayOf(q.completed) >= since;
+  const sessions = new Set(quests2.filter((q) => trained(q) && after(q)).map((q) => dayOf(q.completed))).size;
+  const life = quests2.filter((q) => q.status === "done" && !isTrainer(q) && after(q)).length;
+  const need = PREREQ[next.id];
+  const lastFail = attempts(quests2).find((a) => a.grade === next.id && !a.passed);
+  const retakeOn = lastFail ? addDays(lastFail.day, RETAKE_DAYS) : null;
+  const waiting = retakeOn && today < retakeOn;
+  const targets = testTargets(next.id, profile);
+  const missing = [];
+  if (sessions < need.sessions) missing.push(`${need.sessions - sessions} more training day${need.sessions - sessions === 1 ? "" : "s"}`);
+  if (life < need.life) missing.push(`${need.life - life} more quest${need.life - life === 1 ? "" : "s"} from your life (tasks, reading, places)`);
+  if (waiting) missing.push(`a retake after ${retakeOn}`);
+  return {
+    grade: grade2,
+    next,
+    targets,
+    sessions: { have: sessions, need: need.sessions },
+    life: { have: life, need: need.life },
+    retakeOn: waiting ? retakeOn : null,
+    best: Object.fromEntries(Object.keys(targets).map((ex) => [ex, bestSet(quests2, ex, today)])),
+    eligible: missing.length === 0,
+    missing
+  };
+}
 
 // src/core/achievements.js
 var TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
 var count = (key, n) => (f2) => ({ value: f2[key].length, target: n, date: f2[key][n - 1] || null });
-var rank = (id) => (f2) => {
-  const min = RANKS.find((r) => r.id === id).min;
-  return { value: f2.xp, target: min, date: f2.xpAt.find(([, x]) => x >= min)?.[0] || null };
-};
+var grade = (id) => (f2) => ({ value: f2.grade, target: GRADES.findIndex((g) => g.id === id), date: f2.gradeDays[id] || null });
 var streak = (n) => (f2) => ({ value: f2.streak.best, target: n, date: f2.streak.reached[n] || null });
 var CATALOG = [
   { id: "first-quest", title: "First Quest", desc: "Turn in your first quest.", tier: "bronze", icon: "\u2694", check: count("done", 1) },
@@ -166,9 +340,9 @@ var CATALOG = [
   { id: "tasks-10", title: "Getting Things Done", desc: "Finish 10 tasks.", tier: "bronze", icon: "\u2713", check: count("tasks", 10) },
   { id: "tasks-100", title: "Taskmaster", desc: "Finish 100 tasks.", tier: "silver", icon: "\u2713", check: count("tasks", 100) },
   { id: "tasks-500", title: "Architect of Days", desc: "Finish 500 tasks.", tier: "gold", icon: "\u2713", check: count("tasks", 500) },
-  { id: "rank-c", title: "Bronze Vanguard", desc: "Reach guild rank C.", tier: "silver", icon: "\u25C6", check: rank("C") },
-  { id: "rank-a", title: "Golden Sovereign", desc: "Reach guild rank A.", tier: "gold", icon: "\u25C6", check: rank("A") },
-  { id: "rank-s", title: "Mythic Vanguard", desc: "Reach guild rank S.", tier: "mythic", icon: "\u25C6", check: rank("S") },
+  { id: "rank-c", title: "Bronze Vanguard", desc: "Pass the C-grade test.", tier: "silver", icon: "\u25C6", check: grade("C") },
+  { id: "rank-a", title: "Golden Sovereign", desc: "Pass the A-grade test.", tier: "gold", icon: "\u25C6", check: grade("A") },
+  { id: "rank-s", title: "Mythic Vanguard", desc: "Pass the S-grade test.", tier: "mythic", icon: "\u25C6", check: grade("S") },
   { id: "tier-a", title: "Elite Trait", desc: "Any attribute at tier A.", tier: "gold", icon: "\u25C8", check: (f2) => ({ value: Math.max(0, f2.bestTier), target: 5, date: null }) },
   { id: "tier-ss", title: "Legendary Trait", desc: "Any attribute at tier SS.", tier: "mythic", icon: "\u25C8", check: (f2) => ({ value: Math.max(0, f2.bestTier), target: 7, date: null }) },
   { id: "skill-5", title: "Adept", desc: "Any skill at Lv 5.", tier: "silver", icon: "\u2727", check: (f2) => ({ value: f2.bestSkill, target: 5, date: null }) },
@@ -182,6 +356,151 @@ function validateTrophy(t) {
   if (t?.status && !["earned", "goal"].includes(t.status)) errs.push("status must be earned or goal");
   if (t?.date && !/^\d{4}(-\d{2}(-\d{2})?)?$/.test(t.date)) errs.push("date must be YYYY, YYYY-MM or YYYY-MM-DD");
   return errs;
+}
+
+// src/core/forge.js
+var DAY2 = 864e5;
+var days = (from, to) => Math.max(0, Math.round((Date.parse(to) - Date.parse(String(from).slice(0, 10))) / DAY2));
+function attributesFor(category = "") {
+  const c = category.toLowerCase();
+  if (/shop|grocer|errand/.test(c)) return { agi: 0.5, wil: 0.5 };
+  if (/r&d|develop|build|code|make/.test(c)) return { int: 1, wil: 0.5 };
+  if (/research|read|learn|study/.test(c)) return { int: 1 };
+  if (/interest|curio|explore/.test(c)) return { wis: 0.5, int: 0.5 };
+  if (/admin|chore|home|clean|money/.test(c)) return { wil: 1 };
+  if (/social|friend|family/.test(c)) return { cha: 1 };
+  if (/fit|gym|health|run|train/.test(c)) return { vit: 1, str: 0.5 };
+  return { wil: 0.5 };
+}
+var plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+var weeksAgo = (d) => d >= 14 ? `waiting ${Math.round(d / 7)} weeks` : d >= 2 ? `waiting ${d} days` : "new";
+function forge({ tasks = [], history = [], sources = [], pieces = [], showcase = {}, quests: quests2 = [], today }) {
+  const linked = /* @__PURE__ */ new Map();
+  for (const q of quests2) for (const id of q.taskIds || []) (linked.get(String(id)) || linked.set(String(id), []).get(String(id))).push(q.status);
+  const onBoard = new Set(quests2.filter((q) => OPEN.has(q.status) || q.status === "requested").map((q) => slug(q.title)));
+  const skills = (showcase.skills || []).filter((s) => !s.removed);
+  const learning = skills.filter((s) => ["learning", "aspiring"].includes(s.status));
+  const skillsIn = (text) => skills.filter((s) => new RegExp(`\\b${s.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text));
+  const recent = {};
+  for (const h of history) if (h.completedDate && days(h.completedDate, today) <= 30) recent[h.category] = (recent[h.category] || 0) + 1;
+  const out = [];
+  const skipped = { declined: 0, linked: 0 };
+  const steps = (t) => (t.noteItems || []).length + tasks.filter((s) => s.parentId === t.id).length;
+  for (const t of tasks) {
+    if (t.parentId != null) continue;
+    const st = linked.get(String(t.id)) || [];
+    if (st.includes("declined")) {
+      skipped.declined++;
+      continue;
+    }
+    if (st.some((s) => s !== "expired")) {
+      skipped.linked++;
+      continue;
+    }
+    const why = [], age = days(t.created, today), n = steps(t), mom = recent[t.category] || 0;
+    let score = 2;
+    score += Math.min(3, Math.floor(age / 14));
+    why.push(weeksAgo(age));
+    if (n) {
+      score += 1;
+      why.push(plural(n, "step"));
+    }
+    if (mom) {
+      score += Math.min(3, mom);
+      why.push(`you finished ${plural(mom, `${t.category} task`)} this month`);
+    }
+    if (/shop|grocer/i.test(t.category || "")) {
+      score -= 2;
+      why.push("an errand");
+    }
+    const sk = skillsIn(t.title);
+    if (sk.length) {
+      score += 2;
+      why.push(`practises ${sk.map((s) => s.name).join(", ")}`);
+    }
+    out.push({ score, source: "task", title: t.title, why, quest: {
+      title: t.title,
+      origin: "task",
+      taskIds: [String(t.id)],
+      difficulty: n >= 4 ? "hard" : n ? "normal" : "easy",
+      proof: { type: "honor" },
+      attributes: attributesFor(t.category),
+      skills: sk.length ? Object.fromEntries(sk.map((s) => [s.id, 1])) : void 0
+    } });
+  }
+  for (const s of sources) {
+    if (!["to-read", "inbox", "reading"].includes(s.status)) continue;
+    const why = [s.status === "reading" ? "you started it" : s.status === "to-read" ? "on your to-read list" : "in your Deposit inbox"];
+    let score = s.status === "reading" ? 4 : s.status === "to-read" ? 3 : 1;
+    if (s.favourite) {
+      score += 2;
+      why.push("a favourite");
+    }
+    const age = days(s.added || today, today);
+    if (age >= 14) {
+      score += 1;
+      why.push(weeksAgo(age));
+    }
+    out.push({ score, source: "reading", title: `Read: ${s.title}`, why, quest: {
+      title: `Read: ${s.title}`,
+      origin: "self",
+      difficulty: "normal",
+      proof: { type: "journal" },
+      attributes: { int: 1 }
+    } });
+  }
+  for (const p of pieces) {
+    if (!["idea", "drafting"].includes(p.status)) continue;
+    const why = [p.status === "drafting" ? "a draft in progress" : "an idea you saved"];
+    out.push({ score: p.status === "drafting" ? 4 : 2, source: "writing", title: `Write 300 words of \u201C${p.title}\u201D`, why, quest: {
+      title: `Write 300 words of \u201C${p.title}\u201D`,
+      origin: "self",
+      difficulty: "normal",
+      proof: { type: "honor" },
+      attributes: { wis: 0.5, int: 0.5 }
+    } });
+  }
+  for (const g of (showcase.achievements || []).filter((a) => a.status === "goal" && !a.removed)) {
+    out.push({ score: 4, source: "goal", title: `A step toward: ${g.title}`, why: ["a goal you set"], quest: {
+      title: `A step toward: ${g.title}`,
+      origin: "self",
+      difficulty: "normal",
+      proof: { type: "honor" },
+      attributes: { wil: 1 }
+    } });
+  }
+  for (const s of learning) {
+    out.push({ score: s.status === "learning" ? 3 : 2, source: "skill", title: `Practise ${s.name}`, why: [s.status === "learning" ? "a skill you're learning" : "a skill you want"], quest: {
+      title: `Practise ${s.name}`,
+      origin: "self",
+      difficulty: "normal",
+      proof: { type: "honor" },
+      attributes: { int: 0.5, wil: 0.5 },
+      skills: { [s.id]: 1 }
+    } });
+  }
+  const ranked = out.filter((c) => !onBoard.has(slug(c.title))).sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+  const el = eligibility(quests2, { today });
+  const lifeNeeded = el.next ? Math.max(0, el.life.need - el.life.have) : 0;
+  return { candidates: ranked, skipped, grade: el.grade.id, next: el.next?.id ?? null, lifeNeeded };
+}
+function addCommand(c) {
+  const q = c.quest, w = (o) => Object.entries(o).map(([k, v]) => `${k}=${v}`).join(",");
+  return [
+    "add",
+    "--title",
+    JSON.stringify(q.title),
+    ...q.taskIds?.flatMap((id) => ["--task", id]) ?? [],
+    "--origin",
+    q.origin,
+    "--difficulty",
+    q.difficulty,
+    "--proof",
+    q.proof.type,
+    "--attr",
+    w(q.attributes),
+    ...q.skills ? ["--skill", w(q.skills)] : []
+  ].join(" ");
 }
 
 // tools/quests.mjs
@@ -215,6 +534,28 @@ function save(q) {
   if (errs.length) fail(`Not saved \u2014 ${errs.join("; ")}`);
   mkdirSync(boardDir, { recursive: true });
   writeFileSync(path.join(boardDir, `${q.id}.json`), serialize(q));
+}
+var dataRoot = process.env.DATA_DIR || path.resolve(root, "..");
+function readJson(rel, fallback) {
+  const file = path.join(dataRoot, rel);
+  try {
+    return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function readFrontMatter(rel) {
+  const dir = path.join(dataRoot, rel);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { recursive: true }).filter((f2) => String(f2).endsWith(".md")).map((f2) => {
+    const m = readFileSync(path.join(dir, String(f2)), "utf8").match(/^---\n([\s\S]*?)\n---/);
+    const o = {};
+    for (const l of (m?.[1] || "").split("\n")) {
+      const kv = l.match(/^([a-z_]+):\s*(.*)$/);
+      if (kv) o[kv[1]] = kv[2] === "true" ? true : kv[2] === "false" ? false : kv[2].replace(/^(["'])(.*)\1$/, "$2");
+    }
+    return o;
+  });
 }
 function fail(msg) {
   console.error(msg);
@@ -399,6 +740,25 @@ switch (cmd) {
     } else live.forEach((t) => console.log(`${t.id.padEnd(40)} ${String(t.status).padEnd(7)} ${String(t.tier).padEnd(7)} ${t.date || ""}  ${t.title}`));
     break;
   }
+  case "forge": {
+    const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const tasks = readJson("data/tasks.json", {}).tasks || [], history = readJson("data/history.json", {}).entries || [];
+    const sources = readFrontMatter("research/sources"), pieces = readFrontMatter("research/writing");
+    const res = forge({ tasks, history, sources, pieces, showcase: readShowcase(), quests, today });
+    const top = res.candidates.slice(0, Number(f.limit) || 10);
+    if (f.json) {
+      console.log(JSON.stringify({ ...res, candidates: top }, null, 2));
+      break;
+    }
+    console.log(`Forge (read-only): ${res.candidates.length} candidates from ${tasks.length} tasks, ${sources.length} sources, ${pieces.length} pieces, ${readShowcase().skills.length} skills. Journal not read.`);
+    if (res.next) console.log(`Grade ${res.grade}; the ${res.next}-grade test needs ${res.lifeNeeded} more life quest${res.lifeNeeded === 1 ? "" : "s"}.`);
+    if (res.skipped.declined || res.skipped.linked) console.log(`Left out: ${res.skipped.linked} task(s) already on a quest, ${res.skipped.declined} whose quest was declined.`);
+    top.forEach((c, i) => console.log(`${String(i + 1).padStart(2)}. [${c.score}] ${c.source.padEnd(7)} ${c.title}
+      ${c.why.join(" \xB7 ")}
+      ${addCommand(c)}`));
+    console.log("Post the ones Silica would want with add (edit the brief and difficulty first); nothing was written.");
+    break;
+  }
   default:
-    console.log(`Commands: list, requests, show, add, shape, set, remove, validate, summary, skill, trophy. Difficulties: ${Object.keys(DIFFICULTY).join(", ")}.`);
+    console.log(`Commands: list, requests, show, add, shape, set, remove, validate, summary, skill, trophy, forge. Difficulties: ${Object.keys(DIFFICULTY).join(", ")}.`);
 }

@@ -12,6 +12,7 @@ import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
 import { relayCounter } from "../ui/relay.js";
 import { newlyEarned } from "../core/achievements.js";
+import { attributeGains } from "../core/stats.js";
 import { uploadPhoto } from "../data/media.js";
 
 const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted", training: "Trainer", test: "Grade test" };
@@ -230,13 +231,16 @@ async function turnIn(ctx, q, type) {
     if (note == null) return;
     evidence = note.trim() ? { note: note.trim() } : {};
   }
-  const before = ctx.derived().trophies;
+  const before = ctx.derived();
   const done = complete(q, { proofType: type, evidence, at: ctx.now() });
   ctx.store.put(done);
   ctx.afterTurnIn(done);
-  toast(stamped(done, done.xp, Date.now()), { timeout: 5000 });
+  const after = ctx.derived();
+  const gains = attributeGains(before.attributes, after.attributes)
+    .map((g) => `${g.name}${g.xp ? ` +${g.xp} XP` : ""}${g.from !== g.to ? ` (tier ${g.from || "–"} → ${g.to || "–"})` : ""}`).join(" · ");
+  toast(`${stamped(done, done.xp, Date.now())}${gains ? ` ${gains}.` : ""}`, { timeout: 6000 });
   celebrate();
-  for (const a of newlyEarned(before, ctx.derived().trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
+  for (const a of newlyEarned(before.trophies, after.trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
 }
 
 function celebrate() {
