@@ -1577,6 +1577,23 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "20-pushups-mw0adnoj",
+      "title": "20 pushups",
+      "category": "Guild Quests",
+      "completedDate": "2026-11-03",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mw0afcwajp1w",
+          "text": "i added this. it is not synced to the same name quest in the adventurers Guild. just needed to create the category",
+          "done": false,
+          "created": "2026-11-03T06:09:17.578Z",
+          "updated": "2026-11-03T06:09:17.578Z"
+        }
+      ]
     }
   ]
 }
