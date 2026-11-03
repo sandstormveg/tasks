@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:ef72f1262c71d9ed
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:4505f538d04332d7
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1683,6 +1683,7 @@ function makeSource(fields = {}, { now, device = "", via = "app" } = {}) {
     why: String(fields.why || "").trim() || void 0,
     expect: String(fields.expect || "").trim() || void 0,
     quotes: fields.quotes?.length ? fields.quotes : void 0,
+    media: fields.media?.length ? fields.media : void 0,
     visibility: "private",
     captured: { via, device: device || void 0 },
     body: fields.body || ""
@@ -2416,6 +2417,7 @@ function describe(s) {
   if (s.authors?.length) out.push(`- authors: ${s.authors.join(", ")}`);
   if (s.year) out.push(`- year: ${s.year}`);
   if (s.tags?.length) out.push(`- tags: ${s.tags.map((t) => `#${t}`).join(" ")}`);
+  for (const m of (s.media || []).filter((x) => x.type === "photo")) out.push(`- picture: ${m.path}${m.width ? ` (${m.width}\xD7${m.height})` : ""} \u2014 open this file to see it`);
   out.push(`- saved: ${String(s.added || "").slice(0, 10)}${s.started ? ` \xB7 started ${String(s.started).slice(0, 10)}` : ""}${s.finished ? ` \xB7 finished ${String(s.finished).slice(0, 10)}` : ""}`);
   if (s.why) out.push("", "## Why I saved it", s.why);
   if (s.expect) out.push("", "## What I expected it to argue", s.expect);

@@ -28,6 +28,7 @@ export async function mount(el, ctx, route, ui) {
     box.innerHTML = String(found.length
       ? html`<p class="small muted">${found.length} found</p>${found.map((s) => sourceCard(s, { actions: false }))}`
       : html`<div class="empty"><h3>Nothing matches</h3><p>Try fewer words, or a #tag.</p></div>`);
+    ctx.media.hydrate(box);
   }
   const later = debounce(render, 150);
   input.addEventListener("input", later);

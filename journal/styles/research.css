@@ -45,3 +45,11 @@ button.tag { cursor: pointer; }
 
 .bookmarklet { cursor: grab; }
 .bookmarklet svg { color: var(--accent); }
+
+/* Pictures: a thumbnail on cards, the whole picture on its page (tap for full size). */
+.src-card .src-img { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin: 0 0 9px; background: var(--surface-2); }
+.add-image-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 12px; }
+.src-picture { grid-column: 1 / -1; display: block; padding: 0; border: 0; background: var(--surface-2); border-radius: var(--radius); overflow: hidden; cursor: zoom-in; margin: 0 0 10px; }
+.src-picture img { display: block; width: 100%; max-height: 62vh; object-fit: contain; }
+.src-picture.full { position: fixed; inset: 0; z-index: 60; border-radius: 0; margin: 0; background: #000; cursor: zoom-out; }
+.src-picture.full img { max-height: none; height: 100%; }

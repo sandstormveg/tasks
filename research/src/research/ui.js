@@ -10,6 +10,7 @@ import {
 import { lookupDoi } from "./lookup.js";
 import { makePin, makeString, placeNear, defaultSize, boardParts } from "../core/boards.js";
 import { suggestHomes, homesFrom } from "../core/deposit.js";
+import { saveImages, imageOf, imagePinSize, imagesFrom } from "./images.js";
 
 // What a card offers, by status: the next step in reading, without opening it.
 const NEXT = {
@@ -25,6 +26,7 @@ export function sourceCard(s, { actions = true, extra = "" } = {}) {
   const by = [formatAuthors(s.authors), s.year].filter(Boolean).join(", ");
   return html`<div class="src-card" data-id="${s.id}">
     <a class="src-main" href="#/source/${s.id}">
+      ${imageOf(s) ? html`<img class="src-img" data-media="${imageOf(s).thumb || imageOf(s).path}" data-fallback="${imageOf(s).path}" alt="" loading="lazy">` : ""}
       <div class="src-title">${s.favourite ? html`<span class="fav" aria-label="Favourite">${raw(icon("star"))}</span>` : ""}${s.title || s.url}</div>
       <div class="src-meta">${[s.site, by, s.kind && s.kind !== "article" ? KINDS[s.kind] : ""].filter(Boolean).join(" · ")}</div>
       ${s.tags?.length ? html`<div class="src-tags">${s.tags.map((t) => html`<span class="tag">#${t}</span>`)}</div>` : ""}
@@ -122,7 +124,7 @@ export async function fileTo(ctx, sourceId, home) {
   if (home.kind === "board") {
     const { pins } = boardParts(ctx.records(), home.id);
     const near = (home.near || []).map((n) => pins.find((p) => p.id === n.id)).filter(Boolean);
-    const size = defaultSize("source");
+    const size = imageOf(s) ? imagePinSize(s) : defaultSize("source");
     const spot = placeNear(pins, { anchor: near[0] || null, ...size });
     const pin = makePin({ board: home.id, kind: "source", source: s.id, title: s.title, ...spot }, { now });
     await ctx.store.put(pin);
@@ -203,7 +205,8 @@ export async function addSheet(ctx, { status = "inbox", text = "" } = {}) {
   let found = null;
   const result = await sheet({
     title: "Add to Research",
-    body: html`<label class="field"><span>A link, DOI or arXiv link — or just a thought</span><textarea class="textarea" data-link rows="2" autofocus placeholder="https://…, 10.1234/…, or whatever's on your mind" autocomplete="off">${text}</textarea></label>
+    body: html`<div class="add-image-row"><button type="button" class="btn small" data-images>${raw(icon("camera"))}Add a picture</button><span class="small faint">a sketch, a screenshot, a page — or paste one</span><input type="file" accept="image/*" multiple hidden data-image-in></div>
+      <label class="field"><span>A link, DOI or arXiv link — or just a thought</span><textarea class="textarea" data-link rows="2" autofocus placeholder="https://…, 10.1234/…, or whatever's on your mind" autocomplete="off">${text}</textarea></label>
       <p class="small faint" data-found style="margin:-4px 0 8px"></p>
       <label class="field"><span>Title</span><input class="input" data-title autocomplete="off" placeholder="Filled in when we can — edit freely"></label>
       <label class="field"><span>Why are you saving it? <span class="faint">(optional)</span></span><input class="input" data-why autocomplete="off" placeholder="One line for future you"></label>
@@ -239,10 +242,21 @@ export async function addSheet(ctx, { status = "inbox", text = "" } = {}) {
         }
       }, 400);
       link.addEventListener("input", look);
+      // A picture instead of (or as well as) words: the title, why and tags apply to it.
+      const fileIn = d.querySelector("[data-image-in]");
+      const withImages = (images) => images.length && close({ images, link: "", title: title.value.trim(), why: d.querySelector("[data-why]").value.trim(), status: pick });
+      d.querySelector("[data-images]").addEventListener("click", () => fileIn.click());
+      fileIn.addEventListener("change", () => withImages([...fileIn.files]));
+      d.addEventListener("paste", (e) => { const imgs = imagesFrom(e.clipboardData); if (imgs.length) { e.preventDefault(); withImages(imgs); } });
       if (text) look();
       d.querySelector("[data-ok]").addEventListener("click", () => close({ link: link.value, title: title.value.trim(), why: d.querySelector("[data-why]").value.trim(), status: pick }));
     },
   });
+  if (result?.images) {
+    const saved = await saveImages(ctx, result.images, { status: result.status, title: result.title || undefined, why: result.why, tags: tagger.tags });
+    if (saved.length) toast(`${saved.length === 1 ? "Picture" : `${saved.length} pictures`} saved to ${STATUSES[saved[0].status]}`, { action: "Open", onAction: () => ctx.navigate(saved.length === 1 ? `#/source/${saved[0].id}` : "#/inbox") });
+    return saved[0] || null;
+  }
   if (!result || (!result.link.trim() && !result.title)) return null;
   const extra = { why: result.why, tags: tagger.tags, status: result.status };
   if (result.title) extra.title = result.title;

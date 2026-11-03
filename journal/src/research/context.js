@@ -8,6 +8,7 @@ import { openIdbBackend, memoryBackend } from "../data/backend.js";
 import { deviceTimeZone, dayKey, isoLocal } from "../core/dates.js";
 import { deepMerge, hostToken } from "../app/context.js";
 import { SyncService } from "../app/sync-service.js";
+import { MediaService } from "../app/media-service.js";
 
 export const RESEARCH_TEMPLATE = ["README.md", "CLAUDE.md", ".gitattributes", ".claude/skills/research/SKILL.md", "tools/research.mjs"];
 
@@ -78,5 +79,6 @@ export async function createResearchContext({ backend, host = null } = {}) {
     records() { return ["board", "pin", "string", "card", "piece", "source"].flatMap((t) => store.all(t)); },
   };
   ctx.sync = new SyncService(ctx, { template: RESEARCH_TEMPLATE, templateDir: "research-template", label: "research" });
+  ctx.media = new MediaService(ctx); // pictures in image sources: lazy, downloaded on first view on a new device
   return ctx;
 }

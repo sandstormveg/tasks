@@ -120,6 +120,7 @@ export function makeSource(fields = {}, { now, device = "", via = "app" } = {}) 
     why: String(fields.why || "").trim() || undefined,
     expect: String(fields.expect || "").trim() || undefined,
     quotes: fields.quotes?.length ? fields.quotes : undefined,
+    media: fields.media?.length ? fields.media : undefined,
     visibility: "private",
     captured: { via, device: device || undefined },
     body: fields.body || "",

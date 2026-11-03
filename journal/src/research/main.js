@@ -11,6 +11,7 @@ import { $, $$, toast } from "../ui/dom.js";
 import { applyTheme, fillIcons, renderSyncPill, hostLink, registerServiceWorker } from "../ui/shell.js";
 import { enableSwipe } from "../ui/swipe.js";
 import { capture } from "./ui.js";
+import { takeSharedImages } from "./images.js";
 
 const TABS = ["inbox", "queue", "read", "writing", "boards"];
 const ROUTES = [
@@ -41,9 +42,17 @@ function parseHash() {
 /** A link shared or sent here: save it, tidy the address, open it. */
 async function takeShared(ctx) {
   const q = new URLSearchParams(location.search);
-  if (!["url", "text", "title"].some((k) => q.get(k))) return null;
+  const stamp = q.get("share");
+  if (!["url", "text", "title"].some((k) => q.get(k)) && !stamp) return null;
   const via = q.get("via") === "bookmarklet" ? "bookmarklet" : "share";
   history.replaceState(null, "", location.pathname + (location.hash || "#/inbox"));
+  if (stamp) {
+    // Pictures shared from another app: any words that came with them become the title.
+    const words = [q.get("title"), q.get("text")].map((t) => String(t || "").trim()).filter(Boolean).join(" — ");
+    const saved = await takeSharedImages(ctx, stamp, { title: words ? words.slice(0, 120) : undefined, url: q.get("url") || undefined });
+    if (saved.length) { toast(`${saved.length === 1 ? "Picture" : `${saved.length} pictures`} saved to your Deposit`, { timeout: 5000 }); return saved[0]; }
+    if (!["url", "text", "title"].some((k) => q.get(k))) { toast("The picture didn't come through — try sharing it again.", { error: true }); return null; }
+  }
   const { source, existing } = await capture(ctx, { url: q.get("url") || "", text: q.get("text") || "", title: q.get("title") || "", via });
   if (!source) { toast("Nothing to save — the share was empty.", { error: true }); return null; }
   toast(existing ? "Already in your library" : source.kind === "thought" ? "Saved to your Deposit as a thought" : "Saved to your Deposit — add why, or a tag", { timeout: 5000 });
