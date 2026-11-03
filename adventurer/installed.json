@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@56290a9740e4",
+ "source": "sandstormveg/Adventurer@f9fd8e77c391",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -40,6 +40,8 @@
   "vendor/movenet/model.json",
   "vendor/movenet/group1-shard1of2.bin",
   "vendor/movenet/group1-shard2of2.bin",
+  "vendor/movenet/ref.jpg",
+  "vendor/movenet/ref.json",
   "sw.js",
   "host.json",
   "asset-manifest.json",

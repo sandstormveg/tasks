@@ -27,7 +27,7 @@ function blip() {
 // does on load), so the skeleton can appear the moment the camera does.
 let detecting;
 export function preloadPose() {
-  detecting ||= import("../../vendor/pose.js").then((m) => m.createDetector()).catch((err) => { detecting = null; throw err; });
+  detecting ||= import("../../vendor/pose.js").then((m) => m.createDetector()).catch((err) => { detecting = null; throw err; }); // { detector, backend, gap }
   return detecting;
 }
 
@@ -46,7 +46,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
     wide: true,
     body: html`<div class="cam">
         <video playsinline muted></video><canvas></canvas>
-        <div class="cam-hud"><span class="cam-count">0</span><span class="cam-of">${max ? "max" : `/ ${target}`}</span><span class="cam-angle"></span></div>
+        <div class="cam-hud"><span class="cam-count">0</span><span class="cam-of">${max ? "max" : `/ ${target}`}</span><span class="cam-angle"></span><span class="cam-engine"></span></div>
         <div class="cam-status">Loading the pose model…</div>
       </div>
       <p class="muted small">${rule.cue} Frames stay on this device.</p>`,
@@ -66,9 +66,11 @@ export function countReps(exercise, target, { max = false, title } = {}) {
           video.srcObject = stream;
           await video.play();
           status.textContent = "Loading the pose model… the first time can take a minute.";
-          detector = await preloadPose();
+          const engine = await preloadPose();
+          detector = engine.detector;
           if (stopped) return;
-          status.textContent = "Get in position.";
+          status.textContent = engine.backend === "cpu" ? "Ready (CPU mode — this phone's GPU gave wrong answers). Get in position." : "Ready. Get in position.";
+          d.querySelector(".cam-engine").textContent = engine.backend === "cpu" ? "CPU" : "GPU";
           const loop = async () => {
             if (stopped) return;
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
@@ -79,7 +81,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
             if (!kp && !/error/.test(status.textContent)) status.textContent = "No one in view yet.";
             cam.classList.toggle("seen", !!kp && counter.angle != null);
             if (kp) {
-              draw(g, kp);
+              draw(g, kp, exercise, counter);
               const n = kp.filter((k) => k.score >= DRAW_SCORE).length;
               if (counter.update(kp, performance.now())) {
                 count.textContent = counter.reps;
@@ -102,17 +104,38 @@ export function countReps(exercise, target, { max = false, title } = {}) {
   });
 }
 
-function draw(g, kp) {
+// Cali_pro's drawPoseSkeleton: lines coloured by stage, white-ringed joints, the
+// working joints circled and the live angle beside them.
+const ACTIVE = { pushup: ["elbow", "shoulder"], dip: ["elbow", "shoulder"], pullup: ["elbow", "shoulder"], situp: ["hip", "shoulder"], squat: ["knee", "hip"] };
+const BADGE = { pushup: "elbow", dip: "elbow", pullup: "elbow", situp: "hip", squat: "knee" };
+
+function draw(g, kp, exercise, counter) {
   const by = Object.fromEntries(kp.map((k) => [k.name, k]));
-  g.strokeStyle = "#1de9b6"; g.lineWidth = 5; g.fillStyle = "#ff2e63";
+  const down = counter.stage === "DOWN";
+  const unit = Math.max(g.canvas.width, g.canvas.height) / 640; // scale marks with the camera's resolution
+  g.lineCap = "round";
+  g.strokeStyle = down ? "#38bdf8" : "#facc15"; g.lineWidth = 6 * unit;
   for (const [a, b] of BONES) {
     const p = by[a], q = by[b];
     if (p?.score >= DRAW_SCORE && q?.score >= DRAW_SCORE) { g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); }
   }
   for (const k of kp) {
     if (k.score < FAINT_SCORE) continue;
-    g.globalAlpha = k.score >= DRAW_SCORE ? 1 : 0.35;
-    g.beginPath(); g.arc(k.x, k.y, k.score >= MIN_SCORE ? 7 : 5, 0, 7); g.fill();
+    const strong = k.score >= DRAW_SCORE;
+    g.globalAlpha = strong ? 1 : 0.4;
+    g.beginPath(); g.arc(k.x, k.y, (strong ? 8 : 5) * unit, 0, 7);
+    g.fillStyle = "#ef4444"; g.fill(); g.lineWidth = 2.5 * unit; g.strokeStyle = "#fff"; g.stroke();
+    if (strong && ACTIVE[exercise]?.some((j) => k.name.endsWith(j))) {
+      g.beginPath(); g.arc(k.x, k.y, 18 * unit, 0, 7); g.lineWidth = 4 * unit; g.strokeStyle = down ? "#22c55e" : "#eab308"; g.stroke();
+    }
   }
   g.globalAlpha = 1;
+  const j = [by[`left_${BADGE[exercise]}`], by[`right_${BADGE[exercise]}`]].filter((x) => x?.score >= DRAW_SCORE).sort((a, b) => b.score - a.score)[0];
+  if (j && counter.angle != null) {
+    // The canvas is mirrored with the video, so text is drawn mirrored back to read the right way.
+    g.save(); g.translate(j.x, j.y); g.scale(-1, 1);
+    g.font = `bold ${22 * unit}px sans-serif`; g.fillStyle = down ? "#22c55e" : "#facc15"; g.shadowColor = "rgba(0,0,0,.8)"; g.shadowBlur = 6;
+    g.fillText(`${counter.angle}°`, 20 * unit, -14 * unit);
+    g.restore();
+  }
 }
