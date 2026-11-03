@@ -4,7 +4,8 @@
 // and unchanged files are skipped by their sha.
 //
 // Safety rules: refuses a public repository (quests can name places and habits),
-// and every write path is checked to stay inside the quests folder.
+// and every write path is checked to stay inside the quests folder — except
+// writeData, which may write tasks-data's own task and history lists only.
 
 const API = "https://api.github.com";
 
@@ -68,6 +69,16 @@ export class QuestRemote {
     const r = await this.req(`/repos/${this.owner}/${this.repo}/contents/${this.inside(rel)}`, {
       method: "PUT",
       body: JSON.stringify({ message, content: b64.enc(text), ...(sha ? { sha } : {}) }),
+    });
+    return r.content.sha;
+  }
+
+  /** The one exception to "only inside quests/": tasks-data's own task and history lists, for quest↔task sync. */
+  async writeData(path, text, { sha, message }) {
+    if (!["data/tasks.json", "data/history.json"].includes(path)) throw new GitHubError("Only the task lists can be written outside quests/.", 400);
+    const r = await this.req(`/repos/${this.owner}/${this.repo}/contents/${path}`, {
+      method: "PUT",
+      body: JSON.stringify({ message, content: b64.enc(text), sha }),
     });
     return r.content.sha;
   }

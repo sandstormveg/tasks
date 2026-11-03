@@ -67,6 +67,10 @@ function validate(q) {
   if (q.attributes) {
     for (const [k, v] of Object.entries(q.attributes)) if (!(v >= 0 && v <= 1)) errs.push(`attributes.${k} must be a weight from 0 to 1`);
   }
+  if (q.skills) {
+    if (typeof q.skills !== "object" || Array.isArray(q.skills)) errs.push("skills must be {skill-id: weight}");
+    else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
+  }
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
   return errs;
 }
@@ -86,8 +90,10 @@ function serialize(q) {
     "giver",
     "author",
     "taskIds",
+    "taskCreated",
     "difficulty",
     "attributes",
+    "skills",
     "proof",
     "posted",
     "expires",
@@ -102,9 +108,97 @@ function serialize(q) {
   return JSON.stringify(out, null, 2) + "\n";
 }
 
+// src/core/skills.js
+var SKILL_KINDS = { active: "Active", passive: "Passive", unique: "Unique" };
+var SKILL_STATUS = ["known", "learning", "aspiring"];
+var SKILL_LEVELS = [0, 60, 160, 320, 560, 900, 1360, 1960, 2720, 3660];
+var MAX_SKILL_LEVEL = SKILL_LEVELS.length;
+function validateSkill(s) {
+  const errs = [];
+  if (!s || !/^[a-z0-9][a-z0-9-]{0,59}$/.test(s.id || "")) errs.push("skill id must be kebab-case");
+  if (!s?.name) errs.push("skill name is required");
+  if (s?.kind && !SKILL_KINDS[s.kind]) errs.push(`kind must be one of ${Object.keys(SKILL_KINDS).join(", ")}`);
+  if (s?.status && !SKILL_STATUS.includes(s.status)) errs.push(`status must be one of ${SKILL_STATUS.join(", ")}`);
+  if (s?.startLevel != null && !(s.startLevel >= 0 && s.startLevel <= MAX_SKILL_LEVEL)) errs.push(`startLevel must be 0\u2013${MAX_SKILL_LEVEL}`);
+  return errs;
+}
+
+// src/core/stats.js
+var RANKS = [
+  { id: "E", title: "Novice Pathfinder", min: 0 },
+  { id: "D", title: "Iron Wayfarer", min: 200 },
+  { id: "C", title: "Bronze Vanguard", min: 600 },
+  { id: "B", title: "Silver Scoutmaster", min: 1400 },
+  { id: "A", title: "Golden Sovereign", min: 2800 },
+  { id: "S", title: "Mythic Vanguard", min: 5e3 }
+];
+
+// src/core/achievements.js
+var TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
+var count = (key, n) => (f2) => ({ value: f2[key].length, target: n, date: f2[key][n - 1] || null });
+var rank = (id) => (f2) => {
+  const min = RANKS.find((r) => r.id === id).min;
+  return { value: f2.xp, target: min, date: f2.xpAt.find(([, x]) => x >= min)?.[0] || null };
+};
+var streak = (n) => (f2) => ({ value: f2.streak.best, target: n, date: f2.streak.reached[n] || null });
+var CATALOG = [
+  { id: "first-quest", title: "First Quest", desc: "Turn in your first quest.", tier: "bronze", icon: "\u2694", check: count("done", 1) },
+  { id: "quests-10", title: "Journeyman", desc: "Turn in 10 quests.", tier: "silver", icon: "\u2694", check: count("done", 10) },
+  { id: "quests-50", title: "Veteran of the Board", desc: "Turn in 50 quests.", tier: "gold", icon: "\u2694", check: count("done", 50) },
+  { id: "quests-200", title: "Living Legend", desc: "Turn in 200 quests.", tier: "mythic", icon: "\u2694", check: count("done", 200) },
+  { id: "first-reps", title: "Proof of Strength", desc: "Turn in a camera-verified quest.", tier: "bronze", icon: "\u270A", check: count("reps", 1) },
+  {
+    id: "reps-500",
+    title: "Iron Body",
+    desc: "500 camera-verified reps in total.",
+    tier: "gold",
+    icon: "\u270A",
+    check: (f2) => ({ value: f2.repTotal, target: 500, date: f2.repDates.find(([, n]) => n >= 500)?.[0] || null })
+  },
+  { id: "first-gps", title: "First Footsteps", desc: "Check in somewhere by GPS.", tier: "bronze", icon: "\u2316", check: count("gps", 1) },
+  { id: "gps-10", title: "Cartographer", desc: "Check in at 10 places.", tier: "silver", icon: "\u2316", check: count("gps", 10) },
+  { id: "gps-50", title: "World Walker", desc: "Check in at 50 places.", tier: "gold", icon: "\u2316", check: count("gps", 50) },
+  { id: "inferred-1", title: "Heeded the Call", desc: "Finish a quest the guild master inferred for you.", tier: "silver", icon: "\u2726", check: count("inferred", 1) },
+  { id: "epic-1", title: "Epic Deed", desc: "Finish an epic quest.", tier: "gold", icon: "\u265B", check: count("epic", 1) },
+  { id: "streak-7", title: "Kindled", desc: "A 7-day streak.", tier: "silver", icon: "\u2739", check: streak(7) },
+  { id: "streak-30", title: "Unbroken", desc: "A 30-day streak.", tier: "gold", icon: "\u2739", check: streak(30) },
+  { id: "streak-100", title: "Eternal Flame", desc: "A 100-day streak.", tier: "mythic", icon: "\u2739", check: streak(100) },
+  { id: "tasks-10", title: "Getting Things Done", desc: "Finish 10 tasks.", tier: "bronze", icon: "\u2713", check: count("tasks", 10) },
+  { id: "tasks-100", title: "Taskmaster", desc: "Finish 100 tasks.", tier: "silver", icon: "\u2713", check: count("tasks", 100) },
+  { id: "tasks-500", title: "Architect of Days", desc: "Finish 500 tasks.", tier: "gold", icon: "\u2713", check: count("tasks", 500) },
+  { id: "rank-c", title: "Bronze Vanguard", desc: "Reach guild rank C.", tier: "silver", icon: "\u25C6", check: rank("C") },
+  { id: "rank-a", title: "Golden Sovereign", desc: "Reach guild rank A.", tier: "gold", icon: "\u25C6", check: rank("A") },
+  { id: "rank-s", title: "Mythic Vanguard", desc: "Reach guild rank S.", tier: "mythic", icon: "\u25C6", check: rank("S") },
+  { id: "tier-a", title: "Elite Trait", desc: "Any attribute at tier A.", tier: "gold", icon: "\u25C8", check: (f2) => ({ value: Math.max(0, f2.bestTier), target: 5, date: null }) },
+  { id: "tier-ss", title: "Legendary Trait", desc: "Any attribute at tier SS.", tier: "mythic", icon: "\u25C8", check: (f2) => ({ value: Math.max(0, f2.bestTier), target: 7, date: null }) },
+  { id: "skill-5", title: "Adept", desc: "Any skill at Lv 5.", tier: "silver", icon: "\u2727", check: (f2) => ({ value: f2.bestSkill, target: 5, date: null }) },
+  { id: "skill-10", title: "Grandmaster", desc: "Any skill at Lv 10.", tier: "mythic", icon: "\u2727", check: (f2) => ({ value: f2.bestSkill, target: 10, date: null }) }
+];
+function validateTrophy(t) {
+  const errs = [];
+  if (!t || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(t.id || "")) errs.push("trophy id must be kebab-case");
+  if (!t?.title) errs.push("trophy title is required");
+  if (t?.tier && !TROPHY_TIERS[t.tier]) errs.push(`tier must be one of ${Object.keys(TROPHY_TIERS).join(", ")}`);
+  if (t?.status && !["earned", "goal"].includes(t.status)) errs.push("status must be earned or goal");
+  if (t?.date && !/^\d{4}(-\d{2}(-\d{2})?)?$/.test(t.date)) errs.push("date must be YYYY, YYYY-MM or YYYY-MM-DD");
+  return errs;
+}
+
 // tools/quests.mjs
 var root = process.env.QUESTS_DIR || (existsSync("board") || existsSync("CLAUDE.md") ? "." : "quests");
 var boardDir = path.join(root, "board");
+var showcaseFile = path.join(root, "showcase.json");
+function readShowcase() {
+  if (!existsSync(showcaseFile)) return { skills: [], achievements: [] };
+  try {
+    return { skills: [], achievements: [], ...JSON.parse(readFileSync(showcaseFile, "utf8")) };
+  } catch (e) {
+    fail(`showcase.json is unreadable: ${e.message}`);
+  }
+}
+function saveShowcase(doc) {
+  writeFileSync(showcaseFile, JSON.stringify(doc, null, 2) + "\n");
+}
 function readAll() {
   if (!existsSync(boardDir)) return [];
   return readdirSync(boardDir).filter((f2) => f2.endsWith(".json")).map((f2) => {
@@ -145,10 +239,12 @@ function build(f2, base = {}) {
   let proof = { type: proofType };
   if (proofType === "reps") proof = { type: "reps", exercise: f2.exercise || base.proof?.exercise, count: Number(f2.count || base.proof?.count) };
   if (proofType === "gps") proof = { type: "gps", target: { lat: Number(f2.lat), lng: Number(f2.lng), place: f2.place || void 0, radius: f2.radius ? Number(f2.radius) : 60 } };
-  const attributes = f2.attr ? Object.fromEntries(String(f2.attr).split(",").map((p) => {
-    const [k, v] = p.split("=");
-    return [k.trim(), v === void 0 ? 1 : Number(v)];
-  })) : base.attributes || {};
+  const attributes = f2.attr ? weights(f2.attr) : base.attributes || {};
+  const skills = f2.skill ? weights(f2.skill) : base.skills;
+  if (f2.skill) {
+    const known = new Set(readShowcase().skills.filter((s) => !s.removed).map((s) => s.id));
+    for (const id of Object.keys(skills)) if (!known.has(id)) console.warn(`Note: no skill "${id}" in showcase.json yet (skill list); it will count once one exists.`);
+  }
   return {
     ...base,
     title: f2.title || base.title,
@@ -162,10 +258,17 @@ function build(f2, base = {}) {
     taskIds: f2.task.length ? f2.task : base.taskIds || [],
     difficulty: f2.difficulty || base.difficulty || "normal",
     attributes,
+    skills,
     proof,
     posted: base.posted && base.status !== "requested" ? base.posted : (/* @__PURE__ */ new Date()).toISOString(),
     expires: f2.expires || base.expires
   };
+}
+function weights(text) {
+  return Object.fromEntries(String(text).split(",").map((p) => {
+    const [k, v] = p.split("=");
+    return [k.trim(), v === void 0 ? 1 : Number(v)];
+  }));
 }
 var line = (q) => `${q.id.padEnd(40)} ${q.status.padEnd(9)} ${q.origin.padEnd(8)} ${String(payout(q)).padStart(4)}xp  ${q.title}`;
 var [cmd, ...rest] = process.argv.slice(2);
@@ -244,6 +347,58 @@ switch (cmd) {
     done.slice(0, 5).forEach((q) => console.log(`  ${(q.completed || "").slice(0, 10)}  +${q.xp}  ${q.title}  [${q.evidence?.type}]`));
     break;
   }
+  case "skill": {
+    const doc = readShowcase();
+    const live = doc.skills.filter((s) => !s.removed);
+    if (f._?.[0] === "add") {
+      if (!f.name) fail("skill add needs --name");
+      const id = f.id || slug(f.name);
+      if (live.some((s2) => s2.id === id || slug(s2.name) === slug(f.name))) fail(`Refused: a skill "${f.name}" already exists.`);
+      const s = {
+        id,
+        name: String(f.name),
+        kind: f.kind || "active",
+        status: f.status || "known",
+        startLevel: f.status === "aspiring" ? 0 : Number(f.level || 1),
+        category: f.category,
+        note: f.note,
+        since: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+        author: f.author || "guildmaster",
+        updated: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const errs = validateSkill(s);
+      if (errs.length) fail(`Not saved \u2014 ${errs.join("; ")}`);
+      saveShowcase({ ...doc, skills: [...doc.skills.filter((x) => x.id !== id), s] });
+      console.log(`Added skill ${id}`);
+    } else live.forEach((s) => console.log(`${s.id.padEnd(30)} ${(SKILL_KINDS[s.kind] || s.kind).padEnd(8)} ${String(s.status).padEnd(9)} Lv${s.startLevel ?? 1}  ${s.name}`));
+    break;
+  }
+  case "trophy": {
+    const doc = readShowcase();
+    const live = doc.achievements.filter((t) => !t.removed);
+    if (f._?.[0] === "add") {
+      if (!f.title) fail("trophy add needs --title");
+      const id = f.id || `life-${slug(f.title)}`.slice(0, 70);
+      if (live.some((t2) => t2.id === id)) fail(`Refused: trophy ${id} already exists.`);
+      const t = {
+        id,
+        title: String(f.title),
+        detail: f.detail,
+        status: f.goal ? "goal" : "earned",
+        date: f.date || (f.goal ? void 0 : (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)),
+        tier: f.tier || "gold",
+        icon: f.icon || "\u2605",
+        category: f.category,
+        author: f.author || "guildmaster",
+        updated: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const errs = validateTrophy(t);
+      if (errs.length) fail(`Not saved \u2014 ${errs.join("; ")}`);
+      saveShowcase({ ...doc, achievements: [...doc.achievements.filter((x) => x.id !== id), t] });
+      console.log(`Placed ${t.status === "goal" ? "goal" : "trophy"} ${id}`);
+    } else live.forEach((t) => console.log(`${t.id.padEnd(40)} ${String(t.status).padEnd(7)} ${String(t.tier).padEnd(7)} ${t.date || ""}  ${t.title}`));
+    break;
+  }
   default:
-    console.log(`Commands: list, requests, show, add, shape, set, remove, validate, summary. Difficulties: ${Object.keys(DIFFICULTY).join(", ")}.`);
+    console.log(`Commands: list, requests, show, add, shape, set, remove, validate, summary, skill, trophy. Difficulties: ${Object.keys(DIFFICULTY).join(", ")}.`);
 }

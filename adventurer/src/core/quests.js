@@ -6,10 +6,11 @@
 // Quests point at tasks by id (taskIds) instead of copying them: the task stays
 // the record, the quest is the adventure built on it.
 
-export const STATUSES = ["requested", "posted", "accepted", "done", "declined", "expired"];
+// "failed": a training or test set you did but fell short of (it still counts as evidence of your level).
+export const STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 export const OPEN = new Set(["posted", "accepted"]);
-export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self"];
-export const GIVERS = ["guildmaster", "relay", "board", "self"];
+export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
+export const GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
 export const PROOFS = ["gps", "reps", "photo", "journal", "honor"];
 export const EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];
 
@@ -88,6 +89,10 @@ export function validate(q) {
   if (q.attributes) {
     for (const [k, v] of Object.entries(q.attributes)) if (!(v >= 0 && v <= 1)) errs.push(`attributes.${k} must be a weight from 0 to 1`);
   }
+  if (q.skills) {
+    if (typeof q.skills !== "object" || Array.isArray(q.skills)) errs.push("skills must be {skill-id: weight}");
+    else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
+  }
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
   return errs;
 }
@@ -115,8 +120,8 @@ export function complete(q, { proofType, evidence = {}, at }) {
 
 /** Deterministic file text: stable key order so unchanged quests never make a diff. */
 export function serialize(q) {
-  const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "difficulty", "attributes",
-    "proof", "posted", "expires", "accepted", "completed", "evidence", "xp"];
+  const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "taskCreated", "difficulty", "attributes", "skills",
+    "proof", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
   const out = {};
   for (const k of order) if (q[k] !== undefined) out[k] = q[k];
   for (const k of Object.keys(q).sort()) if (!(k in out) && q[k] !== undefined && !k.startsWith("_")) out[k] = q[k];

@@ -1,7 +1,8 @@
-// The status screen: level, guild rank and XP up top; a radar of the seven
+// The status screen: level, guild grade and XP up top; a radar of the seven
 // attributes by percentile; then one row per attribute with its tier, value and
 // a distribution curve showing where you sit. Tap a row and Relay explains it;
-// "Measure" types in a new value. Sources live in a small footnote at the
+// "Measure" types in a new value. Below them: Skills and the Achievements
+// cabinet (views/showcase.js). Sources live in a small footnote at the
 // bottom — the data behind them is swappable (core/norms.js).
 //
 // Charts: one series each (no legend), recessive grid, tooltips on hover/tap,
@@ -11,11 +12,12 @@ import { html, raw, sheet, toast } from "../ui/dom.js";
 import { METRICS, ATTRIBUTES, NORMS_VERSION } from "../core/norms.js";
 import { TIERS } from "../core/stats.js";
 import { explainTier } from "../core/relay.js";
+import { skillsSection, editSkill, trophiesSection, openTrophy, editTrophy } from "./showcase.js";
 
 const fmt = (v) => (v == null ? "—" : Number.isInteger(v) ? String(v) : v.toFixed(1));
 
 export async function mount(el, ctx, route, ui) {
-  let open = null;
+  let open = null, filter = "all";
   const draw = () => {
     const d = ctx.derived();
     const s = ctx.settings();
@@ -27,23 +29,33 @@ export async function mount(el, ctx, route, ui) {
         <div class="grow">
           <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span></div>
           <div class="xpbar" role="progressbar" aria-valuenow="${d.level.into}" aria-valuemax="${d.level.need}" aria-label="XP to next level"><i style="width:${xpPct}%"></i></div>
-          <div class="muted small">${d.level.into}/${d.level.need} XP to Lv ${d.level.level + 1} · ${d.xp} total${d.rank.next ? ` · rank ${d.rank.next.id} at ${d.rank.next.min}` : ""}${d.streak ? ` · ${d.streak}-day streak` : ""}</div>
+          <div class="muted small">${d.level.into}/${d.level.need} XP to Lv ${d.level.level + 1} · ${d.xp} total${d.rank.next ? ` · grade ${d.rank.next.id} by test (Train tab)` : ""}${d.streak ? ` · ${d.streak}-day streak` : ""}</div>
         </div>
       </section>
       ${!prof.ageBand ? html`<p class="notice">Set your age band in <a href="#/settings">Settings</a> so strength is compared with people your age.</p>` : ""}
       <section class="radar-wrap">${raw(radar(d.attributes))}<div class="tip" hidden></div></section>
       <section class="attrs">${d.attributes.map((a) => attrRow(a, open === a.id, s))}</section>
+      ${skillsSection(d.skills)}
+      ${trophiesSection(d.trophies, filter)}
       <details class="footnote"><summary>Sources & method</summary>
         <p>Tiers come from where a value sits in a distribution: F under the 10th percentile, then E 10, D 30, C 50, B 70, A 85, S 95, SS 99. Population metrics compare you with published data; "guild ladder" metrics have no good population data and use the guild's own scale. XP comes only from turned-in quests (verified proof pays in full, your word about 60%) and finished tasks (+15). Missing data is shown as unranked, never as zero. Reference data version ${NORMS_VERSION}.</p>
         <ul>${Object.entries(METRICS).filter(([k]) => ATTRIBUTES.some((a) => a.metric === k)).map(([, m]) => html`<li><b>${m.label}</b> (${m.scale === "game" ? "guild ladder" : "population"}): ${m.source}</li>`)}</ul>
       </details>`);
   };
   draw();
-  ui.onStore((c) => { if (["quest", "sync", "stats", "settings"].includes(c.op)) draw(); });
+  ui.onStore((c) => { if (["quest", "sync", "stats", "settings", "showcase"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
     const m = e.target.closest("[data-measure]");
     if (m) return measure(ctx, m.dataset.measure);
+    if (e.target.closest("[data-sk=add]")) return editSkill(ctx);
+    const sk = e.target.closest("[data-skill]");
+    if (sk) return editSkill(ctx, ctx.store.skills().find((x) => x.id === sk.dataset.skill));
+    if (e.target.closest("[data-tr=add]")) return editTrophy(ctx);
+    const tf = e.target.closest("[data-tf]");
+    if (tf) { filter = tf.dataset.tf; return draw(); }
+    const tr = e.target.closest("[data-trophy]");
+    if (tr) return openTrophy(ctx, ctx.derived().trophies.find((x) => x.id === tr.dataset.trophy));
     const row = e.target.closest("[data-attr]");
     if (row) { open = open === row.dataset.attr ? null : row.dataset.attr; draw(); }
   });

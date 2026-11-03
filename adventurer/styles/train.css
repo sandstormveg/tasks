@@ -1,0 +1,34 @@
+/* The Train tab: grade header, the next test's progress and benchmarks, the
+   trainer's missions and the test record. Same tokens as app.css. */
+
+.grade-head { display: flex; gap: 14px; align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.grade-badge { display: grid; place-items: center; width: 56px; height: 56px; flex: none; border: 2px solid var(--accent); color: var(--accent); font-size: 1.7rem; font-weight: bold; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 46, 99, .35); }
+.grade-badge.big { width: 84px; height: 84px; font-size: 2.6rem; margin: 0 auto; }
+.grade-title { font-weight: bold; letter-spacing: .06em; text-transform: uppercase; }
+.promo { text-align: center; }
+
+.test-panel, .train-day, .train-record { margin-top: 16px; }
+.test-panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 8px; padding: 12px; }
+.test-panel h3, .train-day h3, .train-record h3 { font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); margin: 0 0 10px; }
+.prereq > div:not(.xpbar) { display: flex; justify-content: space-between; font-size: .88rem; }
+.prereq .xpbar { margin: 4px 0 10px; }
+
+.bench { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 4px; }
+.bench th { text-align: left; font-weight: normal; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--grid); padding: 4px 6px; }
+.bench td { padding: 6px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.bench td:not(:first-child), .bench th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.bench tr.met td:nth-child(2) { color: var(--accent-2); font-weight: bold; }
+
+.missions { display: grid; gap: 10px; }
+.mission { display: flex; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--grid); border-left: 3px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.mission.posted, .mission.accepted { border-left-color: var(--accent-2); box-shadow: 0 0 10px rgba(29, 233, 182, .12); }
+.mission.done { opacity: .85; }
+.mission.failed { border-left-color: var(--amber); }
+.mission-title { font-weight: bold; }
+.ok { color: var(--accent-2); } .warn { color: var(--amber); }
+
+.attempt { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: .88rem; flex-wrap: wrap; }
+.attempt.passed b { color: var(--accent-2); } .attempt.failed b { color: var(--muted); font-weight: normal; }
+.grade-chip { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; font-size: .78rem; font-weight: bold; }
+
+@media (max-width: 520px) { .mission { flex-wrap: wrap; } .mission .btn { width: 100%; } }

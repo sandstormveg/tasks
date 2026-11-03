@@ -8,12 +8,13 @@
 // the further-along status wins — a turn-in is never undone by a stale copy —
 // and the losing version is kept on the quest as `_conflict` for a look.
 
-import { normalize, serialize, validate, STATUSES } from "../core/quests.js";
+import { normalize, serialize, validate, payout, STATUSES } from "../core/quests.js";
+import { applyTaskOps, questIndex } from "../core/tasklink.js";
 import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
 const TEMPLATE = ["README.md", "CLAUDE.md", ".claude/skills/quests/SKILL.md", "tools/quests.mjs"];
-const STAGE = { requested: 0, posted: 1, declined: 2, expired: 2, accepted: 3, done: 4 };
+const STAGE = { requested: 0, posted: 1, declined: 2, expired: 2, accepted: 3, failed: 3.5, done: 4 }; // a retried set that passes beats the failed one
 
 function load(k, fallback) {
   try { const v = localStorage.getItem(KEY + k); return v == null ? fallback : JSON.parse(v); } catch { return fallback; }
@@ -36,13 +37,18 @@ export class Store {
     this.tasks = load("tasks", { active: [], history: [] });
     this.settings = load("settings", {});
     this.secrets = load("secrets", {});
+    this.showcase = load("showcase", { doc: { skills: [], achievements: [] }, sha: null, dirty: false });
+    this.taskOps = load("taskOps", []);     // queued writes to tasks-data's task list (see core/tasklink.js)
     this.status = load("status", { lastSync: null, error: null });
     this.listeners = new Set();
   }
 
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   emit(change) { for (const fn of this.listeners) try { fn(change); } catch (e) { console.error(e); } }
-  persist() { save("quests", this.quests); save("stats", this.stats); save("tasks", this.tasks); save("status", this.status); }
+  persist() {
+    save("quests", this.quests); save("stats", this.stats); save("tasks", this.tasks); save("status", this.status);
+    save("showcase", this.showcase); save("taskOps", this.taskOps);
+  }
 
   all() { return Object.values(this.quests).map((x) => normalize(x.q)); }
   get(id) { return this.quests[id] ? normalize(this.quests[id].q) : null; }
@@ -64,9 +70,22 @@ export class Store {
     this.emit({ op: "stats" });
   }
 
+  skills() { return (this.showcase.doc.skills || []).filter((x) => !x.removed); }
+  trophies() { return (this.showcase.doc.achievements || []).filter((x) => !x.removed); }
+  /** Add or replace one skill or trophy by id (kind: "skills" | "achievements"). Removal is a `removed` tombstone, so it syncs. */
+  upsertShowcase(kind, item) {
+    const list = (this.showcase.doc[kind] || []).filter((x) => x.id !== item.id);
+    this.showcase = { ...this.showcase, doc: { ...this.showcase.doc, [kind]: [...list, { ...item, updated: new Date().toISOString() }] }, dirty: true };
+    this.persist();
+    this.emit({ op: "showcase" });
+  }
+  queueTaskOp(op) { this.taskOps = [...this.taskOps, op]; this.persist(); }
+
   setSettings(patch) { this.settings = { ...this.settings, ...patch }; save("settings", this.settings); this.emit({ op: "settings" }); }
   setSecrets(patch) { this.secrets = { ...this.secrets, ...patch }; save("secrets", this.secrets); this.emit({ op: "settings" }); }
-  pending() { return Object.values(this.quests).filter((x) => x.dirty).length + (this.stats.dirty ? 1 : 0); }
+  pending() {
+    return Object.values(this.quests).filter((x) => x.dirty).length + (this.stats.dirty ? 1 : 0) + (this.showcase.dirty ? 1 : 0) + this.taskOps.length;
+  }
 }
 
 /** One sync pass: tasks (read-only), the board, stats.json; seeds the folder's README/tool on first run. */
@@ -82,7 +101,8 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
     remote.readAny("data/tasks.json"), remote.readAny("data/history.json"),
   ]);
   store.tasks = {
-    active: [...parse(pa, "tasks"), ...parse(qa?.text, "tasks")].map(({ id, title, category, parentId, created }) => ({ id, title, category, parentId, created })),
+    active: [...parse(pa, "tasks").map((t) => ({ ...t, repo: "public" })), ...parse(qa?.text, "tasks").map((t) => ({ ...t, repo: "private" }))]
+      .map(({ id, title, category, parentId, created, repo, questId }) => ({ id, title, category, parentId, created, repo, questId })),
     history: [...parse(ph, "entries"), ...parse(qh?.text, "entries")].map(({ id, title, category, completedDate }) => ({ id, title, category, completedDate })),
   };
 
@@ -147,7 +167,46 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
     store.stats.dirty = false;
   }
 
-  store.status = { lastSync: new Date().toISOString(), error: null };
+  // showcase.json: skills and personal trophies, merged item by item (newest `updated` wins).
+  const sc = await remote.read("showcase.json");
+  if (sc && sc.sha !== store.showcase.sha) {
+    const theirs = JSON.parse(sc.text);
+    const merge = (a = [], b = []) => [...new Map([...a, ...b].sort((x, y) => (x.updated || "").localeCompare(y.updated || "")).map((x) => [x.id, x])).values()];
+    store.showcase.doc = store.showcase.dirty
+      ? { ...theirs, skills: merge(theirs.skills, store.showcase.doc.skills), achievements: merge(theirs.achievements, store.showcase.doc.achievements) }
+      : { skills: [], achievements: [], ...theirs };
+    store.showcase.sha = sc.sha;
+  }
+  if (store.showcase.dirty) {
+    store.showcase.sha = await remote.write("showcase.json", JSON.stringify(store.showcase.doc, null, 2) + "\n", { sha: store.showcase.sha || undefined, message: msg("skills and trophies") });
+    store.showcase.dirty = false;
+  }
+
+  // Accepted quests onto the task list (private tasks-data only), then the flare index.
+  if (store.taskOps.length) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const ft = await remote.readAny("data/tasks.json"), fh = await remote.readAny("data/history.json");
+      const r = applyTaskOps(ft ? JSON.parse(ft.text).tasks || [] : [], fh ? JSON.parse(fh.text).entries || [] : [], store.taskOps);
+      try {
+        // History first, then the task list, as the Tasks site does: a half-done completion leaves the task, not a gap.
+        if (r.historyChanged) await remote.writeData("data/history.json", JSON.stringify({ entries: r.history }, null, 2) + "\n", { sha: fh?.sha, message: msg("quest turned in, task completed") });
+        if (r.tasksChanged) await remote.writeData("data/tasks.json", JSON.stringify({ tasks: r.tasks }, null, 2) + "\n", { sha: ft?.sha, message: msg("quest tasks") });
+        store.taskOps = [];
+        break;
+      } catch (err) {
+        if (!(err instanceof GitHubError && err.status === 409) || attempt) throw err;
+      }
+    }
+  }
+  const index = questIndex(store.all(), payout);
+  const indexText = JSON.stringify(index.quests);
+  if (indexText !== store.status.indexText) {
+    const old = await remote.read("index.json");
+    await remote.write("index.json", JSON.stringify(index, null, 2) + "\n", { sha: old?.sha, message: msg("quest index") });
+    store.status.indexText = indexText;
+  }
+
+  store.status = { ...store.status, lastSync: new Date().toISOString(), error: null };
   store.persist();
   store.emit({ op: "sync" });
 }

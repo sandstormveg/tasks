@@ -1,10 +1,16 @@
 // The app context every view gets: the store, settings with the host's
 // defaults, the token (your own, or the Tasks site's when installed there),
-// sync, and the derived numbers (XP, rank, attributes) computed on demand.
+// sync, and the derived numbers (XP, level, grade, attributes) computed on demand.
+// Your guild rank is your grade (core/grades.js): earned by passing grade tests,
+// not by XP. XP still sets your level.
 
 import { Store, sync } from "./data/store.js";
-import { attributeStats, totalXp, levelOf, rankOf, streak } from "./core/stats.js";
-import { isExpired, OPEN } from "./core/quests.js";
+import { attributeStats, totalXp, levelOf, streak } from "./core/stats.js";
+import { isExpired, OPEN, payout } from "./core/quests.js";
+import { skillStats } from "./core/skills.js";
+import { cabinet } from "./core/achievements.js";
+import { taskIdFor, GUILD_CATEGORY } from "./core/tasklink.js";
+import { gradeOf } from "./core/grades.js";
 
 export const DEFAULTS = {
   owner: "sandstormveg",
@@ -71,13 +77,40 @@ export function createContext(host) {
       const quests = ctx.quests();
       const history = store.tasks.history;
       const xp = totalXp({ quests, history });
+      const attributes = attributeStats({ quests, history, measurements: store.measurements(), profile: store.profile(), today: ctx.today() });
+      const skills = skillStats(store.skills(), quests);
       return {
-        xp, level: levelOf(xp), rank: rankOf(xp),
+        xp, level: levelOf(xp), rank: gradeOf(quests),
         streak: streak({ quests, history, today: ctx.today() }),
-        attributes: attributeStats({ quests, history, measurements: store.measurements(), profile: store.profile(), today: ctx.today() }),
+        attributes, skills,
+        trophies: cabinet({ quests, history, attributes, skills }, store.trophies()),
         open: quests.filter((q) => OPEN.has(q.status)),
       };
     },
+    /** Accepting puts the quest on the task list: its own task if it has one, else a new private Guild task. */
+    accept(q) {
+      let next = { ...q, status: "accepted", accepted: ctx.now() };
+      if (!q.taskIds.length) {
+        const id = taskIdFor(q.title);
+        store.queueTaskOp({ op: "create", task: { id, title: q.title, category: GUILD_CATEGORY, created: ctx.today(), notes: "", questId: q.id } });
+        next = { ...next, taskIds: [id], taskCreated: id };
+        store.tasks = { ...store.tasks, active: [...store.tasks.active, { id, title: q.title, category: GUILD_CATEGORY, created: ctx.today(), repo: "private", questId: q.id }] };
+      }
+      store.put(next);
+    },
+    /** After a turn-in: complete the task the Guild made, or leave a note on a private task it's built on. */
+    afterTurnIn(done) {
+      const note = `Quest turned in: +${done.xp} XP (${done.evidence?.type}).`;
+      if (done.taskCreated) {
+        store.queueTaskOp({ op: "complete", taskId: done.taskCreated, questId: done.id, date: ctx.today(), note });
+      } else {
+        for (const id of done.taskIds) {
+          const t = store.tasks.active.find((x) => x.id === id);
+          if (t?.repo === "private") store.queueTaskOp({ op: "note", taskId: id, noteId: `n-guild-${done.id}`.slice(0, 60), text: `⚔ ${note}` });
+        }
+      }
+    },
+    payout,
     taskTitle(id) {
       const t = [...store.tasks.active, ...store.tasks.history].find((x) => x.id === id);
       return t ? t.title : null;
