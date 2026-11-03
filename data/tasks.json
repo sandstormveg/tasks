@@ -384,23 +384,6 @@
       ]
     },
     {
-      "id": "20-pushups-mw0adnoj",
-      "title": "20 pushups",
-      "category": "Guild Quests",
-      "created": "2026-11-03",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mw0afcwajp1w",
-          "text": "i added this. it is not synced to the same name quest in the adventurers Guild. just needed to create the category",
-          "done": false,
-          "created": "2026-11-03T06:09:17.578Z",
-          "updated": "2026-11-03T06:09:17.578Z"
-        }
-      ]
-    },
-    {
       "id": "in-journal-make-the-to-help-you-remember-section-toggle-able-and-untoggled-by-default-mw0dcdxk",
       "title": "In journal make the to help you remember section a dropdown and have it untoggled by default",
       "category": "Development",
