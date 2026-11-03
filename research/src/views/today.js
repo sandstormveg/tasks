@@ -237,6 +237,7 @@ export async function mount(el, ctx, route, ui) {
   }
 
   // ---------- helping you remember (past days) ----------
+  const CUES_OPEN = "cues-open";
   let cues = { tasks: [], neighbours: [], events: [], loading: !isToday, failed: 0 };
   function cueQuestion(c) {
     if (c.kind === "done") return `You finished “${c.title}” that day. How did it go?`;
@@ -255,11 +256,14 @@ export async function mount(el, ctx, route, ui) {
       ...events.map((e, i) => html`<li><button type="button" class="cue" data-act="cue" data-cue="e${i}">${raw(icon("calendar"))}<span>${e.all_day ? "" : html`${String(e.start || "").slice(11, 16)} `}<b>${e.title || "Event"}</b>${e.location ? html` <span class="faint">· ${e.location}</span>` : ""}</span></button></li>`),
       ...cues.neighbours.map((n) => html`<li><a class="cue" href="#/day/${n.day}">${raw(icon("history"))}<span>${n.when === "before" ? "The day before" : "The day after"} (${dayWord(n.day, today)}) you wrote: ${n.bits.map((b, k) => html`${k ? " · " : ""}“${b}”`)}</span></a></li>`),
     ];
-    box.innerHTML = String(html`<div class="section-title" style="margin-top:0">To help you remember</div>
+    // Folded by default so the page opens on your writing; this device remembers if you open it.
+    const open = ctx.store.getKv(CUES_OPEN, false);
+    box.innerHTML = String(html`<details ${open ? "open" : ""}><summary class="section-title" style="margin:0">To help you remember${rows.length ? html` <span class="faint">· ${rows.length}</span>` : ""}</summary><div class="recall-body">
       ${rows.length ? html`<ul class="cue-list">${rows}</ul>` : cues.loading ? "" : html`<p class="small muted" style="margin:0">No records for this day — start wherever you woke up, or walk through it below.</p>`}
       ${cues.loading ? html`<p class="small faint" style="margin:6px 0 0">Looking in your tasks…</p>` : ""}
       ${!hasPhotos ? html`<p class="small muted" style="margin:8px 0 0">${raw(icon("camera"))} Your camera roll from ${word} is often the quickest way back — add a few with <b>Photos</b> below, or pick a batch from several days and <button type="button" class="linkish" data-act="photo-days">sort them into their days</button>.</p>` : ""}
-      ${cues.tasks.length || cues.failed ? html`<p class="tiny faint" style="margin:8px 0 0">${cues.tasks.length ? "From your tasks — records, not memories: use what helps. Tasks dates are in UTC, so something done before 7am may show a day early. " : ""}${cues.failed ? "Couldn't reach your tasks just now." : ""}</p>` : ""}`);
+      ${cues.tasks.length || cues.failed ? html`<p class="tiny faint" style="margin:8px 0 0">${cues.tasks.length ? "From your tasks — records, not memories: use what helps. Tasks dates are in UTC, so something done before 7am may show a day early. " : ""}${cues.failed ? "Couldn't reach your tasks just now." : ""}</p>` : ""}</div></details>`);
+    box.querySelector("details").addEventListener("toggle", (ev) => ctx.store.setKv(CUES_OPEN, ev.target.open));
     box._events = events;
   }
   async function loadCues() {
