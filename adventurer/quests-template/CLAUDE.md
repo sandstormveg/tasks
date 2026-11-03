@@ -21,13 +21,21 @@ from the app; you post and shape them with `tools/quests.mjs`, run from this fol
 8. **Requests** (`status: requested`) come from the receptionist's intake: Silica's own words. Shape
    them with `shape <id>`; keep their wording in `detail`.
 9. **Sign your work**: `--author "<your model name>"`.
+10. **Skills and trophies are Silica's.** `skill add` and `trophy add` write `showcase.json`; add only what
+    Silica has told you is true (a skill they have, a thing they did, a goal they named), never a guess.
+    Tag quests with the skills they train: `--skill rust=1`.
+11. **Tasks become quests here, not in the task list.** When a task deserves a quest, `add --task <id>`;
+    the app syncs accepted quests back to tasks itself. Don't edit `data/tasks.json` for quests.
 
 ## Quest shape
 
 `board/<id>.json` — `id, title, brief, detail, why, status (requested|posted|accepted|done|declined|expired),
 origin (task|inferred|request|guild|local|self), giver, author, taskIds, difficulty (trivial|easy|normal|hard|epic),
-attributes {str, vit, agi, int, wis, cha, wil: 0..1}, proof {type: gps|reps|photo|journal|honor, …}, posted,
+attributes {str, vit, agi, int, wis, cha, wil: 0..1}, skills {skill-id: 0..1}, proof {type: gps|reps|photo|journal|honor, …}, posted,
 expires`. Proof for reps: `{exercise: pushup|squat|situp|dip|pullup, count}`; for gps: `{target: {lat, lng, place, radius}}`.
 
 XP: difficulty base (10/25/50/100/250) × proof rate (verified 1.0, photo/journal 0.9, honor 0.6).
-`stats.json` holds Silica's stats profile and measurements: read-only for you.
+`stats.json` holds Silica's stats profile and measurements, and `index.json` is rebuilt by the app: both
+read-only for you. `showcase.json`: `{skills: [{id, name, kind active|passive|unique, status known|learning|aspiring,
+startLevel 0-10, category}], achievements: [{id, title, detail, status earned|goal, date, tier bronze|silver|gold|mythic, icon}]}`.
+A skill levels up from the XP of turned-in quests that train it.

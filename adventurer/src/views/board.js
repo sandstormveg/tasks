@@ -1,7 +1,9 @@
-// The quest Board: Relay at the counter, then the quests — accepted first,
-// inferred and guild-master quests next. Tapping one opens its sheet: what it
-// is, which tasks it's built on, accept/decline, and turn-in with the proof it
-// asks for (GPS check-in, camera-verified reps, photo, journal day, or your word).
+// The quest Board: Relay at the counter, then two surfaces — accepted quests
+// on the digital "Active" panel (your HUD), and posted ones pinned as paper
+// notices on the guild's corkboard, like a real adventurers' guild. Tapping one
+// opens its sheet: what it is, which tasks it's built on, accept/decline, and
+// turn-in with the proof it asks for (GPS check-in, camera-verified reps,
+// photo, journal day, or your word). Accepting puts it on the task list.
 
 import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
 import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
@@ -9,6 +11,7 @@ import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf } from ".
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
 import { relayCounter } from "../ui/relay.js";
+import { newlyEarned } from "../core/achievements.js";
 import { uploadPhoto } from "../data/media.js";
 
 const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted" };
@@ -30,6 +33,7 @@ export async function mount(el, ctx, route, ui) {
       streak: d.streak,
     };
     const shown = quests.filter((q) => filter === "open" ? OPEN.has(q.status) : filter === "requested" ? q.status === "requested" : !OPEN.has(q.status) && q.status !== "requested").sort(boardOrder);
+    const active = shown.filter((q) => q.status === "accepted"), posted = shown.filter((q) => q.status === "posted");
     el.innerHTML = String(html`
       ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness, seed: seedOf(today) })) : ""}
       <div class="board-head">
@@ -43,9 +47,27 @@ export async function mount(el, ctx, route, ui) {
           <button class="btn small ghost" data-act="new">+ Post my own</button>
         </div>
       </div>
-      <div class="quests">
-        ${shown.length ? shown.map(card) : html`<div class="empty"><p>${filter === "open" ? "No open quests. Scout nearby, file a request, or wait for the guild master's next pass." : "Nothing here."}</p></div>`}
-      </div>`);
+      ${filter !== "open" ? html`<div class="quests">${shown.length ? shown.map(card) : html`<div class="empty"><p>Nothing here.</p></div>`}</div>` : html`
+        <section class="active-panel" aria-label="Accepted quests">
+          <h2 class="panel-title"><span>▮ Active</span><span class="muted small">${active.length} accepted</span></h2>
+          ${active.length ? html`<div class="quests">${active.map(card)}</div>` : html`<p class="muted small panel-empty">No quest accepted. Take one off the board.</p>`}
+        </section>
+        <section class="cork" aria-label="Quest board">
+          <h2 class="cork-title">Quest Board</h2>
+          ${posted.length ? html`<div class="notes">${posted.map(note)}</div>` : html`<p class="cork-empty">Nothing pinned. Scout nearby, file a request, or wait for the guild master's next pass.</p>`}
+        </section>`}`);
+    function note(q) {
+      const tilt = ((seedOf(q.id) % 7) - 3) * 0.6;
+      const tasks = q.taskIds.length;
+      return html`<button class="note n-${q.origin} d-${q.difficulty}" data-id="${q.id}" style="--tilt:${tilt}deg">
+        <span class="pin" aria-hidden="true"></span>
+        <span class="note-tag">${ORIGIN_TAG[q.origin] || q.origin}</span>
+        <span class="note-title">${q.title}</span>
+        ${q.origin === "inferred" && q.why ? html`<span class="note-why">${q.why}</span>` : q.brief ? html`<span class="note-brief">${q.brief}</span>` : ""}
+        <span class="note-foot"><span class="note-diff">${DIFFICULTY[q.difficulty].label}</span><span class="note-xp">${payout(q)} XP</span></span>
+        <span class="note-meta">${PROOF_LABEL[q.proof.type]}${q.expires ? ` · until ${q.expires}` : ""}${tasks ? ` · ⛓ ${tasks}` : ""}</span>
+      </button>`;
+    }
     function card(q) {
       const tasks = q.taskIds.map((id) => ctx.taskTitle(id)).filter(Boolean);
       return html`<button class="quest ${q.status} ${q.origin}" data-id="${q.id}">
@@ -59,12 +81,12 @@ export async function mount(el, ctx, route, ui) {
     }
   };
   draw();
-  ui.onStore((c) => { if (["quest", "sync", "sync-end", "settings", "stats"].includes(c.op)) draw(); });
+  ui.onStore((c) => { if (["quest", "sync", "sync-end", "settings", "stats", "showcase"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
     const f = e.target.closest("[data-filter]");
     if (f) { filter = f.dataset.filter; draw(); return; }
-    const card = e.target.closest(".quest[data-id]");
+    const card = e.target.closest(".quest[data-id], .note[data-id]");
     if (card) return openQuest(ctx, ctx.quests().find((q) => q.id === card.dataset.id));
     const act = e.target.closest("[data-act]")?.dataset.act;
     if (act === "scout") return scout(ctx);
@@ -109,6 +131,7 @@ async function postOwn(ctx) {
         <label class="field"><span>Exercise (reps)</span><select class="input" name="exercise">${opts(EXERCISES)}</select></label>
         <label class="field"><span>Reps</span><input class="input" name="count" type="number" min="1" value="20"></label>
         <label class="field"><span>Attribute</span><select class="input" name="attr">${opts(["", "str", "vit", "agi", "int", "wis", "cha", "wil"])}</select></label>
+        <label class="field"><span>Trains skill</span><select class="input" name="skill"><option value="">—</option>${ctx.store.skills().map((k) => html`<option value="${k.id}">${k.name}</option>`)}</select></label>
         <label class="field"><span>Expires</span><input class="input" name="expires" type="date"></label>
       </div>
       <label class="field"><span>Built on a task</span><select class="input" name="task"><option value="">—</option>${tasks.map((t) => html`<option value="${t.id}">${t.title}</option>`)}</select></label>
@@ -125,7 +148,8 @@ async function postOwn(ctx) {
   const proof = out.proof === "reps" ? { type: "reps", exercise: out.exercise, count: Number(out.count) } : { type: out.proof };
   try {
     ctx.store.put({ id: newId(out.title, ctx.store.ids()), title: out.title.trim(), brief: out.brief?.trim() || undefined, status: "posted", origin: out.task ? "task" : "self", giver: "self", author: "self",
-      taskIds: out.task ? [out.task] : [], difficulty: out.difficulty, attributes: out.attr ? { [out.attr]: 1 } : out.proof === "reps" ? { str: 1 } : {}, proof, posted: ctx.now(), expires: out.expires || undefined });
+      taskIds: out.task ? [out.task] : [], difficulty: out.difficulty, attributes: out.attr ? { [out.attr]: 1 } : out.proof === "reps" ? { str: 1 } : {},
+      skills: out.skill ? { [out.skill]: 1 } : undefined, proof, posted: ctx.now(), expires: out.expires || undefined });
     ctx.syncNow();
   } catch (err) { errorToast(err); }
 }
@@ -155,7 +179,7 @@ async function openQuest(ctx, q) {
       <dl class="facts">
         <dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>
         <dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>
-        ${Object.keys(q.attributes).length ? html`<dt>Trains</dt><dd>${Object.keys(q.attributes).map((a) => a.toUpperCase()).join(" · ")}</dd>` : ""}
+        ${Object.keys(q.attributes).length || q.skills ? html`<dt>Trains</dt><dd>${[...Object.keys(q.attributes).map((a) => a.toUpperCase()), ...Object.keys(q.skills || {}).map((id) => ctx.store.skills().find((k) => k.id === id)?.name || id)].join(" · ")}</dd>` : ""}
         ${q.expires ? html`<dt>Closes</dt><dd>${q.expires}</dd>` : ""}
         <dt>Posted by</dt><dd>${q.giver === "guildmaster" ? "the guild master" : q.giver === "relay" ? s.relayName : q.giver === "board" ? "the board" : "you"}</dd>
         ${tasks.length ? html`<dt>Tasks</dt><dd>${tasks.map((t) => html`<div>⛓ ${t.title || t.id}</div>`)}</dd>` : ""}
@@ -169,7 +193,7 @@ async function openQuest(ctx, q) {
     setup: (d, close) => d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); }),
   });
   try {
-    if (act === "accept") ctx.store.put({ ...q, status: "accepted", accepted: ctx.now() });
+    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); }
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
@@ -206,10 +230,13 @@ async function turnIn(ctx, q, type) {
     if (note == null) return;
     evidence = note.trim() ? { note: note.trim() } : {};
   }
+  const before = ctx.derived().trophies;
   const done = complete(q, { proofType: type, evidence, at: ctx.now() });
   ctx.store.put(done);
+  ctx.afterTurnIn(done);
   toast(stamped(done, done.xp, Date.now()), { timeout: 5000 });
   celebrate();
+  for (const a of newlyEarned(before, ctx.derived().trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
 }
 
 function celebrate() {

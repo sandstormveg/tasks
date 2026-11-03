@@ -56,6 +56,11 @@ function loadUiState() {
 
 const el = (sel) => document.querySelector(sel);
 const tokenKey = "tasks_gh_token";
+// The ⚔ Guild's quest flare: a badge on tasks that are accepted quests, fed by
+// quests/index.json in tasks-data (written by the Guild app). On unless turned off.
+const questFlareKey = "tasks_quest_flare";
+const questFlareOn = () => localStorage.getItem(questFlareKey) !== "off";
+const QUEST_DIFFICULTY = { trivial: "Trivial", easy: "Easy", normal: "Normal", hard: "Hard", epic: "Epic" };
 const getToken = () => localStorage.getItem(tokenKey) || "";
 
 // A Set that persists to localStorage on every change — drop-in for the plain Sets
@@ -149,7 +154,9 @@ async function loadData({ quiet = false } = {}) {
   let privateLoaded = false;
   const shas = { public: { tasks: pub.tasksSha || null, history: pub.historySha || null }, private: { tasks: null, history: null } };
 
+  let questFlare = {};
   if (getToken()) {
+    const questIndex = questFlareOn() ? ghGetFile(PRIVATE_REPO, "quests/index.json").catch(() => null) : null;
     try {
       const [privT, privH] = await Promise.all([
         ghGetFile(PRIVATE_REPO, "data/tasks.json"),
@@ -163,13 +170,21 @@ async function loadData({ quiet = false } = {}) {
     } catch (err) {
       console.warn("Couldn't load private tasks:", err.message);
     }
+    try {
+      const idx = await questIndex;
+      for (const q of idx ? JSON.parse(idx.content).quests || [] : []) {
+        for (const id of q.taskIds || []) questFlare[id] = { title: String(q.title || ""), difficulty: QUEST_DIFFICULTY[q.difficulty] ? q.difficulty : "normal", xp: Number(q.xp) || 0 };
+      }
+    } catch (err) {
+      console.warn("Couldn't read the quest index:", err.message);
+    }
   }
 
   // Reading Pages without a token never goes through ghFetch, so a load that worked is
   // what says we're back online. This load is the resync, so don't start another.
   markOnline({ resync: false });
   const before = viewFingerprint();
-  Object.assign(state, { tasks, history, categories, publicLoaded, privateLoaded, shas, dataLoaded: true, savedAt: null });
+  Object.assign(state, { tasks, history, categories, questFlare, publicLoaded, privateLoaded, shas, dataLoaded: true, savedAt: null });
   if (!getToken() || (publicLoaded && privateLoaded)) saveSnapshot();
   applyOutbox();
   if (!quiet || viewFingerprint() !== before) renderWhenSafe(quiet);
@@ -189,7 +204,7 @@ function renderAfterLoad() {
 }
 
 function viewFingerprint() {
-  return JSON.stringify([state.tasks, state.history, state.categories]);
+  return JSON.stringify([state.tasks, state.history, state.categories, state.questFlare]);
 }
 
 // A background refresh re-renders the lists and the open task, which would wipe a note
@@ -1869,6 +1884,8 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
   const waiting = waitingTaskKeys().has(key);
   if (waiting) card.classList.add("waiting-sync");
   const subtasksCollapsed = subtaskCount > 0 && collapsedSubtaskParents.has(key);
+  const quest = questFlareOn() ? state.questFlare?.[task.id] : null;
+  if (quest) card.classList.add("quest-flared");
 
   card.innerHTML = `
     <div class="task-card-header">
@@ -1882,7 +1899,7 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
             ${subtaskCount > 0 ? `<button class="subtask-collapse-toggle" title="${subtasksCollapsed ? "Show" : "Hide"} subtasks">${subtasksCollapsed ? "▸" : "▾"} ${subtaskCount}</button>` : ""}
             <button class="task-menu-btn" aria-label="More options" title="More options (or right-click)">⋮</button>
           </div>
-          <div class="task-meta">${taskCardMeta(task, subtaskCount)}</div>
+          <div class="task-meta">${quest ? `<span class="quest-flare q-${quest.difficulty}" title="Accepted guild quest: ${esc(quest.title)}">⚔ ${QUEST_DIFFICULTY[quest.difficulty]} · +${quest.xp} XP</span>` : ""}${taskCardMeta(task, subtaskCount)}</div>
         </div>
       </div>
     </div>
@@ -3742,6 +3759,7 @@ el("#active-detail-back").addEventListener("click", closeActiveDetail);
 // ---------- settings ----------
 el("#settings-btn").addEventListener("click", () => {
   el("#settings-token").value = getToken();
+  el("#settings-quest-flare").checked = questFlareOn();
   el("#settings-dialog").showModal();
 });
 el("#settings-clear").addEventListener("click", () => {
@@ -3750,6 +3768,7 @@ el("#settings-clear").addEventListener("click", () => {
 });
 el("#settings-form").addEventListener("submit", () => {
   localStorage.setItem(tokenKey, el("#settings-token").value.trim());
+  localStorage.setItem(questFlareKey, el("#settings-quest-flare").checked ? "on" : "off");
   // A new token is the fix for a rejected one, so let the waiting changes try again.
   state.syncError = null;
   state.tokenRejected = false;
