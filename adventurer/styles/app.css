@@ -125,7 +125,7 @@ a { color: var(--accent-2); }
 .note-meta { font-size: .68rem; opacity: .7; }
 
 /* Sheets and forms */
-dialog.sheet { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: 88vh; }
+dialog.sheet { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: 94vh; }
 dialog.sheet::backdrop { background: rgba(0, 0, 0, .7); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 0; gap: 8px; }
 .sheet-head h3 { margin: 0; font-size: 1.02rem; }
@@ -270,7 +270,8 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 .stamp-mark { color: var(--accent); font-weight: bold; }
 
 /* Camera */
-.cam { position: relative; background: #000; border-radius: 6px; overflow: hidden; aspect-ratio: 4 / 3; }
+.cam { position: relative; background: #000; border-radius: 6px; overflow: hidden; aspect-ratio: 3 / 4; max-height: 64vh; margin: 0 auto; }
+@media (min-width: 700px) { .cam { aspect-ratio: 4 / 3; } }
 /* Red until it can see your joints, then green: readable from across the room. */
 .cam::after { content: ""; position: absolute; inset: 0; border: 8px solid #ff2e63; border-radius: 6px; pointer-events: none; z-index: 2; }
 .cam.seen::after { border-color: var(--accent-2); }

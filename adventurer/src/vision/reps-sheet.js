@@ -23,6 +23,14 @@ function blip() {
   } catch { /* no sound is fine */ }
 }
 
+// One detector for the whole visit, started as soon as the Train tab opens (as Cali_pro
+// does on load), so the skeleton can appear the moment the camera does.
+let detecting;
+export function preloadPose() {
+  detecting ||= import("../../vendor/pose.js").then((m) => m.createDetector()).catch((err) => { detecting = null; throw err; });
+  return detecting;
+}
+
 const BONES = [["left_shoulder", "left_elbow"], ["left_elbow", "left_wrist"], ["right_shoulder", "right_elbow"], ["right_elbow", "right_wrist"],
   ["left_shoulder", "right_shoulder"], ["left_shoulder", "left_hip"], ["right_shoulder", "right_hip"], ["left_hip", "right_hip"],
   ["left_hip", "left_knee"], ["left_knee", "left_ankle"], ["right_hip", "right_knee"], ["right_knee", "right_ankle"]];
@@ -49,7 +57,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
       const status = d.querySelector(".cam-status"), count = d.querySelector(".cam-count"), ang = d.querySelector(".cam-angle");
       const cam = d.querySelector(".cam");
       try { (audio ||= new (window.AudioContext || window.webkitAudioContext)()).resume(); } catch { /* sound unlocks on this tap, or not at all */ }
-      const stop = () => { stopped = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); detector?.dispose?.(); };
+      const stop = () => { stopped = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); };
       d.addEventListener("close", stop);
       d.querySelector("[data-done]").addEventListener("click", () => { const reps = counter.reps; stop(); close({ reps }); });
       (async () => {
@@ -57,8 +65,8 @@ export function countReps(exercise, target, { max = false, title } = {}) {
           stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
           video.srcObject = stream;
           await video.play();
-          const { createDetector } = await import("../../vendor/pose.js");
-          detector = await createDetector();
+          status.textContent = "Loading the pose model… the first time can take a minute.";
+          detector = await preloadPose();
           if (stopped) return;
           status.textContent = "Get in position.";
           const loop = async () => {
@@ -72,6 +80,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
             cam.classList.toggle("seen", !!kp && counter.angle != null);
             if (kp) {
               draw(g, kp);
+              const n = kp.filter((k) => k.score >= DRAW_SCORE).length;
               if (counter.update(kp, performance.now())) {
                 count.textContent = counter.reps;
                 navigator.vibrate?.(30);
@@ -79,7 +88,7 @@ export function countReps(exercise, target, { max = false, title } = {}) {
                 if (!max && counter.reps === target) status.textContent = "Target reached. Keep going or tap Done.";
               }
               ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
-              if (max || counter.reps < target) status.textContent = counter.hint || (counter.angle == null ? "Can't see the joints — step back." : null) || (counter.stage === "DOWN" ? "Down… now up." : "Go.");
+              if (max || counter.reps < target) status.textContent = counter.hint || (counter.angle == null ? `Seeing ${n} of 17 joints. ${rule.cue}` : null) || (counter.stage === "DOWN" ? "Down… now up." : "Go.");
             }
             raf = requestAnimationFrame(loop);
           };
