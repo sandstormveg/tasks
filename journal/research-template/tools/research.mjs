@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:a863e4a08ddebffb
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:ef72f1262c71d9ed
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1181,14 +1181,26 @@ var FIELD_ORDER = {
     "synthesised_by"
   ],
   // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
+  // `source: atlas` cards are Atlas entries (src/core/atlas.js); the rest are made from Wikidata.
   card: [
     "id",
     "type",
+    "source",
+    "atlas",
     "qid",
     "label",
     "desc",
     "kind",
     "subtitle",
+    "address",
+    "status",
+    "standing",
+    "credence",
+    "review",
+    "path",
+    "edges",
+    "sprite",
+    "atlas_version",
     "rarity",
     "sitelinks",
     "finish",
@@ -1515,7 +1527,9 @@ function validateRecord(rec) {
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
       break;
     case "card":
-      if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q\u2026)");
+      if (rec.source === "atlas") {
+        if (!rec.atlas) errors.push("Atlas card needs its entry id");
+      } else if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q\u2026)");
       break;
     case "piece":
       if (!rec.title) errors.push("piece needs a title");
@@ -1846,6 +1860,7 @@ function addressOf(pin, pins, cardsById = {}) {
     if (f.address?.domain) return { ...f.address, frame: f.id };
   }
   const card = pin.kind === "card" ? cardsById[pin.card] : null;
+  if (card?.source === "atlas") return card.address?.domain ? { ...card.address, from: "Atlas" } : null;
   if (card?.kind && card.kind !== "WILD") return { domain: card.kind.charAt(0) + card.kind.slice(1).toLowerCase(), from: "card type" };
   return null;
 }
@@ -1858,6 +1873,7 @@ function pinText(pin, { cards = {}, sources = {} } = {}) {
     c?.label,
     c?.desc,
     c?.subtitle,
+    c?.address?.domain?.replace(/_/g, " "),
     ...c?.lineage || [],
     s?.title,
     s?.why,
@@ -2260,6 +2276,64 @@ function wordCount(text) {
   return (String(text || "").match(/[\p{L}\p{N}'’-]+/gu) || []).length;
 }
 
+// src/core/atlas.js
+var atlasCardId = (id) => `card-atlas-${id}`;
+function searchAtlas(index, query, { limit = 12 } = {}) {
+  const entries = index?.entries || [];
+  const q2 = fold(String(query || "").trim()).replace(/[-_]+/g, " ");
+  if (!q2) return [];
+  const words = q2.split(/\s+/).filter(Boolean);
+  const scored = [];
+  for (const e of entries) {
+    const name2 = fold(e.name).replace(/[-_]+/g, " ");
+    const id = fold(e.id).replace(/[-_]+/g, " ");
+    const rest = fold([e.summary, e.address?.domain, e.type].join(" ")).replace(/[-_]+/g, " ");
+    let s = 0;
+    if (name2 === q2 || id === q2) s += 100;
+    else if (name2.startsWith(q2)) s += 40;
+    for (const w2 of words) {
+      if (name2.split(" ").some((t) => t.startsWith(w2))) s += 10;
+      else if (id.includes(w2)) s += 6;
+      else if (rest.includes(w2)) s += 2;
+      else {
+        s = 0;
+        break;
+      }
+    }
+    if (s > 0) scored.push([s, e]);
+  }
+  return scored.sort((a, b2) => b2[0] - a[0] || a[1].name.localeCompare(b2[1].name)).slice(0, limit).map(([, e]) => e);
+}
+function cardFromAtlas(e, { now, version } = {}) {
+  return {
+    id: atlasCardId(e.id),
+    type: "card",
+    source: "atlas",
+    atlas: e.id,
+    label: e.name,
+    desc: e.summary || void 0,
+    kind: e.type,
+    address: e.address && Object.keys(e.address).length ? { ...e.address } : void 0,
+    status: e.status || void 0,
+    standing: e.standing || void 0,
+    credence: typeof e.credence === "number" ? e.credence : void 0,
+    review: e.review || void 0,
+    path: e.path || void 0,
+    edges: e.links?.length ? e.links.map((l) => [...l]) : void 0,
+    sprite: e.sprite || void 0,
+    atlas_version: version || void 0,
+    added: now,
+    updated: now,
+    body: ""
+  };
+}
+function refreshAtlasCard(existing, e, { now, version } = {}) {
+  const fresh = cardFromAtlas(e, { now, version });
+  if (!existing) return fresh;
+  return { ...fresh, body: existing.body, added: existing.added || fresh.added };
+}
+var readable = (s) => String(s || "").replace(/_/g, " ");
+
 // tools/research.mjs
 var AUTHOR = "claude";
 function args(argv) {
@@ -2303,6 +2377,20 @@ function loadAll(root) {
     }
   }
   return { records, problems };
+}
+function loadAtlas(root, dir) {
+  const tried = [dir, process.env.ATLAS_DIR, path.join(root, "..", "..", "atlas_infodex"), path.join(root, "..", "atlas_infodex"), path.join(root, "atlas_infodex")].filter(Boolean);
+  for (const d of tried) {
+    const f = path.join(path.resolve(root, d), "generated", "infodex-index.json");
+    if (existsSync(f)) {
+      try {
+        return { index: JSON.parse(readFileSync(f, "utf8")), file: f };
+      } catch (err) {
+        return { error: `${f}: ${err.message}` };
+      }
+    }
+  }
+  return { error: "No Atlas index found. Clone sandstormveg/atlas_infodex next to tasks-data (or pass --atlas-dir), and run `npm run build` there if generated/infodex-index.json is missing." };
 }
 function loadSources(root) {
   const { records, problems } = loadAll(root);
@@ -2525,7 +2613,8 @@ ${rel2}`);
         const items = parts.pins.filter((p) => p.kind !== "frame");
         const pinLine = (p) => {
           const first = String(p.body || "").split("\n").find(Boolean) || "";
-          const extra = p.kind === "card" ? ` \u2014 ${typeOf(cards[p.card]?.kind).name}, ${rarityByKey(cards[p.card]?.rarity).name}` : p.kind === "source" && sourcesById[p.source]?.url ? ` \u2014 ${sourcesById[p.source].url}` : p.url ? ` \u2014 ${p.url}` : "";
+          const cc = cards[p.card];
+          const extra = p.kind === "card" ? cc?.source === "atlas" ? ` \u2014 Atlas ${readable(cc.kind)}${cc.address?.domain ? `, ${readable(cc.address.domain)}` : ""}${cc.status ? `, ${readable(cc.status)}` : ""}` : ` \u2014 ${typeOf(cc?.kind).name}, ${rarityByKey(cc?.rarity).name}` : p.kind === "source" && sourcesById[p.source]?.url ? ` \u2014 ${sourcesById[p.source].url}` : p.url ? ` \u2014 ${p.url}` : "";
           return `- [${p.kind}] ${pinName(p)}${extra}${first && first !== p.title ? `: ${first.slice(0, 140)}` : ""}${by(p)}  (${p.id})`;
         };
         for (const f of frames) {
@@ -2590,9 +2679,21 @@ ${rel2}`);
         print(`No source ${a.source || ""} in the library \u2014 add it first (add / deposit).`);
         return null;
       }
-      const cardId = kind === "card" ? cardIdFor(String(a.card || "").toUpperCase()) : void 0;
+      let cardId = kind === "card" ? str(a.atlas) ? atlasCardId(a.atlas) : cardIdFor(String(a.card || "").toUpperCase()) : void 0;
+      if (kind === "card" && str(a.atlas) && !cards[cardId]) {
+        const { index, error } = loadAtlas(root, str(a["atlas-dir"]));
+        const entry = index?.entries.find((e) => e.id === a.atlas);
+        if (!entry) {
+          print(error || `No Atlas entry "${a.atlas}". Try \`atlas <words>\`.`);
+          return null;
+        }
+        const card = refreshAtlasCard(null, entry, { now, version: index.version });
+        save(root, card);
+        cards[card.id] = card;
+        cardId = card.id;
+      }
       if (kind === "card" && !cards[cardId]) {
-        print(`No card ${a.card || ""} yet \u2014 run \`card ${a.card || "Q\u2026"}\` first.`);
+        print(`No card ${a.card || ""} yet \u2014 run \`card ${a.card || "Q\u2026"}\` first (or pin an Atlas entry with --atlas <id>).`);
         return null;
       }
       if (!str(a.title) && !str(a.text) && kind !== "source" && kind !== "card") {
@@ -2645,7 +2746,35 @@ ${rel2}`);
       print(`Red string: ${pinName(from)} \u2014 ${pinName(to)}${t.label ? ` \xB7 ${t.label}` : ""} (not synthesised \u2014 only the owner synthesises)  (${t.id})`);
       return t;
     }
+    case "atlas": {
+      const { index, error, file } = loadAtlas(root, str(a["atlas-dir"]));
+      if (!index) {
+        print(error);
+        return null;
+      }
+      const q2 = rest.join(" ");
+      if (!q2) {
+        print(`Atlas index: ${index.count} entries, version ${index.version} (${file}). Search it: atlas <words>`);
+        return index;
+      }
+      const found = searchAtlas(index, q2, { limit: Number(a.limit) || 10 });
+      if (a.json) return json(found);
+      print(found.length ? found.map((e) => `${e.id} \u2014 ${e.name} (${[readable(e.type), readable(e.address?.domain), e.status && readable(e.status)].filter(Boolean).join(" \xB7 ")}): ${e.summary}`).join("\n") : "Nothing in the Atlas matches.");
+      return found;
+    }
     case "card": {
+      if (str(a.atlas)) {
+        const { index, error } = loadAtlas(root, str(a["atlas-dir"]));
+        const entry = index?.entries.find((e) => e.id === a.atlas);
+        if (!entry) {
+          print(error || `No Atlas entry "${a.atlas}".`);
+          return null;
+        }
+        const card = refreshAtlasCard(cards[atlasCardId(entry.id)], entry, { now, version: index.version });
+        save(root, card);
+        print(`Atlas card: ${card.label} \u2014 ${readable(card.kind)}${card.address?.domain ? `, ${readable(card.address.domain)}` : ""}  (${card.id})`);
+        return card;
+      }
       const qid = String(rest[0] || "").toUpperCase();
       if (!/^Q\d+$/.test(qid)) {
         const list = Object.values(cards);
@@ -2747,7 +2876,9 @@ Boards:    boards \xB7 board <id | words> \xB7 curate <board>
            pin <board> --title \u2026 [--text \u2026] [--kind note|link|quote|source|card] [--url \u2026] [--source s-\u2026] [--card Q\u2026] [--near p-\u2026]
            pin <board> --kind frame --title \u2026 [--domain \u2026] [--perspective \u2026] [--scale \u2026] [--time \u2026]   (then --near <frame> to pin inside it)
            connect <board> <pin> <pin> [--label \u2026]
-           card [Q\u2026]
+           card [Q\u2026] \xB7 card --atlas <entry-id>
+Atlas:     atlas <words> [--atlas-dir <clone of atlas_infodex>] \u2014 searches its small index, never the whole repo
+           pin <board> --kind card --atlas <entry-id>
 Writing:   pieces \xB7 piece <id | words> \xB7 new-piece <title> [--task-id \u2026 --task-title \u2026]
            validate
 Options: --data <dir>, --json
@@ -2763,6 +2894,7 @@ if (isMain) Promise.resolve(run(process.argv.slice(2))).catch((err) => {
 export {
   describe,
   loadAll,
+  loadAtlas,
   loadSources,
   run
 };

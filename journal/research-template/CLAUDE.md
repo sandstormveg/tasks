@@ -16,7 +16,9 @@ node tools/research.mjs search moral circle #ethics           # words and #tags,
 node tools/research.mjs show <id or words>                    # one source in full
 node tools/research.mjs board <id or words>                   # one board: frames, pins, strings, curator's findings
 node tools/research.mjs piece <id or words>                   # one piece, with its draft
-node tools/research.mjs card [Q…]                             # Infodex cards (list, or one)
+node tools/research.mjs card [Q…]                             # cards (list, or one Wikidata card)
+node tools/research.mjs atlas <words>                         # search the Atlas's small index (needs a clone of atlas_infodex
+                                                              # next to tasks-data, or --atlas-dir) — never read the Atlas repo whole
 ```
 
 Add `--json` for structured output. Read only what the question needs: `stats`, `boards` and `pieces`
@@ -42,7 +44,8 @@ are one line per item; open a single board or piece only when it's relevant.
 - **Change** status, ⭐ or tags when asked: `node tools/research.mjs set <id> --status read --fav true --tags +a,-b`.
 - **Boards** (when asked, or by a routine that owns a board):
   - `new-board "<title>" --about "…"`, `pin <board> --title "…" --text "…" [--kind link --url …] [--near <pin>]`,
-    `pin <board> --kind source --source <s-id>`, `card Q…` then `pin <board> --kind card --card Q…`.
+    `pin <board> --kind source --source <s-id>`, `pin <board> --kind card --atlas <entry-id>` (an Atlas
+    entry; find ids with `atlas <words>`), or `card Q…` then `pin <board> --kind card --card Q…` (Wikidata).
   - `connect <board> <pin> <pin> --label "…"` ties a **red** string. Label it with the specific reason you
     think they connect, so it's checkable.
   - Your pins and strings are marked as Claude's (`author: claude`) and shown that way in the app.

@@ -193,6 +193,8 @@ export function addressOf(pin, pins, cardsById = {}) {
     if (f.address?.domain) return { ...f.address, frame: f.id };
   }
   const card = pin.kind === "card" ? cardsById[pin.card] : null;
+  // An Atlas entry brings its own address; a Wikidata card falls back to its Infodex type.
+  if (card?.source === "atlas") return card.address?.domain ? { ...card.address, from: "Atlas" } : null;
   if (card?.kind && card.kind !== "WILD") return { domain: card.kind.charAt(0) + card.kind.slice(1).toLowerCase(), from: "card type" };
   return null;
 }
@@ -201,7 +203,7 @@ export function addressOf(pin, pins, cardsById = {}) {
 export function pinText(pin, { cards = {}, sources = {} } = {}) {
   const c = pin.kind === "card" ? cards[pin.card] : null;
   const s = pin.kind === "source" ? sources[pin.source] : null;
-  return [pin.title, pin.body, c?.label, c?.desc, c?.subtitle, ...(c?.lineage || []),
+  return [pin.title, pin.body, c?.label, c?.desc, c?.subtitle, c?.address?.domain?.replace(/_/g, " "), ...(c?.lineage || []),
     s?.title, s?.why, ...(s?.tags || [])].filter(Boolean).join(" ");
 }
 
@@ -256,4 +258,30 @@ export function boundsOf(pins) {
   const x1 = Math.max(...pins.map((p) => p.x + p.w));
   const y1 = Math.max(...pins.map((p) => p.y + p.h));
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/**
+ * How a string hangs between two pushpins — the physics from the Chalkboard prototype
+ * (src/utils/connectorPhysics.ts): longer strings pull tighter, so sag grows more slowly
+ * than distance (12–95 units); a string being dragged bellies away from the motion; a
+ * synthesised string is drawn taut. The droop is 4t(1−t)·offset, which is exactly a
+ * quadratic Bézier with its control point at twice the offset from the midpoint.
+ */
+export function stringCurve(p0, p1, { state = "red", vx = 0, vy = 0 } = {}) {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const dist = Math.hypot(dx, dy);
+  const tension = clamp((dist - 80) / 520, 0, 1);
+  let sag = clamp(dist * 0.13 + (1 - tension) * 18, 12, 95);
+  if (state === "synthesised") sag = Math.min(16, sag * 0.22);
+  const swayX = clamp(-vx * 0.18, -35, 35);
+  const swayY = clamp(-vy * 0.12, -20, 30);
+  const ox = swayX;
+  const oy = sag + swayY;
+  const mx = (p0.x + p1.x) / 2;
+  const my = (p0.y + p1.y) / 2;
+  const r = (n) => Math.round(n * 10) / 10;
+  return { d: `M${r(p0.x)},${r(p0.y)} Q${r(mx + 2 * ox)},${r(my + 2 * oy)} ${r(p1.x)},${r(p1.y)}`, mid: { x: mx + ox, y: my + oy }, sag, tension };
 }

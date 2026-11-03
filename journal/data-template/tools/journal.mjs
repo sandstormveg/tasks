@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:ee3d99de85e17376
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:35559beceb3a1c39
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1181,14 +1181,26 @@ var FIELD_ORDER = {
     "synthesised_by"
   ],
   // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
+  // `source: atlas` cards are Atlas entries (src/core/atlas.js); the rest are made from Wikidata.
   card: [
     "id",
     "type",
+    "source",
+    "atlas",
     "qid",
     "label",
     "desc",
     "kind",
     "subtitle",
+    "address",
+    "status",
+    "standing",
+    "credence",
+    "review",
+    "path",
+    "edges",
+    "sprite",
+    "atlas_version",
     "rarity",
     "sitelinks",
     "finish",
@@ -1594,7 +1606,9 @@ function validateRecord(rec) {
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
       break;
     case "card":
-      if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q\u2026)");
+      if (rec.source === "atlas") {
+        if (!rec.atlas) errors.push("Atlas card needs its entry id");
+      } else if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q\u2026)");
       break;
     case "piece":
       if (!rec.title) errors.push("piece needs a title");

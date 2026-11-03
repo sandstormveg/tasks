@@ -113,7 +113,8 @@ export function sheet({ title, body, foot, setup, wide = false, dismissable = tr
     d.showModal();
     setup?.(d, close);
     const first = d.querySelector("[autofocus]");
-    if (first) setTimeout(() => first.focus(), 30);
+    // Focus the first field after the open animation — unless you've already moved into another one.
+    if (first) setTimeout(() => { const at = document.activeElement; if (!at || at === d || at === document.body || !d.contains(at)) first.focus(); }, 30);
   });
 }
 

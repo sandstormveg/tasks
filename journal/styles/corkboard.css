@@ -211,3 +211,19 @@ body.board-mode .content { max-width: none; padding: 0; }
 .board-link svg { width: 26px; height: 26px; flex: none; }
 .piece-source { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
 .draft { min-height: 60vh; font-size: 1.08rem; }
+
+/* ---- Atlas cards (src/core/atlas.js): the Atlas's pixel sprite and type colour */
+.ix-card.atlas-card { background: linear-gradient(160deg, color-mix(in srgb, var(--c1) 85%, #fff 15%), color-mix(in srgb, var(--c1) 55%, #000 45%)); border-color: color-mix(in srgb, var(--c1) 60%, #fff 40%); }
+.atlas-sprite { background: rgba(255, 255, 255, 0.12); }
+.atlas-sprite svg { width: 72%; height: 72%; image-rendering: pixelated; }
+.atlas-domain { text-transform: capitalize; }
+.atlas-summary { white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-size: 9.5px; line-height: 1.3; }
+.pin-card[data-lod="3"] .atlas-summary { display: none; }
+.pick-atlas { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: center; }
+.pick-atlas .pick-sprite { grid-row: span 2; width: 30px; height: 30px; }
+.pick-atlas .pick-sprite svg { width: 30px; height: 30px; }
+.atlas-says { background: var(--surface-2); padding: 7px 10px; border-radius: 9px; margin: 0 0 8px; }
+
+/* String labels stay the same size on screen at any zoom, so they never cover an open card's page. */
+.cork-labels text { font-size: calc(13px / var(--z, 1)); stroke-width: calc(3.5px / var(--z, 1)); }
+.ix-subhead { font-weight: 700; margin-bottom: 0.2em; }

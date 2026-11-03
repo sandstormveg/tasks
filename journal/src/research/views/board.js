@@ -13,8 +13,10 @@ import { html, raw, on, sheet, toast, confirmSheet, promptSheet, debounce } from
 import { icon } from "../../ui/icons.js";
 import {
   PIN_KINDS, TIERS, PIN_COLORS, makePin, makeString, synthesisPatch, unsynthesisePatch, boardParts, boardSummary,
-  placeNear, tiltOf, boundsOf, framesOf, defaultSize,
+  placeNear, tiltOf, boundsOf, framesOf, defaultSize, stringCurve,
 } from "../../core/boards.js";
+import { searchAtlas, refreshAtlasCard, atlasCardId, atlasRelations, spriteSvg, readable } from "../../core/atlas.js";
+import { loadAtlasIndex, loadAtlasEntry, atlasFileUrl } from "../atlas.js";
 import { checkSynthesis, curate } from "../../core/curator.js";
 import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor } from "../../core/infodex.js";
 import { searchSources, formatAuthors } from "../../core/sources.js";
@@ -22,9 +24,9 @@ import { cardFace, cardPage, addEntry } from "../cards.js";
 
 const MIN_Z = 0.08;
 const MAX_Z = 6;
-// How much a pin shows, from its size on screen: 0 a label, 1–2 the pin, 3 its page — reached at 560px,
-// or once it fills most of a phone's width.
-const LOD = (screenW, vpW = 1200) => (screenW < 70 ? 0 : screenW < 300 ? 1 : screenW < Math.min(560, vpW * 0.8) ? 2 : 3);
+// How much a pin shows, from its size on screen: 0 a label, 1–2 the pin, 3 its page — reached at 480px
+// (where an opened card lands on a laptop, fitted to the screen's height), or once it fills most of a phone's width.
+const LOD = (screenW, vpW = 1200) => (screenW < 70 ? 0 : screenW < 300 ? 1 : screenW < Math.min(480, vpW * 0.8) ? 2 : 3);
 const isClaude = (a) => a === "claude" || a === "claude-code" || String(a || "").startsWith("ai:");
 
 export async function mount(el, ctx, route, ui) {
@@ -89,6 +91,20 @@ export async function mount(el, ctx, route, ui) {
   }
   const pinById = (id) => parts.pins.find((p) => p.id === id);
   const vpW = () => vp.clientWidth || 1200;
+  // A pin only becomes its page (and fetches anything) while it's actually on screen.
+  const onScreen = (p) => {
+    const w = vp.clientWidth || 1200;
+    const h = vp.clientHeight || 800;
+    const x = cam.x + p.x * cam.z;
+    const y = cam.y + p.y * cam.z;
+    return x < w && y < h && x + p.w * cam.z > 0 && y + p.h * cam.z > 0;
+  };
+  const lodOf = (p) => {
+    let l = LOD(p.w * cam.z, vpW());
+    // A pin that fills most of the screen's height is open too, even if the screen is wide and short.
+    if (l === 2 && p.h * cam.z >= (vp.clientHeight || 800) * 0.8) l = 3;
+    return l === 3 && !onScreen(p) ? 2 : l;
+  };
 
   // ---- camera
   function loadCam() { try { return JSON.parse(localStorage.getItem(`cork.cam.${boardId}`) || "null"); } catch { return null; } }
@@ -124,6 +140,7 @@ export async function mount(el, ctx, route, ui) {
     anim = requestAnimationFrame(step);
   }
   function zoomAt(px, py, factor) {
+    cancelAnimationFrame(anim); // your input always wins over a camera flight in progress
     const z = Math.max(MIN_Z, Math.min(MAX_Z, cam.z * factor));
     const k = z / cam.z;
     cam = { z, x: px - (px - cam.x) * k, y: py - (py - cam.y) * k };
@@ -169,8 +186,16 @@ export async function mount(el, ctx, route, ui) {
       const o = pinById(s.from === p.id ? s.to : s.from);
       return { state: s.state, label: s.label, other: o ? o.title || cardsById[o.card]?.label || sourcesById[o.source]?.title || o.kind : "?" };
     });
-    return { boards: [...new Map(onBoards.map((b) => [b.id, b])).values()], strings, here: boardId, infodex: ctx.settings().infodexUrl, card: c };
+    const base = { boards: [...new Map(onBoards.map((b) => [b.id, b])).values()], strings, here: boardId, infodex: ctx.settings().infodexUrl, card: c };
+    if (c?.source !== "atlas") return base;
+    if (!atlasEntries.has(c.path) && c.path) {
+      atlasEntries.set(c.path, null); // fetching
+      loadAtlasEntry(ctx, c.path).then((entry) => { atlasEntries.set(c.path, entry || { data: {}, notes: "" }); const n = pinEls.get(p.id); if (n?._lod === 3) renderPin(p); });
+    }
+    const names = Object.fromEntries((ctx.store.getKv("atlas-index", null)?.index?.entries || []).map((e) => [e.id, e.name]));
+    return { ...base, entry: atlasEntries.get(c.path) || null, names, fileUrl: c.path ? atlasFileUrl(ctx, c.path) : "" };
   }
+  const atlasEntries = new Map();
 
   function renderPin(p) {
     let node = pinEls.get(p.id);
@@ -180,7 +205,7 @@ export async function mount(el, ctx, route, ui) {
       pinEls.set(p.id, node);
       pinsEl.appendChild(node);
     }
-    const lod = LOD(p.w * cam.z, vpW());
+    const lod = lodOf(p);
     node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${selected === p.id ? " sel" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
     node.dataset.lod = lod;
     node.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--tilt:${p.kind === "frame" ? 0 : tiltOf(p.id)}deg`;
@@ -189,19 +214,29 @@ export async function mount(el, ctx, route, ui) {
     node._lod = lod;
   }
 
+  // While you drag a pin its strings belly away from the motion, then settle back with a little spring.
+  let sway = { ids: new Set(), vx: 0, vy: 0 };
+  let settle = 0;
   function stringPath(s) {
     const a = pinById(s.from);
     const b = pinById(s.to);
     if (!a || !b) return null;
-    const ax = a.x + a.w / 2;
-    const ay = a.y + 10;
-    const bx = b.x + b.w / 2;
-    const by = b.y + 10;
-    const d = Math.hypot(bx - ax, by - ay);
-    const sag = s.state === "synthesised" ? Math.min(30, d * 0.04) : Math.min(160, 18 + d * 0.16);
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2 + sag;
-    return { d: `M${ax},${ay} Q${mx},${my} ${bx},${by}`, mx, my: (ay + by) / 2 + sag / 2 };
+    const moving = sway.ids.has(s.from) || sway.ids.has(s.to);
+    const c = stringCurve({ x: a.x + a.w / 2, y: a.y + 10 }, { x: b.x + b.w / 2, y: b.y + 10 }, { state: s.state, vx: moving ? sway.vx : 0, vy: moving ? sway.vy : 0 });
+    return { d: c.d, mx: c.mid.x, my: c.mid.y };
+  }
+  function settleStrings(v0) {
+    cancelAnimationFrame(settle);
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = t - t0;
+      const f = Math.exp(-k / 160) * Math.cos(k / 85);
+      sway = { ...sway, vx: v0.vx * f, vy: v0.vy * f };
+      renderStrings();
+      if (k < 700) settle = requestAnimationFrame(step);
+      else { sway = { ids: new Set(), vx: 0, vy: 0 }; renderStrings(); }
+    };
+    settle = requestAnimationFrame(step);
   }
 
   function renderStrings(temp = null) {
@@ -249,7 +284,7 @@ export async function mount(el, ctx, route, ui) {
     for (const p of parts.pins) {
       const node = pinEls.get(p.id);
       if (!node) continue;
-      const lod = LOD(p.w * cam.z, vpW());
+      const lod = lodOf(p);
       if (lod !== node._lod) renderPin(p);
       else if (lod === 3) node.style.setProperty("--u", (1 / cam.z).toFixed(4));
     }
@@ -331,6 +366,7 @@ export async function mount(el, ctx, route, ui) {
     if (e.target.closest("a, input, textarea, select, button:not([data-pushpin])")) return;
     if (e.target.closest(".pin[data-lod='3'] .pin-page")) return; // a card's page scrolls like a page
     vp.setPointerCapture?.(e.pointerId);
+    cancelAnimationFrame(anim);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
       const [p1, p2] = [...pointers.values()];
@@ -384,8 +420,18 @@ export async function mount(el, ctx, route, ui) {
       if (!gesture.moved && Math.abs(dx) + Math.abs(dy) < 6) return;
       gesture.moved = true;
       const p = pinById(gesture.id);
-      p.x = Math.round(gesture.px + dx / cam.z);
-      p.y = Math.round(gesture.py + dy / cam.z);
+      const nx = Math.round(gesture.px + dx / cam.z);
+      const ny = Math.round(gesture.py + dy / cam.z);
+      // Velocity in board units per ~frame, smoothed, for the strings' sway.
+      const now = performance.now();
+      const dt = Math.max(8, now - (gesture.t || now - 16));
+      const k = 16 / dt;
+      gesture.vx = 0.6 * (gesture.vx || 0) + 0.4 * (nx - p.x) * k;
+      gesture.vy = 0.6 * (gesture.vy || 0) + 0.4 * (ny - p.y) * k;
+      gesture.t = now;
+      sway = { ids: new Set([p.id, ...gesture.carry.map((c) => c.q.id)]), vx: gesture.vx * 6, vy: gesture.vy * 6 };
+      p.x = nx;
+      p.y = ny;
       for (const c of gesture.carry) { c.q.x = Math.round(c.x + dx / cam.z); c.q.y = Math.round(c.y + dy / cam.z); }
       for (const q of [p, ...gesture.carry.map((c) => c.q)]) { const n = pinEls.get(q.id); n.style.left = `${q.x}px`; n.style.top = `${q.y}px`; }
       renderStrings();
@@ -424,6 +470,7 @@ export async function mount(el, ctx, route, ui) {
     }
     if (g.type === "pin") {
       if (g.moved) {
+        settleStrings({ vx: sway.vx, vy: sway.vy });
         const p = pinById(g.id);
         await savePin(p, { x: p.x, y: p.y });
         for (const c of g.carry) await savePin(c.q, { x: c.q.x, y: c.q.y });
@@ -431,7 +478,8 @@ export async function mount(el, ctx, route, ui) {
       }
       if (connectFrom && connectFrom !== g.id) { const from = connectFrom; connectFrom = null; hideHint(); await connect(from, g.id); select(g.id); return; }
       const t = performance.now();
-      if (lastTap.id === g.id && t - lastTap.t < 320) { lastTap = { id: null, t: 0 }; openPin(g.id); return; }
+      // Double-tap: a card or note flies open; a frame's title badge opens its name and address to edit.
+      if (lastTap.id === g.id && t - lastTap.t < 320) { lastTap = { id: null, t: 0 }; if (pinById(g.id)?.kind === "frame") editPin(g.id); else openPin(g.id); return; }
       lastTap = { id: g.id, t };
       select(g.id);
     }
@@ -446,7 +494,7 @@ export async function mount(el, ctx, route, ui) {
     // Trackpad pinch and ctrl/cmd+wheel zoom; so does a mouse wheel (whole notches, no sideways motion). Two-finger scroll pans.
     const mouseWheel = e.deltaMode === 1 || (Math.abs(e.deltaX) < 1 && Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY));
     if (e.ctrlKey || e.metaKey || mouseWheel) zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018)));
-    else { cam = { ...cam, x: cam.x - e.deltaX, y: cam.y - e.deltaY }; applyCam(); }
+    else { cancelAnimationFrame(anim); cam = { ...cam, x: cam.x - e.deltaX, y: cam.y - e.deltaY }; applyCam(); }
   }, { passive: false });
 
   vp.addEventListener("keydown", (e) => {
@@ -539,6 +587,11 @@ export async function mount(el, ctx, route, ui) {
       title: syn ? "Synthesised" : "Red string",
       body: html`<p class="str-ends"><b>${nm(a)}</b> 〰 <b>${nm(b)}</b></p>
         <p class="small muted" style="margin-top:0">${syn ? `Synthesised ${String(s.synthesised || "").slice(0, 10)}.` : "Not synthesised yet: you've noticed these connect, but not worked out how."}${isClaude(s.author) ? " Proposed by Claude." : ""}</p>
+        ${(() => {
+          const rel = atlasRelations(cardsById[a?.card], cardsById[b?.card]);
+          return rel.length ? html`<p class="small atlas-says">The Atlas already links these: ${rel.map((r) => `${readable(r.relation)}${r.tier ? ` (${readable(r.tier)})` : ""}`).join("; ")}.</p>`
+            : cardsById[a?.card]?.source === "atlas" && cardsById[b?.card]?.source === "atlas" ? html`<p class="small atlas-says">Uncharted: the Atlas doesn't link these yet.</p>` : "";
+        })()}
         <label class="field"><span>Label <span class="faint">(optional, shown on the string)</span></span><input class="input" data-f="label" value="${s.label || ""}" autocomplete="off"></label>
         <label class="field"><span>How do they connect?</span><textarea class="textarea" data-f="text" rows="4" placeholder="In your words — this is the synthesis">${s.body || ""}</textarea></label>
         <label class="field"><span>Kind of connection <span class="faint">(the Atlas's tiers)</span></span><select class="select" data-f="tier"><option value="">—</option>${Object.entries(TIERS).map(([k, t]) => html`<option value="${k}" ${s.tier === k ? "selected" : ""}>${t.name} — ${t.hint}</option>`)}</select></label>
@@ -623,36 +676,44 @@ export async function mount(el, ctx, route, ui) {
 
   async function addCardPin() {
     let pick = null;
+    const atlas = await loadAtlasIndex(ctx);
     await sheet({
-      title: "Pin an Infodex card",
-      body: html`<p class="small muted" style="margin-top:0">Type anything — a lichen, sentience, the Cuban missile crisis. The card is made the Infodex's way: its type from where it sits on Wikidata, its rarity from how many Wikipedias cover it.</p>
-        <input class="input" data-q placeholder="Search Wikidata" autocomplete="off" autofocus>
+      title: "Pin a card",
+      body: html`<p class="small muted" style="margin-top:0">Search your Atlas — each entry comes with its sprite, its domain and its epistemic status, and zooms into its own page. Not in your Atlas? It searches Wikidata too.</p>
+        <input class="input" data-q placeholder="Search the Atlas" autocomplete="off" autofocus>
+        <p class="small faint" data-atlas-state style="margin:6px 0 0">${atlas.index ? `Atlas: ${atlas.index.count} entries${atlas.error ? " (this device's copy — couldn't check for a newer one)" : ""}` : `Atlas not reachable: ${atlas.error || "no index yet"} See Settings → Atlas.`}</p>
         <div class="pick-list" data-list></div>
-        <details class="layer"><summary>${raw(icon("upload"))}Bring cards from your Dex</summary>
+        <details class="layer"><summary>${raw(icon("upload"))}Bring cards from your Infodex Dex</summary>
           <p class="small">In the Infodex, open your Dex and Export (JSON). Then choose that file here: your cards — with their finish, Insight and your questions — join your library, ready to pin.</p>
           <input type="file" accept="application/json,.json" data-dex></details>`,
       foot: html`<button class="btn" data-close>Cancel</button>`,
       setup: (d, close) => {
         const list = d.querySelector("[data-list]");
         const mine = () => ctx.cards().sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
+        const atlasRow = (e) => html`<button type="button" class="pick pick-atlas" data-atlas="${e.id}"><span class="pick-sprite">${raw(spriteSvg(e))}</span><b>${e.name}</b><span>${[readable(e.type), readable(e.address?.domain), e.status ? readable(e.status) : ""].filter(Boolean).join(" · ")}</span></button>`;
+        const cardRow = (c) => (c.source === "atlas" ? atlasRow({ id: c.atlas, name: c.label, type: c.kind, address: c.address, status: c.status, sprite: c.sprite }) : html`<button type="button" class="pick" data-qid="${c.qid}"><b>${c.label}</b><span>${c.subtitle || c.desc || ""}</span></button>`);
         const drawMine = () => {
           const m = mine().slice(0, 12);
-          list.innerHTML = String(m.length ? html`<div class="pick-head">Your cards</div>${m.map((c) => html`<button type="button" class="pick" data-qid="${c.qid}"><b>${c.label}</b><span>${c.subtitle || c.desc || ""}</span></button>`)}` : "");
+          list.innerHTML = String(m.length ? html`<div class="pick-head">Your cards</div>${m.map(cardRow)}` : "");
         };
         const look = debounce(async () => {
           const q = d.querySelector("[data-q]").value.trim();
           if (!q) return drawMine();
-          list.innerHTML = String(html`<p class="faint">Searching…</p>`);
+          const found = atlas.index ? searchAtlas(atlas.index, q, { limit: 10 }) : [];
+          const head = found.length ? html`<div class="pick-head">In your Atlas</div>${found.map(atlasRow)}` : "";
+          list.innerHTML = String(html`${head}<div class="pick-head">On Wikidata</div><p class="faint" data-wd>Searching…</p>`);
           try {
             const res = await searchThings(q);
             if (d.querySelector("[data-q]").value.trim() !== q) return;
-            list.innerHTML = String(res.length ? html`${res.map((r) => html`<button type="button" class="pick" data-qid="${r.qid}"><b>${r.label}</b><span>${r.desc}</span></button>`)}` : html`<p class="faint">Nothing on Wikidata by that name.</p>`);
+            list.innerHTML = String(html`${head}<div class="pick-head">On Wikidata</div>${res.length ? res.map((r) => html`<button type="button" class="pick" data-qid="${r.qid}"><b>${r.label}</b><span>${r.desc}</span></button>`) : html`<p class="faint">Nothing on Wikidata by that name.</p>`}`);
           } catch (err) {
-            list.innerHTML = String(html`<p class="faint">Couldn't reach Wikidata (${err.message}). Your own cards still work offline.</p>`);
+            if (d.querySelector("[data-q]").value.trim() !== q) return;
+            list.innerHTML = String(html`${head}<div class="pick-head">On Wikidata</div><p class="faint">Couldn't reach Wikidata (${err.message}).</p>`);
           }
-        }, 350);
+        }, 300);
         d.querySelector("[data-q]").addEventListener("input", look);
-        on(list, "click", "[data-qid]", (e, b) => { pick = b.dataset.qid; close(true); });
+        on(list, "click", "[data-qid]", (e, b) => { pick = { qid: b.dataset.qid }; close(true); });
+        on(list, "click", "[data-atlas]", (e, b) => { pick = { atlas: b.dataset.atlas }; close(true); });
         d.querySelector("[data-dex]").addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
@@ -669,11 +730,20 @@ export async function mount(el, ctx, route, ui) {
       },
     });
     if (!pick) return;
-    let card = ctx.store.get(cardIdFor(pick));
-    if (!card) {
-      toast("Making the card…", { timeout: 1200 });
-      try { card = await fetchCard(pick, { now: now() }); await ctx.store.put(card); }
-      catch (err) { toast(`Couldn't make that card: ${err.message}`, { error: true }); return; }
+    let card;
+    if (pick.atlas) {
+      const entry = atlas.index?.entries.find((e) => e.id === pick.atlas);
+      const have = ctx.store.get(atlasCardId(pick.atlas));
+      card = entry ? refreshAtlasCard(have, entry, { now: now(), version: atlas.index.version }) : have;
+      if (!card) { toast("That entry isn't in this device's copy of the Atlas.", { error: true }); return; }
+      await ctx.store.put(card);
+    } else {
+      card = ctx.store.get(cardIdFor(pick.qid));
+      if (!card) {
+        toast("Making the card…", { timeout: 1200 });
+        try { card = await fetchCard(pick.qid, { now: now() }); await ctx.store.put(card); }
+        catch (err) { toast(`Couldn't make that card: ${err.message}`, { error: true }); return; }
+      }
     }
     cardsById[card.id] = card;
     await addPin({ kind: "card", card: card.id, title: card.label }, { near: selected });
@@ -781,7 +851,7 @@ export async function mount(el, ctx, route, ui) {
   });
   const ro = new ResizeObserver(() => positionSelection());
   ro.observe(vp);
-  ui.cleanup(() => { ro.disconnect(); cancelAnimationFrame(anim); cancelAnimationFrame(raf); });
+  ui.cleanup(() => { ro.disconnect(); cancelAnimationFrame(anim); cancelAnimationFrame(raf); cancelAnimationFrame(settle); });
 
   load();
   if (!cam) { cam = { x: 0, y: 0, z: 1 }; requestAnimationFrame(() => { fit(null, { animate: false, maxZ: 1 }); renderAll(); }); }

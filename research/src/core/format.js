@@ -38,7 +38,9 @@ const FIELD_ORDER = {
   string: ["id", "type", "board", "from", "to", "label", "state", "tier", "holds_in", "breaks_at", "author",
     "created", "updated", "synthesised", "synthesised_by"],
   // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
-  card: ["id", "type", "qid", "label", "desc", "kind", "subtitle", "rarity", "sitelinks", "finish", "insight", "img",
+  // `source: atlas` cards are Atlas entries (src/core/atlas.js); the rest are made from Wikidata.
+  card: ["id", "type", "source", "atlas", "qid", "label", "desc", "kind", "subtitle", "address", "status", "standing",
+    "credence", "review", "path", "edges", "sprite", "atlas_version", "rarity", "sitelinks", "finish", "insight", "img",
     "lineage", "stats", "flavor", "questions", "bridges", "links", "by", "minted", "added", "updated"],
   // A piece of writing (src/core/writing.js); the body is your draft.
   piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],

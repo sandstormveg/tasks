@@ -255,7 +255,8 @@ export function validateRecord(rec) {
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
       break;
     case "card":
-      if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q…)");
+      if (rec.source === "atlas") { if (!rec.atlas) errors.push("Atlas card needs its entry id"); }
+      else if (!/^Q\d+$/.test(String(rec.qid || ""))) errors.push("card needs a Wikidata id (Q…)");
       break;
     case "piece":
       if (!rec.title) errors.push("piece needs a title");

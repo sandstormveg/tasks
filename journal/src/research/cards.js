@@ -6,6 +6,7 @@
 
 import { html, raw } from "../ui/dom.js";
 import { typeOf, rarityByKey, FINISHES } from "../core/infodex.js";
+import { spriteSvg, swatchFor, readable } from "../core/atlas.js";
 
 // Glyphs from the Infodex (24×24).
 const G = {
@@ -25,9 +26,23 @@ const G = {
 
 export const glyph = (key) => raw(`<svg viewBox="0 0 24 24" aria-hidden="true">${G[key] || G.compass}</svg>`);
 
+/** An Atlas entry's card: its sprite, type, name, domain and epistemic standing. */
+export function atlasFace(card) {
+  const pct = typeof card.credence === "number" ? `${Math.round(card.credence * 100)}%` : "";
+  return html`<div class="ix-card atlas-card t-${card.kind}" style="--c1:${swatchFor(card.kind)}">
+    <div class="ix-top"><span class="ix-type">${readable(card.kind)}</span><span class="ix-rarity">${[card.status ? readable(card.status) : "", pct].filter(Boolean).join(" · ")}</span></div>
+    <div class="ix-art atlas-sprite">${raw(spriteSvg({ id: card.atlas, type: card.kind, sprite: card.sprite }))}</div>
+    <div class="ix-name">${card.label}</div>
+    ${card.address?.domain ? html`<div class="ix-sub atlas-domain">${readable(card.address.domain)}</div>` : ""}
+    ${card.desc ? html`<div class="ix-lineage atlas-summary">${card.desc}</div>` : ""}
+    <div class="ix-finish">Atlas${card.review === "unaudited" ? " · unaudited" : ""}</div>
+  </div>`;
+}
+
 /** The card face. `card` may be missing (a pin whose card hasn't synced yet). */
 export function cardFace(card, { label = "" } = {}) {
   if (!card) return html`<div class="ix-card ix-missing"><div class="ix-name">${label || "Card"}</div><div class="ix-sub">not on this device yet</div></div>`;
+  if (card.source === "atlas") return atlasFace(card);
   const T = typeOf(card.kind);
   const R = rarityByKey(card.rarity);
   const st = card.stats || {};
@@ -64,9 +79,37 @@ export function addEntry(body, date, text) {
   return `${prev ? `${prev}\n\n` : ""}### ${date}\n${t}`;
 }
 
+// Notes are Markdown; on a card page they're read as plain prose (no markup interpreted).
+const plain = (t) => String(t).replace(/^#{1,6}\s*/, "").replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim();
+const list = (v) => (Array.isArray(v) ? v : v ? [v] : []).map((x) => (typeof x === "string" ? x : x?.label || x?.text || JSON.stringify(x)));
+
+/** An Atlas card's page: the entry (fetched when you zoom in), what it's linked to, and your entries. */
+function atlasPage(card, { entry = null, names = {}, boards = [], strings = [], here = "", fileUrl = "" } = {}) {
+  const d = entry?.data || {};
+  const entries = entriesOf(card.body);
+  const ep = d.epistemics || {};
+  return html`<div class="ix-page">
+    <div class="ix-page-head"><b>${card.label}</b> <span class="muted">— ${readable(card.kind)}${card.address?.domain ? `, ${readable(card.address.domain)}` : ""}</span></div>
+    <div class="ix-statline">${[card.status && `status: ${readable(card.status)}`, card.standing && `standing: ${readable(card.standing)}`, typeof card.credence === "number" && `credence ${card.credence}`, ep.contestation && `contestation: ${readable(ep.contestation)}`, card.review === "unaudited" && "not yet audited"].filter(Boolean).join(" · ")}</div>
+    <p>${d.description || d.proposition || d.statement || card.desc || ""}</p>
+    ${entry ? "" : html`<p class="faint">Fetching the full entry…</p>`}
+    ${entry?.notes ? html`<div class="ix-section">Atlas notes</div>${entry.notes.split(/\n{2,}/).slice(0, 8).map((para) => /^#{1,6}\s/.test(para) ? html`<p class="ix-subhead">${plain(para)}</p>` : html`<p>${plain(para)}</p>`)}` : ""}
+    ${list(d.what_would_change_mind).length ? html`<div class="ix-section">What would change the Atlas's mind</div><ul class="ix-list">${list(d.what_would_change_mind).map((x) => html`<li>${x}</li>`)}</ul>` : ""}
+    <div class="ix-section">Your entries <button type="button" class="btn small" data-act="card-entry" data-card="${card.id}">Add</button></div>
+    ${entries.length ? entries.map((e) => html`<div class="ix-entry">${e.date ? html`<div class="ix-date">${e.date}</div>` : ""}<p>${e.text}</p></div>`)
+      : html`<p class="faint">Nothing yet. What do you make of it, and why is it on this board?</p>`}
+    ${card.edges?.length ? html`<div class="ix-section">Linked in the Atlas</div><ul class="ix-list">${card.edges.slice(0, 10).map(([t, rel, tier]) => html`<li>${readable(rel)} → ${names[t] || readable(t)}${tier ? html` <span class="faint">(${readable(tier)})</span>` : ""}</li>`)}</ul>` : ""}
+    ${strings.length ? html`<div class="ix-section">Connected on this board</div><ul class="ix-list">${strings.map((s) => html`<li class="${s.state === "synthesised" ? "syn" : "red"}">${s.state === "synthesised" ? "━" : "〰"} ${s.other}${s.label ? html` <span class="faint">· ${s.label}</span>` : ""}</li>`)}</ul>` : ""}
+    ${boards.filter((b) => b.id !== here).length ? html`<div class="ix-section">Also pinned on</div><ul class="ix-list">${boards.filter((b) => b.id !== here).map((b) => html`<li><a href="#/board/${b.id}">${b.title}</a></li>`)}</ul>` : ""}
+    ${list(d.references).length ? html`<div class="ix-section">References</div><ul class="ix-list">${(d.references || []).map((r) => html`<li>${r?.url ? html`<a href="${r.url}" target="_blank" rel="noopener noreferrer">${r.label || r.url}</a>` : r?.label || String(r)}</li>`)}</ul>` : ""}
+    <div class="ix-links">${fileUrl ? html`<a href="${fileUrl}" target="_blank" rel="noopener noreferrer">Open in the Atlas</a>` : ""}</div>
+  </div>`;
+}
+
 /** The card's page: what you see zoomed right in. */
-export function cardPage(card, { boards = [], strings = [], here = "", infodex = "" } = {}) {
+export function cardPage(card, { boards = [], strings = [], here = "", infodex = "", ...atlas } = {}) {
   if (!card) return "";
+  if (card.source === "atlas") return atlasPage(card, { boards, strings, here, ...atlas });
   const entries = entriesOf(card.body);
   return html`<div class="ix-page">
     <div class="ix-page-head"><b>${card.label}</b>${card.desc ? html` — <span class="muted">${card.desc}</span>` : ""}</div>

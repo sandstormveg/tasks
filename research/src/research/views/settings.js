@@ -4,6 +4,7 @@
 
 import { html, raw, on, toast } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
+import { atlasConfig, loadAtlasIndex } from "../atlas.js";
 import { cleanFolder } from "../../data/folder-remote.js";
 
 export async function mount(el, ctx, route, ui) {
@@ -12,8 +13,18 @@ export async function mount(el, ctx, route, ui) {
   const appUrl = `${location.origin}${location.pathname}`;
   const bookmarklet = `javascript:(()=>{window.open(${JSON.stringify(appUrl)}+'?via=bookmarklet&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title),'_blank')})()`;
 
+  let atlasStatus = "Not checked on this device yet.";
+  const describeAtlas = (r) => (r.index ? `${r.index.count} entries · version ${r.index.version || "?"}${r.error ? ` · couldn't check for a newer one: ${r.error}` : ""}` : `Not reachable: ${r.error || "no index yet"}`);
+  async function checkAtlas(refresh) {
+    atlasStatus = "Checking…";
+    const box = el.querySelector("[data-atlas-status]");
+    if (box) box.textContent = atlasStatus;
+    atlasStatus = describeAtlas(await loadAtlasIndex(ctx, { refresh }));
+    render();
+  }
   function render() {
     const s = ctx.settings();
+    const atlas = atlasConfig(ctx);
     const sec = ctx.secrets();
     const st = ctx.sync.status;
     const conf = ctx.sync.configured();
@@ -52,6 +63,20 @@ export async function mount(el, ctx, route, ui) {
         <p class="faint" style="margin-bottom:0">Writes this version's <code>CLAUDE.md</code>, skill and query tool into ${where}. Your sources, boards and writing aren't touched.</p>` : ""}
       </div>
 
+      <div class="section-title">Atlas</div>
+      <div class="card flat">
+        <p class="small" style="margin-top:0">Cards on your boards can be entries from your Atlas (<b>${atlas.owner}/${atlas.repo}</b>). Research reads only the Atlas's small index — and only when it has changed — and an entry's full file when you zoom into its card.</p>
+        <p class="small" data-atlas-status>${atlasStatus}</p>
+        <button class="btn small" data-act="atlas-refresh">${raw(icon("sync"))}Check for a newer Atlas</button>
+        <details class="layer" style="margin-top:10px"><summary>${raw(icon("info"))}If it says your token can't see the Atlas</summary>
+          <p class="small">Research uses the same GitHub token as the rest of Tasks. On GitHub: <b>Settings → Developer settings → Fine-grained tokens</b>, open that token, <b>Edit</b>, and add <b>${atlas.repo}</b> under <i>Repository access</i>. Nothing to paste again — the same token just sees one more repository. (A fine-grained token has one set of permissions for all its repositories, so it will also be able to write there; Research itself only ever reads the Atlas.)</p>
+          <p class="small">After you add it, the Atlas needs its index: run <code>npm run build</code> in the Atlas repo (or wait for its next build), which writes <code>generated/infodex-index.json</code>.</p>
+          <div class="row wrap"><label class="field grow"><span>Owner</span><input class="input" data-atlas-set="owner" value="${atlas.owner}" autocomplete="off" autocapitalize="off"></label>
+            <label class="field grow"><span>Repository</span><input class="input" data-atlas-set="repo" value="${atlas.repo}" autocomplete="off" autocapitalize="off"></label>
+            <label class="field grow"><span>Branch</span><input class="input" data-atlas-set="branch" value="${atlas.branch}" autocomplete="off" autocapitalize="off"></label></div>
+        </details>
+      </div>
+
       <div class="section-title">Infodex</div>
       <div class="card flat">
         <label class="field"><span>Your Infodex's address <span class="faint">(for “Infodex” links on card pages)</span></span><input class="input" data-set-plain="infodexUrl" value="${s.infodexUrl || ""}" placeholder="https://…" inputmode="url" autocomplete="off" autocapitalize="off"></label>
@@ -62,6 +87,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div></div>`);
   }
   render();
+  checkAtlas(false);
   const off = ctx.sync.on(() => render());
   ui.cleanup(off);
 
@@ -74,6 +100,8 @@ export async function mount(el, ctx, route, ui) {
   });
   on(el, "click", "[data-theme]", async (e, b) => { await ctx.saveSettings({ theme: b.dataset.theme }); render(); });
   on(el, "change", "[data-secret]", async (e, f) => { await ctx.saveSecrets({ githubToken: f.value.trim(), ignoreHostToken: false }); toast("Saved"); render(); ctx.sync.syncNow(); });
+  on(el, "click", "[data-act=atlas-refresh]", () => checkAtlas(true));
+  on(el, "change", "[data-atlas-set]", async (e, f) => { await ctx.saveSettings({ atlas: { ...atlasConfig(ctx), [f.dataset.atlasSet]: f.value.trim() } }); await ctx.store.deleteKv("atlas-index"); toast("Saved"); checkAtlas(true); });
   on(el, "change", "[data-set-plain]", async (e, f) => { await ctx.saveSettings({ [f.dataset.setPlain]: f.value.trim() }); toast("Saved"); });
   on(el, "change", "[data-set]", async (e, f) => {
     const [a, b] = f.dataset.set.split(".");
