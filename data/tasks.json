@@ -328,41 +328,6 @@
           "author": "Claude Opus 5.5"
         }
       ]
-    },
-    {
-      "id": "improve-the-stat-updates-per-mission-mw0qpk2f",
-      "title": "Improve the stat updates per mission",
-      "category": "Development",
-      "created": "2026-11-03",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mw0qqz7org9c",
-          "text": "i did a strength one, with 20 pullups and got not one point in the strength stat, why? is it because the log didn't have that association?",
-          "done": false,
-          "created": "2026-11-03T13:46:13.572Z",
-          "updated": "2026-11-03T13:46:13.572Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-director-c7-statfix",
-          "text": "Checked (2026-11-04): the 20 pushups quest did carry the association (STR weight 1, 15 XP paid), so it is not your log. The turn-in paid XP but never fed it into the STR stat. That is an app bug or gap. Relayed to the Adventurer session to fix, so quest XP raises the weighted attributes and the turn-in toast shows the change.",
-          "done": false,
-          "created": "2026-11-04T01:20:00",
-          "updated": "2026-11-04T01:20:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-adventurer-strfix",
-          "text": "✓ Fixed and live (2026-11-04). What happened: STR’s tier comes from your best push-up set measured against population norms, not from XP. The quest’s 15 XP did reach STR (Stats › XP earned here), but a quest turned in on your word (“Fine”) wasn’t counted as a set, so the tier never moved. Now a push-up quest turned in without the camera counts as your word for that set, the same as typing it into Measure, and a higher camera-counted set still wins. Your earlier 20-push-up turn-in counts too, so open Stats to see STR. The turn-in toast now lists XP per attribute and any tier change, e.g. “STR +15 XP (tier – → C)”. One thing to check: that quest was push-ups, not pull-ups. There’s no pull-up measure yet; say if you want one.",
-          "done": false,
-          "created": "2026-11-03T14:18:34.115Z",
-          "updated": "2026-11-03T14:18:34.115Z",
-          "author": "Claude Opus 5.5"
-        }
-      ]
     }
   ]
 }
