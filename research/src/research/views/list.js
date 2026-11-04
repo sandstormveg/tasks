@@ -8,6 +8,7 @@ import { html, raw, on } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
 import { tagCounts } from "../../core/sources.js";
 import { sourceCard, moveSource, addSheet, homesFor, fileTo, fileElsewhere } from "../ui.js";
+import { mountDonut } from "../donut.js";
 
 const TITLES = { inbox: "Deposit", queue: "To read", read: "Read" };
 const by = (k, dir = -1) => (a, b) => dir * String(a[k] || a.added || "").localeCompare(String(b[k] || b.added || ""));
@@ -18,6 +19,13 @@ export async function mount(el, ctx, route, ui) {
   ui.setActions(html`<button class="btn small primary" data-act="add">${raw(icon("plus"))}Add</button>`);
   ui.onAction((e, b) => { if (b.dataset.act === "add") addSheet(ctx, { status: mode === "read" ? "read" : mode === "queue" ? "to-read" : "inbox" }); });
   let filter = route.query.filter || "all"; // read: all | fav | dropped | #tag
+  // The Deposit opens on the everything donut; the list redraws beneath it without touching what you're typing.
+  let listEl = el;
+  if (mode === "inbox") {
+    el.innerHTML = '<div data-donut-dock></div><div data-list></div>';
+    mountDonut(el.querySelector("[data-donut-dock]"), ctx);
+    listEl = el.querySelector("[data-list]");
+  }
 
   function render() {
     const all = ctx.sources();
@@ -30,8 +38,8 @@ export async function mount(el, ctx, route, ui) {
         if (!h.length && !anyHome) return "";
         return html`<div class="src-homes">${h.length ? html`<span class="faint">Could go:</span>` : ""}${h.map((x) => html`<button class="chip home" data-home="${x.id}" data-src="${s.id}" title="Shares: ${x.shared.join(", ")}">${raw(icon(x.kind === "board" ? "map" : "edit"))}${x.title}</button>`)}<button class="chip ghost" data-elsewhere="${s.id}">${h.length ? "Elsewhere…" : "File to…"}</button></div>`;
       };
-      body = list.length ? html`<p class="small muted list-hint">Drop anything here: links, quotes, pictures, half-thoughts. Each shows where it might belong — file it there and it's pinned next to what it shares the most with, tied by red string. Or sort it into your reading.</p>${list.map((s) => sourceCard(s, { extra: homes(s) }))}`
-        : empty("Your Deposit is empty", html`Share anything to <b>Tasks</b> from any app — a link, a quote, a photo, a thought — or tap <b>Add</b>. On your computer, use the bookmark button in <a href="#/settings">Settings</a>.`);
+      body = list.length ? html`<p class="small muted list-hint">Each shows where it might belong — file it there and it's pinned next to what it shares the most with, tied by red string. Or sort it into your reading.</p>${list.map((s) => sourceCard(s, { extra: homes(s) }))}`
+        : html`<p class="small muted list-hint">Empty for now. Feed the donut, or share anything to <b>Tasks</b> from any app. On your computer, the bookmark button in <a href="#/settings">Settings</a> sends pages here.</p>`;
     } else if (mode === "queue") {
       const reading = all.filter((s) => s.status === "reading").sort(by("started"));
       const next = all.filter((s) => s.status === "to-read").sort(by("added", 1));
@@ -50,14 +58,14 @@ export async function mount(el, ctx, route, ui) {
           ${chip("all", "All")}${chip("fav", html`${raw(icon("star"))}Favourites`)}${tags.map(([t, n]) => chip(`#${t}`, `#${t} · ${n}`))}${chip("dropped", "Dropped")}</div>
         ${list.length ? list.map((s) => sourceCard(s)) : empty(filter === "fav" ? "No favourites yet" : "Nothing here yet", filter === "fav" ? "Tap ☆ on something you've read that earned it." : "Finished things land here.")}`;
     }
-    el.innerHTML = String(body);
-    ctx.media.hydrate(el);
+    listEl.innerHTML = String(body);
+    ctx.media.hydrate(listEl);
   }
   const empty = (title, text) => html`<div class="empty">${raw(icon(mode === "inbox" ? "inbox" : mode === "queue" ? "bookmark" : "check"))}<h3>${title}</h3><p>${text}</p></div>`;
 
   render();
   ui.onStore(() => render());
-  on(el, "click", "[data-act=move]", async (e, b) => { e.preventDefault(); await moveSource(ctx, b.dataset.id, b.dataset.to); });
+  on(listEl, "click", "[data-act=move]", async (e, b) => { e.preventDefault(); await moveSource(ctx, b.dataset.id, b.dataset.to); });
   on(el, "click", "[data-filter]", (e, b) => { filter = b.dataset.filter; render(); });
   on(el, "click", "[data-home]", async (e, b) => {
     const s = ctx.store.get(b.dataset.src);

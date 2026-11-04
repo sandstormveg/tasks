@@ -89,6 +89,48 @@ export function parseShared({ title = "", text = "", url = "" } = {}) {
   return { url: link, title: name, doi: doi || (arxiv ? `10.48550/arXiv.${arxiv}` : null) };
 }
 
+/**
+ * Whatever you paste into the Deposit, sorted into the things it holds: a list
+ * of links (one per line) becomes one item per link, keeping each line's words
+ * as its title; a DOI or arXiv id is a paper; words in quote marks (or after
+ * "> ") are a quote, with "— Name" kept as who said it; anything else is a
+ * thought. Returns [{ sort: "link"|"paper"|"quote"|"thought", text, title?, who? }].
+ */
+export function sortDrop(input) {
+  const text = String(input || "").replace(/\r\n?/g, "\n").trim();
+  if (!text) return [];
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const linky = (l) => !!(firstUrl(l) || findDoi(l) || findArxiv(l));
+  // A list: every line (bar the odd heading) carries its own link.
+  if (lines.length > 1 && lines.filter(linky).length >= 2 && lines.filter(linky).length >= lines.length - 1) {
+    return lines.filter(linky).map((l) => one(l.replace(/^[-*•\d.)\s]+(?=\S)/, "")));
+  }
+  return [one(text)];
+}
+
+function one(text) {
+  const s = parseShared({ text });
+  if (s.doi) return { sort: "paper", text };
+  if (s.url) return { sort: "link", text };
+  const q = /^(?:>\s*|["“])([\s\S]+?)["”]?\s*(?:(?:\n|\s)[—–-]{1,2}\s*([^\n]{1,80}))?$/.exec(text);
+  if (q && (text.startsWith(">") || /["”]/.test(text.slice(1)))) {
+    const body = q[1].replace(/^>\s*/gm, "").replace(/["”]\s*$/, "").trim();
+    if (body) return { sort: "quote", text: body, who: q[2]?.trim() || undefined };
+  }
+  return { sort: "thought", text };
+}
+
+/** What a pasted or dropped file becomes: its kind of source. */
+export function kindOfFile(mime = "", name = "") {
+  const m = String(mime).toLowerCase();
+  if (m.startsWith("image/")) return "image";
+  if (m === "application/pdf" || /\.pdf$/i.test(name)) return "paper";
+  if (m.startsWith("audio/")) return "podcast";
+  if (m.startsWith("video/")) return "video";
+  if (/\.(epub|mobi|azw3?)$/i.test(name)) return "book";
+  return "other";
+}
+
 /** "#AI Safety" → "ai-safety". Empty if nothing's left. */
 export function cleanTag(tag) {
   return String(tag || "").trim().replace(/^#+/, "").toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\p{N}_-]+/gu, "").replace(/^-+|-+$/g, "");

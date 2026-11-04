@@ -18,9 +18,9 @@ import {
 import { searchAtlas, refreshAtlasCard, atlasCardId, atlasRelations, spriteSvg, readable } from "../../core/atlas.js";
 import { loadAtlasIndex, loadAtlasEntry, atlasFileUrl } from "../atlas.js";
 import { checkSynthesis, curate } from "../../core/curator.js";
-import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor } from "../../core/infodex.js";
+import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor, searchCards } from "../../core/infodex.js";
 import { searchSources, formatAuthors } from "../../core/sources.js";
-import { cardFace, cardPage, addEntry } from "../cards.js";
+import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 
 const MIN_Z = 0.08;
@@ -49,6 +49,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="cork-world" id="cork-world">
         <svg class="cork-strings" id="cork-svg" aria-hidden="true"></svg>
         <div class="cork-pins" id="cork-pins"></div>
+        <svg class="cork-strings cork-strings-top" id="cork-svg-top" aria-hidden="true"></svg>
         <svg class="cork-strings cork-labels" id="cork-labels" aria-hidden="true"></svg>
       </div>
     </div>
@@ -72,7 +73,13 @@ export async function mount(el, ctx, route, ui) {
   const svg = el.querySelector("#cork-svg");
   const pinsEl = el.querySelector("#cork-pins");
   const labelsEl = el.querySelector("#cork-labels"); // string labels sit above the pins so none is hidden
+  // Red string runs over the notes, as on a real board. What you select is lifted above it —
+  // a card or note, or everything inside a frame — so the string tucks behind what you're looking at.
+  // (The bottom layer keeps the strings' tap targets; the top one only draws.)
+  const svgTop = el.querySelector("#cork-svg-top");
+  let lifted = new Set();
   const selEl = el.querySelector("#cork-sel");
+  wireCardArt(vp);
   const hintEl = el.querySelector("#cork-hint");
 
   // ---- state
@@ -204,6 +211,10 @@ export async function mount(el, ctx, route, ui) {
   }
   const atlasEntries = new Map();
 
+  // Frames, notes and pictures resize from their corner (a card keeps its card shape; a picture keeps its own).
+  const resizable = (p) => p.kind === "frame" || p.kind === "note" || p.kind === "quote" || p.kind === "link" || (p.kind === "source" && !!imageOf(sourcesById[p.source]));
+  const MIN = { frame: [220, 140], note: [120, 80] };
+
   function renderPin(p) {
     let node = pinEls.get(p.id);
     if (!node) {
@@ -213,11 +224,11 @@ export async function mount(el, ctx, route, ui) {
       pinsEl.appendChild(node);
     }
     const lod = lodOf(p);
-    node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${selected === p.id ? " sel" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
+    node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${selected === p.id ? " sel" : ""}${lifted.has(p.id) ? " lift" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
     node.dataset.lod = lod;
     node.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--tilt:${p.kind === "frame" ? 0 : tiltOf(p.id)}deg`;
     if (lod === 3) node.style.setProperty("--u", (1 / cam.z).toFixed(4));
-    node.innerHTML = String(html`${p.kind !== "frame" ? html`<span class="pushpin" data-pushpin title="Drag to another pin to connect"></span>` : ""}<div class="pin-body">${pinInner(p, lod)}</div>`);
+    node.innerHTML = String(html`${p.kind !== "frame" ? html`<span class="pushpin" data-pushpin title="Drag to another pin to connect"></span>` : ""}<div class="pin-body">${pinInner(p, lod)}</div>${resizable(p) ? html`<span class="pin-grip" data-grip title="Drag to resize" aria-hidden="true"></span>` : ""}`);
     node._lod = lod;
     if (node.querySelector("img[data-media]")) ctx.media.hydrate(node);
   }
@@ -252,22 +263,25 @@ export async function mount(el, ctx, route, ui) {
     const b = boundsOf(all.length ? all : [{ x: 0, y: 0, w: 1, h: 1 }]);
     const pad = 600;
     const vb = { x: Math.floor(b.x - pad), y: Math.floor(b.y - pad), w: Math.ceil(b.w + pad * 2), h: Math.ceil(b.h + pad * 2) };
-    for (const layer of [svg, labelsEl]) {
+    for (const layer of [svg, svgTop, labelsEl]) {
       layer.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
       layer.style.cssText = `left:${vb.x}px;top:${vb.y}px;width:${vb.w}px;height:${vb.h}px`;
     }
     const labels = [];
     const { bridges } = curateNow();
     const out = [];
+    const top = [];
     for (const s of parts.strings) {
       const p = stringPath(s);
       if (!p) continue;
       const cls = `str ${s.state === "synthesised" ? "syn" : "red"}${bridges.includes(s.id) ? " bridge" : ""}${flash.has(s.id) ? " flash" : ""}${isClaude(s.author) ? " by-claude" : ""}`;
-      out.push(html`<g class="${cls}" data-string="${s.id}"><path class="str-hit" d="${p.d}"/><path class="str-shadow" d="${p.d}"/><path class="str-line" d="${p.d}"/></g>`);
+      out.push(html`<g class="${cls}" data-string="${s.id}"><path class="str-hit" d="${p.d}"/></g>`);
+      top.push(html`<g class="${cls}"><path class="str-shadow" d="${p.d}"/><path class="str-line" d="${p.d}"/></g>`);
       if (s.label) labels.push(html`<g class="str"><text x="${p.mx}" y="${p.my}" text-anchor="middle">${s.label}</text></g>`);
     }
-    if (temp) out.push(html`<path class="str-temp" d="M${temp.ax},${temp.ay} L${temp.bx},${temp.by}"/>`);
+    if (temp) top.push(html`<path class="str-temp" d="M${temp.ax},${temp.ay} L${temp.bx},${temp.by}"/>`);
     svg.innerHTML = String(html`${out}`);
+    svgTop.innerHTML = String(html`${top}`);
     labelsEl.innerHTML = String(html`${labels}`);
   }
 
@@ -278,6 +292,7 @@ export async function mount(el, ctx, route, ui) {
     curated = null;
     const live = new Set(parts.pins.map((p) => p.id));
     for (const [id, node] of pinEls) if (!live.has(id)) { node.remove(); pinEls.delete(id); }
+    lifted = liftFor(selected);
     // Frames first so they sit underneath.
     const order = [...parts.pins].sort((a, b) => (a.kind === "frame") === (b.kind === "frame") ? 0 : a.kind === "frame" ? -1 : 1);
     for (const p of order) { renderPin(p); pinsEl.appendChild(pinEls.get(p.id)); }
@@ -309,8 +324,14 @@ export async function mount(el, ctx, route, ui) {
     btn.classList.toggle("warn", checks > 0);
   }
 
-  function showHint(text) { hintEl.textContent = text; hintEl.hidden = false; }
-  function hideHint() { hintEl.hidden = true; }
+  let hintTimer = 0;
+  function showHint(text, { timeout = 0 } = {}) {
+    clearTimeout(hintTimer);
+    hintEl.textContent = text;
+    hintEl.hidden = false;
+    if (timeout) hintTimer = setTimeout(hideHint, timeout);
+  }
+  function hideHint() { clearTimeout(hintTimer); hintEl.hidden = true; }
 
   // ---- selection bar
   function renderSelection() {
@@ -334,10 +355,22 @@ export async function mount(el, ctx, route, ui) {
     selEl.style.left = `${Math.max(8, Math.min(r.width - selEl.offsetWidth - 8, x - selEl.offsetWidth / 2))}px`;
     selEl.style.top = `${Math.max(8, y - selEl.offsetHeight - 14)}px`;
   }
+  function liftFor(id) {
+    const p = id && pinById(id);
+    if (!p) return new Set();
+    if (p.kind !== "frame") return new Set([p.id]);
+    return new Set(parts.pins.filter((q) => q.id !== p.id && framesOf(q, parts.pins).some((f) => f.id === p.id)).map((q) => q.id));
+  }
+  function applyLift(ids) {
+    lifted = ids;
+    for (const [pid, node] of pinEls) node.classList.toggle("lift", lifted.has(pid));
+  }
   function select(id) {
     selected = id;
     for (const [pid, node] of pinEls) node.classList.toggle("sel", pid === id);
+    applyLift(liftFor(id));
     renderSelection();
+    if (pinById(id)?.kind === "frame" && !connectFrom) showHint("Drag inside the frame to move it with everything in it — or drag its corner to resize.", { timeout: 3500 });
   }
 
   // ---- saving
@@ -383,6 +416,12 @@ export async function mount(el, ctx, route, ui) {
     }
     const pinNode = e.target.closest(".pin");
     const strNode = e.target.closest("[data-string]");
+    if (e.target.closest("[data-grip]") && pinNode) {
+      const p = pinById(pinNode.dataset.id);
+      select(p.id);
+      gesture = { type: "resize", id: p.id, x0: e.clientX, y0: e.clientY, w: p.w, h: p.h, ratio: p.kind === "source" ? (p.h - 34) / p.w : 0 };
+      return;
+    }
     if (e.target.closest("[data-pushpin]") && pinNode) {
       gesture = { type: "string", from: pinNode.dataset.id, x0: e.clientX, y0: e.clientY };
       return;
@@ -390,10 +429,12 @@ export async function mount(el, ctx, route, ui) {
     if (pinNode) {
       const p = pinById(pinNode.dataset.id);
       const isFrame = p.kind === "frame";
-      // A frame moves by its title bar (so you can still pan by dragging inside it) and carries what's in it.
-      if (isFrame && !e.target.closest("[data-drag]")) { gesture = { type: "pan", x0: e.clientX, y0: e.clientY, cam: { ...cam }, moved: false, frameTap: p.id }; return; }
+      // A frame moves by its title bar, or from anywhere inside once it's selected (so an unselected
+      // frame still lets you pan the board by dragging inside it); it carries what's in it.
+      if (isFrame && !e.target.closest("[data-drag]") && selected !== p.id) { gesture = { type: "pan", x0: e.clientX, y0: e.clientY, cam: { ...cam }, moved: false, frameTap: p.id }; return; }
       const carry = isFrame ? parts.pins.filter((q) => q.id !== p.id && framesOf(q, parts.pins).some((f) => f.id === p.id)).map((q) => ({ q, x: q.x, y: q.y })) : [];
       gesture = { type: "pin", id: p.id, x0: e.clientX, y0: e.clientY, px: p.x, py: p.y, moved: false, carry };
+      if (!isFrame) applyLift(new Set([...liftFor(selected), p.id]));
       return;
     }
     if (strNode) { gesture = { type: "tap-string", id: strNode.dataset.string, x0: e.clientX, y0: e.clientY }; return; }
@@ -444,6 +485,17 @@ export async function mount(el, ctx, route, ui) {
       for (const q of [p, ...gesture.carry.map((c) => c.q)]) { const n = pinEls.get(q.id); n.style.left = `${q.x}px`; n.style.top = `${q.y}px`; }
       renderStrings();
       positionSelection();
+    } else if (gesture.type === "resize") {
+      const p = pinById(gesture.id);
+      const [mw, mh] = MIN[p.kind] || MIN.note;
+      p.w = Math.max(mw, Math.round(gesture.w + dx / cam.z));
+      p.h = gesture.ratio ? Math.round(p.w * gesture.ratio) + 34 : Math.max(mh, Math.round(gesture.h + dy / cam.z));
+      const n = pinEls.get(p.id);
+      n.style.width = `${p.w}px`;
+      n.style.height = `${p.h}px`;
+      gesture.moved = true;
+      renderStrings();
+      positionSelection();
     } else if (gesture.type === "string") {
       const a = pinById(gesture.from);
       const w = toWorld(e.clientX, e.clientY);
@@ -467,6 +519,10 @@ export async function mount(el, ctx, route, ui) {
       }
       return;
     }
+    if (g.type === "resize") {
+      if (g.moved) { const p = pinById(g.id); await savePin(p, { w: p.w, h: p.h }); curated = null; renderStrings(); }
+      return;
+    }
     if (g.type === "tap-string") { if (Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8) openString(g.id); return; }
     if (g.type === "string") {
       for (const n of pinEls.values()) n.classList.remove("target");
@@ -479,6 +535,7 @@ export async function mount(el, ctx, route, ui) {
     if (g.type === "pin") {
       if (g.moved) {
         settleStrings({ vx: sway.vx, vy: sway.vy });
+        applyLift(liftFor(selected));
         const p = pinById(g.id);
         await savePin(p, { x: p.x, y: p.y });
         for (const c of g.carry) await savePin(c.q, { x: c.q.x, y: c.q.y });
@@ -696,8 +753,8 @@ export async function mount(el, ctx, route, ui) {
     const atlas = await loadAtlasIndex(ctx);
     await sheet({
       title: "Pin a card",
-      body: html`<p class="small muted" style="margin-top:0">Search your Atlas — each entry comes with its sprite, its domain and its epistemic status, and zooms into its own page. Not in your Atlas? It searches Wikidata too.</p>
-        <input class="input" data-q placeholder="Search the Atlas" autocomplete="off" autofocus>
+      body: html`<p class="small muted" style="margin-top:0">Search your own cards (all of your Dex) and your Atlas — each Atlas entry comes with its sprite, its domain and its epistemic status, and zooms into its own page. Not in your Atlas? It searches Wikidata too.</p>
+        <input class="input" data-q placeholder="Search your cards, the Atlas and Wikidata" autocomplete="off" autofocus>
         <p class="small faint" data-atlas-state style="margin:6px 0 0">${atlas.index ? `Atlas: ${atlas.index.count} entries${atlas.error ? " (this device's copy — couldn't check for a newer one)" : ""}` : `Atlas not reachable: ${atlas.error || "no index yet"} See Settings → Atlas.`}</p>
         <div class="pick-list" data-list></div>
         <details class="layer"><summary>${raw(icon("upload"))}Bring cards from your Infodex Dex</summary>
@@ -709,15 +766,19 @@ export async function mount(el, ctx, route, ui) {
         const mine = () => ctx.cards().sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
         const atlasRow = (e) => html`<button type="button" class="pick pick-atlas" data-atlas="${e.id}"><span class="pick-sprite">${raw(spriteSvg(e))}</span><b>${e.name}</b><span>${[readable(e.type), readable(e.address?.domain), e.status ? readable(e.status) : ""].filter(Boolean).join(" · ")}</span></button>`;
         const cardRow = (c) => (c.source === "atlas" ? atlasRow({ id: c.atlas, name: c.label, type: c.kind, address: c.address, status: c.status, sprite: c.sprite }) : html`<button type="button" class="pick" data-qid="${c.qid}"><b>${c.label}</b><span>${c.subtitle || c.desc || ""}</span></button>`);
+        // All your cards, newest first — the list scrolls; typing searches every one of them.
         const drawMine = () => {
-          const m = mine().slice(0, 12);
-          list.innerHTML = String(m.length ? html`<div class="pick-head">Your cards</div>${m.map(cardRow)}` : "");
+          const m = mine();
+          list.innerHTML = String(m.length ? html`<div class="pick-head">Your cards · ${m.length}</div>${m.map(cardRow)}` : "");
         };
         const look = debounce(async () => {
           const q = d.querySelector("[data-q]").value.trim();
           if (!q) return drawMine();
-          const found = atlas.index ? searchAtlas(atlas.index, q, { limit: 10 }) : [];
-          const head = found.length ? html`<div class="pick-head">In your Atlas</div>${found.map(atlasRow)}` : "";
+          const ownHits = searchCards(ctx.cards(), q);
+          const own = ownHits.length ? html`<div class="pick-head">Your cards · ${ownHits.length}</div>${ownHits.map(cardRow)}` : "";
+          const have = new Set(ownHits.filter((c) => c.source === "atlas").map((c) => c.atlas));
+          const found = atlas.index ? searchAtlas(atlas.index, q, { limit: 10 }).filter((e) => !have.has(e.id)) : [];
+          const head = html`${own}${found.length ? html`<div class="pick-head">In your Atlas</div>${found.map(atlasRow)}` : ""}`;
           list.innerHTML = String(html`${head}<div class="pick-head">On Wikidata</div><p class="faint" data-wd>Searching…</p>`);
           try {
             const res = await searchThings(q);
