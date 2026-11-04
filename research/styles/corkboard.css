@@ -22,7 +22,11 @@ body.board-mode .content { max-width: none; padding: 0; }
 }
 .cork-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .cork-strings { position: absolute; overflow: visible; pointer-events: none; }
-.cork-labels { z-index: 1; }
+.cork-strings-top { z-index: 2; }
+.cork-labels { z-index: 4; }
+/* What's selected (or inside a selected frame, or being dragged) rises above the string. */
+.pin.lift { z-index: 3; }
+.pin.lift:not(.pin-frame) { box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2), 0 12px 26px rgba(40, 24, 10, 0.38); }
 .cork-sel[hidden], .cork-hint[hidden] { display: none; }
 .cork-pins { position: absolute; left: 0; top: 0; }
 
@@ -69,7 +73,19 @@ body.board-mode .content { max-width: none; padding: 0; }
   background: #3b2a1c; color: #fff7ea; border-radius: 6px; padding: 4px 9px; font: 600 13px var(--font-ui); max-width: calc(100% - 20px);
 }
 .frame-addr { font-weight: 500; font-size: 11px; background: rgba(255, 255, 255, 0.16); padding: 1px 6px; border-radius: 999px; }
-.pin.pin-frame.sel { outline-color: #ffd166; }
+.pin.pin-frame.sel { outline-color: #ffd166; cursor: move; }
+/* The resize grip: faint on a frame, shown on anything selected. */
+.pin-grip {
+  /* Kept ~22px on screen at any zoom, so a finger can always find it. */
+  --g: max(22px, calc(22px / var(--z, 1)));
+  position: absolute; right: calc(var(--g) * -0.3); bottom: calc(var(--g) * -0.3); width: var(--g); height: var(--g); z-index: 3; cursor: nwse-resize; touch-action: none; display: none;
+  background: linear-gradient(135deg, transparent 0 45%, #ffd166 45% 55%, transparent 55% 65%, #ffd166 65% 75%, transparent 75%);
+  border-radius: 0 0 6px 0;
+}
+.pin-grip::after { content: ""; position: absolute; inset: -10px; } /* a bigger target for fingers */
+.pin.sel .pin-grip { display: block; }
+.pin.pin-frame .pin-grip { display: block; opacity: 0.55; background: linear-gradient(135deg, transparent 0 45%, #fff7ea 45% 55%, transparent 55% 65%, #fff7ea 65% 75%, transparent 75%); }
+.pin.pin-frame.sel .pin-grip { opacity: 1; }
 .pin.pin-frame[data-lod="0"] .frame-head { font-size: 40px; top: -60px; }
 
 /* ---- strings */
@@ -146,7 +162,8 @@ body.board-mode .content { max-width: none; padding: 0; }
 .ix-type svg { width: 11px; height: 11px; }
 .ix-rarity { color: var(--rc); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); white-space: nowrap; }
 .ix-art { flex: 1 1 auto; min-height: 0; border-radius: 8px; background: rgba(0, 0, 0, 0.22); display: grid; place-items: center; overflow: hidden; }
-.ix-art img { width: 100%; height: 100%; object-fit: cover; }
+.ix-art > * { grid-area: 1 / 1; }
+.ix-art img { width: 100%; height: 100%; object-fit: cover; position: relative; }
 .ix-glyph svg { width: 54px; height: 54px; opacity: 0.85; }
 .ix-name { font-weight: 800; font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
 .ix-sub { font-size: 11px; opacity: 0.85; line-height: 1.25; max-height: 2.5em; overflow: hidden; }

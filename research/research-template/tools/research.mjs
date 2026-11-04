@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:4505f538d04332d7
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:3244baa6e19ede4f
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -2199,7 +2199,7 @@ function cardFromSpecimen(entity, nodes, { summary = null, now } = {}) {
     subtitle: cap(ladder.length > 1 ? ladder[ladder.length - 2].label : S.desc.split(/[,;(]/)[0]) || void 0,
     rarity: rarityFor(S.sitelinks).key,
     sitelinks: S.sitelinks,
-    img: img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(img.replace(/ /g, "_"))}?width=480` : void 0,
+    img: img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(img.replace(/ /g, "_"))}?width=500` : void 0,
     lineage: ladder.slice(-5, -1).map((r) => cap(r.label)),
     stats: { depth: Math.max(0, ladder.length - 1), bonds, reach: S.sitelinks },
     flavor: sentence ? sentence.slice(0, 170) : void 0,
@@ -2418,6 +2418,7 @@ function describe(s) {
   if (s.year) out.push(`- year: ${s.year}`);
   if (s.tags?.length) out.push(`- tags: ${s.tags.map((t) => `#${t}`).join(" ")}`);
   for (const m of (s.media || []).filter((x) => x.type === "photo")) out.push(`- picture: ${m.path}${m.width ? ` (${m.width}\xD7${m.height})` : ""} \u2014 open this file to see it`);
+  for (const m of (s.media || []).filter((x) => x.type === "file")) out.push(`- file: ${m.path}${m.original_name ? ` (${m.original_name})` : ""} \u2014 kept as it is; open it to read`);
   out.push(`- saved: ${String(s.added || "").slice(0, 10)}${s.started ? ` \xB7 started ${String(s.started).slice(0, 10)}` : ""}${s.finished ? ` \xB7 finished ${String(s.finished).slice(0, 10)}` : ""}`);
   if (s.why) out.push("", "## Why I saved it", s.why);
   if (s.expect) out.push("", "## What I expected it to argue", s.expect);

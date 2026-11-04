@@ -130,7 +130,7 @@ export function cardFromSpecimen(entity, nodes, { summary = null, now } = {}) {
     subtitle: cap(ladder.length > 1 ? ladder[ladder.length - 2].label : S.desc.split(/[,;(]/)[0]) || undefined,
     rarity: rarityFor(S.sitelinks).key,
     sitelinks: S.sitelinks,
-    img: img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(img.replace(/ /g, "_"))}?width=480` : undefined,
+    img: img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(img.replace(/ /g, "_"))}?width=500` : undefined,
     lineage: ladder.slice(-5, -1).map((r) => cap(r.label)),
     stats: { depth: Math.max(0, ladder.length - 1), bonds, reach: S.sitelinks },
     flavor: sentence ? sentence.slice(0, 170) : undefined,
@@ -141,6 +141,56 @@ export function cardFromSpecimen(entity, nodes, { summary = null, now } = {}) {
     body: "",
   };
 }
+
+// Wikimedia serves thumbnails only at its standard widths now; any other width
+// (the Infodex asked for 480) is refused, which showed as a broken picture.
+const THUMB_STEPS = [120, 250, 330, 500, 960, 1280];
+const step = (n) => THUMB_STEPS.find((w) => w >= n) || THUMB_STEPS.at(-1);
+
+/** A card's picture link, made safe to load: Wikimedia thumbnail widths snapped to a standard step. */
+export function artUrl(url) {
+  const u = String(url || "");
+  if (!/^https:\/\/(commons|upload)\.wikimedia\.org\//.test(u)) return u;
+  return u
+    .replace(/([?&]width=)(\d+)/, (m, k, n) => `${k}${step(Number(n))}`)
+    .replace(/\/(\d+)px-([^/]+)$/, (m, n, f) => `/${step(Number(n))}px-${f}`);
+}
+
+/** The same picture at its original size — the last thing to try before the type's glyph. */
+export function artOriginal(url) {
+  const u = String(url || "");
+  const thumb = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\/(\w\/\w\w\/[^/]+)\/[^/]+$/.exec(u);
+  if (thumb) return `https://upload.wikimedia.org/wikipedia/commons/${thumb[1]}`;
+  if (/Special:FilePath\//.test(u)) return u.replace(/[?&]width=\d+/, "");
+  return "";
+}
+
+/**
+ * Your own cards (Dex imports, Wikidata cards, Atlas cards) matching what you
+ * typed — every one of them, not a first page. Each word must appear somewhere:
+ * the name counts most, then its subtitle and lineage, then the rest.
+ */
+export function searchCards(cards, query) {
+  const words = foldText(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const out = [];
+  for (const c of cards || []) {
+    const name = foldText(c.label);
+    const mid = foldText([c.subtitle, ...(c.lineage || []), c.kind, c.address?.domain].join(" "));
+    const rest = foldText([c.desc, c.flavor, ...(c.questions || []), c.body, c.qid, c.atlas].join(" "));
+    let s = name === words.join(" ") ? 50 : 0;
+    for (const w of words) {
+      if (name.split(" ").some((t) => t.startsWith(w))) s += 10;
+      else if (name.includes(w)) s += 6;
+      else if (mid.includes(w)) s += 3;
+      else if (rest.includes(w)) s += 1;
+      else { s = 0; break; }
+    }
+    if (s) out.push([s, c]);
+  }
+  return out.sort((a, b) => b[0] - a[0] || String(a[1].label).localeCompare(String(b[1].label))).map(([, c]) => c);
+}
+const foldText = (t) => String(t || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 
 /** A card exported from the Infodex Dex (Export → JSON, `{ infodex: 1, cards: [...] }`) → card record. */
 export function cardFromDex(c, { now } = {}) {

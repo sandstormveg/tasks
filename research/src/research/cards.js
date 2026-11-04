@@ -5,7 +5,7 @@
 // card on a board; it's the same page on every board the card is pinned to.
 
 import { html, raw } from "../ui/dom.js";
-import { typeOf, rarityByKey, FINISHES } from "../core/infodex.js";
+import { typeOf, rarityByKey, FINISHES, artUrl, artOriginal } from "../core/infodex.js";
 import { spriteSvg, swatchFor, readable } from "../core/atlas.js";
 
 // Glyphs from the Infodex (24×24).
@@ -39,6 +39,21 @@ export function atlasFace(card) {
   </div>`;
 }
 
+/**
+ * A card picture that won't load (offline, moved, refused) tries its original
+ * once, then steps aside for the type's glyph — never a broken-image icon.
+ * Error events don't bubble, so this listens in the capture phase on `root`.
+ */
+export function wireCardArt(root) {
+  root.addEventListener("error", (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.closest(".ix-art")) return;
+    const next = img.dataset.artNext;
+    if (next && img.src !== next) { img.dataset.artNext = ""; img.src = next; return; }
+    img.remove();
+  }, true);
+}
+
 /** The card face. `card` may be missing (a pin whose card hasn't synced yet). */
 export function cardFace(card, { label = "" } = {}) {
   if (!card) return html`<div class="ix-card ix-missing"><div class="ix-name">${label || "Card"}</div><div class="ix-sub">not on this device yet</div></div>`;
@@ -48,7 +63,7 @@ export function cardFace(card, { label = "" } = {}) {
   const st = card.stats || {};
   return html`<div class="ix-card r-${R.key} f-${card.finish || "base"}" style="--c1:${T.c1};--c2:${T.c2};--rc:${R.color}">
     <div class="ix-top"><span class="ix-type" title="${T.blurb}">${glyph(T.g)}${T.name}</span><span class="ix-rarity" title="Covered by ${card.sitelinks ?? "?"} Wikipedia editions">${R.gems} ${R.name}</span></div>
-    <div class="ix-art">${card.img ? html`<img src="${card.img}" alt="" loading="lazy" referrerpolicy="no-referrer">` : html`<span class="ix-glyph">${glyph(T.g)}</span>`}</div>
+    <div class="ix-art"><span class="ix-glyph">${glyph(T.g)}</span>${card.img ? html`<img src="${artUrl(card.img)}" data-art-next="${artOriginal(card.img)}" alt="" decoding="async">` : ""}</div>
     <div class="ix-name">${card.label}</div>
     <div class="ix-sub">${card.subtitle || card.desc || ""}</div>
     ${card.lineage?.length ? html`<div class="ix-lineage">${card.lineage.join(" › ")}</div>` : ""}

@@ -29,9 +29,11 @@ export async function mount(el, ctx, route, ui) {
     <textarea class="textarea" data-f="${k}" rows="${rows}" placeholder="${ph}">${s[k] || ""}</textarea></label>`;
 
   const pic = imageOf(s);
+  const kept = (s.media || []).filter((m) => m.type === "file");
   el.innerHTML = String(html`<div class="src-page">
     ${pic ? html`<button type="button" class="src-picture" data-act="zoom" aria-label="Show the picture full size"><img data-media="${pic.path}" data-fallback="${pic.thumb || ""}" alt="${s.title || "Picture"}"></button>` : ""}
     <div class="src-side">
+      ${kept.map((m) => html`<button type="button" class="btn small src-file" data-file="${m.path}" data-name="${m.original_name || ""}">${raw(icon("file"))}Open ${m.original_name || "the file"}${m.size ? html` <span class="faint">· ${Math.max(1, Math.round(m.size / 1024))} KB</span>` : ""}</button>`)}
       <textarea class="src-title-in" data-f="title" rows="1" aria-label="Title" placeholder="Title">${s.title || ""}</textarea>
       <div class="src-meta">${metaLine(s)}</div>
       <div class="status-seg" role="group" aria-label="Status">${Object.entries(STATUSES).map(([k, label]) => html`<button type="button" data-status="${k}" class="${s.status === k ? "on" : ""}">${label}</button>`)}</div>
@@ -59,6 +61,14 @@ export async function mount(el, ctx, route, ui) {
   </div>`);
   ctx.media.hydrate(el);
   el.querySelector("[data-act=zoom]")?.addEventListener("click", (e) => e.currentTarget.classList.toggle("full"));
+  // A kept file opens from this device's copy (fetched from the data repo the first time on a new device).
+  on(el, "click", "[data-file]", async (e, b) => {
+    const u = await ctx.media.url(b.dataset.file);
+    if (!u) { toast("That file isn't on this device yet — it downloads when you're online and synced.", { error: true }); return; }
+    const a = Object.assign(document.createElement("a"), { href: u, target: "_blank", rel: "noopener", download: b.dataset.name || "" });
+    if (/^(application\/pdf|image\/|text\/|audio\/|video\/)/.test(ctx.store.blobMeta.get(b.dataset.file)?.mime || "")) a.removeAttribute("download");
+    a.click();
+  });
 
   for (const t of el.querySelectorAll("textarea")) autosize(t);
   const save = async (patch) => {

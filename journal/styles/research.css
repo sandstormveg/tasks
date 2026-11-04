@@ -53,3 +53,65 @@ button.tag { cursor: pointer; }
 .src-picture img { display: block; width: 100%; max-height: 62vh; object-fit: contain; }
 .src-picture.full { position: fixed; inset: 0; z-index: 60; border-radius: 0; margin: 0; background: #000; cursor: zoom-out; }
 .src-picture.full img { max-height: none; height: 100%; }
+
+/* ---- the everything donut (src/research/donut.js): the Deposit's way in */
+.donut-dock {
+  display: flex; gap: 18px; align-items: center; margin: 4px 0 16px; padding: 16px; border-radius: 22px; position: relative;
+  background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, #ff2bd6 10%, var(--surface)) 0%, var(--surface) 60%);
+  border: 1px solid color-mix(in srgb, #00e5ff 35%, var(--line, transparent)); box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.06), 0 10px 30px rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.donut-dock.over { border-color: #00e5ff; box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.35), 0 0 40px rgba(255, 43, 214, 0.35); }
+.donut {
+  --d: 132px; flex: none; width: var(--d); height: var(--d); position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+}
+.donut:focus-visible { outline: 3px solid #00e5ff; outline-offset: 4px; }
+/* The ring: a neon torus — magenta to cyan to acid — with a hole cut by a mask. */
+.donut-ring, .donut-sprinkles { position: absolute; inset: 0; border-radius: 50%; }
+.donut-ring {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 33%, rgba(255, 255, 255, 0.35) 34%, transparent 40%, transparent 62%, rgba(0, 0, 0, 0.35) 70%),
+    conic-gradient(from 0deg, #ff2bd6, #7a5cff, #00e5ff, #39ff88, #ffe600, #ff7a1a, #ff2bd6);
+  -webkit-mask: radial-gradient(circle, transparent 0 31%, #000 32% 69%, transparent 70%);
+  mask: radial-gradient(circle, transparent 0 31%, #000 32% 69%, transparent 70%);
+  filter: drop-shadow(0 0 10px rgba(255, 43, 214, 0.55)) drop-shadow(0 0 18px rgba(0, 229, 255, 0.35));
+  animation: donut-spin 14s linear infinite;
+}
+/* Sprinkles: little lit pixels riding the ring, and a scanline sheen. */
+.donut-sprinkles {
+  background:
+    radial-gradient(circle at 30% 22%, #fff 0 2px, transparent 2.5px), radial-gradient(circle at 74% 30%, #39ff88 0 2px, transparent 2.5px),
+    radial-gradient(circle at 80% 66%, #ffe600 0 2px, transparent 2.5px), radial-gradient(circle at 48% 84%, #00e5ff 0 2px, transparent 2.5px),
+    radial-gradient(circle at 18% 60%, #ff2bd6 0 2px, transparent 2.5px), radial-gradient(circle at 60% 14%, #ff7a1a 0 1.6px, transparent 2px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.10) 0 1px, transparent 1px 4px);
+  -webkit-mask: radial-gradient(circle, transparent 0 31%, #000 32% 69%, transparent 70%);
+  mask: radial-gradient(circle, transparent 0 31%, #000 32% 69%, transparent 70%);
+  animation: donut-spin 9s linear infinite reverse;
+}
+.donut-hole {
+  position: absolute; inset: 34%; border-radius: 50%; display: grid; place-items: center; color: #00e5ff;
+  background: radial-gradient(circle, color-mix(in srgb, #0b0f1a 80%, var(--surface)) 0 60%, transparent 100%);
+  box-shadow: inset 0 0 12px rgba(0, 229, 255, 0.55);
+}
+.donut-hole svg { width: 26px; height: 26px; filter: drop-shadow(0 0 6px #00e5ff); transition: transform 0.25s; }
+.donut:hover .donut-hole svg, .donut-dock.over .donut-hole svg { transform: scale(1.25) rotate(90deg); }
+.donut-dock.over .donut-ring { animation-duration: 2s; }
+/* Eating: the donut gulps — a squash, a fast spin, a flash. */
+.donut-dock.eating .donut { animation: donut-gulp 0.6s ease-out; }
+.donut-dock.eating .donut-ring { animation-duration: 0.9s; filter: drop-shadow(0 0 18px #ff2bd6) drop-shadow(0 0 28px #00e5ff); }
+@keyframes donut-spin { to { transform: rotate(360deg); } }
+@keyframes donut-gulp { 0% { transform: scale(1); } 30% { transform: scale(0.86, 0.92); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .donut-ring, .donut-sprinkles { animation: none; } .donut-dock.eating .donut { animation: none; } }
+.donut-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.donut-kicker { font: 700 12px/1 var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; background: linear-gradient(90deg, #ff2bd6, #00e5ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.donut-in { min-height: 84px; font-size: 15px; }
+.donut-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.donut-row .grow { flex: 1; }
+.donut-sorts { min-width: 0; flex: 1 1 180px; }
+@media (max-width: 560px) {
+  .donut-dock { flex-direction: column; align-items: stretch; padding: 14px; }
+  .donut { --d: 116px; align-self: center; }
+}
+.src-file { display: inline-flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.card-hit { cursor: default; } .card-boards { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
