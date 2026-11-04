@@ -389,7 +389,7 @@
       "category": "Development",
       "created": "2026-11-03",
       "notes": "",
-      "assist": true,
+      "assist": false,
       "claudeNotes": [
         {
           "id": "n-director-c7-jtoggle",
