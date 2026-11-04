@@ -394,9 +394,9 @@
         {
           "id": "n-director-c7-jtoggle",
           "text": "Relayed (2026-11-03) to the 'Living Journal system' session, which owns the journal. Suggested: make the section collapsible, collapsed by default, and remember the choice per device. It's a cloud session, so it will pick this up the next time you run it.",
-          "done": false,
+          "done": true,
           "created": "2026-11-03T19:20:00",
-          "updated": "2026-11-03T19:20:00",
+          "updated": "2026-11-04T07:41:59.875Z",
           "author": "Claude Opus 5.5"
         }
       ]
