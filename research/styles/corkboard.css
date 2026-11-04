@@ -227,3 +227,8 @@ body.board-mode .content { max-width: none; padding: 0; }
 /* String labels stay the same size on screen at any zoom, so they never cover an open card's page. */
 .cork-labels text { font-size: calc(13px / var(--z, 1)); stroke-width: calc(3.5px / var(--z, 1)); }
 .ix-subhead { font-weight: 700; margin-bottom: 0.2em; }
+
+/* A picture pinned to the board: the image at its own shape, a caption under it. */
+.pin .pin-body:has(> .pin-img) { padding: 16px 7px 6px; display: flex; flex-direction: column; gap: 5px; }
+.pin .pin-img { flex: 1; min-height: 0; width: 100%; object-fit: contain; border-radius: 3px; background: rgba(0, 0, 0, .04); pointer-events: none; user-select: none; }
+.pin .pin-caption { font-size: .78rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2, inherit); }

@@ -6,6 +6,7 @@ import { html, raw, on, debounce, autosize, sheet, toast } from "../../ui/dom.js
 import { icon } from "../../ui/icons.js";
 import { STATUSES, KINDS, statusPatch, formatAuthors, normalizeUrl, siteOf, findDoi } from "../../core/sources.js";
 import { tagInput, deleteSource } from "../ui.js";
+import { imageOf } from "../images.js";
 
 const metaLine = (s) => [s.site, formatAuthors(s.authors), s.year, KINDS[s.kind]].filter(Boolean).join(" · ");
 // What a field shows for a stored value (the inverse of valueOf below).
@@ -27,7 +28,9 @@ export async function mount(el, ctx, route, ui) {
   const field = (k, label, ph, { rows = 2, hint = "" } = {}) => html`<label class="field"><span>${label}${hint ? html` <span class="faint">${hint}</span>` : ""}</span>
     <textarea class="textarea" data-f="${k}" rows="${rows}" placeholder="${ph}">${s[k] || ""}</textarea></label>`;
 
+  const pic = imageOf(s);
   el.innerHTML = String(html`<div class="src-page">
+    ${pic ? html`<button type="button" class="src-picture" data-act="zoom" aria-label="Show the picture full size"><img data-media="${pic.path}" data-fallback="${pic.thumb || ""}" alt="${s.title || "Picture"}"></button>` : ""}
     <div class="src-side">
       <textarea class="src-title-in" data-f="title" rows="1" aria-label="Title" placeholder="Title">${s.title || ""}</textarea>
       <div class="src-meta">${metaLine(s)}</div>
@@ -54,6 +57,8 @@ export async function mount(el, ctx, route, ui) {
       <label class="field"><span>Notes</span><textarea class="textarea notes" data-f="body" placeholder="Your notes — Markdown works">${s.body || ""}</textarea></label>
     </div>
   </div>`);
+  ctx.media.hydrate(el);
+  el.querySelector("[data-act=zoom]")?.addEventListener("click", (e) => e.currentTarget.classList.toggle("full"));
 
   for (const t of el.querySelectorAll("textarea")) autosize(t);
   const save = async (patch) => {

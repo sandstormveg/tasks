@@ -21,6 +21,7 @@ import { checkSynthesis, curate } from "../../core/curator.js";
 import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor } from "../../core/infodex.js";
 import { searchSources, formatAuthors } from "../../core/sources.js";
 import { cardFace, cardPage, addEntry } from "../cards.js";
+import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 
 const MIN_Z = 0.08;
 const MAX_Z = 6;
@@ -57,6 +58,7 @@ export async function mount(el, ctx, route, ui) {
       <button class="btn small" data-tool="note">${raw(icon("edit"))}<span>Note</span></button>
       <button class="btn small" data-tool="card">${raw(icon("sparkle"))}<span>Card</span></button>
       <button class="btn small" data-tool="source">${raw(icon("bookmark"))}<span>Source</span></button>
+      <button class="btn small" data-tool="image">${raw(icon("camera"))}<span>Picture</span></button>
       <button class="btn small" data-tool="frame">${raw(icon("map"))}<span>Frame</span></button>
       <span class="cork-tools-gap"></span>
       <button class="btn icon small" data-tool="zoom-out" aria-label="Zoom out">−</button>
@@ -166,6 +168,11 @@ export async function mount(el, ctx, route, ui) {
       const c = cardsById[p.card];
       return html`${cardFace(c, { label: p.title })}${lod >= 3 ? html`<div class="pin-page">${cardPage(c, pageCtx(p))}</div>` : ""}`;
     }
+    if (p.kind === "source" && imageOf(sourcesById[p.source])) {
+      const s = sourcesById[p.source], m = imageOf(s);
+      return html`${by}<img class="pin-img" draggable="false" data-media="${lod >= 2 ? m.path : m.thumb || m.path}" data-fallback="${m.path}" alt="${s.title || ""}">
+        <div class="pin-caption">${s.title || p.title || "Picture"}${lod >= 2 ? html` · <a href="#/source/${p.source}" class="pin-open">Open</a>` : ""}</div>`;
+    }
     if (p.kind === "source") {
       const s = sourcesById[p.source];
       return html`${by}<div class="pin-kicker">${s?.site || "Source"}${s?.status ? html` · ${s.status === "inbox" ? "deposit" : s.status}` : ""}</div>
@@ -212,6 +219,7 @@ export async function mount(el, ctx, route, ui) {
     if (lod === 3) node.style.setProperty("--u", (1 / cam.z).toFixed(4));
     node.innerHTML = String(html`${p.kind !== "frame" ? html`<span class="pushpin" data-pushpin title="Drag to another pin to connect"></span>` : ""}<div class="pin-body">${pinInner(p, lod)}</div>`);
     node._lod = lod;
+    if (node.querySelector("img[data-media]")) ctx.media.hydrate(node);
   }
 
   // While you drag a pin its strings belly away from the motion, then settle back with a little spring.
@@ -674,6 +682,15 @@ export async function mount(el, ctx, route, ui) {
     await addPin({ kind: "source", source: picked, title: s?.title }, { near: selected });
   }
 
+  // Pictures: each becomes an image source in your library (filed, not in the
+  // Deposit) and is pinned here at its own shape. Paste or drop works too.
+  async function addImagePins(files) {
+    if (!files.length) return;
+    const saved = await saveImages(ctx, files, { status: "filed" });
+    for (const s of saved) { sourcesById[s.id] = s; await addPin({ kind: "source", source: s.id, title: s.title, ...imagePinSize(s) }, { near: selected }); }
+    if (saved.length) toast(saved.length === 1 ? "Picture pinned — tap its caption to rename it in Research" : `${saved.length} pictures pinned`, { timeout: 3500 });
+  }
+
   async function addCardPin() {
     let pick = null;
     const atlas = await loadAtlasIndex(ctx);
@@ -820,6 +837,12 @@ export async function mount(el, ctx, route, ui) {
   }
 
   // ---- wiring
+  // Paste a screenshot, or drop pictures onto the board, to pin them.
+  const onPaste = (e) => { if (e.target.closest?.("input, textarea, [contenteditable]")) return; const imgs = imagesFrom(e.clipboardData); if (imgs.length) { e.preventDefault(); addImagePins(imgs); } };
+  document.addEventListener("paste", onPaste);
+  ui.cleanup(() => document.removeEventListener("paste", onPaste));
+  vp.addEventListener("dragover", (e) => { if ([...(e.dataTransfer?.items || [])].some((i) => i.type.startsWith("image/"))) e.preventDefault(); });
+  vp.addEventListener("drop", (e) => { const imgs = imagesFrom(e.dataTransfer); if (imgs.length) { e.preventDefault(); addImagePins(imgs); } });
   ui.onAction((e, b) => { if (b.dataset.act === "curator") openCurator(); if (b.dataset.act === "board-menu") boardMenu(); });
   on(el, "click", "[data-tool]", (e, b) => {
     const t = b.dataset.tool;
@@ -827,6 +850,7 @@ export async function mount(el, ctx, route, ui) {
     if (t === "note") addNote();
     if (t === "card") addCardPin();
     if (t === "source") addSourcePin();
+    if (t === "image") pickImages().then(addImagePins);
     if (t === "frame") addFrame();
     if (t === "fit") fit();
     if (t === "zoom-in") zoomAt(r.width / 2, r.height / 2, 1.35);

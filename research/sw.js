@@ -38,8 +38,27 @@ self.addEventListener("message", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
-  if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // Android's share sheet POSTs to Research's page (the manifest's share_target):
+  // pictures wait in a cache for the page to take (src/research/images.js), the
+  // words go in the address as a GET share always did.
+  if (req.method === "POST" && url.origin === self.location.origin && url.pathname === new URL(self.registration.scope).pathname) {
+    e.respondWith((async () => {
+      const form = await req.formData();
+      const stamp = Date.now().toString(36);
+      const cache = await caches.open("research-share");
+      let n = 0;
+      for (const f of form.getAll("files")) {
+        if (f && typeof f === "object" && f.size) await cache.put(`share/${stamp}/${n++}`, new Response(f, { headers: { "content-type": f.type || "application/octet-stream", "x-name": encodeURIComponent(f.name || "") } }));
+      }
+      const q = new URLSearchParams();
+      for (const k of ["title", "text", "url"]) { const v = form.get(k); if (typeof v === "string" && v) q.set(k, v); }
+      if (n) q.set("share", stamp);
+      return Response.redirect(`${self.registration.scope}?${q}`, 303);
+    })());
+    return;
+  }
+  if (req.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
   const isNav = req.mode === "navigate";
   e.respondWith((async () => {

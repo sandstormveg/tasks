@@ -30,8 +30,8 @@ export async function mount(el, ctx, route, ui) {
         if (!h.length && !anyHome) return "";
         return html`<div class="src-homes">${h.length ? html`<span class="faint">Could go:</span>` : ""}${h.map((x) => html`<button class="chip home" data-home="${x.id}" data-src="${s.id}" title="Shares: ${x.shared.join(", ")}">${raw(icon(x.kind === "board" ? "map" : "edit"))}${x.title}</button>`)}<button class="chip ghost" data-elsewhere="${s.id}">${h.length ? "Elsewhere…" : "File to…"}</button></div>`;
       };
-      body = list.length ? html`<p class="small muted list-hint">Drop anything here: links, quotes, half-thoughts. Each shows where it might belong — file it there and it's pinned next to what it shares the most with, tied by red string. Or sort it into your reading.</p>${list.map((s) => sourceCard(s, { extra: homes(s) }))}`
-        : empty("Your Deposit is empty", html`Share anything to <b>Tasks</b> from any app — a link, a quote, a thought — or tap <b>Add</b>. On your computer, use the bookmark button in <a href="#/settings">Settings</a>.`);
+      body = list.length ? html`<p class="small muted list-hint">Drop anything here: links, quotes, pictures, half-thoughts. Each shows where it might belong — file it there and it's pinned next to what it shares the most with, tied by red string. Or sort it into your reading.</p>${list.map((s) => sourceCard(s, { extra: homes(s) }))}`
+        : empty("Your Deposit is empty", html`Share anything to <b>Tasks</b> from any app — a link, a quote, a photo, a thought — or tap <b>Add</b>. On your computer, use the bookmark button in <a href="#/settings">Settings</a>.`);
     } else if (mode === "queue") {
       const reading = all.filter((s) => s.status === "reading").sort(by("started"));
       const next = all.filter((s) => s.status === "to-read").sort(by("added", 1));
@@ -51,6 +51,7 @@ export async function mount(el, ctx, route, ui) {
         ${list.length ? list.map((s) => sourceCard(s)) : empty(filter === "fav" ? "No favourites yet" : "Nothing here yet", filter === "fav" ? "Tap ☆ on something you've read that earned it." : "Finished things land here.")}`;
     }
     el.innerHTML = String(body);
+    ctx.media.hydrate(el);
   }
   const empty = (title, text) => html`<div class="empty">${raw(icon(mode === "inbox" ? "inbox" : mode === "queue" ? "bookmark" : "check"))}<h3>${title}</h3><p>${text}</p></div>`;
 
