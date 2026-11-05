@@ -309,6 +309,13 @@
           "done": false,
           "created": "2026-11-05T20:04:15.127Z",
           "updated": "2026-11-05T20:04:15.127Z"
+        },
+        {
+          "id": "n-mw3z6fofks60",
+          "text": "Markdown on the notes doesn't seem to be viewable in a preview mode",
+          "done": false,
+          "created": "2026-11-05T20:05:30.207Z",
+          "updated": "2026-11-05T20:05:30.207Z"
         }
       ]
     }
