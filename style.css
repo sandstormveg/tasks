@@ -173,7 +173,13 @@ body {
 /* The Journal and Research tabs are links (to journal/ and research/, their own apps), styled like the tab buttons. */
 a.tab-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
 .app-tab-glyph { font-size: 15px; color: var(--accent-2); }
-.history-tab-btn { font-size: 15px; }
+.history-tab-btn { font-size: 15px; display: inline-flex; align-items: center; }
+/* Drawn rather than an emoji, so it takes the accent colour and glow like the ✦ tab. */
+.history-tab-icon { color: var(--accent-2); filter: drop-shadow(0 0 4px rgba(29, 233, 182, 0.55)); }
+/* The other apps sit at the right end of the tab bar, apart from Tasks' own views. */
+a.app-tab-btn[data-app="journal"] { margin-left: auto; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dialog-head h3 { margin: 0; }
 /* Settings: sections that fold, so the key isn't buried under paragraphs of help. */
 .settings-section { border: 1px solid var(--border); border-radius: 9px; padding: 8px 12px; margin: 10px 0; }
 .settings-section > summary { cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; color: var(--accent-2); }
@@ -931,6 +937,8 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   border-radius: 8px;
 }
 .task-menu-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+/* A textarea that grows with the title, so a long title is all visible while you edit it. */
+.task-title-edit, .assist-title-edit { resize: none; overflow: hidden; line-height: 1.35; white-space: pre-wrap; display: block; box-sizing: border-box; }
 .task-title-edit {
   width: 100%;
   font-size: 16.5px;

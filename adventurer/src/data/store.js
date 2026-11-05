@@ -9,7 +9,7 @@
 // and the losing version is kept on the quest as `_conflict` for a look.
 
 import { normalize, serialize, validate, payout, STATUSES } from "../core/quests.js";
-import { applyTaskOps, questIndex } from "../core/tasklink.js";
+import { applyTaskOps, questIndex, nominations } from "../core/tasklink.js";
 import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
@@ -102,7 +102,7 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
   ]);
   store.tasks = {
     active: [...parse(pa, "tasks").map((t) => ({ ...t, repo: "public" })), ...parse(qa?.text, "tasks").map((t) => ({ ...t, repo: "private" }))]
-      .map(({ id, title, category, parentId, created, repo, questId }) => ({ id, title, category, parentId, created, repo, questId })),
+      .map(({ id, title, category, parentId, created, repo, questId, questNominated }) => ({ id, title, category, parentId, created, repo, questId, questNominated })),
     history: [...parse(ph, "entries"), ...parse(qh?.text, "entries")].map(({ id, title, category, completedDate }) => ({ id, title, category, completedDate })),
   };
 
@@ -133,6 +133,9 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
   }
   // Gone remotely and not changed here: removed by the guild master's tool.
   for (const [id, x] of Object.entries(store.quests)) if (!seen.has(id) && x.sha && !x.dirty) delete store.quests[id];
+
+  // Tasks nominated on the Tasks site become requests, pushed with the rest below.
+  for (const q of nominations(store.tasks.active, Object.values(store.quests).map((x) => x.q), new Date().toISOString())) store.quests[q.id] = { q, sha: null, dirty: true };
 
   // Push.
   for (const [id, x] of Object.entries(store.quests)) {

@@ -1,6 +1,16 @@
 {
   "name": "Tasks",
   "home": "../",
+  "apps": [
+    {
+      "name": "Journal",
+      "href": "../journal/"
+    },
+    {
+      "name": "Research",
+      "href": "../research/"
+    }
+  ],
   "tokenKey": "tasks_gh_token",
   "defaults": {
     "owner": "sandstormveg",
@@ -9,5 +19,5 @@
     "folder": "quests"
   },
   "app": "adventurer",
-  "source": "sandstormveg/Adventurer@b1a6e13ce1c9"
+  "source": "sandstormveg/Adventurer@b7e843f67f67"
 }
