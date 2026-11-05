@@ -20,6 +20,7 @@ export const DEFAULTS = {
   relay: true,
   relayName: "Relay",
   chattiness: "normal",
+  voice: false,
   autoSync: true,
 };
 

@@ -1,5 +1,5 @@
 {
- "version": "fafc5145f935",
+ "version": "e68d978baa5f",
  "files": [
   "./",
   "icons/icon.svg",
@@ -28,6 +28,7 @@
   "src/main.js",
   "src/ui/dom.js",
   "src/ui/relay.js",
+  "src/ui/voice.js",
   "src/views/board.js",
   "src/views/log.js",
   "src/views/settings.js",
