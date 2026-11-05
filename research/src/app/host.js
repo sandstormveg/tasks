@@ -2,7 +2,8 @@
 // the Tasks site, so both open as one home-screen app — the install writes
 // host.json next to index.html (see tools/install-into.mjs): the host's name, a
 // link back to it, where it keeps its GitHub token, and default settings (sync
-// into a folder of the host's private data repo). Standalone there is no
+// into a folder of the host's private data repo), and its other apps, so the
+// top bar links across to them. Standalone there is no
 // host.json and nothing changes.
 
 export async function loadHost() {
@@ -25,5 +26,8 @@ export function normalizeHost(h) {
   const tokenKey = typeof h.tokenKey === "string" && /^[\w.-]{1,64}$/.test(h.tokenKey) ? h.tokenKey : "";
   const defaults = h.defaults && typeof h.defaults === "object" && !Array.isArray(h.defaults) ? h.defaults : null;
   if (!name) return null;
-  return { name, home, tokenKey, defaults, source: typeof h.source === "string" ? h.source : "" };
+  // The host's other apps (the Tasks site's Journal, Research and Guild), each a link on this site.
+  const apps = (Array.isArray(h.apps) ? h.apps : []).map((a) => ({ name: typeof a?.name === "string" ? a.name.trim().slice(0, 24) : "", href: sameSite(a?.href) }))
+    .filter((a) => a.name && a.href).slice(0, 6);
+  return { name, home, tokenKey, defaults, apps, source: typeof h.source === "string" ? h.source : "" };
 }

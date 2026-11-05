@@ -41,10 +41,17 @@ export function renderSyncPill(ctx) {
   if (line) line.textContent = st.error ? `Sync: ${st.error}` : label;
 }
 
-/** "‹ Tasks" when the app lives inside a host app: the way back to the rest of it. */
+/**
+ * "‹ Tasks · Research · Guild" when the app lives inside a host app: the way back
+ * to it, then across to its other apps (host.json `apps`).
+ */
 export function hostLink(ctx, cls) {
   const h = ctx.host;
-  return h?.home ? html`<a class="${cls}" href="${h.home}" data-host-home>${raw(icon("back"))}<span>${h.name}</span></a>` : "";
+  if (!h?.home) return "";
+  const apps = h.apps || [];
+  const wrap = /\bonly-mobile\b/.test(cls) ? "host-nav only-mobile" : "host-nav"; // the sidebar has its own on a computer
+  return html`<span class="${wrap}">
+    <a class="${cls}" href="${h.home}" data-host-home>${raw(icon("back"))}<span>${h.name}</span></a>${apps.map((a) => html`<a class="host-app" href="${a.href}" data-host-app>${a.name}</a>`)}</span>`;
 }
 
 /** Offline copy and updates. Only an update replaces a working copy: the first install

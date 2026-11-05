@@ -12,7 +12,7 @@ import { icon } from "../ui/icons.js";
 import { sortDrop, kindOfFile, makeSource } from "../core/sources.js";
 import { mediaPath, MIME_EXT } from "../core/format.js";
 import { newId } from "../core/ids.js";
-import { capture } from "./ui.js";
+import { capture, addSheet } from "./ui.js";
 import { saveImages } from "./images.js";
 
 const MAX_FILE = 25 * 1024 * 1024; // the sync repo holds files; keep them reasonable
@@ -86,6 +86,7 @@ export function mountDonut(el, ctx) {
         <span class="small faint donut-sorts" data-donut-sorts aria-live="polite">It sorts itself: links, papers, quotes, thoughts, pictures, files.</span>
         <span class="grow"></span>
         ${READ_CLIPBOARD ? html`<button type="button" class="btn small" data-donut-paste>${raw(icon("file"))}Paste</button>` : ""}
+        <button type="button" class="btn small ghost" data-donut-more title="Add with a title, why, tags and where it goes">More…</button>
         <button type="button" class="btn small" data-donut-files>${raw(icon("upload"))}Files</button>
         <button type="button" class="btn small primary" data-donut-go disabled>Deposit</button>
       </div>
@@ -128,6 +129,12 @@ export function mountDonut(el, ctx) {
     eat({ files, text: e.target === input ? "" : e.clipboardData.getData("text/plain") });
   });
   dock.querySelector("[data-donut-files]").addEventListener("click", () => fileIn.click());
+  // The full Add sheet — title, why, tags, reading status — starting from whatever's in the box.
+  dock.querySelector("[data-donut-more]").addEventListener("click", async () => {
+    const text = input.value;
+    const saved = await addSheet(ctx, { status: "inbox", text });
+    if (saved && input.value === text) { input.value = ""; show(); }
+  });
   fileIn.addEventListener("change", () => { eat({ files: [...fileIn.files] }); fileIn.value = ""; });
   dock.querySelector("[data-donut-paste]")?.addEventListener("click", () => pasteClipboard());
   donut.addEventListener("click", () => (READ_CLIPBOARD ? pasteClipboard() : input.focus()));

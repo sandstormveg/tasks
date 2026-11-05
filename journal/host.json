@@ -11,6 +11,16 @@
       "folder": "journal"
     }
   },
+  "apps": [
+    {
+      "name": "Research",
+      "href": "../research/"
+    },
+    {
+      "name": "Guild",
+      "href": "../adventurer/"
+    }
+  ],
   "app": "journal",
-  "source": "sandstormveg/Journal_system@ff288fbc389c"
+  "source": "sandstormveg/Journal_system@1ccfbbc2d5f0"
 }
