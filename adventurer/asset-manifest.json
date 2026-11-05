@@ -1,5 +1,5 @@
 {
- "version": "1f7240742adb",
+ "version": "ecad5207d4c5",
  "files": [
   "./",
   "icons/icon.svg",
@@ -27,6 +27,7 @@
   "src/data/store.js",
   "src/main.js",
   "src/ui/dom.js",
+  "src/ui/encounter.js",
   "src/ui/questmap.js",
   "src/ui/relay.js",
   "src/ui/voice.js",

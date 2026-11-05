@@ -9,6 +9,7 @@ import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
 import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
 import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn, questPitch } from "../core/relay.js";
 import { questMap, mappable } from "../ui/questmap.js";
+import { openEncounter } from "../ui/encounter.js";
 import { speak } from "../ui/voice.js";
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
@@ -88,7 +89,7 @@ export async function mount(el, ctx, route, ui) {
           <span class="reward">+${payout(q)} XP</span></div>
         <div class="quest-title">${q.title}</div>
         ${q.origin === "inferred" && q.why ? html`<div class="why">${q.why}</div>` : q.brief ? html`<div class="brief">${q.brief}</div>` : ""}
-        <div class="quest-foot"><span>${PROOF_LABEL[q.proof.type]}</span>${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
+        <div class="quest-foot"><span>${PROOF_LABEL[q.proof.type]}</span>${q.encounter ? html`<span>${q.encounter.type === "chest" ? "📦 chest" : "📜 scholar"}</span>` : ""}${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
           ${ctx.taskDone(q) ? html`<span class="status ready">✓ task done · turn in</span>` : q.status !== "posted" ? html`<span class="status">${q.status}</span>` : ""}</div>
       </button>`;
     }
@@ -202,7 +203,9 @@ async function openQuest(ctx, q) {
         ${q.link ? html`<dt>About</dt><dd><a href="${q.link}" target="_blank" rel="noopener">Read about it</a></dd>` : ""}
         ${ev ? html`<dt>Turned in</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
       </dl>
-      ${q.proof.type === "gps" && mappable([q]).length ? html`<button class="btn small" data-map>🗺 Show on the map</button>` : ""}`,
+      ${q.encounter && q.status !== "done" ? html`<p class="notice">${q.encounter.type === "chest" ? "📦 Something's waiting there: a chest, opened when you check in." : "📜 Someone's waiting there: a scholar, met when you check in."}</p>` : ""}
+      ${q.proof.type === "gps" && mappable([q]).length ? html`<button class="btn small" data-map>🗺 Show on the map</button>` : ""}
+      ${q.status === "done" && q.encounter ? html`<button class="btn small" data-a="encounter">${q.encounter.type === "chest" ? "📦 Look in the chest again" : "📜 Revisit the scholar"}</button>` : ""}`,
     foot: html`${q.status === "posted" ? html`<button class="btn" data-a="decline">Decline</button><button class="btn" data-a="accept">Accept</button>` : ""}
       ${OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
       ${q.status === "declined" || q.status === "expired" ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}`,
@@ -216,6 +219,7 @@ async function openQuest(ctx, q) {
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
+    else if (act === "encounter") await openEncounter(q, { taskTitle: ctx.taskTitle });
     else if (act === "map") { const id = await questMap([q], { focus: q.id }); if (id) openQuest(ctx, q); }
     else if (act === "honor") await turnIn(ctx, q, "honor");
     else return;
@@ -261,6 +265,7 @@ async function turnIn(ctx, q, type) {
   const s = ctx.settings();
   if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }), s);
   celebrate();
+  if (done.encounter) await openEncounter(done, { taskTitle: ctx.taskTitle });
   for (const a of newlyEarned(before.trophies, after.trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
 }
 
