@@ -287,41 +287,6 @@
       ]
     },
     {
-      "id": "how-can-i-integrate-this-task-menu-with-my-research-system-mvykx50o",
-      "title": "How can i integrate this task category with my research system?",
-      "category": "Research §",
-      "created": "2026-11-02",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mvykykvhocv3",
-          "text": "I guess i could just have this be monitored like usual for things to add into my research system?",
-          "done": false,
-          "created": "2026-11-02T01:28:38.188Z",
-          "updated": "2026-11-02T01:28:38.188Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-director-c7-rsys1",
-          "text": "Yes, that works, and it's cheap, because the hourly director pass already reads both trackers. Proposal (assuming 'research system' means the Epistemic Atlas):\n1. Each pass, the director checks for new tasks or new notes in any category ending in '§' (so you can mark other categories the same way later).\n2. For each new item, it uses the atlas skill to add it as an object (or to the Atlas inputs queue if it needs a closer look), then leaves a claudeNote on the task saying what it added and where.\n3. It never marks tasks done or moves them. You stay in control of the tracker side.\n4. A capture costs one small Atlas edit, and it shows up in the next notification as 'Atlas: added X'.\nReply 'yes' (here or in the director chat) and I'll add it to the director's routine. If the research system is something else, such as Infodex or a doc, say which and I'll point it there instead.",
-          "done": true,
-          "created": "2026-11-02T13:20:00",
-          "updated": "2026-11-03T07:32:40.796Z",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-director-c7-rlib-mvykx50o",
-          "text": "Correction: you meant the § Research tab, not the Atlas. It's set up now: each hourly director pass checks open Research § tasks, adds any new links to your Research Inbox, and notes it on the task. Your why/expect/notes stay for you to fill in. Tasks without a link are left alone. First batch: 3 links added.",
-          "done": false,
-          "created": "2026-11-02T16:10:00",
-          "updated": "2026-11-02T16:10:00",
-          "author": "Claude Opus 5.5"
-        }
-      ]
-    },
-    {
       "id": "sequencing-comparison-chart-mw2yaqop",
       "title": "sequencing comparison chart",
       "category": "Interested in",
