@@ -94,6 +94,17 @@ export function validate(q) {
     else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
   }
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
+  if (q.encounter) {
+    const e = q.encounter;
+    if (!["chest", "scholar"].includes(e.type)) errs.push("encounter.type must be chest or scholar");
+    if (q.proof?.type !== "gps") errs.push("an encounter waits at a place: its quest needs gps proof");
+    if (!Array.isArray(e.loot) || e.loot.length > 5) errs.push("encounter.loot must be a list of up to 5 items");
+    else for (const l of e.loot) {
+      if (!["dex", "babel", "task", "note"].includes(l.kind)) errs.push("each loot item's kind is dex, babel, task or note");
+      if (l.kind === "dex" && !/^Q\d+$/.test(l.qid || "")) errs.push("a dex loot item needs a Wikidata qid like Q5194");
+      if (l.kind === "task" && !l.taskId) errs.push("a task loot item needs a taskId");
+    }
+  }
   return errs;
 }
 
@@ -121,7 +132,7 @@ export function complete(q, { proofType, evidence = {}, at }) {
 /** Deterministic file text: stable key order so unchanged quests never make a diff. */
 export function serialize(q) {
   const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "taskCreated", "difficulty", "attributes", "skills",
-    "proof", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
+    "proof", "encounter", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
   const out = {};
   for (const k of order) if (q[k] !== undefined) out[k] = q[k];
   for (const k of Object.keys(q).sort()) if (!(k in out) && q[k] !== undefined && !k.startsWith("_")) out[k] = q[k];

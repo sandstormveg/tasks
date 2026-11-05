@@ -39,3 +39,9 @@ XP: difficulty base (10/25/50/100/250) × proof rate (verified 1.0, photo/journa
 read-only for you. `showcase.json`: `{skills: [{id, name, kind active|passive|unique, status known|learning|aspiring,
 startLevel 0-10, category}], achievements: [{id, title, detail, status earned|goal, date, tier bronze|silver|gold|mythic, icon}]}`.
 A skill levels up from the XP of turned-in quests that train it.
+
+**Explore quests** are gps quests with an `encounter` that opens at check-in: `{type: chest|scholar, name, text,
+loot: [...up to 5]}`. Loot kinds: `{kind: "dex", qid: "Q5194", label, why}` (a lead to chart in the Infodex and mint as a
+Dex card), `{kind: "babel", label, why}` (a Babel run), `{kind: "task", taskId, why}`, `{kind: "note", label, why}`. Fill
+them from what Silica is into: their tasks, research, and the journal only through its gate (themes, never quotes).
+Keep the place public and the coordinates in this private repo.
