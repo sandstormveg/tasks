@@ -15,7 +15,11 @@ export const voices = () => ("speechSynthesis" in window ? speechSynthesis.getVo
 function pickVoice(name) {
   const all = voices();
   if (name) { const v = all.find((x) => x.name === name); if (v) return v; }
-  for (const re of PREFERRED) { const v = all.find((x) => re.test(x.name)); if (v) return v; }
+  for (const re of PREFERRED.slice(0, 8)) { const v = all.find((x) => re.test(x.name)); if (v) return v; }
+  // Android names its voices by language only ("English United Kingdom"); there the en-GB one is female.
+  const gb = all.find((x) => /^en[-_]GB/i.test(x.lang));
+  if (gb) return gb;
+  for (const re of PREFERRED.slice(8)) { const v = all.find((x) => re.test(x.name)); if (v) return v; }
   return all[0] || null;
 }
 export const bestVoice = () => pickVoice("")?.name || "";
