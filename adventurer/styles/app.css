@@ -276,6 +276,9 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 /* Red until it can see your joints, then green: readable from across the room. */
 .cam::after { content: ""; position: absolute; inset: 0; border: 8px solid #ff2e63; border-radius: 6px; pointer-events: none; z-index: 2; }
 .cam.seen::after { border-color: var(--accent-2); }
+.cam.loading::before { content: "Loading pose model…"; position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; font-size: 1.6rem; font-weight: bold; color: var(--amber); background: rgba(0, 0, 0, .55); animation: cam-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes cam-pulse { from { opacity: .55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cam.loading::before { animation: none; } }
 .cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 .cam-hud { position: absolute; top: 8px; left: 10px; display: flex; gap: 6px; align-items: baseline; text-shadow: 0 0 6px #000; }
 .cam-count { font-size: 4rem; font-weight: bold; color: var(--accent-2); }

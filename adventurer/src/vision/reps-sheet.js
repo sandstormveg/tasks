@@ -55,9 +55,10 @@ export function countReps(exercise, target, { max = false, title } = {}) {
       let stream, raf, stopped = false, counter = new RepCounter(exercise), detector;
       const video = d.querySelector("video"), canvas = d.querySelector("canvas"), g = canvas.getContext("2d");
       const status = d.querySelector(".cam-status"), count = d.querySelector(".cam-count"), ang = d.querySelector(".cam-angle");
-      const cam = d.querySelector(".cam");
+      const cam = d.querySelector(".cam"), engineEl = d.querySelector(".cam-engine");
+      const say = (text) => { if (status.textContent !== text) status.textContent = text; }; // no layout work when nothing changed
       try { (audio ||= new (window.AudioContext || window.webkitAudioContext)()).resume(); } catch { /* sound unlocks on this tap, or not at all */ }
-      const stop = () => { stopped = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); };
+      const stop = () => { stopped = true; video.cancelVideoFrameCallback ? video.cancelVideoFrameCallback(raf) : cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); };
       d.addEventListener("close", stop);
       d.querySelector("[data-done]").addEventListener("click", () => { const reps = counter.reps; stop(); close({ reps }); });
       (async () => {
@@ -65,36 +66,47 @@ export function countReps(exercise, target, { max = false, title } = {}) {
           stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
           video.srcObject = stream;
           await video.play();
-          status.textContent = "Loading the pose model… the first time can take a minute.";
+          cam.classList.add("loading");
+          status.textContent = "Loading the pose model…";
           const engine = await preloadPose();
           detector = engine.detector;
+          cam.classList.remove("loading");
           if (stopped) return;
-          status.textContent = engine.backend === "cpu" ? "Ready (CPU mode — this phone's GPU gave wrong answers). Get in position." : "Ready. Get in position.";
-          d.querySelector(".cam-engine").textContent = engine.backend === "cpu" ? "CPU" : "GPU";
+          const label = { webgl: "GPU", wasm: "WASM", cpu: "CPU" }[engine.backend] || engine.backend;
+          say(engine.backend === "cpu" ? "Ready (slow CPU mode). Get in position." : "Ready. Get in position.");
+          // One inference per new camera frame (requestVideoFrameCallback where the browser has it),
+          // the skeleton redrawn every time, and the last one held through a missed frame so it doesn't flicker.
+          let last = null, lastAt = 0, frames = 0, fpsAt = performance.now();
+          const next = () => { if (!stopped) raf = video.requestVideoFrameCallback ? video.requestVideoFrameCallback(loop) : requestAnimationFrame(loop); };
           const loop = async () => {
             if (stopped) return;
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
             let poses = [];
-            try { poses = await detector.estimatePoses(video); } catch (err) { status.textContent = `Pose model error: ${err.message}`; }
+            try { poses = await detector.estimatePoses(video); } catch (err) { say(`Pose model error: ${err.message}`); return next(); }
+            if (stopped) return;
+            const t = performance.now();
+            frames++;
+            if (t - fpsAt >= 1000) { engineEl.textContent = `${label} · ${Math.round((frames * 1000) / (t - fpsAt))} fps`; frames = 0; fpsAt = t; }
+            let kp = poses[0]?.keypoints;
+            if (kp && kp.some((k) => k.score >= DRAW_SCORE)) { last = kp; lastAt = t; } else if (last && t - lastAt < 400) kp = last;
             g.clearRect(0, 0, canvas.width, canvas.height);
-            const kp = poses[0]?.keypoints;
-            if (!kp && !/error/.test(status.textContent)) status.textContent = "No one in view yet.";
-            cam.classList.toggle("seen", !!kp && counter.angle != null);
-            if (kp) {
-              draw(g, kp, exercise, counter);
-              const n = kp.filter((k) => k.score >= DRAW_SCORE).length;
-              if (counter.update(kp, performance.now())) {
-                count.textContent = counter.reps;
-                navigator.vibrate?.(30);
-                blip();
-                if (!max && counter.reps === target) status.textContent = "Target reached. Keep going or tap Done.";
-              }
-              ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
-              if (max || counter.reps < target) status.textContent = counter.hint || (counter.angle == null ? `Seeing ${n} of 17 joints. ${rule.cue}` : null) || (counter.stage === "DOWN" ? "Down… now up." : "Go.");
+            if (!kp) { cam.classList.remove("seen"); say("No one in view yet."); return next(); }
+            const real = poses[0]?.keypoints;
+            const repped = real ? counter.update(real, t) : false; // count only fresh frames, never the held skeleton
+            draw(g, kp, exercise, counter);
+            cam.classList.toggle("seen", counter.angle != null);
+            if (repped) {
+              count.textContent = counter.reps;
+              navigator.vibrate?.(30);
+              blip();
             }
-            raf = requestAnimationFrame(loop);
+            ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
+            const n = kp.filter((k) => k.score >= DRAW_SCORE).length;
+            if (!max && counter.reps >= target) say("Target reached. Keep going or tap Done.");
+            else say(counter.hint || (counter.angle == null ? `Seeing ${n} of 17 joints. ${rule.cue}` : counter.stage === "DOWN" ? "Down… now up." : "Go."));
+            next();
           };
-          loop();
+          next();
         } catch (err) {
           status.textContent = err.name === "NotAllowedError" ? "Camera permission was refused." : `Couldn't start: ${err.message}`;
           toast("Camera counting unavailable — you can still turn in on your word.", { error: true });
