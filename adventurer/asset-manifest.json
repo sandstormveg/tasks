@@ -1,5 +1,5 @@
 {
- "version": "e68d978baa5f",
+ "version": "1f7240742adb",
  "files": [
   "./",
   "icons/icon.svg",
@@ -27,6 +27,7 @@
   "src/data/store.js",
   "src/main.js",
   "src/ui/dom.js",
+  "src/ui/questmap.js",
   "src/ui/relay.js",
   "src/ui/voice.js",
   "src/views/board.js",

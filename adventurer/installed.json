@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@fe1dce137241",
+ "source": "sandstormveg/Adventurer@902097ce4e35",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -26,6 +26,7 @@
   "src/data/store.js",
   "src/main.js",
   "src/ui/dom.js",
+  "src/ui/questmap.js",
   "src/ui/relay.js",
   "src/ui/voice.js",
   "src/views/board.js",
@@ -38,6 +39,8 @@
   "styles/app.css",
   "styles/train.css",
   "vendor/pose.js",
+  "vendor/leaflet/leaflet.js",
+  "vendor/leaflet/leaflet.css",
   "vendor/movenet/model.json",
   "vendor/movenet/group1-shard1of2.bin",
   "vendor/movenet/group1-shard2of2.bin",

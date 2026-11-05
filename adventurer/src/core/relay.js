@@ -87,3 +87,16 @@ const TURN_IN = {
 const tone = (c) => (c in ACCEPT ? c : "normal");
 export const cheerAccept = ({ chattiness, seed = 0 } = {}) => pick(ACCEPT[tone(chattiness)], seed);
 export const cheerTurnIn = (q, xp, { chattiness, seed = 0 } = {}) => `${pick(TURN_IN[tone(chattiness)], seed)} Plus ${xp} XP.`;
+
+/** What Relay says when you open a quest at the counter: a guild receptionist's pitch. */
+export function questPitch(q, xp, label, seed = 0) {
+  if (q.status === "accepted") return pick([`Back for "${q.title}"? `, "Still on this one? Good. ", "Ready to report in? "], seed) + askProof(q);
+  if (q.status === "done") return pick(["That one's complete. Nicely done.", "Finished and filed. The guild thanks you."], seed);
+  if (q.status !== "posted") return "This one's off the board. I can put it back up if you like.";
+  return pick([
+    `"${q.title}" just came in. ${label} rank, ${xp} XP on completion. Shall I put your name down?`,
+    `This one's open: ${xp} XP if you see it through. Want me to sign you up?`,
+    `A ${label.toLowerCase()} request, paying ${xp} XP. I think you'd do well with it.`,
+    `Fresh off the board. ${xp} XP for this one. Interested?`,
+  ], seed);
+}

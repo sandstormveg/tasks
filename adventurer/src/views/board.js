@@ -7,11 +7,12 @@
 
 import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
 import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
-import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn } from "../core/relay.js";
+import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn, questPitch } from "../core/relay.js";
+import { questMap, mappable } from "../ui/questmap.js";
 import { speak } from "../ui/voice.js";
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
-import { relayCounter } from "../ui/relay.js";
+import { relayCounter, relayBubble } from "../ui/relay.js";
 import { newlyEarned } from "../core/achievements.js";
 import { attributeGains } from "../core/stats.js";
 import { uploadPhoto } from "../data/media.js";
@@ -56,6 +57,7 @@ export async function mount(el, ctx, route, ui) {
           <button class="btn small" data-act="scout">⌖ Scout nearby</button>
           <button class="btn small" data-act="request">✉ File a request</button>
           <button class="btn small ghost" data-act="new">+ Post my own</button>
+          ${mappable(shown.filter((q) => OPEN.has(q.status))).length ? html`<button class="btn small" data-act="map">🗺 Map</button>` : ""}
         </div>
       </div>
       ${filter !== "open" ? html`<div class="quests">${shown.length ? shown.map(card) : html`<div class="empty"><p>Nothing here.</p></div>`}</div>` : html`
@@ -103,6 +105,7 @@ export async function mount(el, ctx, route, ui) {
     if (act === "scout") return scout(ctx);
     if (act === "request") return fileRequest(ctx);
     if (act === "new") return postOwn(ctx);
+    if (act === "map") { const id = await questMap(ctx.quests().filter((q) => OPEN.has(q.status) && q.giver !== "trainer")); if (id) openQuest(ctx, ctx.quests().find((q) => q.id === id)); return; }
   });
 }
 
@@ -181,10 +184,11 @@ async function openQuest(ctx, q) {
   const s = ctx.settings();
   const tasks = q.taskIds.map((id) => ({ id, title: ctx.taskTitle(id) }));
   const ev = q.evidence;
+  const pitch = q.origin === "inferred" && q.status === "posted" ? inferredIntro(q) : questPitch(q, payout(q), DIFFICULTY[q.difficulty]?.label || "Normal", Date.now());
   const act = await sheet({
     title: q.title,
     body: html`
-      ${q.origin === "inferred" && s.relay ? html`<p class="relay-line">${s.relayName}: ${inferredIntro(q)}</p>` : ""}
+      ${s.relay ? relayBubble(s.relayName, pitch) : ""}
       ${q.brief ? html`<p>${q.brief}</p>` : ""}
       ${q.detail ? html`<p class="muted pre">${q.detail}</p>` : ""}
       ${ctx.taskDone(q) ? html`<p class="notice">You finished its task in Tasks. Turn it in below to claim the XP.</p>` : ""}
@@ -198,17 +202,21 @@ async function openQuest(ctx, q) {
         ${q.link ? html`<dt>About</dt><dd><a href="${q.link}" target="_blank" rel="noopener">Read about it</a></dd>` : ""}
         ${ev ? html`<dt>Turned in</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
       </dl>
-      ${OPEN.has(q.status) && s.relay ? html`<p class="relay-line">${s.relayName}: ${askProof(q)}</p>` : ""}`,
+      ${q.proof.type === "gps" && mappable([q]).length ? html`<button class="btn small" data-map>🗺 Show on the map</button>` : ""}`,
     foot: html`${q.status === "posted" ? html`<button class="btn" data-a="decline">Decline</button><button class="btn" data-a="accept">Accept</button>` : ""}
       ${OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
       ${q.status === "declined" || q.status === "expired" ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}`,
-    setup: (d, close) => d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); }),
+    setup: (d, close) => {
+      d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); if (e.target.closest("[data-map]")) close("map"); });
+      if (s.voice) speak(pitch, s);
+    },
   });
   try {
-    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); if (s.voice) speak(cheerAccept({ chattiness: s.chattiness, seed: Date.now() })); }
+    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); if (s.voice) speak(cheerAccept({ chattiness: s.chattiness, seed: Date.now() }), s); }
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
+    else if (act === "map") { const id = await questMap([q], { focus: q.id }); if (id) openQuest(ctx, q); }
     else if (act === "honor") await turnIn(ctx, q, "honor");
     else return;
     ctx.syncNow();
@@ -251,7 +259,7 @@ async function turnIn(ctx, q, type) {
     .map((g) => `${g.name}${g.xp ? ` +${g.xp} XP` : ""}${g.from !== g.to ? ` (tier ${g.from || "–"} → ${g.to || "–"})` : ""}`).join(" · ");
   toast(`${stamped(done, done.xp, Date.now())}${gains ? ` ${gains}.` : ""}`, { timeout: 6000 });
   const s = ctx.settings();
-  if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }));
+  if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }), s);
   celebrate();
   for (const a of newlyEarned(before.trophies, after.trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
 }

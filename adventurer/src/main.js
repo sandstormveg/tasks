@@ -58,8 +58,10 @@ async function boot() {
     };
     const mod = await VIEWS[r.name]();
     if (mine !== seq) return;
-    const el = $("#content");
-    el.innerHTML = "";
+    // A fresh element per view: reusing one piled up each visit's click handlers, so a
+    // quest tapped after a few tab switches opened several stacked pop-ups (Close took two taps).
+    const old = $("#content"), el = old.cloneNode(false);
+    old.replaceWith(el);
     try { await mod.mount(el, ctx, r, ui); } catch (err) {
       console.error(err);
       el.innerHTML = String(html`<div class="empty"><h3>That view broke</h3><p>${err.message}</p></div>`);
