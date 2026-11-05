@@ -58,3 +58,17 @@ export function questIndex(quests, payout, updated = new Date().toISOString()) {
       .map((q) => ({ id: q.id, title: q.title, status: q.status, difficulty: q.difficulty, xp: payout(q), taskIds: q.taskIds })),
   };
 }
+
+/**
+ * Tasks nominated as quests on the Tasks site (⋮ › Nominate as a quest sets `questNominated`)
+ * become requests for the guild master, linked to their task. One per task, ever: a task
+ * already linked to any quest, or nominated before, is skipped.
+ */
+export function nominations(tasks, quests, now) {
+  const linked = new Set(quests.flatMap((q) => q.taskIds || []));
+  const ids = new Set(quests.map((q) => q.id));
+  return tasks.filter((t) => t.questNominated && !linked.has(t.id) && !ids.has(`nom-${t.id}`.slice(0, 80))).map((t) => ({
+    id: `nom-${t.id}`.slice(0, 80), title: t.title, detail: "Nominated from Tasks.", status: "requested", origin: "request", giver: "relay", author: "self",
+    taskIds: [t.id], difficulty: "normal", attributes: {}, proof: { type: "honor" }, posted: now,
+  }));
+}

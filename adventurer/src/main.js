@@ -38,7 +38,7 @@ async function boot() {
   const host = await loadHost();
   const ctx = createContext(host);
   window.__adventurer = ctx;
-  if (host?.home) $("#host-home").innerHTML = String(html`<a class="host-home" href="${host.home}">‹ ${host.name}</a>`);
+  if (host?.home) $("#host-home").innerHTML = String(html`<a class="host-home" href="${host.home}">‹ ${host.name}</a>${(host.apps || []).map((a) => html`<a class="host-home host-app" href="${a.href}">${a.name}</a>`)}`);
 
   ctx.store.on(() => renderSync(ctx));
   renderSync(ctx);

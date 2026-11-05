@@ -59,6 +59,22 @@ const tokenKey = "tasks_gh_token";
 // The ⚔ Guild's quest flare: a badge on tasks that are accepted quests, fed by
 // quests/index.json in tasks-data (written by the Guild app). On unless turned off.
 const questFlareKey = "tasks_quest_flare";
+const questNominateKey = "tasks_quest_nominate";
+const questNominateOn = () => localStorage.getItem(questNominateKey) !== "off";
+
+// Marks a task for the ⚔ Guild: on its next sync the Guild files it as a request for the
+// guild master, linked to this task. Withdrawing only clears the mark here.
+async function nominateAsQuest(task) {
+  if (!requireToken()) return;
+  const on = !task.questNominated;
+  try {
+    await saveOrQueue(makeOp("fields", task._repo, { taskId: task.id, fields: { questNominated: on ? true : null }, label: `${on ? "Nominate" : "Withdraw"} as a quest: ${task.title}` }));
+    if (on) task.questNominated = true; else delete task.questNominated;
+    showToast({ message: on ? `⚔ Nominated "${task.title}". The Guild will pass it to the guild master.` : `Withdrew the quest nomination for "${task.title}".`, duration: 5000 });
+  } catch (err) {
+    alert(`Couldn't save: ${err.message}`);
+  }
+}
 const questFlareOn = () => localStorage.getItem(questFlareKey) !== "off";
 const QUEST_DIFFICULTY = { trivial: "Trivial", easy: "Easy", normal: "Normal", hard: "Hard", epic: "Epic" };
 const getToken = () => localStorage.getItem(tokenKey) || "";
@@ -406,10 +422,27 @@ function reportGone(op) {
 // into the outbox. Resolves to "saved", "queued", or "gone" (the task no longer exists).
 // Anything already waiting goes first, so a note on a task added offline can't run before
 // the task itself exists.
-async function saveOrQueue(op) {
+// Saves run one at a time: ticking tasks off quickly used to start several writes to
+// tasks.json at once, and every one after the first failed with a 409 conflict.
+let saveChain = Promise.resolve();
+function saveOrQueue(op) {
+  const run = saveChain.then(() => saveOrQueueNow(op));
+  saveChain = run.catch(() => {});
+  return run;
+}
+
+async function saveOrQueueNow(op) {
   if (!state.offline && !getOutbox().length) {
     try {
-      const ok = await runOp(op);
+      let ok;
+      try {
+        ok = await runOp(op);
+      } catch (err) {
+        // 409: GitHub hadn't caught up with the last write yet, or another device wrote. Re-read and retry once.
+        if (err.status !== 409) throw err;
+        await new Promise((r) => setTimeout(r, 400));
+        ok = await runOp(op);
+      }
       if (!ok) reportGone(op);
       return ok ? "saved" : "gone";
     } catch (err) {
@@ -1816,6 +1849,7 @@ function openTaskOptionsMenu(task, x, y) {
     <div class="combo-option" data-action="nest">↳ Nest or move…</div>
     <div class="combo-option" data-action="assist">✦ ${task.assist ? "Stop AI assistance" : "Start AI assistance"}</div>
     <div class="combo-option" data-action="vis">${task._repo === "private" ? "Make public" : "Make private"}</div>
+    ${questNominateOn() && !state.questFlare?.[task.id] && !task.questId ? `<div class="combo-option" data-action="nominate">⚔ ${task.questNominated ? "Withdraw quest nomination" : "Nominate as a quest"}</div>` : ""}
     <div class="combo-option option-danger" data-action="delete">🗑 Delete task</div>
   `;
   menu.querySelector('[data-action="nest"]').addEventListener("click", () => {
@@ -1833,6 +1867,10 @@ function openTaskOptionsMenu(task, x, y) {
   menu.querySelector('[data-action="delete"]').addEventListener("click", () => {
     closeTaskOptionsMenu();
     deleteTask(task);
+  });
+  menu.querySelector('[data-action="nominate"]')?.addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    nominateAsQuest(task);
   });
 
   document.body.appendChild(menu);
@@ -2045,11 +2083,15 @@ function setupTaskTitleEditing(task, card) {
 function renameTaskInline(task, titleEl, { onBeforeEdit, onDone, inputClassName = "task-title-edit" } = {}) {
   if (onBeforeEdit) onBeforeEdit();
 
-  const input = document.createElement("input");
-  input.type = "text";
+  // A textarea, not an input, so a long title wraps and shows in full while editing.
+  const input = document.createElement("textarea");
+  input.rows = 1;
   input.className = inputClassName;
   input.value = task.title;
   titleEl.replaceWith(input);
+  const grow = () => { input.style.height = "auto"; input.style.height = `${input.scrollHeight}px`; };
+  input.addEventListener("input", grow);
+  grow();
   input.focus();
   input.setSelectionRange(input.value.length, input.value.length);
 
@@ -3760,8 +3802,11 @@ el("#active-detail-back").addEventListener("click", closeActiveDetail);
 el("#settings-btn").addEventListener("click", () => {
   el("#settings-token").value = getToken();
   el("#settings-quest-flare").checked = questFlareOn();
+  el("#settings-quest-nominate").checked = questNominateOn();
   el("#settings-dialog").showModal();
 });
+el("#settings-close").addEventListener("click", () => el("#settings-dialog").close());
+el("#settings-dialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }); // tap outside the box
 el("#settings-clear").addEventListener("click", () => {
   localStorage.removeItem(tokenKey);
   el("#settings-token").value = "";
@@ -3769,6 +3814,7 @@ el("#settings-clear").addEventListener("click", () => {
 el("#settings-form").addEventListener("submit", () => {
   localStorage.setItem(tokenKey, el("#settings-token").value.trim());
   localStorage.setItem(questFlareKey, el("#settings-quest-flare").checked ? "on" : "off");
+  localStorage.setItem(questNominateKey, el("#settings-quest-nominate").checked ? "on" : "off");
   // A new token is the fix for a rejected one, so let the waiting changes try again.
   state.syncError = null;
   state.tokenRejected = false;

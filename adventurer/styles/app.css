@@ -25,6 +25,8 @@ a { color: var(--accent-2); }
 .topbar h1 { font-size: 1.15rem; margin: 0; letter-spacing: .12em; text-transform: uppercase; flex: 1; text-shadow: 0 0 8px rgba(29, 233, 182, .45); }
 .glyph { color: var(--accent); }
 .host-home { text-decoration: none; color: var(--muted); }
+#host-home { display: flex; gap: 12px; flex-wrap: wrap; }
+.host-app { font-size: .85em; }
 .sync-pill { background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; font-size: .78rem; color: var(--muted); cursor: pointer; }
 .sync-pill.pending { color: var(--amber); border-color: var(--amber); }
 .sync-pill.error { color: var(--accent); border-color: var(--accent); }
