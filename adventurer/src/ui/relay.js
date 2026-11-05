@@ -15,6 +15,11 @@ const PORTRAIT = `<svg viewBox="0 0 64 64" aria-hidden="true" class="portrait-sv
   <path d="M24 47l8 4 8-4" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".7"/>
 </svg>`;
 
+/** Relay at the top of a quest's pop-up: portrait and one line, always open, so you can watch her talk. */
+export function relayBubble(name, line) {
+  return html`<div class="relay relay-bubble"><span class="portrait">${raw(PORTRAIT)}</span><div><span class="relay-name">${name}</span><p class="relay-say">${line}</p></div></div>`;
+}
+
 export function relayCounter(name, lines) {
   return html`<details class="relay" open>
     <summary><span class="portrait">${raw(PORTRAIT)}</span><span class="relay-name">${name}</span><span class="relay-first">${lines[0] || ""}</span></summary>

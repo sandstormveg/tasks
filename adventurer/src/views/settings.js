@@ -4,6 +4,16 @@
 
 import { html, toast, confirmSheet } from "../ui/dom.js";
 import { AGE_BANDS } from "../core/norms.js";
+import { speak, voices, bestVoice } from "../ui/voice.js";
+
+const voiceOpts = (f) => ({ voiceName: f.voiceName || "", voiceVolume: Number(f.voiceVolume), voiceRate: Number(f.voiceRate), voicePitch: Number(f.voicePitch) });
+
+// The device's English voices, filled in once the browser has listed them (Chrome lists them late).
+function fillVoices(sel, chosen) {
+  if (!sel) return;
+  const best = bestVoice();
+  sel.replaceChildren(new Option(best ? `Best on this device (${best})` : "Best on this device", ""), ...voices().map((v) => new Option(`${v.name} · ${v.lang}`, v.name, false, v.name === chosen)));
+}
 
 export async function mount(el, ctx, route, ui) {
   const draw = () => {
@@ -31,6 +41,14 @@ export async function mount(el, ctx, route, ui) {
           <label class="field"><span>Name</span><input class="input" name="relayName" value="${s.relayName}" maxlength="24"></label>
           <label class="field"><span>Chattiness</span><select class="input" name="chattiness">${["quiet", "normal", "chatty"].map((c) => html`<option ${s.chattiness === c ? "selected" : ""}>${c}</option>`)}</select></label>
         </div>
+        <div class="grid2">
+          <label class="field"><span>Voice</span><select class="input" name="voiceName" data-voices><option value="">Best on this device</option></select></label>
+          <label class="field"><span>Volume</span><input class="input" type="range" name="voiceVolume" min="0" max="1" step="0.05" value="${s.voiceVolume ?? 1}"></label>
+          <label class="field"><span>Speed</span><input class="input" type="range" name="voiceRate" min="0.6" max="1.6" step="0.05" value="${s.voiceRate ?? 1}"></label>
+          <label class="field"><span>Pitch</span><input class="input" type="range" name="voicePitch" min="0.5" max="2" step="0.05" value="${s.voicePitch ?? 1.1}"></label>
+        </div>
+        <button type="button" class="btn small" data-a="voice-test">▶ Hear her</button>
+        <p class="hint">Voices come from your device. On Windows the "Online (Natural)" voices (Aria, Jenny) sound the most human; on iPhone, download an "Enhanced" voice in Settings › Accessibility › Spoken Content.</p>
       </fieldset>
       <fieldset><legend>Stats profile</legend>
         <p class="hint">Only used to pick the right population table. Synced to your private repo.</p>
@@ -46,13 +64,16 @@ export async function mount(el, ctx, route, ui) {
       </fieldset>
       <div class="row"><button class="btn primary" type="submit">Save</button></div>
     </form>`);
+    fillVoices(el.querySelector("[data-voices]"), s.voiceName);
   };
   draw();
+  if ("speechSynthesis" in window) { const refill = () => fillVoices(el.querySelector("[data-voices]"), ctx.settings().voiceName); speechSynthesis.addEventListener("voiceschanged", refill); ui.cleanup(() => speechSynthesis.removeEventListener("voiceschanged", refill)); }
   ui.onStore((c) => { if (["sync", "sync-end", "sync-error"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (a === "sync") { await ctx.syncNow(); toast(ctx.store.status.error ? ctx.store.status.error : "Synced.", { error: !!ctx.store.status.error }); }
+    if (a === "voice-test") speak("Welcome back, adventurer. The board's looking good today.", voiceOpts(Object.fromEntries(new FormData(el.querySelector("form")))));
     if (a === "forget" && await confirmSheet("Forget the token saved on this device?", { confirm: "Forget" })) { ctx.store.setSecrets({ githubToken: "" }); draw(); }
   });
   el.addEventListener("submit", (e) => {
@@ -61,7 +82,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, autoSync: !!f.autoSync });
+      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), autoSync: !!f.autoSync });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

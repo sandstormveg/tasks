@@ -73,6 +73,12 @@ a { color: var(--accent-2); }
 @keyframes talk { from { opacity: 1; transform: scaleY(.35); } to { opacity: 1; transform: scaleY(1); } }
 @keyframes snap { from { transform: scaleY(1.3); } }
 @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
+.relay-bubble { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; position: sticky; top: -1px; z-index: 3; background: #0d0900; }
+.relay-say { margin: 2px 0 0; font-size: .9rem; color: var(--amber); }
+.quest-map { height: min(62vh, 520px); border: 1px solid var(--amber); border-radius: 6px; background: #111; }
+.map-pin { display: grid; place-items: center; text-align: center; font: bold 15px/1 sans-serif; color: #140d00; background: var(--amber); border: 2px solid #140d00; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+.map-pin.accepted { background: #1de9b6; }
+.map-pop .btn { margin-top: 6px; }
 .relay-name { font-weight: bold; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
 .relay-first { display: none; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay:not([open]) .relay-first { display: block; flex: 1; min-width: 0; }

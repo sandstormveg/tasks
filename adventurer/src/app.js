@@ -21,6 +21,10 @@ export const DEFAULTS = {
   relayName: "Relay",
   chattiness: "normal",
   voice: false,
+  voiceName: "",
+  voiceVolume: 1,
+  voiceRate: 1,
+  voicePitch: 1.1,
   autoSync: true,
 };
 
