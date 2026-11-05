@@ -554,3 +554,24 @@ kbd { font-family: var(--font-mono); font-size: 0.8em; padding: 1px 5px; border:
 .composer:focus-within { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 /* Room for the select bar under the last row of photos. */
 body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 96px); }
+/* "‹ Tasks · Journal · Guild": back to the host app, then across to its others. */
+.host-nav { display: inline-flex; align-items: center; gap: 2px; min-width: 0; flex-wrap: nowrap; }
+.host-nav .host-app { font-size: 0.86rem; color: var(--ink-3); text-decoration: none; padding: 6px 6px; border-radius: 8px; white-space: nowrap; }
+.host-nav .host-app::before { content: "·"; margin-right: 6px; color: var(--ink-3); opacity: 0.6; }
+.host-nav .host-app:hover { color: var(--ink); background: var(--surface-2, rgba(127, 127, 127, 0.12)); }
+.sidebar .host-nav { flex-wrap: wrap; margin-bottom: 6px; }
+.sidebar .host-nav a.host-home { margin-bottom: 0; }
+/* On a phone the app links take the title's place on top-level pages (the tab bar
+   already names the page), and labelled buttons there shrink to their icon. */
+@media (max-width: 460px) {
+  .topbar:has(#topbar-back .host-nav) #topbar-title { display: none; }
+  .topbar:has(#topbar-back .host-nav) #topbar-back { flex: 1; min-width: 0; overflow: hidden; }
+  .topbar:has(#topbar-back .host-nav) #topbar-actions .btn:not(.icon) { font-size: 0; gap: 0; padding: 0 10px; }
+  .topbar:has(#topbar-back .host-nav) #topbar-actions { gap: 0; flex: none; }
+  .topbar:has(#topbar-back .host-nav) { gap: 0; }
+  .topbar:has(#topbar-back .host-nav) :is(#topbar-actions > .btn, > .btn.icon, > .sync-pill) { min-width: 34px; width: 34px; height: 34px; padding: 0; justify-content: center; }
+  .topbar .host-nav { gap: 0; }
+  .topbar .host-nav .btn.host-home { padding-right: 2px; }
+  .topbar .host-nav .host-app { font-size: 0.8rem; padding: 6px 3px; }
+  .topbar .host-nav .host-app::before { margin-right: 3px; }
+}

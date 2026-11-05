@@ -16,7 +16,8 @@ const by = (k, dir = -1) => (a, b) => dir * String(a[k] || a.added || "").locale
 export async function mount(el, ctx, route, ui) {
   const mode = route.tab;
   ui.setTitle(TITLES[mode]);
-  ui.setActions(html`<button class="btn small primary" data-act="add">${raw(icon("plus"))}Add</button>`);
+  // The Deposit has the donut for adding; the other lists keep the Add button.
+  ui.setActions(mode === "inbox" ? "" : html`<button class="btn small primary" data-act="add">${raw(icon("plus"))}Add</button>`);
   ui.onAction((e, b) => { if (b.dataset.act === "add") addSheet(ctx, { status: mode === "read" ? "read" : mode === "queue" ? "to-read" : "inbox" }); });
   let filter = route.query.filter || "all"; // read: all | fav | dropped | #tag
   // The Deposit opens on the everything donut; the list redraws beneath it without touching what you're typing.
