@@ -7,7 +7,8 @@
 
 import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
 import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
-import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf } from "../core/relay.js";
+import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn } from "../core/relay.js";
+import { speak } from "../ui/voice.js";
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
 import { relayCounter } from "../ui/relay.js";
@@ -204,7 +205,7 @@ async function openQuest(ctx, q) {
     setup: (d, close) => d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); }),
   });
   try {
-    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); }
+    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); if (s.voice) speak(cheerAccept({ chattiness: s.chattiness, seed: Date.now() })); }
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
@@ -249,6 +250,8 @@ async function turnIn(ctx, q, type) {
   const gains = attributeGains(before.attributes, after.attributes)
     .map((g) => `${g.name}${g.xp ? ` +${g.xp} XP` : ""}${g.from !== g.to ? ` (tier ${g.from || "–"} → ${g.to || "–"})` : ""}`).join(" · ");
   toast(`${stamped(done, done.xp, Date.now())}${gains ? ` ${gains}.` : ""}`, { timeout: 6000 });
+  const s = ctx.settings();
+  if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }));
   celebrate();
   for (const a of newlyEarned(before.trophies, after.trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
 }

@@ -26,6 +26,7 @@ export async function mount(el, ctx, route, ui) {
       </fieldset>
       <fieldset><legend>Receptionist</legend>
         <label class="check"><input type="checkbox" name="relay" ${s.relay ? "checked" : ""}> Show the receptionist at the counter</label>
+        <label class="check"><input type="checkbox" name="voice" ${s.voice ? "checked" : ""}> Receptionist voice: she cheers you on out loud when you accept or turn in a quest (tap her portrait to hush)</label>
         <div class="grid2">
           <label class="field"><span>Name</span><input class="input" name="relayName" value="${s.relayName}" maxlength="24"></label>
           <label class="field"><span>Chattiness</span><select class="input" name="chattiness">${["quiet", "normal", "chatty"].map((c) => html`<option ${s.chattiness === c ? "selected" : ""}>${c}</option>`)}</select></label>
@@ -60,7 +61,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, autoSync: !!f.autoSync });
+      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, autoSync: !!f.autoSync });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

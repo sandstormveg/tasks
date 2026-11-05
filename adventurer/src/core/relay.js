@@ -71,3 +71,19 @@ export function explainTier(a) {
 export function inferredIntro(q) {
   return `A request came in that seems meant for you${q.why ? `: ${q.why}` : "."}`;
 }
+
+// Pep lines Relay says out loud (Settings › Receptionist voice). Always positive;
+// the sass grows with chattiness. Short, so they finish before the toast does.
+const ACCEPT = {
+  quiet: ["Accepted. You've got this.", "Logged. Go get it.", "On your file. Good luck out there."],
+  normal: ["Accepted. I believe in you, adventurer.", "Good pick. That one's yours now.", "Logged. Go make the guild proud.", "Quest taken. You're going to be great at this."],
+  chatty: ["Ooh, bold choice. I like it. Go show them.", "Accepted. Try not to make it look too easy.", "Look at you, taking quests like a legend. Go on.", "Logged. I've already cleared space on the trophy shelf."],
+};
+const TURN_IN = {
+  quiet: ["Well done.", "Stamped. Nice work.", "Done and logged. Proud of you."],
+  normal: ["Stamped. That's real progress.", "Beautiful work. The file looks better already.", "Done. You keep showing up, and it shows.", "Quest complete. Take a second to feel good about it."],
+  chatty: ["Stamped! Honestly? Show-off.", "Done already? Save some quests for the rest of the guild.", "Turned in. I'd act surprised, but I knew you would.", "Complete. Someone's levelling up and it isn't me."],
+};
+const tone = (c) => (c in ACCEPT ? c : "normal");
+export const cheerAccept = ({ chattiness, seed = 0 } = {}) => pick(ACCEPT[tone(chattiness)], seed);
+export const cheerTurnIn = (q, xp, { chattiness, seed = 0 } = {}) => `${pick(TURN_IN[tone(chattiness)], seed)} Plus ${xp} XP.`;
