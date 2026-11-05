@@ -21,6 +21,8 @@ const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
 export async function mount(el, ctx, route, ui) {
   let filter = "open";
   let nudged = false;
+  // A push-up quest on the board: warm the pose model now so its camera turn-in is instant.
+  if (ctx.quests().some((q) => OPEN.has(q.status) && q.proof?.type === "reps" && q.giver !== "trainer")) import("../vision/reps-sheet.js").then((m) => m.preloadPose()).catch(() => {});
   const draw = () => {
     const d = ctx.derived();
     const quests = ctx.quests().filter((q) => q.giver !== "trainer"); // the trainer's sets live on the Train tab
