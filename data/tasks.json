@@ -301,7 +301,16 @@
       "category": "Development",
       "created": "2026-11-05",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw3z4tqvll1w",
+          "text": "make an option to have an agent work with an item, like similar to toggling assistance in tasks. and make a note/prompt section.",
+          "done": false,
+          "created": "2026-11-05T20:04:15.127Z",
+          "updated": "2026-11-05T20:04:15.127Z"
+        }
+      ]
     }
   ]
 }
