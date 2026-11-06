@@ -334,6 +334,14 @@
           "created": "2026-11-06T17:32:00",
           "updated": "2026-11-06T17:32:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw4lp7tf",
+          "text": "✓ Shipped 2026-11-06 (tasks PR #29): expeditions, i.e. quests with several objectives (a checklist). Each objective has a type (exploration, social, research, creation, reflection, learning, physical, discovery), its own XP, and can be an optional bonus. Linked objectives tick themselves when the real record exists: a task ticked off in Tasks, a source filed in Research (by id, or N sources with a tag after you accept), or another quest turned in. Others you do in the app: check in at a place, count reps on camera, link a journal day (only the date is kept, the entry is never read), or just tick it. The reward shows potential XP plus bonus, and earned XP is paid at turn-in once every required objective is done. A record pays once: the same task, source or journal day can't count for two objectives. The guild master can now post these (tool + rules updated). Not yet built: discoveries that spawn new records and follow-up quests.",
+          "done": false,
+          "created": "2026-11-06T06:35:58.034Z",
+          "updated": "2026-11-06T06:35:58.034Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
