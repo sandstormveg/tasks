@@ -378,6 +378,16 @@
           "created": "2026-11-06T07:23:45.391Z",
           "updated": "2026-11-06T07:23:45.391Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-tsys",
+          "text": "Relayed (2026-11-06) to Adventurer: show subtasks in the large view; change the active tab icon to \"-[]\" and the Research icon to a digital-style 🍩 (left as is if there is no such icon).",
+          "done": false,
+          "created": "2026-11-06T19:33:00",
+          "updated": "2026-11-06T19:33:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     },
     {
@@ -404,6 +414,16 @@
           "created": "2026-11-06T08:23:08.838Z",
           "updated": "2026-11-06T08:23:08.838Z",
           "image": "images/development/bug-in-guild-system-mw4pihez-n-mw4pj1uv026q.jpg"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-gbug",
+          "text": "Relayed (2026-11-06) to Adventurer as a priority, with your screenshot: the error \"Cannot read properties of undefined (reading 'startsWith')\" on the Guild Board, probably a quest or objective missing a field since the Scout/Expedition updates. It will fix it and open a PR.",
+          "done": false,
+          "created": "2026-11-06T19:33:00",
+          "updated": "2026-11-06T19:33:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
