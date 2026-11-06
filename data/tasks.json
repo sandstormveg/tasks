@@ -285,7 +285,16 @@
       "category": "Life Admin",
       "created": "2026-11-06",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw5khrr7sjua",
+          "text": "I'll collect it at Penders park. a place i usually like walking around",
+          "done": false,
+          "created": "2026-11-06T22:49:57.186Z",
+          "updated": "2026-11-06T22:49:57.186Z"
+        }
+      ]
     }
   ]
 }
