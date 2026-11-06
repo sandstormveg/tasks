@@ -442,6 +442,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "collect-a-jar-of-grass-for-puffin-the-cat-mw529wpt",
+      "title": "collect a jar of grass for Puffin the cat",
+      "category": "Life Admin",
+      "created": "2026-11-06",
+      "notes": "",
+      "assist": false
     }
   ]
 }
