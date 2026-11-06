@@ -1872,6 +1872,64 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "task-system-changes-mw4n8ak0",
+      "title": "task system changes",
+      "category": "Development",
+      "completedDate": "2026-11-06",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mw4neoa70tk2",
+          "text": "make it so the subtasks are including in the page view.",
+          "done": false,
+          "created": "2026-11-06T07:23:45.391Z",
+          "updated": "2026-11-06T14:41:36.408Z"
+        },
+        {
+          "id": "n-mw52e9wv9lxd",
+          "text": "I'm not sure i like \"-[]\" as it's not green either..what would the icon for a checkbox be but with the same green icons look like? are they called svg icons or something?",
+          "done": false,
+          "created": "2026-11-06T14:23:21.007Z",
+          "updated": "2026-11-06T14:23:21.007Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-tsys",
+          "text": "Relayed (2026-11-06) to Adventurer: show subtasks in the large view; change the active tab icon to \"-[]\" and the Research icon to a digital-style 🍩 (left as is if there is no such icon).",
+          "done": false,
+          "created": "2026-11-06T19:33:00",
+          "updated": "2026-11-06T19:33:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw4pu9g30",
+          "text": "✓ Shipped 2026-11-06 (tasks PR #31): a task's detail view, normal and full page, now lists its subtasks, and you can tick them off or tap one to open it. The Active tab is now the icon -[]. I left the Research icon as §, because there isn't a digital-style donut glyph (◎ is the closest, if you'd like that instead).",
+          "done": false,
+          "created": "2026-11-06T08:31:51.890Z",
+          "updated": "2026-11-06T08:31:51.890Z",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-svgcheck",
+          "text": "Yes, the green icons are SVG icons. The History tab icon is an inline SVG drawn with currentColor, so it takes on the green when its tab is active. -[] and § are plain text characters, so they don't. Relayed (2026-11-07) to Adventurer: replace -[] with a matching SVG checkbox, a rounded square with a tick inside, so it goes green like the others.",
+          "done": false,
+          "created": "2026-11-07T01:35:00",
+          "updated": "2026-11-07T01:35:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw52od4o",
+          "text": "✓ Changed 2026-11-07 (tasks PR #32): the Active tab is now a green checkbox icon (a rounded square with a tick), drawn the same way as the History icon so it has the same green and glow. The -[] is gone.",
+          "done": false,
+          "created": "2026-11-06T14:31:11.735Z",
+          "updated": "2026-11-06T14:31:11.735Z",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     }
   ]
 }
