@@ -296,30 +296,6 @@
         }
       ],
       "questNominated": true
-    },
-    {
-      "id": "site-changes-mw5kpg91",
-      "title": "site changes",
-      "category": "Development",
-      "created": "2026-11-06",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mw5kqty43f2v",
-          "text": "is it possible for the task app on the phone to show the other apps (like, research, journal and guild) it is connected to when you hold down on its app icon? that'd be helpful i think",
-          "done": false,
-          "created": "2026-11-06T22:56:59.932Z",
-          "updated": "2026-11-06T22:56:59.932Z"
-        },
-        {
-          "id": "n-mw5ksszvmhb4",
-          "text": "Make the make the other app tab icons very slightly bigger and more spaced apart, so they are easier to click. also let's test how the green donut icon will look and feel for research",
-          "done": false,
-          "created": "2026-11-06T22:58:32.011Z",
-          "updated": "2026-11-06T22:58:32.011Z"
-        }
-      ]
     }
   ]
 }
