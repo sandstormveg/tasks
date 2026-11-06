@@ -359,7 +359,8 @@
       "category": "Development",
       "created": "2026-11-06",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "parentId": "task-system-changes-mw4n8ak0"
     }
   ]
 }
