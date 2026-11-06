@@ -410,6 +410,14 @@
           "created": "2026-11-07T01:35:00",
           "updated": "2026-11-07T01:35:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw52od4o",
+          "text": "✓ Changed 2026-11-07 (tasks PR #32): the Active tab is now a green checkbox icon (a rounded square with a tick), drawn the same way as the History icon so it has the same green and glow. The -[] is gone.",
+          "done": false,
+          "created": "2026-11-06T14:31:11.735Z",
+          "updated": "2026-11-06T14:31:11.735Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     },
