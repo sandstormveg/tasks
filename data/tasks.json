@@ -387,6 +387,14 @@
           "created": "2026-11-06T19:33:00",
           "updated": "2026-11-06T19:33:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw4pu9g30",
+          "text": "✓ Shipped 2026-11-06 (tasks PR #31): a task's detail view, normal and full page, now lists its subtasks, and you can tick them off or tap one to open it. The Active tab is now the icon -[]. I left the Research icon as §, because there isn't a digital-style donut glyph (◎ is the closest, if you'd like that instead).",
+          "done": false,
+          "created": "2026-11-06T08:31:51.890Z",
+          "updated": "2026-11-06T08:31:51.890Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     },
@@ -423,6 +431,14 @@
           "done": false,
           "created": "2026-11-06T19:33:00",
           "updated": "2026-11-06T19:33:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw4pu9g31",
+          "text": "✓ Fixed 2026-11-06 (tasks PR #31): the red \"Cannot read properties of undefined (reading 'startsWith')\" message appeared whenever you closed a quest pop-up without pressing a button (✕, a tap outside it, or Back). My expeditions change from earlier today checked the button you pressed without allowing for \"none\". Nothing was saved wrongly, and it's fixed now.",
+          "done": false,
+          "created": "2026-11-06T08:31:51.890Z",
+          "updated": "2026-11-06T08:31:51.890Z",
           "author": "Claude Opus 5.5"
         }
       ]
