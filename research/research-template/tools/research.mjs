@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:3244baa6e19ede4f
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:0fa7b551f42af5d4
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1138,6 +1138,10 @@ var FIELD_ORDER = {
     "expect",
     "surprised",
     "quotes",
+    "assist",
+    "prompt",
+    "prompted",
+    "agent_notes",
     "visibility",
     "captured"
   ],
@@ -1510,6 +1514,8 @@ function validateRecord(rec) {
     case "source":
       if (!rec.title && !rec.url) errors.push("source needs a title or a link");
       if (rec.status && !["inbox", "to-read", "reading", "read", "dropped", "filed"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      if (rec.assist != null && typeof rec.assist !== "boolean") errors.push("assist must be true or false");
+      for (const n of rec.agent_notes || []) if (!n?.text || !n?.author || !n?.date) errors.push("an agent note needs text, author and date");
       break;
     case "board":
       if (!rec.title) errors.push("board needs a title");
@@ -1716,6 +1722,7 @@ function sourceText(s) {
     s.why,
     s.expect,
     s.surprised,
+    s.prompt,
     s.body,
     ...(s.quotes || []).map((q2) => `${q2.text} ${q2.where || ""}`)
   ].filter(Boolean).join("\n");
@@ -1734,6 +1741,17 @@ function tagCounts(sources) {
   const m = /* @__PURE__ */ new Map();
   for (const s of sources) if (!s.deleted) for (const t of s.tags || []) m.set(t, (m.get(t) || 0) + 1);
   return [...m.entries()].sort((a, b2) => b2[1] - a[1] || a[0].localeCompare(b2[0]));
+}
+function assistWaiting(s) {
+  if (!s || s.deleted || s.assist !== true || !String(s.prompt || "").trim()) return false;
+  const asked = Date.parse(s.prompted || "") || 0;
+  return !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
+}
+function assistQueue(sources) {
+  return sources.filter(assistWaiting).sort((a, b2) => String(a.prompted || a.added || "").localeCompare(String(b2.prompted || b2.added || "")));
+}
+function makeAgentNote(text, { author, now }) {
+  return { id: newId("an", now), author, date: now, text: String(text || "").trim() };
 }
 
 // src/core/boards.js
@@ -2425,6 +2443,11 @@ function describe(s) {
   if (s.surprised) out.push("", "## What surprised me", s.surprised);
   if (s.quotes?.length) out.push("", "## Quotes", ...s.quotes.map((q2) => `> ${q2.text}${q2.where ? ` (${q2.where})` : ""}`));
   if (String(s.body || "").trim()) out.push("", "## Notes", s.body.trim());
+  if (s.assist === true || s.prompt) {
+    out.push("", `## Assist \u2014 ${s.assist === true ? "on" : "off"}${assistWaiting(s) ? " \xB7 waiting for an answer" : ""}`);
+    if (s.prompt) out.push(`Their prompt${s.prompted ? ` (${String(s.prompted).slice(0, 16).replace("T", " ")})` : ""}:`, s.prompt.trim());
+  }
+  if (s.agent_notes?.length) out.push("", "## Agent notes", ...s.agent_notes.map((n) => `- ${String(n.date).slice(0, 16).replace("T", " ")} \xB7 ${n.author}: ${n.text}`));
   return out.join("\n");
 }
 function save(root, rec) {
@@ -2565,6 +2588,31 @@ ${rel2}`);
       save(root, next);
       print(`Updated: ${line(next)}`);
       return next;
+    }
+    case "assists": {
+      const list = a.all ? sources.filter((x) => x.assist === true) : assistQueue(sources);
+      if (a.json) return json(list);
+      print(list.length ? list.map((x) => `${line(x)}${assistWaiting(x) ? "" : "  (answered)"}
+    \u2192 ${String(x.prompt || "(no prompt yet)").trim().split("\n")[0].slice(0, 160)}`).join("\n") : a.all ? "No source has Assist on." : "No prompts waiting.");
+      return list;
+    }
+    case "agent-note": {
+      const s = sources.find((x) => x.id === rest[0]);
+      const text = str(a.text) || rest.slice(1).join(" ");
+      if (!s || !text.trim()) {
+        print('Usage: agent-note <source id> --text "\u2026"');
+        return null;
+      }
+      if (s.assist !== true) {
+        print(`Assist is off for ${s.id} \u2014 the owner hasn't asked for an agent here.`);
+        return null;
+      }
+      const note = makeAgentNote(text, { author: str(a.author) || AUTHOR, now });
+      const next = { ...s, agent_notes: [...s.agent_notes || [], note], updated: now };
+      delete next._path;
+      save(root, next);
+      print(`Agent note added to ${s.title || s.id}.`);
+      return note;
     }
     case "deposit": {
       const text = [str(a.title), rest.join(" ")].filter(Boolean).join("\n").trim();
@@ -2874,6 +2922,7 @@ Library:   list [--status inbox|to-read|reading|read|dropped|filed] [--tag t] [-
            add <link> [--title \u2026] [--tags a,b] [--why \u2026] [--status \u2026] [--kind \u2026] [--doi \u2026]
            deposit <text or link> [--title \u2026] [--tags a,b]
            set <id> [--status \u2026] [--fav true|false] [--tags +a,-b]
+Assist:    assists [--all] \xB7 agent-note <id> --text "\u2026" [--author \u2026]   (only where the owner turned Assist on)
 Boards:    boards \xB7 board <id | words> \xB7 curate <board>
            new-board <title> [--about \u2026] [--piece w-\u2026]
            pin <board> --title \u2026 [--text \u2026] [--kind note|link|quote|source|card] [--url \u2026] [--source s-\u2026] [--card Q\u2026] [--near p-\u2026]

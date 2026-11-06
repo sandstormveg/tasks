@@ -20,6 +20,7 @@ import { loadAtlasIndex, loadAtlasEntry, atlasFileUrl } from "../atlas.js";
 import { checkSynthesis, curate } from "../../core/curator.js";
 import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor, searchCards } from "../../core/infodex.js";
 import { searchSources, formatAuthors } from "../../core/sources.js";
+import { renderMarkdown } from "../../core/markdown.js";
 import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 
@@ -190,7 +191,7 @@ export async function mount(el, ctx, route, ui) {
     }
     if (p.kind === "quote") return html`${by}<blockquote class="pin-quote">${p.body}</blockquote>${p.title ? html`<div class="pin-meta">— ${p.title}</div>` : ""}`;
     if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? html`<a class="pin-meta" href="${p.url}" target="_blank" rel="noopener noreferrer">${p.url.replace(/^https?:\/\//, "").slice(0, 60)}</a>` : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${p.body}</div>` : ""}`;
-    return html`${by}${p.title ? html`<div class="pin-title">${p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text">${p.body}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
+    return html`${by}${p.title ? html`<div class="pin-title">${p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : p.body}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
   }
 
   function pageCtx(p) {

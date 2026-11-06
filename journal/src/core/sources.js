@@ -195,7 +195,7 @@ export function findDuplicate(sources, { url, doi }) {
 
 /** Everything about a source that search should find. */
 export function sourceText(s) {
-  return [s.title, (s.authors || []).join(" "), s.site, (s.tags || []).map((t) => `#${t}`).join(" "), s.why, s.expect, s.surprised, s.body,
+  return [s.title, (s.authors || []).join(" "), s.site, (s.tags || []).map((t) => `#${t}`).join(" "), s.why, s.expect, s.surprised, s.prompt, s.body,
     ...(s.quotes || []).map((q) => `${q.text} ${q.where || ""}`)].filter(Boolean).join("\n");
 }
 
@@ -244,4 +244,25 @@ export function fromDataCite(a = {}) {
     kind: /book/i.test(a.types?.resourceTypeGeneral || "") ? "book" : "paper",
     site: a.publisher?.name || a.publisher || undefined,
   };
+}
+
+// Assist: the owner can let an agent work with one source, like Assist on a task. `prompt` is
+// their instruction (their words, edited only in the app); `prompted` is when they last changed it.
+// The agent answers in `agent_notes` — its own, authored and dated, never in why/expect/surprised/notes.
+
+/** True when assist is on, there's a prompt, and no agent note has answered it since it last changed. */
+export function assistWaiting(s) {
+  if (!s || s.deleted || s.assist !== true || !String(s.prompt || "").trim()) return false;
+  const asked = Date.parse(s.prompted || "") || 0;
+  return !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
+}
+
+/** Sources with a prompt waiting, oldest ask first. */
+export function assistQueue(sources) {
+  return sources.filter(assistWaiting).sort((a, b) => String(a.prompted || a.added || "").localeCompare(String(b.prompted || b.added || "")));
+}
+
+/** A new agent note: { id, author, date, text }. */
+export function makeAgentNote(text, { author, now }) {
+  return { id: newId("an", now), author, date: now, text: String(text || "").trim() };
 }

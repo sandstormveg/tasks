@@ -29,7 +29,7 @@ const FIELD_ORDER = {
   report: ["id", "type", "kind", "created", "summary"],
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: ["id", "type", "kind", "title", "url", "doi", "authors", "year", "site", "status", "favourite", "tags",
-    "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "visibility", "captured"],
+    "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "assist", "prompt", "prompted", "agent_notes", "visibility", "captured"],
   // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
   // A pin's body is its note; a string's body is your synthesis — how the two connect.
   board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],

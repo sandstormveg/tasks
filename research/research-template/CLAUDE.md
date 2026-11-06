@@ -14,6 +14,7 @@ node tools/research.mjs pieces                                # their writing
 node tools/research.mjs list --status read --tag s-risk       # also --fav, --kind paper, --status inbox|to-read|reading|dropped|filed
 node tools/research.mjs search moral circle #ethics           # words and #tags, accents and case ignored
 node tools/research.mjs show <id or words>                    # one source in full
+node tools/research.mjs assists                               # sources they've asked an agent to work on
 node tools/research.mjs board <id or words>                   # one board: frames, pins, strings, curator's findings
 node tools/research.mjs piece <id or words>                   # one piece, with its draft
 node tools/research.mjs card [Q…]                             # cards (list, or one Wikidata card)
@@ -51,6 +52,17 @@ are one line per item; open a single board or piece only when it's relevant.
   - Your pins and strings are marked as Claude's (`author: claude`) and shown that way in the app.
   - **Never synthesise a string.** Synthesis is their act: their words for how two things connect. The tool
     has no command for it, on purpose. Suggest a synthesis in chat if useful.
+- **Assist** — the owner can turn on Assist for one source and write a prompt (like Assist on a task).
+  Only an explicit `assist: true` counts. Work only on those, and answer only with the tool:
+  - `node tools/research.mjs assists` lists prompts waiting for an answer, oldest first (`--all`: every
+    source with Assist on). A prompt is waiting until an agent note is dated after `prompted`, when they
+    last changed it, so editing the prompt asks again.
+  - `show <id>` gives the source, their prompt and earlier agent notes. Do what the prompt asks, within
+    these rules — reading the linked page is fine here, because they asked.
+  - `agent-note <id> --text "…"` saves your answer as an `agent_notes` entry (`author: claude`, dated). It's
+    Markdown, shown in the app under the prompt as yours. Answer the whole prompt in one note; cite pages
+    and say what you read versus inferred. The tool refuses when Assist is off.
+  - Never write the prompt, `why`, `expect`, `surprised`, notes or quotes — the prompt is their words too.
 - **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
   **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.
 - **Never** write or edit their words: `why` (beyond quoting them as above), `expect`, `surprised`, notes,

@@ -1,6 +1,6 @@
 // Research's shared pieces: the card a source shows as in lists, quick status
 // changes, saving what you share (or paste) without duplicates, the Add sheet,
-// and delete with Undo.
+// delete with Undo, and the Edit / Preview switch for Markdown (notes, drafts).
 
 import { html, raw, sheet, toast, on, debounce } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
@@ -11,6 +11,7 @@ import { lookupDoi } from "./lookup.js";
 import { makePin, makeString, placeNear, defaultSize, boardParts } from "../core/boards.js";
 import { suggestHomes, homesFrom } from "../core/deposit.js";
 import { saveImages, imageOf, imagePinSize, imagesFrom } from "./images.js";
+import { renderMarkdown } from "../core/markdown.js";
 
 // What a card offers, by status: the next step in reading, without opening it.
 const NEXT = {
@@ -274,4 +275,34 @@ export async function deleteSource(ctx, id) {
   const copy = structuredClone({ ...s, _sync: undefined, _rev: undefined });
   await ctx.store.remove(id, { reason: "deleted" });
   toast("Deleted", { action: "Undo", timeout: 8000, onAction: async () => { await ctx.store.put(copy); toast("Restored"); } });
+}
+
+// Edit / Preview for Markdown you write: the switch sits in a head row; the preview is the
+// Journal's renderer (escaped first, so nothing typed can run). The choice is remembered per device.
+const MD_MODE = "research.notes-mode";
+export const mdMode = () => { try { return localStorage.getItem(MD_MODE) === "preview" ? "preview" : "edit"; } catch { return "edit"; } };
+
+/** The head row: a label and the switch. Put it, a `textarea[data-md]` and `mdPreview` inside an element with class "md-box". */
+export const mdHead = (label) => html`<div class="notes-head"><span class="label">${label}</span>
+  <div class="status-seg small" role="group" aria-label="${label}: edit or preview"><button type="button" data-md-mode="edit">Edit</button><button type="button" data-md-mode="preview">Preview</button></div></div>`;
+export const mdPreview = html`<div class="prose notes-preview" data-md-preview></div>`;
+
+/** Wire one .md-box; returns { refresh } to redraw the preview when the text changes from elsewhere. */
+export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: grow } = {}) {
+  const ta = box.querySelector("textarea[data-md]");
+  const set = (m) => {
+    box.dataset.mode = m;
+    for (const b of box.querySelectorAll("[data-md-mode]")) { b.classList.toggle("on", b.dataset.mdMode === m); b.setAttribute("aria-pressed", String(b.dataset.mdMode === m)); }
+    if (m === "preview") {
+      box.querySelector("[data-md-preview]").innerHTML = ta.value.trim() ? renderMarkdown(ta.value, { tags: false, concepts: false }) : String(html`<p class="faint">${empty}</p>`);
+      ctx.media?.hydrate?.(box);
+    } else grow?.(ta);
+  };
+  set(mdMode());
+  on(box, "click", "[data-md-mode]", (e, b) => {
+    try { localStorage.setItem(MD_MODE, b.dataset.mdMode); } catch { /* a private window: just don't remember */ }
+    set(b.dataset.mdMode);
+    if (b.dataset.mdMode === "edit") ta.focus();
+  });
+  return { refresh: () => { if (box.dataset.mode === "preview") set("preview"); } };
 }
