@@ -1930,6 +1930,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "change-active-tab-icon-to-and-the-research-one-to-the-digital-icon-version-of-leave-it-if-there-isn-t-one-mw4ncuiq",
+      "title": "change active tab icon to \"-[]\" and the research one to the digital icon version of 🍩. leave it if there isn't one",
+      "category": "Development",
+      "completedDate": "2026-11-06",
+      "note": "",
+      "images": []
     }
   ]
 }
