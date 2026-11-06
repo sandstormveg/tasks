@@ -238,6 +238,8 @@ export function validateRecord(rec) {
     case "source":
       if (!rec.title && !rec.url) errors.push("source needs a title or a link");
       if (rec.status && !["inbox", "to-read", "reading", "read", "dropped", "filed"].includes(rec.status)) errors.push(`unknown status "${rec.status}"`);
+      if (rec.assist != null && typeof rec.assist !== "boolean") errors.push("assist must be true or false");
+      for (const n of rec.agent_notes || []) if (!n?.text || !n?.author || !n?.date) errors.push("an agent note needs text, author and date");
       break;
     case "board":
       if (!rec.title) errors.push("board needs a title");

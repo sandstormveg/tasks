@@ -249,3 +249,10 @@ body.board-mode .content { max-width: none; padding: 0; }
 .pin .pin-body:has(> .pin-img) { padding: 16px 7px 6px; display: flex; flex-direction: column; gap: 5px; }
 .pin .pin-img { flex: 1; min-height: 0; width: 100%; object-fit: contain; border-radius: 3px; background: rgba(0, 0, 0, .04); pointer-events: none; user-select: none; }
 .pin .pin-caption { font-size: .78rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2, inherit); }
+/* A note pin's text is Markdown, rendered on its face (the edit sheet is where you write it). */
+.pin-text.pin-md { white-space: normal; }
+.pin-md p, .pin-md ul, .pin-md ol, .pin-md blockquote { margin: 0 0 0.4em; }
+.pin-md ul, .pin-md ol { padding-left: 1.2em; }
+.pin-md h5, .pin-md h6 { margin: 0.3em 0 0.2em; font-size: 13px; }
+.pin-md blockquote { padding-left: 0.6em; border-left: 2px solid rgba(0,0,0,.25); }
+.pin-md code { font-family: var(--font-mono); font-size: 0.9em; background: rgba(0,0,0,.06); padding: 0 3px; border-radius: 3px; }

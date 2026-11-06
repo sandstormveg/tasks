@@ -1,15 +1,22 @@
 // One source: where you're up to, ⭐, tags, why you saved it, what you
 // expected before reading, what surprised you after, notes and exact quotes.
 // Everything saves as you type. On a computer the notes sit beside the rest.
+//
+// Notes are Markdown, with an Edit / Preview switch (the Journal's renderer). Assist lets an
+// agent work with this one source, like Assist on a task: you write the prompt; its answers
+// arrive as its own dated notes underneath — it never writes in your fields.
 
 import { html, raw, on, debounce, autosize, sheet, toast } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
-import { STATUSES, KINDS, statusPatch, formatAuthors, normalizeUrl, siteOf, findDoi } from "../../core/sources.js";
-import { tagInput, deleteSource } from "../ui.js";
+import { STATUSES, KINDS, statusPatch, formatAuthors, normalizeUrl, siteOf, findDoi, assistWaiting } from "../../core/sources.js";
+import { renderMarkdown } from "../../core/markdown.js";
+import { tagInput, deleteSource, mdHead, mdPreview, mdSwitch } from "../ui.js";
 import { imageOf } from "../images.js";
 
 const metaLine = (s) => [s.site, formatAuthors(s.authors), s.year, KINDS[s.kind]].filter(Boolean).join(" · ");
 // What a field shows for a stored value (the inverse of valueOf below).
+const when = (iso) => String(iso || "").slice(0, 16).replace("T", " ");
+const whoIs = (a) => (/^claude/.test(a || "") ? "Claude" : a || "Agent");
 const shown = (k, s) => (k === "authors" ? (s.authors || []).join(", ") : s[k] == null ? "" : String(s[k]));
 
 export async function mount(el, ctx, route, ui) {
@@ -56,7 +63,17 @@ export async function mount(el, ctx, route, ui) {
       </details>
     </div>
     <div class="src-notes">
-      <label class="field"><span>Notes</span><textarea class="textarea notes" data-f="body" placeholder="Your notes — Markdown works">${s.body || ""}</textarea></label>
+      <div class="md-box">${mdHead("Notes")}
+      <textarea class="textarea notes" data-f="body" data-md aria-label="Notes" placeholder="Your notes — Markdown works: # heading, **bold**, *italic*, - lists, > quotes, [links](https://…)">${s.body || ""}</textarea>
+      ${mdPreview}</div>
+      <section class="src-assist" aria-label="Assist">
+        <label class="assist-toggle"><input type="checkbox" data-assist ${s.assist === true ? "checked" : ""}><span><b>Assist</b> — let an agent work with this</span></label>
+        <div class="assist-body">
+          <label class="field"><span>Your prompt <span class="faint">— what you'd like it to do</span></span><textarea class="textarea" data-f="prompt" rows="3" placeholder="e.g. Find the strongest critique of this and say where it lands">${s.prompt || ""}</textarea></label>
+          <p class="small faint" data-assist-state></p>
+        </div>
+        <div data-agent-notes></div>
+      </section>
     </div>
   </div>`);
   ctx.media.hydrate(el);
@@ -71,6 +88,29 @@ export async function mount(el, ctx, route, ui) {
   });
 
   for (const t of el.querySelectorAll("textarea")) autosize(t);
+
+  // Notes: Edit or Preview, remembered on this device.
+  const md = mdSwitch(el.querySelector(".md-box"), ctx, { empty: "No notes yet.", autosize });
+
+  // Assist: the toggle, whether it's waiting, and the agent's notes.
+  function renderAssist() {
+    const on_ = s.assist === true;
+    el.querySelector(".src-assist").classList.toggle("on", on_);
+    el.querySelector("[data-assist]").checked = on_;
+    el.querySelector("[data-assist-state]").textContent = !on_ ? "" : !String(s.prompt || "").trim() ? "Write what you'd like and an agent picks it up on its next pass."
+      : assistWaiting(s) ? "Waiting — an agent picks this up on its next pass." : "Answered. Change the prompt to ask again.";
+    const ns = s.agent_notes || [];
+    el.querySelector("[data-agent-notes]").innerHTML = String(ns.length ? html`${[...ns].reverse().map((n) => html`<article class="agent-note">
+        <header><span class="badge ai">${whoIs(n.author)}</span><span class="faint small">${when(n.date)}</span><span class="grow"></span><button type="button" class="btn icon small ghost" data-act="rm-agent-note" data-id="${n.id}" aria-label="Remove this agent note">${raw(icon("trash"))}</button></header>
+        <div class="prose">${raw(renderMarkdown(n.text, { tags: false, concepts: false }))}</div></article>`)}` : "");
+  }
+  renderAssist();
+  el.querySelector("[data-assist]").addEventListener("change", async (e) => {
+    await flush.flush();
+    await save({ assist: e.target.checked ? true : undefined });
+    renderAssist();
+    if (e.target.checked) el.querySelector("[data-f=prompt]").focus();
+  });
   const save = async (patch) => {
     s = { ...ctx.store.get(id), ...patch };
     await ctx.store.put(s);
@@ -90,6 +130,7 @@ export async function mount(el, ctx, route, ui) {
     const k = f.dataset.f;
     pending[k] = valueOf(k, f.value);
     if (k === "url" && pending.url) pending.site = siteOf(pending.url);
+    if (k === "prompt") pending.prompted = ctx.now();
     flush();
   });
   on(el, "change", "select[data-f]", (e, f) => { pending[f.dataset.f] = f.value; flush(); });
@@ -120,6 +161,8 @@ export async function mount(el, ctx, route, ui) {
       if (f.tagName === "TEXTAREA") autosize(f);
     }
     for (const x of el.querySelectorAll("[data-status]")) x.classList.toggle("on", x.dataset.status === now.status);
+    if (shown("body", now) !== shown("body", last)) md.refresh();
+    renderAssist();
     last = now;
   });
 
@@ -154,6 +197,15 @@ export async function mount(el, ctx, route, ui) {
       await save({ quotes: qs.length ? qs : undefined });
       renderQuotes();
       toast("Quote removed", { action: "Undo", onAction: async () => { await save({ quotes: [...(s.quotes || []), gone] }); renderQuotes(); } });
+    }
+    if (act === "rm-agent-note") {
+      const ns = [...(s.agent_notes || [])];
+      const i = ns.findIndex((n) => n.id === b.dataset.id);
+      if (i < 0) return;
+      const [gone] = ns.splice(i, 1);
+      await save({ agent_notes: ns.length ? ns : undefined });
+      renderAssist();
+      toast("Agent note removed", { action: "Undo", onAction: async () => { await save({ agent_notes: [...(s.agent_notes || []), gone].sort((x, y) => String(x.date).localeCompare(String(y.date))) }); renderAssist(); } });
     }
     if (act === "delete") {
       flush.cancel();

@@ -115,3 +115,21 @@ button.tag { cursor: pointer; }
 }
 .src-file { display: inline-flex; gap: 6px; align-items: center; margin-bottom: 10px; }
 .card-hit { cursor: default; } .card-boards { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+/* Notes: Edit / Preview; and Assist, an agent's help with this one source (its notes stay its own). */
+.notes-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.notes-head .label { font-weight: 600; color: var(--ink-2); }
+.notes-head .status-seg { margin: 0 0 0 auto; flex: 0 0 auto; }
+.notes-head .status-seg button { flex: 0 0 auto; min-height: 30px; padding: 0 12px; }
+.md-box[data-mode="preview"] textarea[data-md] { display: none; }
+.md-box[data-mode="edit"] .notes-preview, .md-box:not([data-mode]) .notes-preview { display: none; }
+.notes-preview { min-height: 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.src-assist { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.src-assist.on { border-color: var(--ai); background: var(--ai-soft); }
+.assist-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 32px; }
+.assist-toggle input { width: 20px; height: 20px; accent-color: var(--ai); }
+.src-assist:not(.on) .assist-body { display: none; }
+.assist-body { margin-top: 10px; }
+.agent-note { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border-left: 3px solid var(--ai); }
+.agent-note header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.agent-note .prose { font-size: 0.98rem; }
