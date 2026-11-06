@@ -309,7 +309,16 @@
       "category": "Development",
       "created": "2026-11-06",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw4kcriijmlh",
+          "text": "quests could integrate journal, tasks and/or research system to make bigger quests/expeditions that involve multiple objectives to be met (multiple checkboxes needing completion)",
+          "done": false,
+          "created": "2026-11-06T05:58:17.418Z",
+          "updated": "2026-11-06T05:58:17.418Z"
+        }
+      ]
     }
   ]
 }
