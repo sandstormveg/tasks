@@ -303,7 +303,16 @@
       "category": "Development",
       "created": "2026-11-06",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw5kqty43f2v",
+          "text": "is it possible for the task app on the phone to show the other apps (like, research, journal and guild) it is connected to when you hold down on its app icon? that'd be helpful i think",
+          "done": false,
+          "created": "2026-11-06T22:56:59.932Z",
+          "updated": "2026-11-06T22:56:59.932Z"
+        }
+      ]
     }
   ]
 }
