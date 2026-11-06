@@ -4,13 +4,89 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
+// src/core/objectives.js
+var OBJECTIVE_TYPES = {
+  exploration: "\u{1F9ED}",
+  social: "\u{1F91D}",
+  research: "\xA7",
+  creation: "\u2726",
+  reflection: "\u270E",
+  learning: "\u25C7",
+  physical: "\u2694",
+  discovery: "\u2727"
+};
+var SYSTEMS = ["tasks", "research", "journal", "quests", "reps", "gps"];
+var EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];
+var hasObjectives = (q) => Array.isArray(q?.objectives) && q.objectives.length > 0;
+var isDone = (q, o) => !!q.progress?.[o.id];
+function validateObjectives(q) {
+  const errs = [];
+  if (q.objectives === void 0) return errs;
+  if (!Array.isArray(q.objectives) || q.objectives.length > 12) return ["objectives must be a list of up to 12"];
+  const ids = /* @__PURE__ */ new Set();
+  for (const o of q.objectives) {
+    const at = `objective ${o?.id || "?"}`;
+    if (!o || typeof o !== "object") {
+      errs.push("each objective must be an object");
+      continue;
+    }
+    if (!/^[a-z0-9-]{1,24}$/.test(o.id || "")) errs.push(`${at}: id must be short kebab-case`);
+    if (ids.has(o.id)) errs.push(`${at}: ids must be unique`);
+    ids.add(o.id);
+    if (!OBJECTIVE_TYPES[o.type]) errs.push(`${at}: type must be one of ${Object.keys(OBJECTIVE_TYPES).join(", ")}`);
+    if (!o.text || typeof o.text !== "string") errs.push(`${at}: text is required`);
+    if (!(Number.isInteger(o.xp) && o.xp >= 0 && o.xp <= 500)) errs.push(`${at}: xp must be a whole number from 0 to 500`);
+    const l = o.link;
+    if (l === void 0) continue;
+    if (!SYSTEMS.includes(l.system)) {
+      errs.push(`${at}: link.system must be one of ${SYSTEMS.join(", ")}`);
+      continue;
+    }
+    if ((l.system === "tasks" || l.system === "quests") && !l.ref) errs.push(`${at}: a ${l.system} link needs a ref (its id)`);
+    if (l.system === "research" && !l.ref && !l.tag && !l.kind) errs.push(`${at}: a research link needs a ref (source, board or piece id) or a tag/kind to match`);
+    if (l.system === "gps" && !(Number.isFinite(l.target?.lat) && Number.isFinite(l.target?.lng))) errs.push(`${at}: a gps link needs target {lat, lng} of a public place`);
+    if (l.system === "reps" && (!EXERCISES.includes(l.exercise) || !(l.count > 0))) errs.push(`${at}: a reps link needs an exercise and a count`);
+  }
+  for (const k of Object.keys(q.progress || {})) if (!ids.has(k)) errs.push(`progress names an objective that doesn't exist: ${k}`);
+  return errs;
+}
+function objectiveXp(q) {
+  let potential = 0, bonus = 0, earned = 0;
+  for (const o of q.objectives || []) {
+    if (o.optional) bonus += o.xp;
+    else potential += o.xp;
+    if (isDone(q, o)) earned += o.xp;
+  }
+  return { potential, bonus, earned };
+}
+function parseObjective(spec, n = 1) {
+  const m = String(spec).trim().match(/^([a-z]+):\s*(.+?)(?:\s+@([a-z]+)(?::(.+?))?)?(?:\s+\+(\d+)\s*xp)?(\s+optional)?$/i);
+  if (!m) throw new Error(`can't read objective "${spec}" \u2014 use "type: text [@system:key=value,\u2026] [+30xp] [optional]"`);
+  const [, type, text, system, kv, xp, optional] = m;
+  const o = { id: `o${n}`, type: type.toLowerCase(), text: text.trim(), xp: xp ? Number(xp) : 20 };
+  if (optional) o.optional = true;
+  if (system) {
+    const link = { system: system.toLowerCase() };
+    for (const pair of (kv || "").split(",").filter(Boolean)) {
+      const [k, ...v] = pair.split("=");
+      const val = v.join("=").trim();
+      link[k.trim()] = /^-?\d+(\.\d+)?$/.test(val) ? Number(val) : val;
+    }
+    if (link.system === "gps") {
+      const { lat, lng, place, radius, ...rest2 } = link;
+      Object.assign(o, { link: { ...rest2, target: { lat, lng, place, radius: radius || 60 } } });
+    } else o.link = link;
+  }
+  return o;
+}
+
 // src/core/quests.js
 var STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 var OPEN = /* @__PURE__ */ new Set(["posted", "accepted"]);
 var ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
 var GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
 var PROOFS = ["gps", "reps", "photo", "journal", "honor"];
-var EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];
+var EXERCISES2 = ["pushup", "squat", "situp", "dip", "pullup"];
 var DIFFICULTY = {
   trivial: { xp: 10, label: "Trivial" },
   easy: { xp: 25, label: "Easy" },
@@ -60,7 +136,7 @@ function validate(q) {
       if (!Number.isFinite(t.lat) || !Number.isFinite(t.lng)) errs.push("a gps quest needs proof.target {lat, lng} of a public place");
     }
     if (p.type === "reps") {
-      if (!EXERCISES.includes(p.exercise)) errs.push(`proof.exercise must be one of ${EXERCISES.join(", ")}`);
+      if (!EXERCISES2.includes(p.exercise)) errs.push(`proof.exercise must be one of ${EXERCISES2.join(", ")}`);
       if (!(p.count > 0)) errs.push("proof.count must be a positive number of reps");
     }
   }
@@ -72,6 +148,7 @@ function validate(q) {
     else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
   }
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
+  errs.push(...validateObjectives(q));
   if (q.encounter) {
     const e = q.encounter;
     if (!["chest", "scholar"].includes(e.type)) errs.push("encounter.type must be chest or scholar");
@@ -86,6 +163,7 @@ function validate(q) {
   return errs;
 }
 function payout(q, proofType = q.proof?.type) {
+  if (hasObjectives(q)) return objectiveXp(q).potential;
   const base = DIFFICULTY[q.difficulty]?.xp ?? DIFFICULTY.normal.xp;
   return Math.round(base * (PROOF_RATE[proofType] ?? PROOF_RATE.honor));
 }
@@ -106,6 +184,9 @@ function serialize(q) {
     "attributes",
     "skills",
     "proof",
+    "objectives",
+    "progress",
+    "encounter",
     "kind",
     "grade",
     "testId",
@@ -120,6 +201,12 @@ function serialize(q) {
   for (const k of order) if (q[k] !== void 0) out[k] = q[k];
   for (const k of Object.keys(q).sort()) if (!(k in out) && q[k] !== void 0 && !k.startsWith("_")) out[k] = q[k];
   return JSON.stringify(out, null, 2) + "\n";
+}
+function localDay(iso) {
+  const s = String(iso || "");
+  if (s.length <= 10) return s;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s.slice(0, 10) : d.toLocaleDateString("en-CA");
 }
 
 // src/core/skills.js
@@ -242,7 +329,7 @@ var PREREQ = {
 };
 var RETAKE_DAYS = 3;
 var DAY = 864e5;
-var dayOf = (iso) => String(iso || "").slice(0, 10);
+var dayOf = localDay;
 var addDays = (day, n) => new Date(Date.parse(`${day}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 var gradeIndex = (id) => GRADES.findIndex((g) => g.id === id);
 var nextGrade = (id) => GRADES[gradeIndex(id) + 1] || null;
@@ -582,6 +669,7 @@ function parseFlags(args) {
     }
     const k = a.slice(2), v = args[i + 1] && !args[i + 1].startsWith("--") ? args[++i] : true;
     if (k === "task") out.task.push(v);
+    else if (k === "objective") (out.objective ||= []).push(v);
     else out[k] = v;
   }
   return out;
@@ -613,8 +701,16 @@ function build(f2, base = {}) {
     skills,
     proof,
     posted: base.posted && base.status !== "requested" ? base.posted : (/* @__PURE__ */ new Date()).toISOString(),
-    expires: f2.expires || base.expires
+    expires: f2.expires || base.expires,
+    objectives: f2.objective ? objectivesFrom(f2.objective) : base.objectives
   };
+}
+function objectivesFrom(specs, start = 1) {
+  try {
+    return specs.map((s, i) => parseObjective(s, start + i));
+  } catch (e) {
+    fail(e.message);
+  }
 }
 function weights(text) {
   return Object.fromEntries(String(text).split(",").map((p) => {
@@ -651,6 +747,17 @@ switch (cmd) {
     console.log(`Posted ${q.id} (+${payout(q)} XP)`);
     break;
   }
+  case "objective": {
+    const q = { ...find(f._?.[0]) };
+    if (!["posted", "requested"].includes(q.status)) fail(`${q.id} is ${q.status}; objectives can only change before it's accepted.`);
+    const have = q.objectives || [];
+    const next = Math.max(0, ...have.map((o) => Number(String(o.id).replace(/\D/g, "")) || 0)) + 1;
+    q.objectives = [...have, ...objectivesFrom(f._.slice(1), next)];
+    save(q);
+    const x = objectiveXp(q);
+    console.log(`${q.id}: ${q.objectives.length} objectives, +${x.potential} XP (+${x.bonus} bonus)`);
+    break;
+  }
   case "shape": {
     const req = find(f._?.[0]);
     if (req.status !== "requested") fail(`${req.id} isn't a request (it's ${req.status}).`);
@@ -664,7 +771,7 @@ switch (cmd) {
     for (const kv of f._.slice(1)) {
       const [k, ...v] = kv.split("=");
       const val = v.join("=");
-      if (["evidence", "xp", "completed"].includes(k)) fail("Turn-ins happen in the app, with proof \u2014 the tool doesn't stamp quests.");
+      if (["evidence", "xp", "completed", "progress"].includes(k)) fail("Turn-ins happen in the app, with proof \u2014 the tool doesn't stamp quests.");
       q[k] = val === "" ? void 0 : /^[[{]/.test(val) ? JSON.parse(val) : val;
     }
     save(q);

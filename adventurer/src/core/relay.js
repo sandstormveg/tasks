@@ -40,6 +40,10 @@ export function greet(board, { chattiness = "normal", seed = 0 } = {}) {
 
 /** What Relay asks for at turn-in, by proof type. */
 export function askProof(q) {
+  if (q.objectives?.length) {
+    const left = q.objectives.filter((o) => !o.optional && !q.progress?.[o.id]).length;
+    return left ? `${left} objective${left === 1 ? "" : "s"} to go. The linked ones tick themselves once I see the record.` : "Everything required is done. Turn it in when you're ready.";
+  }
   const p = q.proof || { type: "honor" };
   switch (p.type) {
     case "gps": return `Check in at ${p.target?.place || "the marked spot"}. I only log the distance, never where you stood.`;

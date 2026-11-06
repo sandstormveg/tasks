@@ -10,6 +10,7 @@ import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, co
 import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn, questPitch } from "../core/relay.js";
 import { questMap, mappable } from "../ui/questmap.js";
 import { openEncounter } from "../ui/encounter.js";
+import { OBJECTIVE_TYPES, hasObjectives, objectiveXp, objectiveCount, ready, isDone, isAuto, howItCompletes, markDone, unmark, claimed } from "../core/objectives.js";
 import { speak } from "../ui/voice.js";
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
@@ -89,7 +90,7 @@ export async function mount(el, ctx, route, ui) {
           <span class="reward">+${payout(q)} XP</span></div>
         <div class="quest-title">${q.title}</div>
         ${q.origin === "inferred" && q.why ? html`<div class="why">${q.why}</div>` : q.brief ? html`<div class="brief">${q.brief}</div>` : ""}
-        <div class="quest-foot"><span>${PROOF_LABEL[q.proof.type]}</span>${q.encounter ? html`<span>${q.encounter.type === "chest" ? "📦 chest" : "📜 scholar"}</span>` : ""}${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
+        <div class="quest-foot"><span>${hasObjectives(q) ? `☑ ${objectiveCount(q).done}/${objectiveCount(q).total} objectives` : PROOF_LABEL[q.proof.type]}</span>${q.encounter ? html`<span>${q.encounter.type === "chest" ? "📦 chest" : "📜 scholar"}</span>` : ""}${q.expires ? html`<span>⏳ ${q.expires}</span>` : ""}${tasks.length ? html`<span>⛓ ${tasks.length} task${tasks.length > 1 ? "s" : ""}</span>` : ""}
           ${ctx.taskDone(q) ? html`<span class="status ready">✓ task done · turn in</span>` : q.status !== "posted" ? html`<span class="status">${q.status}</span>` : ""}</div>
       </button>`;
     }
@@ -194,8 +195,8 @@ async function openQuest(ctx, q) {
       ${q.detail ? html`<p class="muted pre">${q.detail}</p>` : ""}
       ${ctx.taskDone(q) ? html`<p class="notice">You finished its task in Tasks. Turn it in below to claim the XP.</p>` : ""}
       <dl class="facts">
-        <dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>
-        <dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>
+        ${hasObjectives(q) ? html`<dt>Reward</dt><dd>+${objectiveXp(q).potential} XP${objectiveXp(q).bonus ? html` <span class="muted">(+${objectiveXp(q).bonus} bonus)</span>` : ""}</dd>` : html`<dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>`}
+        ${hasObjectives(q) ? "" : html`<dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>`}
         ${Object.keys(q.attributes).length || q.skills ? html`<dt>Trains</dt><dd>${[...Object.keys(q.attributes).map((a) => a.toUpperCase()), ...Object.keys(q.skills || {}).map((id) => ctx.store.skills().find((k) => k.id === id)?.name || id)].join(" · ")}</dd>` : ""}
         ${q.expires ? html`<dt>Closes</dt><dd>${q.expires}</dd>` : ""}
         <dt>Posted by</dt><dd>${q.giver === "guildmaster" ? "the guild master" : q.giver === "relay" ? s.relayName : q.giver === "board" ? "the board" : "you"}</dd>
@@ -203,14 +204,15 @@ async function openQuest(ctx, q) {
         ${q.link ? html`<dt>About</dt><dd><a href="${q.link}" target="_blank" rel="noopener">Read about it</a></dd>` : ""}
         ${ev ? html`<dt>Turned in</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
       </dl>
+      ${hasObjectives(q) ? objectiveList(q) : ""}
       ${q.encounter && q.status !== "done" ? html`<p class="notice">${q.encounter.type === "chest" ? "📦 Something's waiting there: a chest, opened when you check in." : "📜 Someone's waiting there: a scholar, met when you check in."}</p>` : ""}
       ${q.proof.type === "gps" && mappable([q]).length ? html`<button class="btn small" data-map>🗺 Show on the map</button>` : ""}
       ${q.status === "done" && q.encounter ? html`<button class="btn small" data-a="encounter">${q.encounter.type === "chest" ? "📦 Look in the chest again" : "📜 Revisit the scholar"}</button>` : ""}`,
     foot: html`${q.status === "posted" ? html`<button class="btn" data-a="decline">Decline</button><button class="btn" data-a="accept">Accept</button>` : ""}
-      ${OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
+      ${hasObjectives(q) ? (q.status === "accepted" && ready(q) ? html`<button class="btn primary" data-a="turnin">Turn in</button>` : "") : OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
       ${q.status === "declined" || q.status === "expired" ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}`,
     setup: (d, close) => {
-      d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); if (e.target.closest("[data-map]")) close("map"); });
+      d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); if (e.target.closest("[data-map]")) close("map"); const o = e.target.closest("[data-obj]"); if (o) close(`obj:${o.dataset.obj}`); });
       if (s.voice) speak(pitch, s);
     },
   });
@@ -219,6 +221,7 @@ async function openQuest(ctx, q) {
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
+    else if (act.startsWith("obj:")) { const next = await objectiveAction(ctx, q, act.slice(4)); return openQuest(ctx, next || ctx.quests().find((x) => x.id === q.id)); }
     else if (act === "encounter") await openEncounter(q, { taskTitle: ctx.taskTitle });
     else if (act === "map") { const id = await questMap([q], { focus: q.id }); if (id) openQuest(ctx, q); }
     else if (act === "honor") await turnIn(ctx, q, "honor");
@@ -229,7 +232,10 @@ async function openQuest(ctx, q) {
 
 async function turnIn(ctx, q, type) {
   let evidence;
-  if (type === "gps") {
+  if (hasObjectives(q)) {
+    if (!ready(q)) return toast(`${objectiveCount(q).left} objective${objectiveCount(q).left === 1 ? "" : "s"} still to go.`);
+    evidence = {};
+  } else if (type === "gps") {
     const pos = await position();
     const t = q.proof.target;
     const r = checkIn(pos, t, t.radius || 60, pos.accuracy);
@@ -275,3 +281,50 @@ function celebrate() {
   setTimeout(() => document.body.classList.remove("stamp"), 900);
 }
 
+
+// An expedition's checklist: each objective with its type, what finishes it and its XP.
+// Linked ones (a task, a quest, a Research source) tick themselves on sync; the rest are yours.
+function objectiveList(q) {
+  const x = objectiveXp(q), n = objectiveCount(q), live = q.status === "accepted";
+  return html`<section class="objectives">
+    <h4><span>Objectives · ${n.done}/${n.total}</span><span class="muted small">${x.earned} of ${x.potential + x.bonus} XP earned</span></h4>
+    <ul>${q.objectives.map((o) => {
+      const done = isDone(q, o), by = q.progress?.[o.id]?.by;
+      const act = !live || isAuto(o) ? "" : done ? (by === "you" ? html`<button class="btn small ghost" data-obj="${o.id}" aria-label="Untick">↺</button>` : "")
+        : html`<button class="btn small" data-obj="${o.id}">${{ gps: "Check in", reps: "Count", journal: "Link day" }[o.link?.system] || "Tick"}</button>`;
+      return html`<li class="obj ${done ? "done" : ""} ${o.optional ? "optional" : ""}">
+        <span class="obj-box" aria-hidden="true">${done ? "☑" : "☐"}</span>
+        <div class="obj-main"><div><span class="obj-type" title="${o.type}">${OBJECTIVE_TYPES[o.type]}</span> ${o.text}${o.optional ? html` <span class="tag">bonus</span>` : ""}</div>
+          <div class="muted small">${done ? (by === "auto" ? "Found it: ticked off automatically" : "Done") : howItCompletes(o)}</div></div>
+        <span class="obj-xp">+${o.xp}</span>${act}</li>`;
+    })}</ul></section>`;
+}
+
+/** Does one objective's own step (tick, check-in, count, journal day) and saves it. Returns the updated quest. */
+async function objectiveAction(ctx, q, id) {
+  const o = q.objectives.find((x) => x.id === id);
+  if (!o || q.status !== "accepted" || isAuto(o)) return null;
+  const at = ctx.now();
+  if (isDone(q, o)) { const next = unmark(q, id); ctx.store.put(next); return next; }
+  const l = o.link || {};
+  let refs = [];
+  if (l.system === "gps") {
+    const pos = await position();
+    const r = checkIn(pos, l.target, l.target.radius || 60, pos.accuracy);
+    if (!r.inRange) { toast(`Not there yet: ${r.distance} m ${r.direction}. Get within ${r.allowed} m.`, { timeout: 7000 }); return null; }
+  } else if (l.system === "reps") {
+    const { countReps } = await import("../vision/reps-sheet.js");
+    const res = await countReps(l.exercise, l.count);
+    if (!res) return null;
+    if (res.reps < l.count) { toast(`${res.reps}/${l.count} counted. Not quite: try again when you're ready.`, { timeout: 7000 }); return null; }
+  } else if (l.system === "journal") {
+    const day = await promptSheet({ title: "Which journal day?", type: "date", value: ctx.today(), confirm: "Link it", hint: "Only the date is saved; the entry isn't read." });
+    if (!day) return null;
+    refs = [`journal:${day}`];
+    if (claimed(ctx.quests()).has(refs[0])) { toast("That journal day already counted for another objective. Each record pays once."); return null; }
+  }
+  const next = markDone(q, id, { refs, at });
+  ctx.store.put(next);
+  if (ready(next) && !ready(q)) toast("All the required objectives are done. Turn it in when you're ready.", { timeout: 6000 });
+  return next;
+}

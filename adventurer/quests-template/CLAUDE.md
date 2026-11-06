@@ -45,3 +45,36 @@ loot: [...up to 5]}`. Loot kinds: `{kind: "dex", qid: "Q5194", label, why}` (a l
 Dex card), `{kind: "babel", label, why}` (a Babel run), `{kind: "task", taskId, why}`, `{kind: "note", label, why}`. Fill
 them from what Silica is into: their tasks, research, and the journal only through its gate (themes, never quotes).
 Keep the place public and the coordinates in this private repo.
+
+## Expeditions (quests with several objectives)
+
+An expedition is a quest with `objectives`. Each objective has a **type** (exploration, social, research, creation,
+reflection, learning, physical, discovery), its own **XP**, and can be **optional** (bonus XP). An objective can link to a
+real record, and then it completes only when that record exists. The app checks on every sync:
+
+| link | completes when | shorthand |
+|---|---|---|
+| `tasks` | that task is ticked off in Tasks | `@tasks:ref=<task-id>` |
+| `research` | a source/board/piece id exists, or N sources with a tag/kind/status are filed **after it's accepted** | `@research:ref=s-…` · `@research:tag=ai-safety,count=2` |
+| `quests` | that quest is turned in | `@quests:ref=<quest-id>` |
+| `journal` | Silica links a journal day (only the date is kept) | `@journal` |
+| `gps` | Silica checks in there | `@gps:lat=…,lng=…,place=…,radius=80` |
+| `reps` | camera-counted reps | `@reps:exercise=pushup,count=20` |
+| none | Silica ticks it | (no `@`) |
+
+```sh
+node tools/quests.mjs add --title "Map the persona debate" --difficulty hard --attr int=1,wis=0.5 --author "<you>" \
+  --objective "research: File two papers on model personas @research:tag=personas,count=2 +30xp" \
+  --objective "reflection: Write what changed your mind @journal +20xp" \
+  --objective "creation: Finish the note @tasks:ref=<task-id> +40xp" \
+  --objective "social: Talk it over with someone +15xp optional"
+node tools/quests.mjs objective <id> "discovery: …"     # add more while it's still posted
+```
+
+- XP: the mandatory objectives' XP is the quest's reward; optional ones are bonus. `difficulty` is just its rank label here.
+- **A record pays once.** A task, source or journal day credited to one objective can't complete another, here or in
+  another quest. Don't build two expeditions on the same record.
+- `progress` is written by the app only; the tool refuses to set it (like `evidence`).
+- **Find expeditions in what's already happening**: a cluster of sources on one tag (`research.mjs stats`, `list --tag`), a
+  board full of red strings, a piece of writing with its task, a run of related tasks. Say what you noticed in `--why`.
+  Journal themes only through its gate, never quotes, and a journal objective only ever asks for a date.

@@ -96,6 +96,18 @@ a { color: var(--accent-2); }
 .loot-icon { font-size: 1.4rem; color: var(--amber); }
 @keyframes rattle { 0%, 80%, 100% { transform: rotate(0); } 84% { transform: rotate(-6deg); } 88% { transform: rotate(6deg); } 92% { transform: rotate(-3deg); } }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.objectives { margin: 12px 0; }
+.objectives h4 { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 6px; }
+.objectives ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.obj { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line, #24303a); border-radius: 6px; padding: 6px 8px; }
+.obj.done { opacity: .75; }
+.obj.done .obj-main > div:first-child { text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
+.obj.optional { border-style: dashed; }
+.obj-box { font-size: 1.2rem; }
+.obj.done .obj-box { color: #1de9b6; }
+.obj-main { flex: 1; min-width: 0; }
+.obj-type { display: inline-block; width: 1.3em; text-align: center; }
+.obj-xp { font-weight: bold; color: var(--amber); white-space: nowrap; }
 .relay-name { font-weight: bold; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
 .relay-first { display: none; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay:not([open]) .relay-first { display: block; flex: 1; min-width: 0; }
