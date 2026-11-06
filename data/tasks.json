@@ -388,6 +388,14 @@
       "notes": "",
       "assist": false,
       "parentId": "task-system-changes-mw4n8ak0"
+    },
+    {
+      "id": "bug-in-guild-system-mw4pihez",
+      "title": "bug in guild system",
+      "category": "Development",
+      "created": "2026-11-06",
+      "notes": "",
+      "assist": true
     }
   ]
 }
