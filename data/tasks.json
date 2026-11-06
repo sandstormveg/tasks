@@ -351,7 +351,16 @@
       "category": "Development",
       "created": "2026-11-06",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mw4neoa70tk2",
+          "text": "make it so the subtasks are including in the lage view.",
+          "done": false,
+          "created": "2026-11-06T07:23:45.391Z",
+          "updated": "2026-11-06T07:23:45.391Z"
+        }
+      ]
     },
     {
       "id": "change-active-tab-icon-to-and-the-research-one-to-the-digital-icon-version-of-leave-it-if-there-isn-t-one-mw4ncuiq",
