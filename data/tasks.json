@@ -431,42 +431,6 @@
       "parentId": "task-system-changes-mw4n8ak0"
     },
     {
-      "id": "bug-in-guild-system-mw4pihez",
-      "title": "bug in guild system",
-      "category": "Development",
-      "created": "2026-11-06",
-      "notes": "",
-      "assist": true,
-      "noteItems": [
-        {
-          "id": "n-mw4pj1uv026q",
-          "text": "startwith error",
-          "done": false,
-          "created": "2026-11-06T08:23:08.838Z",
-          "updated": "2026-11-06T08:23:08.838Z",
-          "image": "images/development/bug-in-guild-system-mw4pihez-n-mw4pj1uv026q.jpg"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-director-c7-gbug",
-          "text": "Relayed (2026-11-06) to Adventurer as a priority, with your screenshot: the error \"Cannot read properties of undefined (reading 'startsWith')\" on the Guild Board, probably a quest or objective missing a field since the Scout/Expedition updates. It will fix it and open a PR.",
-          "done": false,
-          "created": "2026-11-06T19:33:00",
-          "updated": "2026-11-06T19:33:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-agent-mw4pu9g31",
-          "text": "✓ Fixed 2026-11-06 (tasks PR #31): the red \"Cannot read properties of undefined (reading 'startsWith')\" message appeared whenever you closed a quest pop-up without pressing a button (✕, a tap outside it, or Back). My expeditions change from earlier today checked the button you pressed without allowing for \"none\". Nothing was saved wrongly, and it's fixed now.",
-          "done": false,
-          "created": "2026-11-06T08:31:51.890Z",
-          "updated": "2026-11-06T08:31:51.890Z",
-          "author": "Claude Opus 5.5"
-        }
-      ]
-    },
-    {
       "id": "collect-a-jar-of-grass-for-puffin-the-cat-mw529wpt",
       "title": "collect a jar of grass for Puffin the cat",
       "category": "Life Admin",
