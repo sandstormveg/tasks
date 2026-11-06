@@ -402,6 +402,14 @@
           "created": "2026-11-06T08:31:51.890Z",
           "updated": "2026-11-06T08:31:51.890Z",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-svgcheck",
+          "text": "Yes, the green icons are SVG icons. The History tab icon is an inline SVG drawn with currentColor, so it takes on the green when its tab is active. -[] and § are plain text characters, so they don't. Relayed (2026-11-07) to Adventurer: replace -[] with a matching SVG checkbox, a rounded square with a tick inside, so it goes green like the others.",
+          "done": false,
+          "created": "2026-11-07T01:35:00",
+          "updated": "2026-11-07T01:35:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     },
