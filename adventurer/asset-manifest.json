@@ -1,5 +1,5 @@
 {
- "version": "bb858aa6279d",
+ "version": "c2615bbb716a",
  "files": [
   "./",
   "icons/icon.svg",
@@ -15,6 +15,7 @@
   "src/core/geo.js",
   "src/core/grades.js",
   "src/core/norms.js",
+  "src/core/objectives.js",
   "src/core/quests.js",
   "src/core/relay.js",
   "src/core/reps.js",

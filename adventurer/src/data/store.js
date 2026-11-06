@@ -10,6 +10,7 @@
 
 import { normalize, serialize, validate, payout, STATUSES } from "../core/quests.js";
 import { applyTaskOps, questIndex, nominations } from "../core/tasklink.js";
+import { autoProgress, hasObjectives } from "../core/objectives.js";
 import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
@@ -27,6 +28,7 @@ export function mergeQuest(local, remote) {
   const a = STAGE[local.status] ?? 0, b = STAGE[remote.status] ?? 0;
   if (b > a) return { ...remote, _conflict: undefined };
   if (a > b) return local;
+  if (local.progress || remote.progress) return { ...remote, ...local, progress: { ...remote.progress, ...local.progress } }; // ticks from either device
   return { ...remote, ...local }; // same stage: keep this device's fields, take anything new from the remote
 }
 
@@ -40,6 +42,7 @@ export class Store {
     this.showcase = load("showcase", { doc: { skills: [], achievements: [] }, sha: null, dirty: false });
     this.taskOps = load("taskOps", []);     // queued writes to tasks-data's task list (see core/tasklink.js)
     this.status = load("status", { lastSync: null, error: null });
+    this.research = load("research", null); // research/ file list + source tags, for expedition objectives
     this.listeners = new Set();
   }
 
@@ -47,7 +50,7 @@ export class Store {
   emit(change) { for (const fn of this.listeners) try { fn(change); } catch (e) { console.error(e); } }
   persist() {
     save("quests", this.quests); save("stats", this.stats); save("tasks", this.tasks); save("status", this.status);
-    save("showcase", this.showcase); save("taskOps", this.taskOps);
+    save("showcase", this.showcase); save("taskOps", this.taskOps); save("research", this.research);
   }
 
   all() { return Object.values(this.quests).map((x) => normalize(x.q)); }
@@ -136,6 +139,14 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
 
   // Tasks nominated on the Tasks site become requests, pushed with the rest below.
   for (const q of nominations(store.tasks.active, Object.values(store.quests).map((x) => x.q), new Date().toISOString())) store.quests[q.id] = { q, sha: null, dirty: true };
+
+  // Expeditions: tick off objectives whose record now exists (a task done, a source filed in Research).
+  const live = Object.values(store.quests).map((x) => x.q);
+  const open = live.filter((q) => q.status === "accepted" && hasObjectives(q));
+  if (open.length) {
+    if (open.some((q) => q.objectives.some((o) => o.link?.system === "research"))) store.research = await remote.researchIndex(store.research).catch(() => store.research);
+    for (const q of autoProgress(live, { history: store.tasks.history, research: store.research, now: new Date().toISOString() })) store.quests[q.id] = { ...store.quests[q.id], q, dirty: true };
+  }
 
   // Push.
   for (const [id, x] of Object.entries(store.quests)) {

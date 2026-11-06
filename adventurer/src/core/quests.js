@@ -6,6 +6,8 @@
 // Quests point at tasks by id (taskIds) instead of copying them: the task stays
 // the record, the quest is the adventure built on it.
 
+import { validateObjectives, hasObjectives, objectiveXp, objectiveCount } from "./objectives.js";
+
 // "failed": a training or test set you did but fell short of (it still counts as evidence of your level).
 export const STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 export const OPEN = new Set(["posted", "accepted"]);
@@ -94,6 +96,7 @@ export function validate(q) {
     else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
   }
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
+  errs.push(...validateObjectives(q));
   if (q.encounter) {
     const e = q.encounter;
     if (!["chest", "scholar"].includes(e.type)) errs.push("encounter.type must be chest or scholar");
@@ -109,7 +112,9 @@ export function validate(q) {
 }
 
 /** What a quest pays, given the proof actually handed in. */
+// An expedition pays what its objectives pay: the mandatory ones up front, optional ones as a bonus.
 export function payout(q, proofType = q.proof?.type) {
+  if (hasObjectives(q)) return objectiveXp(q).potential;
   const base = DIFFICULTY[q.difficulty]?.xp ?? DIFFICULTY.normal.xp;
   return Math.round(base * (PROOF_RATE[proofType] ?? PROOF_RATE.honor));
 }
@@ -126,13 +131,14 @@ export function boardOrder(a, b) {
 
 /** Turn in: the quest with its evidence, stamped and paid. */
 export function complete(q, { proofType, evidence = {}, at }) {
+  if (hasObjectives(q)) return { ...q, status: "done", completed: at, evidence: { type: "objectives", done: objectiveCount(q).done, ...evidence }, xp: objectiveXp(q).earned };
   return { ...q, status: "done", completed: at, evidence: { type: proofType, ...evidence }, xp: payout(q, proofType) };
 }
 
 /** Deterministic file text: stable key order so unchanged quests never make a diff. */
 export function serialize(q) {
   const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "taskCreated", "difficulty", "attributes", "skills",
-    "proof", "encounter", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
+    "proof", "objectives", "progress", "encounter", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
   const out = {};
   for (const k of order) if (q[k] !== undefined) out[k] = q[k];
   for (const k of Object.keys(q).sort()) if (!(k in out) && q[k] !== undefined && !k.startsWith("_")) out[k] = q[k];

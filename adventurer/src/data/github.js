@@ -6,6 +6,8 @@
 // Safety rules: refuses a public repository (quests can name places and habits),
 // and every write path is checked to stay inside the quests folder — except
 // writeData, which may write tasks-data's own task and history lists only.
+// Research is read for expedition objectives: the file list of research/ and the
+// front matter of new sources, never anything outside research/ (and never the journal).
 
 const API = "https://api.github.com";
 
@@ -59,6 +61,31 @@ export class QuestRemote {
 
   async read(rel) { return this.readAny(this.inside(rel)); }
 
+  /**
+   * What's in research/, for expedition objectives: {treeSha, sources: [{id, sha, tags, kind, status, added}], boards, pieces}.
+   * Lists only that folder's tree, and reads front matter only for sources new since `prev` (by blob sha).
+   */
+  async researchIndex(prev) {
+    const root = await this.req(`/repos/${this.owner}/${this.repo}/contents/`);
+    const dir = Array.isArray(root) && root.find((x) => x.type === "dir" && x.name === "research");
+    if (!dir) return null;
+    if (prev?.treeSha === dir.sha) return prev;
+    const tree = await this.req(`/repos/${this.owner}/${this.repo}/git/trees/${dir.sha}?recursive=1`);
+    const files = (tree?.tree || []).filter((x) => x.type === "blob");
+    const old = new Map((prev?.sources || []).map((s) => [s.id, s]));
+    const sources = [];
+    for (const f of files) {
+      const m = f.path.match(/^sources\/.*?(s-[\w-]+)\.md$/);
+      if (!m) continue;
+      const had = old.get(m[1]);
+      if (had?.sha === f.sha) { sources.push(had); continue; }
+      const got = await this.readAny(`research/${f.path}`);
+      sources.push({ id: m[1], sha: f.sha, ...frontMatter(got?.text || "") });
+    }
+    const ids = (re) => files.map((f) => f.path.match(re)?.[1]).filter(Boolean);
+    return { treeSha: dir.sha, sources, boards: [...new Set(ids(/^boards\/(b-[\w-]+?)(?:\.md)?$/))], pieces: [...new Set(ids(/^writing\/(w-[\w-]+?)(?:\.md)?$/))] };
+  }
+
   /** Any file of the repo, read-only (the task lists). */
   async readAny(path) {
     const r = await this.req(`/repos/${this.owner}/${this.repo}/contents/${path}`);
@@ -92,6 +119,24 @@ export class QuestRemote {
     });
     return r.content.sha;
   }
+}
+
+/** The few front-matter fields an objective can match on: tags, kind, status, added. */
+export function frontMatter(text) {
+  const head = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] || "";
+  const out = { tags: [] };
+  let list = null;
+  const unquote = (s) => s.trim().replace(/^["']|["']$/g, "");
+  for (const line of head.split(/\r?\n/)) {
+    const item = line.match(/^\s+-\s+(.+)$/);
+    if (item && list === "tags") { out.tags.push(unquote(item[1])); continue; }
+    const kv = line.match(/^(\w+):\s*(.*)$/);
+    if (!kv) continue;
+    list = kv[1];
+    if (["kind", "status", "added"].includes(kv[1])) out[kv[1]] = unquote(kv[2]);
+    if (kv[1] === "tags" && kv[2].trim().startsWith("[")) out.tags = kv[2].replace(/[[\]"']/g, "").split(",").map((t) => t.trim()).filter(Boolean);
+  }
+  return out;
 }
 
 /** The public task list needs no token. */

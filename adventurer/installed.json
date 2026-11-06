@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@c522049ae4b1",
+ "source": "sandstormveg/Adventurer@528e90381f0b",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -14,6 +14,7 @@
   "src/core/geo.js",
   "src/core/grades.js",
   "src/core/norms.js",
+  "src/core/objectives.js",
   "src/core/quests.js",
   "src/core/relay.js",
   "src/core/reps.js",
