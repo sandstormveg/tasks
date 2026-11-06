@@ -1590,9 +1590,11 @@ function renderActiveDetail(task) {
       ${subtaskParentLinkHtml(task)}
       <div class="assist-meta">${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}</div>
     </div>
+    ${detailSubtasksHtml(task)}
     ${taskDetailHtml(task)}
   `;
   wireSubtaskParentLink(body, task);
+  wireDetailSubtasks(body);
   body.querySelector(".check").addEventListener("click", (e) => completeTask(task, e.currentTarget));
   body.querySelector(".expand-toggle").addEventListener("click", () => toggleDetailFullscreen());
   const menuBtn = body.querySelector(".task-menu-btn");
@@ -1637,6 +1639,26 @@ function parentTaskOf(task) {
 function subtaskParentLinkHtml(task) {
   const parent = parentTaskOf(task);
   return parent ? `<button type="button" class="subtask-parent-link">↳ Subtask of ${esc(parent.title)}</button>` : "";
+}
+
+// The task's subtasks inside its detail view, so they're there in the full-page view too
+// (where the Active list, and the subtasks nested in it, is hidden). Tick one off or open it.
+function detailSubtasksHtml(task) {
+  const kids = subtasksOf(task);
+  if (!kids.length) return "";
+  return `<div class="detail-subtasks"><div class="detail-subtasks-head">Subtasks · ${kids.length}</div>
+    ${kids.map((k) => `<div class="detail-subtask" data-key="${esc(taskKey(k))}">
+      <button class="check" aria-label="Complete subtask"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></button>
+      <button type="button" class="detail-subtask-open" title="Open">${esc(k.title)}</button></div>`).join("")}</div>`;
+}
+
+function wireDetailSubtasks(container) {
+  for (const row of container.querySelectorAll(".detail-subtask")) {
+    const kid = state.tasks.find((t) => taskKey(t) === row.dataset.key);
+    if (!kid) continue;
+    row.querySelector(".check").addEventListener("click", (e) => { e.stopPropagation(); completeTask(kid, e.currentTarget); });
+    row.querySelector(".detail-subtask-open").addEventListener("click", () => selectActiveTask(kid));
+  }
 }
 
 function wireSubtaskParentLink(container, task) {

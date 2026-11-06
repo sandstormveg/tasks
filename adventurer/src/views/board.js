@@ -221,7 +221,7 @@ async function openQuest(ctx, q) {
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
     else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
-    else if (act.startsWith("obj:")) { const next = await objectiveAction(ctx, q, act.slice(4)); return openQuest(ctx, next || ctx.quests().find((x) => x.id === q.id)); }
+    else if (act?.startsWith("obj:")) { const next = await objectiveAction(ctx, q, act.slice(4)); return openQuest(ctx, next || ctx.quests().find((x) => x.id === q.id)); }
     else if (act === "encounter") await openEncounter(q, { taskTitle: ctx.taskTitle });
     else if (act === "map") { const id = await questMap([q], { focus: q.id }); if (id) openQuest(ctx, q); }
     else if (act === "honor") await turnIn(ctx, q, "honor");
