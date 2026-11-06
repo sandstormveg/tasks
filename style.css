@@ -468,7 +468,8 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   align-items: center;
   gap: 10px;
 }
-.active-tab-btn { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-weight: 700; letter-spacing: -0.02em; }
+/* Drawn like the History icon, so it takes the same green. */
+.active-tab-btn { display: inline-flex; align-items: center; }
 .detail-subtasks { margin: 10px 0 14px; display: grid; gap: 6px; }
 .detail-subtasks-head { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
 .detail-subtask { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; }
