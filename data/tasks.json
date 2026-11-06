@@ -325,6 +325,16 @@
           "created": "2026-11-06T05:58:36.706Z",
           "updated": "2026-11-06T05:58:36.706Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-expeditions",
+          "text": "Relayed (2026-11-06) to the Adventurer session, with your brainstorm and a suggested build order: (1) quests with several objectives as a checklist, showing potential vs earned XP; (2) objectives tick themselves when the linked record exists (a task done, a research entry added, reps or a GPS check-in); (3) journal objectives check only whether an entry exists, through the privacy gate, never its content. One record will never pay XP twice. The quest tool will also let me, as guild master, post expeditions built from what you are already doing (e.g. a run of related papers becomes a literature-review expedition). It will open a PR.",
+          "done": false,
+          "created": "2026-11-06T17:32:00",
+          "updated": "2026-11-06T17:32:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
