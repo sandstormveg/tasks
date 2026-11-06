@@ -344,6 +344,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "task-system-changes-mw4n8ak0",
+      "title": "task system changes",
+      "category": "Development",
+      "created": "2026-11-06",
+      "notes": "",
+      "assist": false
     }
   ]
 }
