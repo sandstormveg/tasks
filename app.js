@@ -1963,10 +1963,10 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </div>
       </div>
     </div>
-    ${task.assist || task._repo === "private" || waiting ? `
+    ${isAssisted(task) || task._repo === "private" || waiting ? `
       <span class="task-card-badges">
         ${waiting ? `<span class="sync-badge" title="Saved on this device, waiting to sync">⟳</span>` : ""}
-        ${task.assist ? `<span class="assist-badge" title="AI assistance on">✦</span>` : ""}
+        ${task.assist ? `<span class="assist-badge" title="AI assistance on">✦</span>` : assistInherited(task) ? `<span class="assist-badge inherited" title="AI assistance on, via its parent task">✦</span>` : ""}
         ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
       </span>` : ""}
   `;
@@ -2166,8 +2166,15 @@ function enterTaskTitleEditMode(task, card) {
 // Only tasks explicitly opted in show up in Assistance (and get worked on by the
 // morning routine) — otherwise every passing errand would pull research effort.
 function assistTasks() {
-  return state.tasks.filter((t) => t.assist);
+  return state.tasks.filter(isAssisted);
 }
+
+// Assist on a parent covers its subtasks too: they count as assisted (and show up in
+// Assistance) without their own assist flag being flipped.
+function isAssisted(t) {
+  return !!t.assist || !!parentTaskOf(t)?.assist;
+}
+const assistInherited = (t) => !t.assist && isAssisted(t);
 
 async function toggleAssist(task, btnEl) {
   if (!requireToken()) return;
@@ -3256,7 +3263,7 @@ function renderAssistDetail() {
       ${subtaskParentLinkHtml(task)}
       <div class="assist-meta">
         ${esc(task.category)} · ${visTagHtml(task._repo)} · added ${esc(task.created || "—")}
-        <button class="assist-stop-btn" type="button">Stop assistance</button>
+        ${assistInherited(task) ? `<span class="assist-inherited-note">· assisted via its parent task</span>` : `<button class="assist-stop-btn" type="button">Stop assistance</button>`}
       </div>
     </div>
 
@@ -3312,7 +3319,7 @@ function renderAssistDetail() {
     e.preventDefault();
     openTaskOptionsMenu(task, e.clientX, e.clientY);
   });
-  container.querySelector(".assist-stop-btn").addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
+  container.querySelector(".assist-stop-btn")?.addEventListener("click", (e) => toggleAssist(task, e.currentTarget));
   const assistTitleEl = container.querySelector(".assist-title");
   assistTitleEl.addEventListener("dblclick", () => {
     renameTaskInline(task, assistTitleEl, {

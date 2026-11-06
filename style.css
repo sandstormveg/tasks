@@ -172,7 +172,11 @@ body {
 .assist-tab-btn { display: inline-flex; align-items: center; gap: 5px; }
 /* The Journal and Research tabs are links (to journal/ and research/, their own apps), styled like the tab buttons. */
 a.tab-btn { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
-.app-tab-glyph { font-size: 15px; color: var(--accent-2); }
+.app-tab-glyph { font-size: 17px; color: var(--accent-2); }
+/* A little air between the other apps' tabs. */
+a.app-tab-btn + a.app-tab-btn { margin-left: 6px; }
+.assist-badge.inherited { opacity: 0.55; }
+.assist-inherited-note { font-size: 12px; opacity: 0.7; }
 .history-tab-btn { font-size: 15px; display: inline-flex; align-items: center; }
 /* Drawn rather than an emoji, so it takes the accent colour and glow like the ✦ tab. */
 .history-tab-icon { color: var(--accent-2); filter: drop-shadow(0 0 4px rgba(29, 233, 182, 0.55)); }
@@ -1442,6 +1446,7 @@ dialog textarea { min-height: 70px; resize: vertical; }
      little, so the ⚙ button is never pushed off the right edge. */
   .app-tab-label { display: none; }
   .tabs { gap: 2px; }
+  a.app-tab-btn + a.app-tab-btn { margin-left: 3px; }
   .tab-btn { padding: 6px 5px; }
   .menu-btn, .topbar .icon-btn { width: 32px; height: 32px; }
   main.view { padding: 22px 14px 70px; }
