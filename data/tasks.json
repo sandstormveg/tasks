@@ -310,6 +310,14 @@
           "created": "2026-11-06T18:32:00",
           "updated": "2026-11-06T18:32:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resbuilt",
+          "text": "✓ Built by Living Journal (2026-11-06), waiting for you to merge tasks#30 and tasks-data#2. (1) A source page now has an Assist checkbox and 'Your prompt'. An agent's answers show underneath as its own dated notes and never go into your notes or why/before/after. You can remove them, and changing the prompt asks again. The director picks up one waiting prompt each hourly pass. (2) Notes now have an Edit / Preview switch, the draft in Writing has it too, and note pins on a board show their Markdown.",
+          "done": false,
+          "created": "2026-11-06T18:50:00",
+          "updated": "2026-11-06T18:50:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     },
