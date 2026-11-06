@@ -1830,6 +1830,48 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "research-system-changes-mw3z2n8b",
+      "title": "research system changes",
+      "category": "Development",
+      "completedDate": "2026-11-06",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mw3z4tqvll1w",
+          "text": "make an option to have an agent work with an item, like similar to toggling assistance in tasks. and make a note/prompt section.",
+          "done": false,
+          "created": "2026-11-05T20:04:15.127Z",
+          "updated": "2026-11-05T20:04:15.127Z"
+        },
+        {
+          "id": "n-mw3z6fofks60",
+          "text": "Markdown on the notes doesn't seem to be viewable in a preview mode",
+          "done": false,
+          "created": "2026-11-05T20:05:30.207Z",
+          "updated": "2026-11-05T20:05:30.207Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-resassist",
+          "text": "Relayed (2026-11-06) to the Living Journal system session, which owns Research: an assist toggle and a prompt field on each research item, agent replies kept in their own section (never in your notes), and an Edit/Preview toggle so markdown notes can be previewed. Once the fields exist, I will pick up assisted research items on my hourly pass. It is a cloud session, so it will act the next time it runs and open a PR for you to merge.",
+          "done": false,
+          "created": "2026-11-06T18:32:00",
+          "updated": "2026-11-06T18:32:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resbuilt",
+          "text": "✓ Built by Living Journal (2026-11-06), waiting for you to merge tasks#30 and tasks-data#2. (1) A source page now has an Assist checkbox and 'Your prompt'. An agent's answers show underneath as its own dated notes and never go into your notes or why/before/after. You can remove them, and changing the prompt asks again. The director picks up one waiting prompt each hourly pass. (2) Notes now have an Edit / Preview switch, the draft in Writing has it too, and note pins on a board show their Markdown.",
+          "done": false,
+          "created": "2026-11-06T18:50:00",
+          "updated": "2026-11-06T18:50:00",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     }
   ]
 }
