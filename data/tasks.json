@@ -367,7 +367,16 @@
       "category": "Development",
       "created": "2026-11-07",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw5qeo5giztk",
+          "text": "add pullups. they should be able to use camera verification too.",
+          "done": false,
+          "created": "2026-11-07T01:35:30.244Z",
+          "updated": "2026-11-07T01:35:30.244Z"
+        }
+      ]
     }
   ]
 }
