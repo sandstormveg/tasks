@@ -11,7 +11,7 @@
 // page around under one address (from before the Journal tab, say) and serve it offline,
 // next to a newer app.js. Fetches revalidate with the server ("no-cache") so the copy
 // saved is never one GitHub Pages' ~10 minute HTTP cache was still holding.
-const SHELL_CACHE = "tasks-shell-v3";
+const SHELL_CACHE = "tasks-shell-v4";
 const SHELL_FILES = ["index.html", "style.css", "app.js", "manifest.json", "favicon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 const scopeUrl = (path) => new URL(path, self.registration.scope).href;
 
