@@ -504,6 +504,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "uninstall-of-task-all-is-saying-the-app-is-already-installed-it-s-a-bug-mw5xxqpm",
+      "title": "uninstall of task all is saying the app is already installed. it's a bug",
+      "category": "Development",
+      "created": "2026-11-07",
+      "notes": "",
+      "assist": true
     }
   ]
 }
