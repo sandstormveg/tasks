@@ -519,6 +519,13 @@
           "done": false,
           "created": "2026-11-07T05:06:46.199Z",
           "updated": "2026-11-07T05:06:46.199Z"
+        },
+        {
+          "id": "n-mw607gefwdv0",
+          "text": "still not working. I remember doing a fix for this when we were installing it initially. and didn't we build a fix in like the pwa settings?",
+          "done": false,
+          "created": "2026-11-07T06:09:49.761Z",
+          "updated": "2026-11-07T06:09:49.761Z"
         }
       ],
       "claudeNotes": [
