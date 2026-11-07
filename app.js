@@ -11,9 +11,8 @@ const state = {
   // Drive the Active tab's categories/tasks/detail drill-down columns. "__all__" is the
   // sentinel for the "All tasks" rail item (never a real category name).
   selectedCategory: "__all__", selectedActiveTaskKey: null,
-  // Whether "All tasks" groups its list under per-category headers — only meaningful
-  // there, since a single selected category already implies one group.
-  showCategoryHeaders: false,
+  // How "All tasks" is ordered: see SORTS.
+  sortMode: "manual",
   // The sha of tasks.json/history.json as last seen from the API, per repo — used to
   // detect a lost-update race (see saveTasks/saveHistory below): a fresh sha fetched
   // right before writing only stops GitHub rejecting the PUT, it does NOT mean the
@@ -40,7 +39,7 @@ function saveUiState() {
       selectedCategory: state.selectedCategory,
       selectedActiveTaskKey: state.selectedActiveTaskKey,
       selectedAssistKey: state.selectedAssistKey,
-      showCategoryHeaders: state.showCategoryHeaders,
+      sortMode: state.sortMode,
     }));
   } catch {
     // localStorage unavailable/full — last-viewed state just won't survive reload.
@@ -1399,6 +1398,47 @@ function enterCategoryRenameMode(name, row) {
   });
 }
 
+// How "All tasks" is ordered (remembered per device): your own drag order, newest first,
+// quest-linked tasks first, or grouped under category headers.
+const SORTS = { manual: "Your order", recent: "Most recent", quests: "Quests first", category: "Category" };
+
+// A task is a quest's if the Guild made it, a quest is flagged on it, or on one of its subtasks.
+const questLinked = (t) => !!(t.questId || state.questFlare?.[t.id]);
+const isQuestTask = (t) => questLinked(t) || subtasksOf(t).some(questLinked);
+
+function sortedTasks(tasks) {
+  const at = new Map(tasks.map((t, i) => [t, i]));
+  if (state.sortMode === "recent") {
+    // Newest created first; on the same day, the one added later (lower in the file) first.
+    return [...tasks].sort((a, b) => (b.created || "").localeCompare(a.created || "") || at.get(b) - at.get(a));
+  }
+  if (state.sortMode === "quests") return [...tasks].sort((a, b) => Number(isQuestTask(b)) - Number(isQuestTask(a)) || at.get(a) - at.get(b));
+  return tasks;
+}
+
+function openSortMenu(btn) {
+  closeTaskOptionsMenu();
+  const menu = document.createElement("div");
+  menu.className = "category-move-menu task-options-menu";
+  menu.id = "task-options-menu"; // shares the task menu's close-on-outside-click
+  menu.setAttribute("role", "menu");
+  menu.innerHTML = Object.entries(SORTS).map(([k, label]) =>
+    `<div class="combo-option${state.sortMode === k ? " active" : ""}" role="menuitemradio" aria-checked="${state.sortMode === k}" data-sort="${k}">${state.sortMode === k ? "✓ " : ""}${label}</div>`).join("");
+  menu.addEventListener("click", (e) => {
+    const opt = e.target.closest("[data-sort]");
+    if (!opt) return;
+    closeTaskOptionsMenu();
+    state.sortMode = opt.dataset.sort;
+    renderActiveTasksColumn();
+    saveUiState();
+  });
+  document.body.appendChild(menu);
+  const r = btn.getBoundingClientRect(), m = menu.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(r.right - m.width, window.innerWidth - m.width - 8))}px`;
+  menu.style.top = `${Math.min(r.bottom + 4, window.innerHeight - m.height - 8)}px`;
+  setTimeout(() => document.addEventListener("click", onDocClickCloseTaskOptionsMenu, { capture: true }), 0);
+}
+
 function tasksForSelectedCategory() {
   const topLevel = state.tasks.filter((t) => !isSubtask(t));
   return state.selectedCategory === "__all__" ? topLevel : topLevel.filter((t) => t.category === state.selectedCategory);
@@ -1465,12 +1505,13 @@ function renderActiveTasksColumn() {
   el("#active-tasks-title").textContent = searching
     ? `Search: ${totalFound} result${totalFound === 1 ? "" : "s"}`
     : isAllTasks ? "All tasks" : state.selectedCategory;
-  const headersToggle = el("#category-headers-toggle");
-  headersToggle.classList.toggle("hidden", !isAllTasks || searching);
-  headersToggle.classList.toggle("on", state.showCategoryHeaders);
+  const sortBtn = el("#sort-btn");
+  sortBtn.classList.toggle("hidden", !isAllTasks || searching);
+  sortBtn.classList.toggle("on", state.sortMode !== "manual");
+  sortBtn.textContent = `Sort by: ${SORTS[state.sortMode]} ▾`;
   const container = el("#active-task-list");
   container.innerHTML = "";
-  const tasks = searching ? found : tasksForSelectedCategory();
+  const tasks = searching ? found : isAllTasks ? sortedTasks(tasksForSelectedCategory()) : tasksForSelectedCategory();
   if (searching) {
     if (found.length === 0 && foundHistory.length === 0) container.innerHTML = `<div class="col-empty-hint">Nothing matches.</div>`;
     found.forEach((task) => container.appendChild(taskCard(task, 0, 0)));
@@ -1485,7 +1526,7 @@ function renderActiveTasksColumn() {
     container.innerHTML = `<div class="col-empty-hint">Nothing on the list. Add something below.</div>`;
   } else if (tasks.length === 0) {
     container.innerHTML = `<div class="col-empty-hint">Nothing in this category yet.</div>`;
-  } else if (isAllTasks && state.showCategoryHeaders) {
+  } else if (isAllTasks && state.sortMode === "category") {
     const groups = groupBy(tasks, "category");
     Object.keys(groups).sort().forEach((cat) => {
       const header = document.createElement("div");
@@ -1511,10 +1552,9 @@ el("#task-search").addEventListener("keydown", (e) => {
   }
 });
 
-el("#category-headers-toggle").addEventListener("click", () => {
-  state.showCategoryHeaders = !state.showCategoryHeaders;
-  renderActiveTasksColumn();
-  saveUiState();
+el("#sort-btn").addEventListener("click", (e) => {
+  if (document.getElementById("task-options-menu")) return closeTaskOptionsMenu();
+  openSortMenu(e.currentTarget);
 });
 
 // ---------- Active tab: category rail + task selection ----------
@@ -3985,7 +4025,9 @@ const savedUiState = loadUiState();
 if (savedUiState.selectedCategory) state.selectedCategory = savedUiState.selectedCategory;
 if (savedUiState.selectedActiveTaskKey) state.selectedActiveTaskKey = savedUiState.selectedActiveTaskKey;
 if (savedUiState.selectedAssistKey) state.selectedAssistKey = savedUiState.selectedAssistKey;
-if (savedUiState.showCategoryHeaders) state.showCategoryHeaders = true;
+// sortMode replaced the old Group-by-category switch (showCategoryHeaders), which carries over as "category".
+if (SORTS[savedUiState.sortMode]) state.sortMode = savedUiState.sortMode;
+else if (savedUiState.showCategoryHeaders) state.sortMode = "category";
 if (savedUiState.tab && TAB_ORDER.includes(savedUiState.tab)) switchToTab(savedUiState.tab);
 
 loadData();
