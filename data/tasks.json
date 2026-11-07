@@ -303,7 +303,16 @@
       "category": "Development",
       "created": "2026-11-07",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw5ong09yopq",
+          "text": ".\n\nThe distinction is:\n\n* Your journal system has its own reflective component. It can analyse entries, identify themes, ask questions, provide feedback and help you process experiences.\n\n* Your Adventurers Guild has a receptionist who can access those journal reflections (with permission).\n\nSo when you walk into the guild, the receptionist can respond to how you're doing that day.\n\nFor example:\n\nReceptionist: \"Welcome back! I read your latest expedition report. Sounds like you've had quite a lot on your mind.\"\n\nReceptionist: \"I particularly liked something you wrote about your research project. Have you considered turning that idea into a quest?\"\n\nOr:\n\nReceptionist: \"You've had a fairly demanding week. I've got a few adventures available today, but perhaps we should start with something a little lighter?\"\n\nThe important thing is that the receptionist is context-aware and responsive, rather than simply dispensing generic quests.\n\nI'd actually keep the implementation very lightweight:\n\n* Journal produces a daily reflection or summary.\n\n* Guild receptionist receives that summary and relevant ongoing context.\n\n* Receptionist uses it to personalise greetings, conversations and quest recommendations.\n\n* Your actual journal remains the place for deeper reflection.\n\nAnd the receptionist shouldn't necessarily always bring up something serious. Sometimes they might just be funny, curious, enthusiastic or have an interesting suggestion.\n\nThe idea is that your fictional world knows a little about your real world, and the boundary between the two becomes a playful interface for exploring life.",
+          "done": false,
+          "created": "2026-11-07T00:46:20.361Z",
+          "updated": "2026-11-07T00:46:20.361Z"
+        }
+      ]
     }
   ]
 }
