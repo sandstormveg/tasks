@@ -144,6 +144,18 @@
         <label class="settings-check"><input id="settings-quest-nominate" type="checkbox" checked />
           <span>Nominate as a quest: add “⚔ Nominate as a quest” to each task's ⋮ menu. The Guild turns a nominated task into a request for the guild master.</span></label>
       </details>
+      <details class="settings-section" id="settings-install">
+        <summary>App install</summary>
+        <p class="hint" id="install-status"></p>
+        <button type="button" id="install-btn" hidden>Install Tasks</button>
+        <ol class="hint install-steps">
+          <li>Remove the old app: long-press its icon › App info › Uninstall (or Android Settings › Apps › Tasks › Uninstall).</li>
+          <li>In Chrome, open this site, tap below to reset its app files, then fully close Chrome (swipe it away in recent apps).</li>
+          <li>Reopen this site in Chrome: tap ⋮ › Install app (or "Add to Home screen" › Install). If it still says installed, restart the phone and try once more.</li>
+        </ol>
+        <button type="button" id="reset-app-btn">Reset app files</button>
+        <p class="hint">Clears this site's offline copies and background workers (Tasks, Journal, Research, Guild) and reloads. Your key, settings, tasks and journal stay.</p>
+      </details>
       <div class="dialog-actions">
         <button type="button" id="settings-clear">Clear</button>
         <button type="submit">Save</button>
@@ -151,6 +163,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=46"></script>
+  <script src="app.js?v=47"></script>
 </body>
 </html>

@@ -3869,12 +3869,45 @@ el("#active-detail-back").addEventListener("click", closeActiveDetail);
 
 // ---------- settings ----------
 el("#settings-btn").addEventListener("click", () => {
+  renderInstallStatus();
   el("#settings-token").value = getToken();
   el("#settings-quest-flare").checked = questFlareOn();
   el("#settings-quest-nominate").checked = questNominateOn();
   el("#settings-dialog").showModal();
 });
 el("#settings-close").addEventListener("click", () => el("#settings-dialog").close());
+
+// App install help. Chrome decides "installed" itself (Android keeps a hidden app, a WebAPK,
+// on record), so this can only offer its install prompt when Chrome has one to give, say how
+// this page is running, and reset the site's workers and caches. That reset never touches
+// localStorage or the journal's own storage, so the key, settings and data all stay.
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; renderInstallStatus(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; renderInstallStatus(); });
+
+function renderInstallStatus() {
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  el("#install-status").textContent = standalone ? "You're in the installed app."
+    : installPrompt ? "Chrome can install Tasks on this device." : "Running in the browser. If Chrome won't offer to install, follow these steps:";
+  el("#install-btn").hidden = !installPrompt;
+}
+el("#install-btn").addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => null);
+  installPrompt = null;
+  renderInstallStatus();
+});
+el("#reset-app-btn").addEventListener("click", async (e) => {
+  if (!confirm("Reset this site's app files? Your key, settings and data stay. The page reloads.")) return;
+  e.currentTarget.disabled = true;
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations()) || [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    if (window.caches) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+  } catch { /* reload anyway: whatever was cleared stays cleared */ }
+  location.reload();
+});
 el("#settings-dialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }); // tap outside the box
 el("#settings-clear").addEventListener("click", () => {
   localStorage.removeItem(tokenKey);
