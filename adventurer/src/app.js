@@ -25,6 +25,10 @@ export const DEFAULTS = {
   voiceVolume: 1,
   voiceRate: 1,
   voicePitch: 1.1,
+  coachVoice: true,
+  coachName: "Sergeant Brass",
+  coachVoiceName: "",
+  coachVolume: 1,
   autoSync: true,
 };
 

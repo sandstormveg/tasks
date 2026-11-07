@@ -5,13 +5,15 @@
 import { html, toast, confirmSheet } from "../ui/dom.js";
 import { AGE_BANDS } from "../core/norms.js";
 import { speak, voices, bestVoice } from "../ui/voice.js";
+import { coachVoice } from "../ui/coach.js";
 
+const coachOpts = (f) => ({ coachVoice: !!f.coachVoice, coachName: (f.coachName || "Sergeant Brass").trim().slice(0, 24) || "Sergeant Brass", coachVoiceName: f.coachVoiceName || "", coachVolume: Number(f.coachVolume) });
 const voiceOpts = (f) => ({ voiceName: f.voiceName || "", voiceVolume: Number(f.voiceVolume), voiceRate: Number(f.voiceRate), voicePitch: Number(f.voicePitch) });
 
 // The device's English voices, filled in once the browser has listed them (Chrome lists them late).
-function fillVoices(sel, chosen) {
+function fillVoices(sel, chosen, kind) {
   if (!sel) return;
-  const best = bestVoice();
+  const best = bestVoice(kind);
   sel.replaceChildren(new Option(best ? `Best on this device (${best})` : "Best on this device", ""), ...voices().map((v) => new Option(`${v.name} · ${v.lang}`, v.name, false, v.name === chosen)));
 }
 
@@ -50,6 +52,16 @@ export async function mount(el, ctx, route, ui) {
         <button type="button" class="btn small" data-a="voice-test">▶ Hear her</button>
         <p class="hint">Voices come from your device. On Windows the "Online (Natural)" voices (Aria, Jenny) sound the most human; on iPhone, download an "Enhanced" voice in Settings › Accessibility › Spoken Content.</p>
       </fieldset>
+      <fieldset><legend>Training coach</legend>
+        <label class="check"><input type="checkbox" name="coachVoice" ${s.coachVoice ? "checked" : ""}> Coach's voice: he counts your reps, calls the tempo, cues your form and calls your rest out loud (tap his portrait to hush)</label>
+        <div class="grid2">
+          <label class="field"><span>Name</span><input class="input" name="coachName" value="${s.coachName}" maxlength="24"></label>
+          <label class="field"><span>Voice</span><select class="input" name="coachVoiceName" data-coach-voices><option value="">Best on this device</option></select></label>
+          <label class="field"><span>Volume</span><input class="input" type="range" name="coachVolume" min="0" max="1" step="0.05" value="${s.coachVolume ?? 1}"></label>
+        </div>
+        <button type="button" class="btn small" data-a="coach-test">▶ Hear him</button>
+        <p class="hint">He picks a male voice, British if your device has one (on Windows, "Ryan" or "Thomas Online (Natural)"). Phones that only name voices by language get the UK one, pitched down.</p>
+      </fieldset>
       <fieldset><legend>Stats profile</legend>
         <p class="hint">Only used to pick the right population table. Synced to your private repo.</p>
         <div class="grid2">
@@ -65,15 +77,17 @@ export async function mount(el, ctx, route, ui) {
       <div class="row"><button class="btn primary" type="submit">Save</button></div>
     </form>`);
     fillVoices(el.querySelector("[data-voices]"), s.voiceName);
+    fillVoices(el.querySelector("[data-coach-voices]"), s.coachVoiceName, "male");
   };
   draw();
-  if ("speechSynthesis" in window) { const refill = () => fillVoices(el.querySelector("[data-voices]"), ctx.settings().voiceName); speechSynthesis.addEventListener("voiceschanged", refill); ui.cleanup(() => speechSynthesis.removeEventListener("voiceschanged", refill)); }
+  if ("speechSynthesis" in window) { const refill = () => { fillVoices(el.querySelector("[data-voices]"), ctx.settings().voiceName); fillVoices(el.querySelector("[data-coach-voices]"), ctx.settings().coachVoiceName, "male"); }; speechSynthesis.addEventListener("voiceschanged", refill); ui.cleanup(() => speechSynthesis.removeEventListener("voiceschanged", refill)); }
   ui.onStore((c) => { if (["sync", "sync-end", "sync-error"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (a === "sync") { await ctx.syncNow(); toast(ctx.store.status.error ? ctx.store.status.error : "Synced.", { error: !!ctx.store.status.error }); }
     if (a === "voice-test") speak("Welcome back, adventurer. The board's looking good today.", voiceOpts(Object.fromEntries(new FormData(el.querySelector("form")))));
+    if (a === "coach-test") speak("Right then, soldier. Ten push-ups. On my count.", coachVoice(coachOpts(Object.fromEntries(new FormData(el.querySelector("form"))))));
     if (a === "forget" && await confirmSheet("Forget the token saved on this device?", { confirm: "Forget" })) { ctx.store.setSecrets({ githubToken: "" }); draw(); }
   });
   el.addEventListener("submit", (e) => {
@@ -82,7 +96,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), autoSync: !!f.autoSync });
+      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

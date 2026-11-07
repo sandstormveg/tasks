@@ -12,6 +12,8 @@
 
 import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
+import { coachSet, coachBubble, coachSay, coachName } from "../ui/coach.js";
+import { restLine, restStart } from "../core/coach.js";
 import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPlan, testSets, attempts } from "../core/grades.js";
 
 const dayOf = localDay;
@@ -50,6 +52,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="free-sets">
           <span class="muted small">Free set, any day, counted by the camera:</span>
           ${FREE.map((ex) => html`<button class="btn" data-free="${ex}">◉ ${ex}s</button>`)}
+          <button class="btn ghost" data-rest>⏱ Rest 90s</button>
         </div>
       </section>
       ${record.length ? html`<section class="train-record"><h3>Test record</h3>${record.map(attemptRow)}</section>` : ""}
@@ -68,6 +71,7 @@ export async function mount(el, ctx, route, ui) {
     if (e.target.closest("[data-sit]")) return sitTest(ctx);
     const f = e.target.closest("[data-free]");
     if (f) return runMission(ctx, freeSet(ctx, f.dataset.free));
+    if (e.target.closest("[data-rest]")) return restSheet(ctx, { title: "Rest", seconds: 90, foot: html`<button class="btn primary" data-close>Done</button>` });
   });
 }
 
@@ -142,9 +146,44 @@ function freeSet(ctx, ex) {
     proof: { type: "reps", exercise: ex, count: 1 }, posted: now };
 }
 
-async function count(q, opts) {
+// Your top camera-counted set of an exercise so far, for the coach's records (null: never measured).
+function bestReps(quests, ex) {
+  const reps = quests.filter((q) => q.evidence?.exercise === ex && q.evidence.verified && q.evidence.reps > 0).map((q) => q.evidence.reps);
+  return reps.length ? Math.max(...reps) : null;
+}
+
+/** Counts one set with Sergeant Brass coaching it; he gives his verdict once it's done. */
+async function count(ctx, q, opts) {
   const { countReps } = await import("../vision/reps-sheet.js");
-  return countReps(q.proof.exercise, q.proof.count, opts);
+  const ex = q.proof.exercise, best = bestReps(ctx.quests(), ex);
+  const coach = coachSet(ctx.settings(), ex, q.proof.count, { max: !!opts.max, best });
+  const res = await countReps(ex, q.proof.count, { ...opts, coach });
+  if (res?.reps) coach.end(res.reps); else coach.stop();
+  return res;
+}
+
+/** A rest between sets: a countdown he calls out. Resolves true for the sheet's [data-go] button. */
+function restSheet(ctx, { title, body = "", seconds = 90, foot }) {
+  const s = ctx.settings(), fmt = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+  return sheet({
+    title,
+    body: html`${coachBubble(coachName(s), restStart(Date.now()))}${body}<p class="rest-timer"><span data-left>${fmt(seconds)}</span> <span class="muted small">rest</span></p>`,
+    foot,
+    setup: (d, close) => {
+      let left = seconds;
+      const out = d.querySelector("[data-left]");
+      coachSay(s, d, d.querySelector(".coach-say").textContent);
+      const id = setInterval(() => {
+        left -= 1;
+        out.textContent = fmt(Math.max(0, left));
+        const line = restLine(left);
+        if (line) coachSay(s, d, line);
+        if (left <= 0) { clearInterval(id); d.querySelector(".rest-timer").classList.add("up"); }
+      }, 1000);
+      d.addEventListener("close", () => clearInterval(id));
+      d.querySelector("[data-go]")?.addEventListener("click", () => close(true));
+    },
+  });
 }
 
 /** Log one counted set: done (paid) if it reached the target, failed (with the reps) if not. */
@@ -159,7 +198,7 @@ function logSet(ctx, q, reps) {
 async function runMission(ctx, q) {
   if (!q) return;
   try {
-    const res = await count(q, { max: q.kind === "max" });
+    const res = await count(ctx, q, { max: q.kind === "max" });
     if (!res) return;
     if (!res.reps) return toast("Nothing was counted, so nothing was logged.");
     const rec = logSet(ctx, q, res.reps);
@@ -183,16 +222,15 @@ async function sitTest(ctx) {
     for (const [i, q] of sets.entries()) {
       if (i > 0) {
         const prev = done[i - 1];
-        const ready = await sheet({
-          title: `Set ${i + 1} of ${sets.length}`,
+        const ready = await restSheet(ctx, {
+          title: `Set ${i + 1} of ${sets.length}`, seconds: 90,
           body: html`<p>${prev.status === "done" ? `✓ ${prev.evidence.reps}/${prev.proof.count} ${prev.proof.exercise}s.` : `${prev.evidence.reps}/${prev.proof.count} ${prev.proof.exercise}s — short of the target, so this attempt won't pass, but the rest of the sets still tell the trainer where you are.`}</p>
             <p>Next: <b>${q.proof.count} ${q.proof.exercise}s</b>. Start when you've got your breath back.</p>`,
           foot: html`<button class="btn" data-close>Stop the test</button><button class="btn primary" data-go>Start</button>`,
-          setup: (d, close) => d.querySelector("[data-go]").addEventListener("click", () => close(true)),
         });
         if (!ready) break;
       }
-      const res = await count(q, { title: `${g.id} test · set ${i + 1}/${sets.length}: ${q.proof.count} ${q.proof.exercise}s` });
+      const res = await count(ctx, q, { title: `${g.id} test · set ${i + 1}/${sets.length}: ${q.proof.count} ${q.proof.exercise}s` });
       if (!res || !res.reps) { if (!done.length) return toast("Test not started — nothing was logged."); break; }
       done.push(logSet(ctx, q, res.reps));
     }
