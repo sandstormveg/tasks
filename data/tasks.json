@@ -352,6 +352,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "training-changes-mw5qe491",
+      "title": "training changes",
+      "category": "Development",
+      "created": "2026-11-07",
+      "notes": "",
+      "assist": false
     }
   ]
 }
