@@ -2,7 +2,11 @@
 // each with a level, like a manhwa status screen's skill list. A skill starts
 // at the level Silica gives it (self-assessed, honest is the point) and grows
 // with the XP of turned-in quests that train it (quest.skills: {id: weight}).
-// Pure; the list lives in quests/showcase.json.
+// Pure; the list lives in quests/showcase.json. A quest tagged with a skill that isn't
+// in the list unlocks it at Lv1 when it's turned in (Silica can rename or move it later),
+// and a feat (rare/epic/legendary, core/quests.js) trains its skills 1.5×, 2× or 3×.
+
+import { featTier } from "./quests.js";
 
 export const SKILL_KINDS = { active: "Active", passive: "Passive", unique: "Unique" };
 export const SKILL_STATUS = ["known", "learning", "aspiring"];
@@ -40,14 +44,22 @@ export function validateSkill(s) {
   return errs;
 }
 
+export const FEAT_BOOST = { rare: 1.5, epic: 2, legendary: 3 };
+const boost = (q) => FEAT_BOOST[featTier(q)] || 1;
+const nameOf = (id) => id.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
 /** Every skill with its level, XP and the quests that trained it. */
 export function skillStats(skills = [], quests = []) {
   const done = quests.filter((q) => q.status === "done");
-  return skills.filter((s) => !s.removed).map((s) => {
+  // Tagged on a turned-in quest but not in the list: unlocked at Lv1. A removed skill stays removed.
+  const listed = new Set(skills.map((s) => s.id));
+  const unlocked = [...new Set(done.flatMap((q) => Object.keys(q.skills || {}).filter((id) => Number(q.skills[id]) > 0)))]
+    .filter((id) => !listed.has(id)).map((id) => ({ id, name: nameOf(id), status: "learning", startLevel: 1, auto: true }));
+  return [...skills.filter((s) => !s.removed), ...unlocked].map((s) => {
     const start = s.status === "aspiring" ? 0 : Math.max(1, Math.min(MAX_SKILL_LEVEL, Number(s.startLevel) || 1));
     const base = start ? SKILL_LEVELS[start - 1] : 0;
     const trained = done.filter((q) => Number(q.skills?.[s.id]) > 0);
-    const earned = Math.round(trained.reduce((sum, q) => sum + (q.xp || 0) * Number(q.skills[s.id]), 0));
+    const earned = Math.round(trained.reduce((sum, q) => sum + (q.xp || 0) * Number(q.skills[s.id]) * boost(q), 0));
     const lv = skillLevel(base + earned);
     // An aspiring skill wakes at Lv1 with its first trained quest.
     const level = s.status === "aspiring" && !earned ? 0 : Math.max(lv.level, start);

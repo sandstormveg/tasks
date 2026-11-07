@@ -75,12 +75,20 @@ export function nextTier(t) {
   return i >= 0 && i < TIERS.length - 1 ? TIERS[i + 1] : null;
 }
 
-/** Levels: each costs a little more than the last (100, 120, 144…, capped growth). */
-export function levelOf(xp) {
-  let level = 1, need = 100, floor = 0;
-  while (xp >= floor + need) { floor += need; level++; need = Math.round(Math.min(need * 1.2, 1500)); }
-  return { level, into: xp - floor, need };
+// Levels: quick at first, then each a little dearer — +40 XP a level (60, 100, 140…), so the
+// first few come from a quest or two and Lv 20 takes months. Steady growth, never a wall.
+export const levelNeed = (level) => 20 + 40 * level;
+/** An attribute's own level, from the XP earned in it: the same shape, cheaper (15, 25, 35…). */
+export const attrNeed = (level) => 5 + 10 * level;
+export const LEVEL_NOTE = "Levels come quick at first, then each costs a bit more: 60 XP to Lv 2, then +40 XP a level (attributes: 15, then +10). Tiers are separate: where you stand against people your age.";
+
+function climb(xp, need) {
+  let level = 1, floor = 0;
+  while (xp >= floor + need(level)) { floor += need(level); level++; }
+  return { level, into: xp - floor, need: need(level) };
 }
+export const levelOf = (xp) => climb(xp, levelNeed);
+export const attrLevel = (xp) => climb(xp, attrNeed);
 
 export function rankOf(xp) {
   let r = RANKS[0];
@@ -134,11 +142,11 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
     const p = got ? percentile(got.value, cdf) : null;
     const tier = tierOf(p);
     const nt = nextTier(tier);
+    const xp = Math.round(done.reduce((s, q) => s + (q.xp || 0) * (Number(q.attributes?.[a.id]) || 0), 0));
     return {
-      ...a, metric: a.metric, unit: m.unit, scale: m.scale, cdf,
+      ...a, metric: a.metric, xp, level: attrLevel(xp), unit: m.unit, scale: m.scale, cdf,
       value: got?.value ?? null, from: got?.from ?? null, percentile: p == null ? null : Math.round(p * 10) / 10,
       tier, next: nt, toNext: nt && got ? Math.max(0, Math.ceil(valueAt(nt.min, cdf) - got.value)) : null,
-      xp: Math.round(done.reduce((s, q) => s + (q.xp || 0) * (Number(q.attributes?.[a.id]) || 0), 0)),
     };
   });
 }

@@ -15,7 +15,8 @@ import { speak } from "../ui/voice.js";
 import { checkIn } from "../core/geo.js";
 import { geosearchUrl, scoutQuests } from "../core/scout.js";
 import { relayCounter, relayBubble } from "../ui/relay.js";
-import { newlyEarned } from "../core/achievements.js";
+import { announce } from "../ui/moments.js";
+import { trackJog } from "../ui/jog.js";
 import { attributeGains } from "../core/stats.js";
 import { uploadPhoto } from "../data/media.js";
 
@@ -145,7 +146,7 @@ async function postOwn(ctx) {
         <label class="field"><span>Difficulty</span><select class="input" name="difficulty">${opts(Object.keys(DIFFICULTY))}</select></label>
         <label class="field"><span>Proof</span><select class="input" name="proof">${opts(PROOFS, PROOF_LABEL)}</select></label>
         <label class="field"><span>Exercise (reps)</span><select class="input" name="exercise">${opts(EXERCISES)}</select></label>
-        <label class="field"><span>Reps</span><input class="input" name="count" type="number" min="1" value="20"></label>
+        <label class="field"><span>Reps (or steps, for a jog)</span><input class="input" name="count" type="number" min="1" value="20"></label>
         <label class="field"><span>Attribute</span><select class="input" name="attr">${opts(["", "str", "vit", "agi", "int", "wis", "cha", "wil"])}</select></label>
         <label class="field"><span>Trains skill</span><select class="input" name="skill"><option value="">—</option>${ctx.store.skills().map((k) => html`<option value="${k.id}">${k.name}</option>`)}</select></label>
         <label class="field"><span>Expires</span><input class="input" name="expires" type="date"></label>
@@ -161,7 +162,7 @@ async function postOwn(ctx) {
   });
   if (!out) return;
   if (out.proof === "gps") return toast("GPS quests come from Scout nearby or the guild master — they need a public place.", { error: true });
-  const proof = out.proof === "reps" ? { type: "reps", exercise: out.exercise, count: Number(out.count) } : { type: out.proof };
+  const proof = out.proof === "reps" ? { type: "reps", exercise: out.exercise, count: Number(out.count) } : out.proof === "jog" ? { type: "jog", steps: Number(out.count) } : { type: out.proof };
   try {
     ctx.store.put({ id: newId(out.title, ctx.store.ids()), title: out.title.trim(), brief: out.brief?.trim() || undefined, status: "posted", origin: out.task ? "task" : "self", giver: "self", author: "self",
       taskIds: out.task ? [out.task] : [], difficulty: out.difficulty, attributes: out.attr ? { [out.attr]: 1 } : out.proof === "reps" ? { str: 1 } : {},
@@ -196,7 +197,7 @@ async function openQuest(ctx, q) {
       ${ctx.taskDone(q) ? html`<p class="notice">You finished its task in Tasks. Turn it in below to claim the XP.</p>` : ""}
       <dl class="facts">
         ${hasObjectives(q) ? html`<dt>Reward</dt><dd>+${objectiveXp(q).potential} XP${objectiveXp(q).bonus ? html` <span class="muted">(+${objectiveXp(q).bonus} bonus)</span>` : ""}</dd>` : html`<dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>`}
-        ${hasObjectives(q) ? "" : html`<dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>`}
+        ${hasObjectives(q) ? "" : html`<dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "jog" ? ` · ${q.proof.steps.toLocaleString()} steps` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>`}
         ${Object.keys(q.attributes).length || q.skills ? html`<dt>Trains</dt><dd>${[...Object.keys(q.attributes).map((a) => a.toUpperCase()), ...Object.keys(q.skills || {}).map((id) => ctx.store.skills().find((k) => k.id === id)?.name || id)].join(" · ")}</dd>` : ""}
         ${q.expires ? html`<dt>Closes</dt><dd>${q.expires}</dd>` : ""}
         <dt>Posted by</dt><dd>${q.giver === "guildmaster" ? "the guild master" : q.giver === "relay" ? s.relayName : q.giver === "board" ? "the board" : "you"}</dd>
@@ -247,6 +248,12 @@ async function turnIn(ctx, q, type) {
     if (!res) return;
     if (res.reps < q.proof.count) return toast(`${res.reps}/${q.proof.count} counted. Not enough for the stamp — try again when you're ready.`, { timeout: 7000 });
     evidence = { exercise: q.proof.exercise, reps: res.reps, verified: true };
+  } else if (type === "jog") {
+    const res = await trackJog(ctx.settings(), { steps: q.proof.steps, title: q.title });
+    if (!res) return;
+    if (res.steps < q.proof.steps) return toast(`${res.steps.toLocaleString()}/${q.proof.steps.toLocaleString()} steps. Not enough for the stamp yet — go again when you're ready.`, { timeout: 7000 });
+    if (res.manual) { type = "honor"; evidence = { steps: res.steps, manual: true }; }
+    else evidence = { meters: res.meters, steps: res.steps, minutes: res.minutes, tracked: true }; // totals only, never the route
   } else if (type === "photo") {
     const path = await uploadPhoto(ctx, q.id);
     if (!path) return;
@@ -272,7 +279,7 @@ async function turnIn(ctx, q, type) {
   if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }), s);
   celebrate();
   if (done.encounter) await openEncounter(done, { taskTitle: ctx.taskTitle });
-  for (const a of newlyEarned(before.trophies, after.trophies)) toast(`🏆 Achievement unlocked: ${a.title}`, { timeout: 7000 });
+  await announce(before, after);
 }
 
 function celebrate() {

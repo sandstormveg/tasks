@@ -1,5 +1,5 @@
 {
- "version": "02025cec4af2",
+ "version": "25b21371509f",
  "files": [
   "./",
   "icons/icon.svg",
@@ -31,6 +31,8 @@
   "src/ui/coach.js",
   "src/ui/dom.js",
   "src/ui/encounter.js",
+  "src/ui/jog.js",
+  "src/ui/moments.js",
   "src/ui/questmap.js",
   "src/ui/relay.js",
   "src/ui/voice.js",

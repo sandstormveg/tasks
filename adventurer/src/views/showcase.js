@@ -116,7 +116,7 @@ export async function openTrophy(ctx, a) {
   const act = await sheet({
     title: a.title,
     body: html`<div class="trophy-detail t-${a.tier} ${a.earned ? "won" : "locked"}">${medal(a, 120)}
-      <p class="tier-name">${TROPHY_TIERS[a.tier]} · ${a.kind === "personal" ? "Life trophy" : "Guild medal"}</p>
+      <p class="tier-name">${TROPHY_TIERS[a.tier]} · ${a.kind === "personal" ? "Life trophy" : a.kind === "feat" ? "Feat" : "Guild medal"}</p>
       <p>${a.desc}</p>
       ${a.earned ? html`<p class="muted">${a.date ? `Earned ${a.date}` : "Earned"}</p>` : a.target ? html`<div class="skill-bar"><i style="width:${Math.round(a.progress * 100)}%"></i></div><p class="muted small">${a.value} / ${a.target}</p>` : html`<p class="muted">Still ahead. Claim it the day it happens.</p>`}
     </div>`,

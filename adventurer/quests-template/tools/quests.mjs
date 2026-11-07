@@ -85,7 +85,7 @@ var STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined",
 var OPEN = /* @__PURE__ */ new Set(["posted", "accepted"]);
 var ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
 var GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
-var PROOFS = ["gps", "reps", "photo", "journal", "honor"];
+var PROOFS = ["gps", "reps", "jog", "photo", "journal", "honor"];
 var EXERCISES2 = ["pushup", "squat", "situp", "dip", "pullup"];
 var DIFFICULTY = {
   trivial: { xp: 10, label: "Trivial" },
@@ -94,7 +94,8 @@ var DIFFICULTY = {
   hard: { xp: 100, label: "Hard" },
   epic: { xp: 250, label: "Epic" }
 };
-var PROOF_RATE = { gps: 1, reps: 1, photo: 0.9, journal: 0.9, honor: 0.6 };
+var PROOF_RATE = { gps: 1, reps: 1, jog: 1, photo: 0.9, journal: 0.9, honor: 0.6 };
+var FEAT_TIERS = ["rare", "epic", "legendary"];
 var ID_RE = /^[a-z0-9][a-z0-9-]{0,79}$/;
 function slug(text) {
   return String(text || "quest").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "quest";
@@ -139,6 +140,7 @@ function validate(q) {
       if (!EXERCISES2.includes(p.exercise)) errs.push(`proof.exercise must be one of ${EXERCISES2.join(", ")}`);
       if (!(p.count > 0)) errs.push("proof.count must be a positive number of reps");
     }
+    if (p.type === "jog" && !(p.steps > 0)) errs.push("a jog quest needs proof.steps, a positive number of steps");
   }
   if (q.attributes) {
     for (const [k, v] of Object.entries(q.attributes)) if (!(v >= 0 && v <= 1)) errs.push(`attributes.${k} must be a weight from 0 to 1`);
@@ -147,6 +149,7 @@ function validate(q) {
     if (typeof q.skills !== "object" || Array.isArray(q.skills)) errs.push("skills must be {skill-id: weight}");
     else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
   }
+  if (q.feat !== void 0 && !FEAT_TIERS.includes(q.feat?.tier)) errs.push(`feat.tier must be one of ${FEAT_TIERS.join(", ")}`);
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
   errs.push(...validateObjectives(q));
   if (q.encounter) {
@@ -183,6 +186,7 @@ function serialize(q) {
     "difficulty",
     "attributes",
     "skills",
+    "feat",
     "proof",
     "objectives",
     "progress",
@@ -409,7 +413,7 @@ function eligibility(quests2, { profile = {}, today }) {
 }
 
 // src/core/achievements.js
-var TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
+var TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", rare: "Rare", gold: "Gold", epic: "Epic", mythic: "Mythic", legendary: "Legendary" };
 var count = (key, n) => (f2) => ({ value: f2[key].length, target: n, date: f2[key][n - 1] || null });
 var grade = (id) => (f2) => ({ value: f2.grade, target: GRADES.findIndex((g) => g.id === id), date: f2.gradeDays[id] || null });
 var streak = (n) => (f2) => ({ value: f2.streak.best, target: n, date: f2.streak.reached[n] || null });
@@ -427,6 +431,10 @@ var CATALOG = [
     icon: "\u270A",
     check: (f2) => ({ value: f2.repTotal, target: 500, date: f2.repDates.find(([, n]) => n >= 500)?.[0] || null })
   },
+  { id: "first-pullup", title: "Over the Bar", desc: "A camera-verified pull-up, chin over the bar.", tier: "rare", icon: "\u21E1", check: count("pullups", 1) },
+  { id: "pullups-10", title: "Ten Clean", desc: "10 pull-ups in one camera-counted set.", tier: "epic", icon: "\u21E1", check: count("pull10", 1) },
+  { id: "first-jog", title: "Road Runner", desc: "Finish a jog.", tier: "bronze", icon: "\u27B6", check: count("jogs", 1) },
+  { id: "first-5k", title: "First 5k", desc: "Jog 5 km in one go.", tier: "epic", icon: "\u27B6", check: count("fiveK", 1) },
   { id: "first-gps", title: "First Footsteps", desc: "Check in somewhere by GPS.", tier: "bronze", icon: "\u2316", check: count("gps", 1) },
   { id: "gps-10", title: "Cartographer", desc: "Check in at 10 places.", tier: "silver", icon: "\u2316", check: count("gps", 10) },
   { id: "gps-50", title: "World Walker", desc: "Check in at 50 places.", tier: "gold", icon: "\u2316", check: count("gps", 50) },
@@ -678,12 +686,13 @@ function build(f2, base = {}) {
   const proofType = f2.proof || base.proof?.type || "honor";
   let proof = { type: proofType };
   if (proofType === "reps") proof = { type: "reps", exercise: f2.exercise || base.proof?.exercise, count: Number(f2.count || base.proof?.count) };
+  if (proofType === "jog") proof = { type: "jog", steps: Number(f2.steps || base.proof?.steps) };
   if (proofType === "gps") proof = { type: "gps", target: { lat: Number(f2.lat), lng: Number(f2.lng), place: f2.place || void 0, radius: f2.radius ? Number(f2.radius) : 60 } };
   const attributes = f2.attr ? weights(f2.attr) : base.attributes || {};
   const skills = f2.skill ? weights(f2.skill) : base.skills;
   if (f2.skill) {
     const known = new Set(readShowcase().skills.filter((s) => !s.removed).map((s) => s.id));
-    for (const id of Object.keys(skills)) if (!known.has(id)) console.warn(`Note: no skill "${id}" in showcase.json yet (skill list); it will count once one exists.`);
+    for (const id of Object.keys(skills)) if (!known.has(id)) console.warn(`Note: no skill "${id}" in showcase.json yet: turning this quest in unlocks it at Lv 1.`);
   }
   return {
     ...base,
@@ -699,11 +708,16 @@ function build(f2, base = {}) {
     difficulty: f2.difficulty || base.difficulty || "normal",
     attributes,
     skills,
+    feat: f2.feat ? featFrom(f2.feat) : base.feat,
     proof,
     posted: base.posted && base.status !== "requested" ? base.posted : (/* @__PURE__ */ new Date()).toISOString(),
     expires: f2.expires || base.expires,
     objectives: f2.objective ? objectivesFrom(f2.objective) : base.objectives
   };
+}
+function featFrom(spec) {
+  const [tier, ...title] = String(spec).split(":");
+  return { tier: tier.trim(), ...title.length ? { title: title.join(":").trim() } : {} };
 }
 function objectivesFrom(specs, start = 1) {
   try {
