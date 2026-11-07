@@ -10,7 +10,7 @@
 
 import { html, raw, sheet, toast } from "../ui/dom.js";
 import { METRICS, ATTRIBUTES, NORMS_VERSION } from "../core/norms.js";
-import { TIERS } from "../core/stats.js";
+import { TIERS, LEVEL_NOTE } from "../core/stats.js";
 import { explainTier } from "../core/relay.js";
 import { skillsSection, editSkill, trophiesSection, openTrophy, editTrophy } from "./showcase.js";
 
@@ -25,7 +25,7 @@ export async function mount(el, ctx, route, ui) {
     const xpPct = Math.round((d.level.into / d.level.need) * 100);
     el.innerHTML = String(html`
       <section class="status-head">
-        <div class="lv"><span class="lv-label">LV</span><span class="lv-num">${d.level.level}</span></div>
+        <div class="lv" title="${LEVEL_NOTE}"><span class="lv-label">LV</span><span class="lv-num">${d.level.level}</span></div>
         <div class="grow">
           <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span></div>
           <div class="xpbar" role="progressbar" aria-valuenow="${d.level.into}" aria-valuemax="${d.level.need}" aria-label="XP to next level"><i style="width:${xpPct}%"></i></div>
@@ -38,6 +38,7 @@ export async function mount(el, ctx, route, ui) {
       ${skillsSection(d.skills)}
       ${trophiesSection(d.trophies, filter)}
       <details class="footnote"><summary>Sources & method</summary>
+        <p>${LEVEL_NOTE} Skills unlock at Lv 1 when you turn in a quest that trains them; rare, epic and legendary feats train them 1.5×, 2× and 3×.</p>
         <p>Tiers come from where a value sits in a distribution: F under the 10th percentile, then E 10, D 30, C 50, B 70, A 85, S 95, SS 99. Population metrics compare you with published data; "guild ladder" metrics have no good population data and use the guild's own scale. XP comes only from turned-in quests (verified proof pays in full, your word about 60%) and finished tasks (+15). Missing data is shown as unranked, never as zero. Reference data version ${NORMS_VERSION}.</p>
         <ul>${Object.entries(METRICS).filter(([k]) => ATTRIBUTES.some((a) => a.metric === k)).map(([, m]) => html`<li><b>${m.label}</b> (${m.scale === "game" ? "guild ladder" : "population"}): ${m.source}</li>`)}</ul>
       </details>`);
@@ -81,6 +82,7 @@ function attrRow(a, isOpen, s) {
   return html`<div class="attr ${isOpen ? "open" : ""}" data-attr="${a.id}" role="button" tabindex="0" aria-expanded="${isOpen}">
     <div class="attr-main">
       <span class="attr-name">${a.name}</span>
+      <span class="attr-lv" title="${a.xp} XP here. ${a.level.into}/${a.level.need} to Lv ${a.level.level + 1}. ${LEVEL_NOTE}">Lv ${a.level.level}</span>
       <span class="tier t-${a.tier?.id || "none"}">${a.tier?.id || "?"}</span>
       <span class="attr-label">${a.label}</span>
       <span class="attr-val">${fmt(a.value)} <small>${a.value == null ? "unranked" : a.unit}</small></span>
@@ -92,7 +94,7 @@ function attrRow(a, isOpen, s) {
       <div class="row wrap small muted">
         ${p != null ? html`<span>${Math.round(p)}th percentile</span>` : ""}
         ${a.from ? html`<span>from ${a.from === "verified" ? "camera-verified reps" : a.from === "typed" ? "your entry" : a.from}</span>` : ""}
-        ${a.xp ? html`<span>${a.xp} XP earned here</span>` : ""}
+        ${a.xp ? html`<span>${a.xp} XP earned here · Lv ${a.level.level} (${a.level.into}/${a.level.need} to the next)</span>` : ""}
         ${a.scale === "game" ? html`<span>guild ladder</span>` : ""}
       </div>
       ${["pushups", "activeMinutes", "books"].includes(a.metric) ? html`<button class="btn small" data-measure="${a.metric}">Measure</button>` : ""}

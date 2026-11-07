@@ -18,7 +18,9 @@ export const EXERCISE_RULES = {
   squat: { joints: ["hip", "knee", "ankle"], down: 100, up: 160, dwell: 250, cooldown: 1100, cue: "Face the camera, hips to ankles in frame." },
   situp: { joints: ["shoulder", "hip", "knee"], down: 135, up: 75, dwell: 250, cooldown: 1100, inverted: true, cue: "Phone on the floor, side-on." },
   dip: { joints: ["shoulder", "elbow", "wrist"], down: 90, up: 155, dwell: 200, cooldown: 900, cue: "Side-on, arms in frame." },
-  pullup: { joints: ["shoulder", "elbow", "wrist"], down: 160, up: 70, dwell: 200, cooldown: 900, inverted: true, cue: "Face the camera, bar and elbows in frame." },
+  // Pull-ups: from a full hang (elbows straight), a rep lands when the chin clears the bar, read as the
+  // nose rising to the hands (they're on the bar). Bent elbows alone don't count.
+  pullup: { joints: ["shoulder", "elbow", "wrist"], down: 150, up: 110, dwell: 200, cooldown: 900, inverted: true, chin: true, cue: "Face the camera: bar, hands and head in frame." },
 };
 
 // Cali_pro's MIN_CONFIDENCE. Lower lets the hidden far arm (side-on, it scores ~0.3–0.4
@@ -68,7 +70,14 @@ export class RepCounter {
     const a = Math.round(angles.reduce((s, x) => s + x, 0) / angles.length);
     this.angle = a;
     const isDown = inverted ? a >= down : a <= down;
-    const isUp = inverted ? a <= up : a >= up;
+    let isUp = inverted ? a <= up : a >= up;
+    if (this.rule.chin) {
+      const hands = ["left_wrist", "right_wrist"].map((n) => kp[n]).filter((p) => p && (p.score ?? 1) >= MIN_SCORE);
+      const nose = kp.nose && (kp.nose.score ?? 1) >= MIN_SCORE ? kp.nose : null;
+      this.chin = !!(nose && hands.length && nose.y <= Math.min(...hands.map((p) => p.y)));
+      if (isUp && !this.chin && this.stage === "DOWN") this.hint = "Chin over the bar.";
+      isUp = isUp && this.chin;
+    }
     if (isDown) {
       if (this.stage !== "DOWN") { this.stage = "DOWN"; this.downAt = t; this.peak = a; }
       else this.peak = inverted ? Math.max(this.peak, a) : Math.min(this.peak, a);

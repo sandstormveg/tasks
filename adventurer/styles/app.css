@@ -77,6 +77,14 @@ a { color: var(--accent-2); }
 .portrait[data-who="coach"] { color: #d9a441; border-color: #b08d57; background: #120c02; }
 .portrait[data-who="coach"].talking { box-shadow: 0 0 10px #d9a441; }
 .coach-bubble { position: static; margin-bottom: 8px; }
+.attr-lv { font-size: .75rem; color: var(--amber); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; }
+.jog { text-align: center; margin: 10px 0; }
+.jog-big { font-size: 2.2rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+.jog-big small { font-size: .9rem; font-weight: normal; opacity: .7; }
+.jog-row { margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
+.moment { display: grid; gap: 10px; }
+.moment-row { display: flex; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--t, #1de9b6); border-radius: 8px; box-shadow: 0 0 12px color-mix(in srgb, var(--t, #1de9b6) 40%, transparent); }
+.moment-icon { font-size: 2rem; color: var(--t, #1de9b6); }
 .rest-timer { font-size: 2.4rem; font-weight: bold; text-align: center; margin: 12px 0; font-variant-numeric: tabular-nums; }
 .rest-timer.up { color: #1de9b6; }
 .relay-bubble { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; position: sticky; top: -1px; z-index: 3; background: #0d0900; }
@@ -278,6 +286,9 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 .skill-bar i { display: block; height: 100%; background: var(--k, var(--accent-2)); box-shadow: 0 0 6px var(--k, var(--accent-2)); border-radius: 0 2px 2px 0; }
 .skill-xp { grid-area: xp; font-size: .7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+.t-rare, .d-rare { --t: #4fc3f7; } .t-epic, .d-epic { --t: #b388ff; } .t-legendary, .d-legendary { --t: #ffab40; }
+.m-rare .ribbon { fill: #1f5f8b; } .m-epic .ribbon { fill: #5b3a9e; } .m-legendary .ribbon { fill: #a35a00; }
+.medal.m-legendary.won { animation: mythic 3.2s ease-in-out infinite; }
 .t-bronze, .d-bronze { --t: #d08a4c; } .t-silver, .d-silver { --t: #c9d6e0; } .t-gold, .d-gold { --t: #ffc940; } .t-mythic, .d-mythic { --t: #ff4f86; }
 .showcase-hero { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; cursor: pointer;
   border: 1px solid var(--t); border-radius: 6px; background: radial-gradient(ellipse at 15% 50%, color-mix(in srgb, var(--t) 22%, transparent), transparent 70%), var(--panel); }

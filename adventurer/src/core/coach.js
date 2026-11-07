@@ -14,8 +14,9 @@ export function setStart(ex, target, { max = false, seed = 0 } = {}) {
 }
 
 /** The tempo cue on the way down: the first couple of reps, then now and then, so the count isn't crowded. */
-export function tempo(done, seed = 0) {
+export function tempo(done, seed = 0, ex = "") {
   if (done > 1 && seed % 4) return null;
+  if (ex === "pullup") return pick(["Full hang…", "Arms straight…", "All the way down…"], seed);
   return pick(["Down…", "Lower…", "Slow on the way down…", "Control it…"], seed);
 }
 
@@ -45,6 +46,16 @@ export function setEnd(reps, { target, max = false, best = null, seed = 0 } = {}
   if (reps >= target) return pick([`${reps}. Target met. Well done, soldier.`, `Good set. ${reps} clean reps.`, `${reps}. That's how it's done.`], seed);
   return pick([`${reps} of ${target}. Not today, but it counts. We go again.`, `${reps}. Short, but you showed up. That matters.`], seed);
 }
+
+/** Jogging: the start, a call every 1000 steps, and when GPS won't come. */
+export const jogStart = (target, seed = 0) => pick([`${target.toLocaleString()} steps. Easy pace, you should be able to talk. Off you go.`, "Right. Nice and steady, soldier. I'll call the thousands.", "Jog on. Light feet, loose shoulders."], seed);
+export function jogMark(steps, target, seed = 0) {
+  const k = Math.floor(steps / 1000) * 1000;
+  if (steps >= target) return pick([`${k.toLocaleString()} steps. That's the target! Walk it off, then tap Done.`, "Target reached. Outstanding. Tap Done when you've caught your breath."], seed);
+  if (Math.abs(k - target / 2) < 500) return `${k.toLocaleString()} steps. Halfway. Hold that pace.`;
+  return `${k.toLocaleString()} steps. ${pick(["Good rhythm.", "Keep breathing.", "Steady.", "Lovely work."], seed)}`;
+}
+export const jogNoFix = () => "No GPS signal yet. Step outside, or enter your steps by hand.";
 
 /** Spoken rest countdown: a line at the marks, null in between. */
 export function restLine(left) {

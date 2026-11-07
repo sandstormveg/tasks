@@ -23,7 +23,8 @@ from the app; you post and shape them with `tools/quests.mjs`, run from this fol
 9. **Sign your work**: `--author "<your model name>"`.
 10. **Skills and trophies are Silica's.** `skill add` and `trophy add` write `showcase.json`; add only what
     Silica has told you is true (a skill they have, a thing they did, a goal they named), never a guess.
-    Tag quests with the skills they train: `--skill rust=1`.
+    Tag quests with the skills they train: `--skill rust=1`. A tag that isn't in `showcase.json` yet unlocks that
+    skill at Lv 1 when the quest is turned in (named from its id: `woodcarving` → Woodcarving), so tag freely.
 11. **Tasks become quests here, not in the task list.** When a task deserves a quest, `add --task <id>`;
     the app syncs accepted quests back to tasks itself. Don't edit `data/tasks.json` for quests.
 
@@ -31,8 +32,14 @@ from the app; you post and shape them with `tools/quests.mjs`, run from this fol
 
 `board/<id>.json` — `id, title, brief, detail, why, status (requested|posted|accepted|done|declined|expired),
 origin (task|inferred|request|guild|local|self), giver, author, taskIds, difficulty (trivial|easy|normal|hard|epic),
-attributes {str, vit, agi, int, wis, cha, wil: 0..1}, skills {skill-id: 0..1}, proof {type: gps|reps|photo|journal|honor, …}, posted,
-expires`. Proof for reps: `{exercise: pushup|squat|situp|dip|pullup, count}`; for gps: `{target: {lat, lng, place, radius}}`.
+attributes {str, vit, agi, int, wis, cha, wil: 0..1}, skills {skill-id: 0..1}, proof {type: gps|reps|jog|photo|journal|honor, …}, feat, posted,
+expires`. Proof for reps: `{exercise: pushup|squat|situp|dip|pullup, count}` (pull-ups count when the chin clears the bar); for
+jog: `{steps}` (`--proof jog --steps 5000`; tracked by GPS while the app is open, ~0.7 m a step, or steps typed in, paid as
+honor); for gps: `{target: {lat, lng, place, radius}}`.
+
+**Feats** are medals for single deeds. Hard quests are rare feats and epic quests epic ones, automatically; name a
+bigger one with `--feat legendary:"One-Arm Pull-up"` (tiers rare|epic|legendary). A feat trains its skills 1.5×/2×/3×.
+Keep legendary for once-in-a-long-while deeds.
 
 XP: difficulty base (10/25/50/100/250) × proof rate (verified 1.0, photo/journal 0.9, honor 0.6).
 `stats.json` holds Silica's stats profile and measurements, and `index.json` is rebuilt by the app: both

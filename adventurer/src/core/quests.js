@@ -13,7 +13,7 @@ export const STATUSES = ["requested", "posted", "accepted", "done", "failed", "d
 export const OPEN = new Set(["posted", "accepted"]);
 export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
 export const GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
-export const PROOFS = ["gps", "reps", "photo", "journal", "honor"];
+export const PROOFS = ["gps", "reps", "jog", "photo", "journal", "honor"];
 export const EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];
 
 export const DIFFICULTY = {
@@ -25,15 +25,28 @@ export const DIFFICULTY = {
 };
 
 /** Verified proof pays in full; your word alone pays a bit over half. */
-export const PROOF_RATE = { gps: 1, reps: 1, photo: 0.9, journal: 0.9, honor: 0.6 };
+export const PROOF_RATE = { gps: 1, reps: 1, jog: 1, photo: 0.9, journal: 0.9, honor: 0.6 };
 
 export const PROOF_LABEL = {
   gps: "GPS check-in",
   reps: "Camera-verified reps",
+  jog: "GPS-tracked jog",
   photo: "Photo",
   journal: "Journal link",
   honor: "Your word",
 };
+
+/** Metres a jogging step, for steps ⇄ distance (5000 steps ≈ 3.5 km). */
+export const STRIDE_M = 0.7;
+
+// Feats: a turned-in quest that's a medal in its own right. The guild master can name one
+// (feat: {tier, title?}); otherwise hard quests are rare feats and epic ones epic. Trainer sets aren't feats.
+export const FEAT_TIERS = ["rare", "epic", "legendary"];
+export function featTier(q) {
+  if (FEAT_TIERS.includes(q.feat?.tier)) return q.feat.tier;
+  if (q.giver === "trainer" || q.origin === "training" || q.origin === "test") return null;
+  return { hard: "rare", epic: "epic" }[q.difficulty] || null;
+}
 
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,79}$/;
 
@@ -87,6 +100,7 @@ export function validate(q) {
       if (!EXERCISES.includes(p.exercise)) errs.push(`proof.exercise must be one of ${EXERCISES.join(", ")}`);
       if (!(p.count > 0)) errs.push("proof.count must be a positive number of reps");
     }
+    if (p.type === "jog" && !(p.steps > 0)) errs.push("a jog quest needs proof.steps, a positive number of steps");
   }
   if (q.attributes) {
     for (const [k, v] of Object.entries(q.attributes)) if (!(v >= 0 && v <= 1)) errs.push(`attributes.${k} must be a weight from 0 to 1`);
@@ -95,6 +109,7 @@ export function validate(q) {
     if (typeof q.skills !== "object" || Array.isArray(q.skills)) errs.push("skills must be {skill-id: weight}");
     else for (const [k, v] of Object.entries(q.skills)) if (!(v >= 0 && v <= 1)) errs.push(`skills.${k} must be a weight from 0 to 1`);
   }
+  if (q.feat !== undefined && !FEAT_TIERS.includes(q.feat?.tier)) errs.push(`feat.tier must be one of ${FEAT_TIERS.join(", ")}`);
   if (q.expires && !/^\d{4}-\d{2}-\d{2}/.test(q.expires)) errs.push("expires must be a date (YYYY-MM-DD)");
   errs.push(...validateObjectives(q));
   if (q.encounter) {
@@ -137,7 +152,7 @@ export function complete(q, { proofType, evidence = {}, at }) {
 
 /** Deterministic file text: stable key order so unchanged quests never make a diff. */
 export function serialize(q) {
-  const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "taskCreated", "difficulty", "attributes", "skills",
+  const order = ["id", "title", "brief", "detail", "why", "status", "origin", "giver", "author", "taskIds", "taskCreated", "difficulty", "attributes", "skills", "feat",
     "proof", "objectives", "progress", "encounter", "kind", "grade", "testId", "posted", "expires", "accepted", "completed", "evidence", "xp"];
   const out = {};
   for (const k of order) if (q[k] !== undefined) out[k] = q[k];

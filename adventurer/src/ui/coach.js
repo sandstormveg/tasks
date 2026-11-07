@@ -43,7 +43,7 @@ export function coachSet(s, exercise, target, { max = false, best = null } = {})
     on(ev, data, d) {
       seed++;
       if (ev === "start") coachSay(s, d, L.setStart(exercise, target, { max, seed }));
-      else if (ev === "down") { const t = L.tempo(data, seed); if (t) coachSay(s, d, t); }
+      else if (ev === "down") { const t = L.tempo(data, seed, exercise); if (t) coachSay(s, d, t); }
       else if (ev === "rep") coachSay(s, d, L.repLine(data, { target, max, best, seed }));
       else if (ev === "hint") {
         const now = performance.now();

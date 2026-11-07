@@ -8,9 +8,10 @@
 
 import { TIERS } from "./stats.js";
 import { GRADES, attempts } from "./grades.js";
-import { localDay } from "./quests.js";
+import { localDay, featTier, STRIDE_M } from "./quests.js";
 
-export const TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", gold: "Gold", mythic: "Mythic" };
+// Rare, epic and legendary are feat tiers: medals for single deeds (core/quests.js featTier).
+export const TROPHY_TIERS = { bronze: "Bronze", silver: "Silver", rare: "Rare", gold: "Gold", epic: "Epic", mythic: "Mythic", legendary: "Legendary" };
 
 const day = localDay;
 
@@ -47,8 +48,15 @@ export function facts({ quests = [], history = [], attributes = [], skills = [] 
   let reps = 0;
   const repDates = [];
   for (const q of done) if (q.evidence?.type === "reps") { reps += q.evidence.reps || 0; repDates.push([day(q.completed), reps]); }
+  const pullSets = done.filter((q) => q.evidence?.type === "reps" && q.evidence.exercise === "pullup" && q.evidence.reps > 0);
+  const jogs = done.filter((q) => q.proof?.type === "jog" && q.evidence?.steps > 0);
+  const jogMeters = (q) => q.evidence.meters ?? q.evidence.steps * STRIDE_M;
   return {
     done: dates(quested),
+    pullups: dates(pullSets),
+    pull10: dates(pullSets.filter((q) => q.evidence.reps >= 10)),
+    jogs: dates(jogs),
+    fiveK: dates(jogs.filter((q) => jogMeters(q) >= 5000)),
     reps: dates(done.filter((q) => q.evidence?.type === "reps")),
     gps: dates(done.filter((q) => q.evidence?.type === "gps")),
     inferred: dates(quested.filter((q) => q.origin === "inferred")),
@@ -74,6 +82,10 @@ export const CATALOG = [
   { id: "first-reps", title: "Proof of Strength", desc: "Turn in a camera-verified quest.", tier: "bronze", icon: "✊", check: count("reps", 1) },
   { id: "reps-500", title: "Iron Body", desc: "500 camera-verified reps in total.", tier: "gold", icon: "✊",
     check: (f) => ({ value: f.repTotal, target: 500, date: f.repDates.find(([, n]) => n >= 500)?.[0] || null }) },
+  { id: "first-pullup", title: "Over the Bar", desc: "A camera-verified pull-up, chin over the bar.", tier: "rare", icon: "⇡", check: count("pullups", 1) },
+  { id: "pullups-10", title: "Ten Clean", desc: "10 pull-ups in one camera-counted set.", tier: "epic", icon: "⇡", check: count("pull10", 1) },
+  { id: "first-jog", title: "Road Runner", desc: "Finish a jog.", tier: "bronze", icon: "➶", check: count("jogs", 1) },
+  { id: "first-5k", title: "First 5k", desc: "Jog 5 km in one go.", tier: "epic", icon: "➶", check: count("fiveK", 1) },
   { id: "first-gps", title: "First Footsteps", desc: "Check in somewhere by GPS.", tier: "bronze", icon: "⌖", check: count("gps", 1) },
   { id: "gps-10", title: "Cartographer", desc: "Check in at 10 places.", tier: "silver", icon: "⌖", check: count("gps", 10) },
   { id: "gps-50", title: "World Walker", desc: "Check in at 50 places.", tier: "gold", icon: "⌖", check: count("gps", 50) },
@@ -116,8 +128,14 @@ export function cabinet(data, personal = []) {
     id: t.id, title: t.title, desc: t.detail || "", tier: t.tier || "gold", icon: t.icon || "★", kind: "personal", category: t.category,
     earned: t.status !== "goal", date: t.status !== "goal" ? t.date || null : null, target: null, progress: t.status !== "goal" ? 1 : 0, author: t.author,
   }));
-  const order = { mythic: 0, gold: 1, silver: 2, bronze: 3 };
-  return [...mine, ...guild].sort((a, b) => Number(b.earned) - Number(a.earned) || (b.date || "").localeCompare(a.date || "") || b.progress - a.progress || order[a.tier] - order[b.tier]);
+  // Feats: each turned-in quest that's rare, epic or legendary is a medal of its own.
+  const feats = (data.quests || []).filter((q) => q.status === "done" && featTier(q)).map((q) => {
+    const tier = featTier(q);
+    return { id: `feat-${q.id}`, title: q.feat?.title || q.title, desc: q.brief || `Turned in "${q.title}".`, tier, icon: tier === "legendary" ? "✪" : tier === "epic" ? "♛" : "✦",
+      kind: "feat", earned: true, date: day(q.completed), target: null, progress: 1 };
+  });
+  const order = { legendary: 0, mythic: 1, epic: 2, gold: 3, rare: 4, silver: 5, bronze: 6 };
+  return [...mine, ...feats, ...guild].sort((a, b) => Number(b.earned) - Number(a.earned) || (b.date || "").localeCompare(a.date || "") || b.progress - a.progress || order[a.tier] - order[b.tier]);
 }
 
 /** Achievements earned now that weren't before: for the "unlocked" moment at turn-in. */

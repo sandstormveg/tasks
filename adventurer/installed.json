@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@033a5d57bb04",
+ "source": "sandstormveg/Adventurer@722b1da7eab3",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -30,6 +30,8 @@
   "src/ui/coach.js",
   "src/ui/dom.js",
   "src/ui/encounter.js",
+  "src/ui/jog.js",
+  "src/ui/moments.js",
   "src/ui/questmap.js",
   "src/ui/relay.js",
   "src/ui/voice.js",

@@ -12,12 +12,14 @@
 
 import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
+import { trackJog } from "../ui/jog.js";
+import { announce } from "../ui/moments.js";
 import { coachSet, coachBubble, coachSay, coachName } from "../ui/coach.js";
 import { restLine, restStart } from "../core/coach.js";
 import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPlan, testSets, attempts } from "../core/grades.js";
 
 const dayOf = localDay;
-const NAME = { pushup: "Push-ups", squat: "Squats", situp: "Sit-ups" };
+const NAME = { pushup: "Push-ups", squat: "Squats", situp: "Sit-ups", pullup: "Pull-ups" };
 const who = (p) => `${p.sex === "female" ? "women" : "men"} ${(p.ageBand || "20-29").replace("-", "–")}`;
 
 export async function mount(el, ctx, route, ui) {
@@ -52,6 +54,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="free-sets">
           <span class="muted small">Free set, any day, counted by the camera:</span>
           ${FREE.map((ex) => html`<button class="btn" data-free="${ex}">◉ ${ex}s</button>`)}
+          <button class="btn" data-jog>➶ Jog 5000 steps</button>
           <button class="btn ghost" data-rest>⏱ Rest 90s</button>
         </div>
       </section>
@@ -71,6 +74,7 @@ export async function mount(el, ctx, route, ui) {
     if (e.target.closest("[data-sit]")) return sitTest(ctx);
     const f = e.target.closest("[data-free]");
     if (f) return runMission(ctx, freeSet(ctx, f.dataset.free));
+    if (e.target.closest("[data-jog]")) return runJog(ctx, 5000);
     if (e.target.closest("[data-rest]")) return restSheet(ctx, { title: "Rest", seconds: 90, foot: html`<button class="btn primary" data-close>Done</button>` });
   });
 }
@@ -137,7 +141,7 @@ function attemptRow(a) {
 
 // Free sets are max sets you start yourself: they count as training and as your best,
 // so the trainer's targets follow them, but they're never posted to the board.
-const FREE = ["pushup", "squat", "situp"];
+const FREE = ["pushup", "squat", "situp", "pullup"];
 
 function freeSet(ctx, ex) {
   const now = ctx.now();
@@ -201,9 +205,31 @@ async function runMission(ctx, q) {
     const res = await count(ctx, q, { max: q.kind === "max" });
     if (!res) return;
     if (!res.reps) return toast("Nothing was counted, so nothing was logged.");
+    const before = ctx.derived();
     const rec = logSet(ctx, q, res.reps);
     if (rec.status === "done") { toast(q.kind === "max" ? `${res.reps} — noted. The trainer sets your next sets from this.` : `${res.reps}/${q.proof.count}. Stamped: +${rec.xp} XP.`, { timeout: 5000 }); celebrate(); }
     else toast(`${res.reps}/${q.proof.count}. Logged — it still counts as training. The trainer will hold you here.`, { timeout: 6000 });
+    await announce(before, ctx.derived());
+    ctx.syncNow();
+  } catch (err) { errorToast(err); }
+}
+
+// A jog you start yourself: a quest from your own life (not a trainer set), tracked by GPS
+// while the page is open, or steps from your own counter (paid as your word).
+async function runJog(ctx, steps) {
+  const now = ctx.now();
+  const q = { id: `jog-${now.replace(/[^0-9]/g, "").slice(0, 14)}`, title: `Jog ${steps.toLocaleString()} steps`, status: "accepted", origin: "self", giver: "self", author: "self",
+    taskIds: [], difficulty: "normal", attributes: { vit: 1, agi: 0.5 }, skills: { running: 1 }, proof: { type: "jog", steps }, posted: now, accepted: now };
+  try {
+    const res = await trackJog(ctx.settings(), { steps });
+    if (!res) return;
+    if (res.steps < steps) return toast(`${res.steps.toLocaleString()} steps. Short of ${steps.toLocaleString()}, so nothing was logged this time.`, { timeout: 6000 });
+    const before = ctx.derived();
+    const rec = complete(q, { proofType: res.manual ? "honor" : "jog", evidence: res.manual ? { steps: res.steps, manual: true } : { meters: res.meters, steps: res.steps, minutes: res.minutes, tracked: true }, at: ctx.now() });
+    ctx.store.put(rec);
+    toast(`${res.steps.toLocaleString()} steps. Stamped: +${rec.xp} XP.`, { timeout: 5000 });
+    celebrate();
+    await announce(before, ctx.derived());
     ctx.syncNow();
   } catch (err) { errorToast(err); }
 }
