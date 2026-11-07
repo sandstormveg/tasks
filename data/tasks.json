@@ -536,6 +536,14 @@
           "created": "2026-11-07T16:35:00",
           "updated": "2026-11-07T16:35:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-webapk2",
+          "text": "Thanks for trying. Handed to Adventurer (2026-11-07) to fix properly. I couldn't find the earlier fix you remember in the tasks history, so I've asked Adventurer to check. Two likely causes: (1) the app's manifest has no stable id, and (2) the Journal, Research and Guild pages inside Tasks may install as separate hidden apps, and Chrome may be confusing one of them with Tasks. I've also asked for a 'Reinstall app help' button in Settings that resets the app's offline copy. You'll get step-by-step reinstall instructions here when it ships.",
+          "done": false,
+          "created": "2026-11-07T17:35:00",
+          "updated": "2026-11-07T17:35:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
