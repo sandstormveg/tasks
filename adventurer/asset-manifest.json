@@ -1,5 +1,5 @@
 {
- "version": "4058b5f61535",
+ "version": "02025cec4af2",
  "files": [
   "./",
   "icons/icon.svg",
@@ -11,6 +11,7 @@
   "quests-template/tools/quests.mjs",
   "src/app.js",
   "src/core/achievements.js",
+  "src/core/coach.js",
   "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",
@@ -27,6 +28,7 @@
   "src/data/media.js",
   "src/data/store.js",
   "src/main.js",
+  "src/ui/coach.js",
   "src/ui/dom.js",
   "src/ui/encounter.js",
   "src/ui/questmap.js",

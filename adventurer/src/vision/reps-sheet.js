@@ -38,13 +38,15 @@ const BONES = [["left_shoulder", "left_elbow"], ["left_elbow", "left_wrist"], ["
 /**
  * Resolves {reps} when you finish, or null if closed early. `max: true` is an
  * all-out set (the trainer's assessment and weekly max): no target, just count.
+ * coach: { bubble, on(event, data, dialog) } (ui/coach.js), told "start" (first in view),
+ * "down" (reps so far), "rep" (the count) and "hint" (a form cue).
  */
-export function countReps(exercise, target, { max = false, title } = {}) {
+export function countReps(exercise, target, { max = false, title, coach } = {}) {
   const rule = EXERCISE_RULES[exercise];
   return sheet({
     title: title || (max ? `Max set: ${exercise}s` : `${target} ${exercise}s`),
     wide: true,
-    body: html`<div class="cam">
+    body: html`${coach?.bubble || ""}<div class="cam">
         <video playsinline muted></video><canvas></canvas>
         <div class="cam-hud"><span class="cam-count">0</span><span class="cam-of">${max ? "max" : `/ ${target}`}</span><span class="cam-angle"></span><span class="cam-engine"></span></div>
         <div class="cam-status">Loading the pose model…</div>
@@ -52,7 +54,8 @@ export function countReps(exercise, target, { max = false, title } = {}) {
       <p class="muted small">${rule.cue} Frames stay on this device.</p>`,
     foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-done>Done</button>`,
     setup: (d, close) => {
-      let stream, raf, stopped = false, counter = new RepCounter(exercise), detector;
+      let stream, raf, stopped = false, counter = new RepCounter(exercise), detector, began = false, stage = "UP", hint = null;
+      const tell = (ev, data) => { try { coach?.on(ev, data, d); } catch { /* the coach never stops a set */ } };
       const video = d.querySelector("video"), canvas = d.querySelector("canvas"), g = canvas.getContext("2d");
       const status = d.querySelector(".cam-status"), count = d.querySelector(".cam-count"), ang = d.querySelector(".cam-angle");
       const cam = d.querySelector(".cam"), engineEl = d.querySelector(".cam-engine");
@@ -95,10 +98,16 @@ export function countReps(exercise, target, { max = false, title } = {}) {
             const repped = real ? counter.update(real, t) : false; // count only fresh frames, never the held skeleton
             draw(g, kp, exercise, counter);
             cam.classList.toggle("seen", counter.angle != null);
+            if (counter.angle != null && !began) { began = true; tell("start"); }
+            if (counter.hint && counter.hint !== hint) tell("hint", counter.hint);
+            hint = counter.hint;
+            if (counter.stage === "DOWN" && stage !== "DOWN") tell("down", counter.reps);
+            stage = counter.stage;
             if (repped) {
               count.textContent = counter.reps;
               navigator.vibrate?.(30);
               blip();
+              tell("rep", counter.reps);
             }
             ang.textContent = counter.angle != null ? `${counter.angle}°` : "";
             const n = kp.filter((k) => k.score >= DRAW_SCORE).length;
