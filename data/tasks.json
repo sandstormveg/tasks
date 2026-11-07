@@ -423,6 +423,14 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "study-clean-up-mw5vxbrg",
+      "title": "Study clean up",
+      "category": "Life Admin",
+      "created": "2026-11-07",
+      "notes": "",
+      "assist": false
     }
   ]
 }
