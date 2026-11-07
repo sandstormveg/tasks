@@ -544,6 +544,14 @@
           "created": "2026-11-07T17:35:00",
           "updated": "2026-11-07T17:35:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw6109lf",
+          "text": "✓ Fixed 2026-11-07 (tasks PR #37). The cause: the app had no fixed ID, so Chrome identified it by its address, and after an uninstall Chrome can keep that address marked as installed. The app now has a new ID, so Chrome sees it as a new app it can install. To reinstall: (1) If the old Tasks icon or app is still there, long-press it › App info › Uninstall. (2) Wait a few minutes after this update. Then open sandstormveg.github.io/tasks in Chrome, tap ⚙ Settings › App install › Reset app files, and confirm. The page reloads and keeps your key, tasks and journal. (3) Fully close Chrome by swiping it away in recent apps, then reopen the site. (4) If Settings › App install shows an Install Tasks button, tap it. Otherwise use Chrome ⋮ › Install app (or Add to Home screen › Install). (5) Long-press the new icon: you should see Research, Journal and Guild. If Chrome still says it is installed, restart the phone and repeat steps 3 and 4. About the fix you remembered: I could not find one in the Tasks history. The install button you may be thinking of is in the Infodex (Atlas), not in Tasks. Settings › App install is now the built-in fix.",
+          "done": false,
+          "created": "2026-11-07T06:32:13.969Z",
+          "updated": "2026-11-07T06:32:13.969Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
