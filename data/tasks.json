@@ -350,6 +350,14 @@
           "created": "2026-11-07T12:40:00",
           "updated": "2026-11-07T12:40:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw5qe5tt",
+          "text": "✓ Actioned 2026-11-07 (tasks PR #34): Sergeant Brass, a brass drill automaton, now coaches in the Guild Train tab. He is animated like Relay and stays still under reduced motion. He has a male voice, British where the device has one. He announces each set, cues the tempo on the way down, counts every rep (halfway, two more, last one, target), gives form cues and calls new records. He gives a verdict when you tap Done. Between test sets there is a 90s rest timer with a spoken countdown, plus a ⏱ Rest 90s button. Settings › Training coach: on/off (on by default), name, voice, volume and ▶ Hear him. His lines are templates; there is no AI call. The rest of the characters plan waits for your go.",
+          "done": false,
+          "created": "2026-11-07T01:35:06.496Z",
+          "updated": "2026-11-07T01:35:06.496Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     },
