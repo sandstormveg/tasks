@@ -397,6 +397,16 @@
           "created": "2026-11-07T01:38:06.810Z",
           "updated": "2026-11-07T01:41:19.308Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-train1",
+          "text": "Your question first: do quests give skills? Partly, today. A skill levels up from the XP of quests tagged with it, but only skills already in your showcase. A new skill (e.g. woodcarving) doesn't unlock by itself, and achievements aren't awarded automatically.\n\nRelayed (2026-11-07) to Adventurer:\n- **Skills:** handing in a quest that trains a new skill unlocks it at Lv 1, with a \"Skill unlocked\" moment.\n- **Achievements:** awarded automatically by tier (rare, epic, legendary), so a one-arm pull-up earns a big skill bump and a legendary achievement.\n- **Pull-ups:** with camera verification, coached by Sergeant Brass.\n- **Jogging:** a web app can't read your phone's step counter, so my suggestion is GPS distance while the Guild is open, with typing in your steps as a fallback. First quest: 5000 steps (~3.5 km).\n- **Stats:** a better scaling curve (quick early gains, meaningful later ones), with a tooltip explaining it.\n\nOn my side as guild master: I'll tag every quest I shape with the skills it trains, so the hand-ins count.",
+          "done": false,
+          "created": "2026-11-07T13:35:00",
+          "updated": "2026-11-07T13:35:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
