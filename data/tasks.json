@@ -296,6 +296,14 @@
         }
       ],
       "questNominated": true
+    },
+    {
+      "id": "system-characters-mw5omv3q",
+      "title": "System characters",
+      "category": "Development",
+      "created": "2026-11-07",
+      "notes": "",
+      "assist": false
     }
   ]
 }
