@@ -520,6 +520,16 @@
           "created": "2026-11-07T05:06:46.199Z",
           "updated": "2026-11-07T05:06:46.199Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-webapk",
+          "text": "This is almost certainly Chrome on Android, not the Tasks app. The app has no install code of its own, so the \"already installed\" message comes from Chrome. Chrome installs web apps as a hidden Android app (a \"WebAPK\"), and it often keeps thinking it's installed after you remove the icon. Try these in order:\n1. Removing the icon from the home screen isn't an uninstall. Go to Android Settings › Apps, find \"Tasks\" (it may be listed under its site name), and choose Uninstall. Then reopen the site in Chrome.\n2. If Chrome still says it's installed, go to Chrome › ⋮ › Settings › Site settings › All sites, find the Tasks site, then Delete data & reset permissions. Close Chrome fully, or restart the phone, and reopen the site.\n3. Then use ⋮ › Install app (or Add to Home screen › Install).\nOnce it's reinstalled, long-pressing the icon should show the new Research, Journal and Guild shortcuts (PR #33). If step 2 still doesn't fix it, add a note here and I'll get Adventurer to dig in.",
+          "done": false,
+          "created": "2026-11-07T16:35:00",
+          "updated": "2026-11-07T16:35:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
