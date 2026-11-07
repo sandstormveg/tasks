@@ -430,7 +430,16 @@
       "category": "Life Admin",
       "created": "2026-11-07",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw5vxo3lkxzi",
+          "text": "Move things out of Wardrobe",
+          "done": false,
+          "created": "2026-11-07T04:10:14.721Z",
+          "updated": "2026-11-07T04:10:14.721Z"
+        }
+      ]
     }
   ]
 }
