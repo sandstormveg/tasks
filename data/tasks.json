@@ -511,7 +511,16 @@
       "category": "Development",
       "created": "2026-11-07",
       "notes": "",
-      "assist": true
+      "assist": true,
+      "noteItems": [
+        {
+          "id": "n-mw5xyczb2hmf",
+          "text": "i did this to see if i can see the other apps when i hold it down.",
+          "done": false,
+          "created": "2026-11-07T05:06:46.199Z",
+          "updated": "2026-11-07T05:06:46.199Z"
+        }
+      ]
     }
   ]
 }
