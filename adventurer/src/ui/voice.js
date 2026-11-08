@@ -1,4 +1,5 @@
-// Joy's voice: the browser's own speech (speechSynthesis), so nothing is sent
+// Joy's voice: her pre-rendered Piper clips when the line has them (core/voicepack.js),
+// else the browser's own speech (speechSynthesis). Either way nothing is sent
 // anywhere and no AI runs. Off unless Settings › Receptionist voice is on; the
 // voice, volume, speed and pitch are set there too. Sergeant Brass, the Train tab's
 // coach, speaks through here as well, with a male voice (kind: "male"). While she talks, every
@@ -15,6 +16,18 @@ const PREFERRED = [/aria.*natural/i, /jenny.*natural/i, /natasha.*natural/i, /so
 const MALE = [/ryan.*natural/i, /thomas.*natural/i, /oliver.*natural/i, /alfie.*natural/i, /elliot.*natural/i, /ethan.*natural/i, /noah.*natural/i,
   /guy.*natural/i, /andrew.*natural/i, /brian.*natural/i, /christopher.*natural/i, /eric.*natural/i, /davis.*natural/i,
   /google uk english male/i, /\bdaniel\b/i, /\barthur\b/i, /\bgeorge\b/i, /\boliver\b/i, /\bdavid\b/i, /\bmark\b/i, /\bfred\b/i, /\balex\b/i, /\bmale\b/i];
+
+import { clipPaths, sentences } from "../core/voicepack.js";
+
+// The clips on hand: voices/index.json, read once. Browsers that can't play Opus use device speech.
+let clips = null;
+if (typeof Audio !== "undefined" && new Audio().canPlayType('audio/ogg; codecs="opus"')) {
+  fetch(new URL("../../voices/index.json", import.meta.url)).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    clips = j && Object.fromEntries(Object.entries(j).map(([who, vs]) => [who, Object.fromEntries(Object.entries(vs).map(([v, x]) => [v, new Set(x.keys)]))]));
+  }).catch(() => {});
+}
+/** Whether a pack voice ("joy:cori") can say this whole line from clips. */
+export const hasClips = (pack, text) => !!clipPaths(clips, pack, text);
 
 export const voices = () => ("speechSynthesis" in window ? speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang)) : []);
 
@@ -41,12 +54,40 @@ let who = "";
 const portraits = (w = who) => document.querySelectorAll(w ? `.portrait[data-who="${w}"]` : ".portrait:not([data-who])");
 const setTalking = (on) => { (on ? portraits() : document.querySelectorAll(".portrait")).forEach((p) => p.classList.toggle("talking", on)); };
 
-/** Say a line. s: voiceName, voiceVolume, voiceRate, voicePitch, and for the coach kind: "male", who: "coach". */
+let playing = null;
+function stopClips() { if (playing) { playing.forEach((a) => { a.onended = a.onerror = null; a.pause(); }); playing = null; } }
+
+/** Plays a line's clips one after another; if one fails, the device voice says the rest. */
+function playClips(paths, text, s) {
+  const parts = sentences(text);
+  const list = paths.map((p) => { const a = new Audio(new URL(`../../${p}`, import.meta.url).href); a.preload = "auto"; a.volume = num(s.voiceVolume, 1, 0, 1); a.playbackRate = num(s.voiceRate, 1, 0.5, 2); return a; });
+  playing = list;
+  const at = (i) => {
+    if (playing !== list) return;
+    if (i >= list.length) { playing = null; return setTalking(false); }
+    list[i].onended = () => at(i + 1);
+    list[i].onerror = () => { playing = null; deviceSpeak(parts.slice(i).join(" "), s); };
+    list[i].play().then(() => setTalking(true), () => list[i].onerror?.());
+  };
+  at(0);
+}
+
+/**
+ * Say a line. s: voiceName, voiceVolume, voiceRate, voicePitch, and for the coach kind: "male", who: "coach".
+ * pack ("joy:cori") plays the pre-rendered clips when every sentence has one; Joy's comes from s.voicePack.
+ */
 export function speak(text, s = {}) {
-  if (!("speechSynthesis" in window) || !text) return;
-  speechSynthesis.cancel();
-  setTalking(false);
+  if (!text) return;
+  hush();
   who = s.who || "";
+  const pack = s.pack ?? (s.voicePack ? `joy:${s.voicePack}` : "");
+  const paths = clipPaths(clips, pack, text);
+  if (paths) return playClips(paths, text, s);
+  deviceSpeak(text, s);
+}
+
+function deviceSpeak(text, s) {
+  if (!("speechSynthesis" in window)) return setTalking(false);
   const u = new SpeechSynthesisUtterance(text);
   const v = pickVoice(s.voiceName, s.kind);
   if (v) { u.voice = v; u.lang = v.lang; }
@@ -58,10 +99,10 @@ export function speak(text, s = {}) {
 }
 const num = (x, d, lo, hi) => { const n = Number(x); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
 
-export function hush() { if ("speechSynthesis" in window) speechSynthesis.cancel(); setTalking(false); }
+export function hush() { stopClips(); if ("speechSynthesis" in window) speechSynthesis.cancel(); setTalking(false); }
 
-if ("speechSynthesis" in window) {
-  speechSynthesis.getVoices(); // Chrome loads the list late; this starts it
+if ("speechSynthesis" in window) speechSynthesis.getVoices(); // Chrome loads the list late; this starts it
+if (typeof document !== "undefined") {
   document.addEventListener("click", (e) => { if (e.target.closest(".portrait.talking")) { e.preventDefault(); hush(); } });
   document.addEventListener("visibilitychange", () => { if (document.hidden) hush(); });
 }

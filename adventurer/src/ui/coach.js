@@ -22,7 +22,7 @@ const PORTRAIT = `<svg viewBox="0 0 64 64" aria-hidden="true" class="portrait-sv
 </svg>`;
 
 export const coachName = (s) => s.coachName || "Sergeant Brass";
-export const coachVoice = (s) => ({ voiceName: s.coachVoiceName || "", voiceVolume: s.coachVolume ?? 1, voiceRate: s.coachRate ?? 1, voicePitch: s.coachPitch ?? 0.85, kind: "male", who: "coach" });
+export const coachVoice = (s) => ({ pack: s.coachVoicePack ? `brass:${s.coachVoicePack}` : "", voiceName: s.coachVoiceName || "", voiceVolume: s.coachVolume ?? 1, voiceRate: s.coachRate ?? 1, voicePitch: s.coachPitch ?? 0.85, kind: "male", who: "coach" });
 
 export function coachBubble(name, line) {
   return html`<div class="relay relay-bubble coach-bubble"><span class="portrait" data-who="coach">${raw(PORTRAIT)}</span><div><span class="relay-name">${name}</span><p class="relay-say coach-say" aria-live="polite">${line}</p></div></div>`;
