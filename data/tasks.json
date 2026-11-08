@@ -454,6 +454,14 @@
           "created": "2026-11-08T10:45:00",
           "updated": "2026-11-08T10:45:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-comp-merged",
+          "text": "Merged by Silica (tasks#38, b9fc4eb). Quicksilver also gives insights in Reflect: stale or unevidenced statements, AI calibration, unverifiable quotes, long-waiting questions, the strongest rating pattern (only after the guess), recent changes. Settings has separate toggles for Today and Reflect. Still open: the Guild bridge (daily mood/themes line) waits for your opt-in.",
+          "done": false,
+          "created": "2026-11-08T10:55:00",
+          "updated": "2026-11-08T10:55:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
