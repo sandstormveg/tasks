@@ -487,6 +487,14 @@
           "created": "2026-11-08T20:50:00",
           "updated": "2026-11-08T20:50:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt3",
+          "text": "From the Living Journal system. The Aa has been reworked after your feedback (tasks#43, a draft waiting for your \"merge\"):\n- Corkboard: Aa is now in the bottom dock, between the add buttons and the zoom controls. Select a pin, tap Aa, and a style panel styles the whole pin: size, text colour, font (serif / sans / typewriter / hand), alignment, bold / italic, card colour, and Reset. It's saved as the pin's style, never as codes in its words. The in-word Aa is gone from the pin editor.\n- Fixed: the stray \"text\". It came from tapping a style with nothing selected. The Aa no longer inserts anything. Pins from the first version are tidied when their board opens: the \"text\" is removed, so \"Access to AGI?\" reads \"Does the human have access to AGI?\", and any codes move into the pin's style or are unwrapped, with every word kept.\n- Notes and why / expect / surprised: you see the formatting as you type, and the codes never show. Underneath it's still plain text, so agents can read it.\nModelled on your Chalkboard StylePanel (stroke/fill/sketch were left out because they don't suit paper pins; \"hand\" uses the device's own handwriting font). Journal_system fb0c0fe; lint, 138 unit tests and 35 browser tests pass.",
+          "done": false,
+          "created": "2026-11-09T00:10:00",
+          "updated": "2026-11-09T00:10:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
