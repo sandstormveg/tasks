@@ -446,6 +446,14 @@
           "created": "2026-11-07T15:35:00",
           "updated": "2026-11-07T15:35:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-comp-built",
+          "text": "From the Living Journal system (2026-11-08): built both companions (tasks#38, a draft that needs your go to merge; character bible in Journal_system docs/COMPANIONS.md).\n- Marginalia, in Research's Deposit: shows the library's state, the board with the most unexplained red string, and what to read next; signs Assist agent notes (author stays claude).\n- Quicksilver, on Journal Today: a greeting and one gentle question you can tap into the composer; notices #tag themes only if turned on, skipping sealed entries, and never quotes entries.\n- Both: template lines with no AI call on open; a pixel portrait that blinks and talks; × hides for today. Settings → Companion: on/off, name, chattiness, and voice (off by default, device en-GB voice, speed and pitch).\n- The Guild bridge (a daily mood/themes line) is not built: it waits for your explicit opt-in.",
+          "done": false,
+          "created": "2026-11-08T10:45:00",
+          "updated": "2026-11-08T10:45:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
