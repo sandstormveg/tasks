@@ -8,7 +8,8 @@
 
 import { validateObjectives, hasObjectives, objectiveXp, objectiveCount } from "./objectives.js";
 
-// "failed": a training or test set you did but fell short of (it still counts as evidence of your level).
+// "failed": a training or test set you did but fell short of (it still counts as evidence of your level),
+// or a quest you handed in as failed (0 XP, an optional lesson learned in evidence.note).
 export const STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 export const OPEN = new Set(["posted", "accepted"]);
 export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
@@ -28,6 +29,7 @@ export const DIFFICULTY = {
 export const PROOF_RATE = { gps: 1, reps: 1, jog: 1, photo: 0.9, journal: 0.9, honor: 0.6 };
 
 export const PROOF_LABEL = {
+  failed: "Handed in as failed",
   gps: "GPS check-in",
   reps: "Camera-verified reps",
   jog: "GPS-tracked jog",

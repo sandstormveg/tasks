@@ -1,6 +1,6 @@
 // The status screen: level, guild grade and XP up top; a radar of the seven
 // attributes by percentile; then one row per attribute with its tier, value and
-// a distribution curve showing where you sit. Tap a row and Relay explains it;
+// a distribution curve showing where you sit. Tap a row and Joy explains it;
 // "Measure" types in a new value. Below them: Skills and the Achievements
 // cabinet (views/showcase.js). Sources live in a small footnote at the
 // bottom — the data behind them is swappable (core/norms.js).

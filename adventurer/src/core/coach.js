@@ -1,5 +1,5 @@
 // Sergeant Brass, the Train tab's coach: an old salvaged drill automaton, gruff
-// but kind. Like Relay, every line is a template with a few variants, so no AI
+// but kind. Like Joy, every line is a template with a few variants, so no AI
 // runs per rep (or ever). The camera counts; he only talks about the count.
 
 const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];

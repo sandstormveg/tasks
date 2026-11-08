@@ -1,4 +1,4 @@
-// Relay's voice: the browser's own speech (speechSynthesis), so nothing is sent
+// Joy's voice: the browser's own speech (speechSynthesis), so nothing is sent
 // anywhere and no AI runs. Off unless Settings › Receptionist voice is on; the
 // voice, volume, speed and pitch are set there too. Sergeant Brass, the Train tab's
 // coach, speaks through here as well, with a male voice (kind: "male"). While she talks, every
@@ -36,7 +36,7 @@ function pickVoice(name, kind) {
 }
 export const bestVoice = (kind) => pickVoice("", kind)?.name || "";
 
-// Only the speaker's portrait moves: the coach's carry data-who="coach", Relay's carry nothing.
+// Only the speaker's portrait moves: the coach's carry data-who="coach", Joy's carry nothing.
 let who = "";
 const portraits = (w = who) => document.querySelectorAll(w ? `.portrait[data-who="${w}"]` : ".portrait:not([data-who])");
 const setTalking = (on) => { (on ? portraits() : document.querySelectorAll(".portrait")).forEach((p) => p.classList.toggle("talking", on)); };

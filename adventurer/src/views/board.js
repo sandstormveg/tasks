@@ -1,4 +1,4 @@
-// The quest Board: Relay at the counter, then two surfaces — accepted quests
+// The quest Board: Joy at the counter, then two surfaces — accepted quests
 // on the digital "Active" panel (your HUD), and posted ones pinned as paper
 // notices on the guild's corkboard, like a real adventurers' guild. Tapping one
 // opens its sheet: what it is, which tasks it's built on, accept/decline, and
@@ -7,7 +7,7 @@
 
 import { html, sheet, toast, errorToast, promptSheet } from "../ui/dom.js";
 import { OPEN, DIFFICULTY, PROOF_LABEL, PROOFS, EXERCISES, boardOrder, newId, complete, payout } from "../core/quests.js";
-import { greet, askProof, stamped, filedRequest, inferredIntro, seedOf, cheerAccept, cheerTurnIn, questPitch } from "../core/relay.js";
+import { greet, seedOf, proofTip, stamped, filedRequest, inferredIntro, cheerAccept, cheerTurnIn, cheerLevel, sayAbandon, sayFailed, questPitch } from "../core/relay.js";
 import { questMap, mappable } from "../ui/questmap.js";
 import { openEncounter } from "../ui/encounter.js";
 import { OBJECTIVE_TYPES, hasObjectives, objectiveXp, objectiveCount, ready, isDone, isAuto, howItCompletes, markDone, unmark, claimed } from "../core/objectives.js";
@@ -50,7 +50,7 @@ export async function mount(el, ctx, route, ui) {
       toast(ready.length === 1 ? `“${ready[0].title}” — its task is done in Tasks. Turn the quest in to claim the XP.` : `${ready.length} quests have their tasks done in Tasks. Turn them in to claim the XP.`, { timeout: 7000 });
     }
     el.innerHTML = String(html`
-      ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness, seed: seedOf(today) })) : ""}
+      ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness })) : ""}
       <div class="board-head">
         <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span><span class="muted">Lv ${d.level.level} · ${d.xp} XP</span></div>
         <div class="row wrap">
@@ -126,11 +126,11 @@ async function scout(ctx) {
 }
 
 async function fileRequest(ctx) {
-  const text = await promptSheet({ title: `${ctx.settings().relayName}: intake`, label: "What do you want to do?", multiline: true, placeholder: "e.g. get back into climbing; read more fiction; see the coast", confirm: "File it", hint: "The guild master shapes it into a quest on the next pass." });
+  const text = await promptSheet({ title: `${ctx.settings().relayName} · new request`, label: "What do you want to do?", multiline: true, placeholder: "e.g. get back into climbing; read more fiction; see the coast", confirm: "File it", hint: "The guild master shapes it into a quest on the next pass." });
   if (!text?.trim()) return;
   const title = text.trim().split("\n")[0].slice(0, 90);
   ctx.store.put({ id: newId(`req-${title}`, ctx.store.ids()), title, detail: text.trim(), status: "requested", origin: "request", giver: "relay", author: "self", taskIds: [], difficulty: "normal", attributes: {}, proof: { type: "honor" }, posted: ctx.now() });
-  toast(filedRequest(Date.now()));
+  toast(filedRequest());
   ctx.syncNow();
 }
 
@@ -187,7 +187,7 @@ async function openQuest(ctx, q) {
   const s = ctx.settings();
   const tasks = q.taskIds.map((id) => ({ id, title: ctx.taskTitle(id) }));
   const ev = q.evidence;
-  const pitch = q.origin === "inferred" && q.status === "posted" ? inferredIntro(q) : questPitch(q, payout(q), DIFFICULTY[q.difficulty]?.label || "Normal", Date.now());
+  const pitch = q.origin === "inferred" && q.status === "posted" ? inferredIntro(q) : questPitch(q, payout(q), DIFFICULTY[q.difficulty]?.label || "Normal");
   const act = await sheet({
     title: q.title,
     body: html`
@@ -197,13 +197,13 @@ async function openQuest(ctx, q) {
       ${ctx.taskDone(q) ? html`<p class="notice">You finished its task in Tasks. Turn it in below to claim the XP.</p>` : ""}
       <dl class="facts">
         ${hasObjectives(q) ? html`<dt>Reward</dt><dd>+${objectiveXp(q).potential} XP${objectiveXp(q).bonus ? html` <span class="muted">(+${objectiveXp(q).bonus} bonus)</span>` : ""}</dd>` : html`<dt>Reward</dt><dd>+${payout(q)} XP${q.proof.type !== "honor" ? html` <span class="muted">(+${payout(q, "honor")} on your word alone)</span>` : ""}</dd>`}
-        ${hasObjectives(q) ? "" : html`<dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "jog" ? ` · ${q.proof.steps.toLocaleString()} steps` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>`}
+        ${hasObjectives(q) ? "" : html`<dt>Proof</dt><dd>${PROOF_LABEL[q.proof.type]}<button class="info-tip" type="button" data-tip aria-label="How this proof works" title="${proofTip(q)}">ⓘ</button>${q.proof.type === "reps" ? ` · ${q.proof.count} ${q.proof.exercise}` : q.proof.type === "jog" ? ` · ${q.proof.steps.toLocaleString()} steps` : q.proof.type === "gps" ? ` · ${q.proof.target.place || "marked spot"}` : ""}</dd>`}
         ${Object.keys(q.attributes).length || q.skills ? html`<dt>Trains</dt><dd>${[...Object.keys(q.attributes).map((a) => a.toUpperCase()), ...Object.keys(q.skills || {}).map((id) => ctx.store.skills().find((k) => k.id === id)?.name || id)].join(" · ")}</dd>` : ""}
         ${q.expires ? html`<dt>Closes</dt><dd>${q.expires}</dd>` : ""}
         <dt>Posted by</dt><dd>${q.giver === "guildmaster" ? "the guild master" : q.giver === "relay" ? s.relayName : q.giver === "board" ? "the board" : "you"}</dd>
         ${tasks.length ? html`<dt>Tasks</dt><dd>${tasks.map((t) => html`<div>⛓ ${t.title || t.id}</div>`)}</dd>` : ""}
         ${q.link ? html`<dt>About</dt><dd><a href="${q.link}" target="_blank" rel="noopener">Read about it</a></dd>` : ""}
-        ${ev ? html`<dt>Turned in</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
+        ${ev ? html`<dt>${ev.type === "failed" ? "Handed in" : "Turned in"}</dt><dd>${(q.completed || "").slice(0, 10)} · ${PROOF_LABEL[ev.type]}${ev.reps ? ` · ${ev.reps} reps` : ""}${ev.distance != null ? ` · ${ev.distance} m away` : ""}${ev.note ? html`<div class="muted">${ev.type === "failed" ? "Lesson: " : ""}${ev.note}</div>` : ""} · +${q.xp} XP</dd>` : ""}
       </dl>
       ${hasObjectives(q) ? objectiveList(q) : ""}
       ${q.encounter && q.status !== "done" ? html`<p class="notice">${q.encounter.type === "chest" ? "📦 Something's waiting there: a chest, opened when you check in." : "📜 Someone's waiting there: a scholar, met when you check in."}</p>` : ""}
@@ -211,16 +211,29 @@ async function openQuest(ctx, q) {
       ${q.status === "done" && q.encounter ? html`<button class="btn small" data-a="encounter">${q.encounter.type === "chest" ? "📦 Look in the chest again" : "📜 Revisit the scholar"}</button>` : ""}`,
     foot: html`${q.status === "posted" ? html`<button class="btn" data-a="decline">Decline</button><button class="btn" data-a="accept">Accept</button>` : ""}
       ${hasObjectives(q) ? (q.status === "accepted" && ready(q) ? html`<button class="btn primary" data-a="turnin">Turn in</button>` : "") : OPEN.has(q.status) ? html`${q.proof.type !== "honor" ? html`<button class="btn ghost" data-a="honor">On my word</button>` : ""}<button class="btn primary" data-a="turnin">Turn in</button>` : ""}
-      ${q.status === "declined" || q.status === "expired" ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}`,
+      ${q.status === "declined" || q.status === "expired" || (q.status === "failed" && q.origin !== "training" && q.origin !== "test") ? html`<button class="btn" data-a="repost">Put back on the board</button>` : ""}
+      ${q.status === "accepted" && q.giver !== "trainer" ? html`<div class="sheet-more"><button class="btn ghost small" data-a="abandon">Abandon</button><button class="btn ghost small" data-a="fail">Hand in as failed</button></div>` : ""}`,
     setup: (d, close) => {
-      d.addEventListener("click", (e) => { const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); if (e.target.closest("[data-map]")) close("map"); const o = e.target.closest("[data-obj]"); if (o) close(`obj:${o.dataset.obj}`); });
+      d.addEventListener("click", (e) => { if (e.target.closest("[data-tip]")) return toast(proofTip(q), { timeout: 7000 }); const a = e.target.closest("[data-a]"); if (a) close(a.dataset.a); if (e.target.closest("[data-map]")) close("map"); const o = e.target.closest("[data-obj]"); if (o) close(`obj:${o.dataset.obj}`); });
       if (s.voice) speak(pitch, s);
     },
   });
   try {
-    if (act === "accept") { ctx.accept(q); toast(q.taskIds.length ? "Accepted. It's flagged on its task." : "Accepted. Added to your Guild tasks."); if (s.voice) speak(cheerAccept({ chattiness: s.chattiness, seed: Date.now() }), s); }
+    if (act === "accept") {
+      ctx.accept(q);
+      const line = cheerAccept({ chattiness: s.chattiness });
+      toast(`${s.relay ? `${s.relayName}: ${line} ` : ""}${q.taskIds.length ? "Flagged on its task." : "Added to your Guild tasks."}`);
+      if (s.voice) speak(line, s);
+    }
     else if (act === "decline") ctx.store.put({ ...q, status: "declined" });
-    else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined });
+    else if (act === "repost") ctx.store.put({ ...q, status: "posted", expires: undefined, completed: undefined, evidence: undefined, xp: undefined });
+    else if (act === "abandon") { ctx.abandon(q); joySays(s, sayAbandon()); }
+    else if (act === "fail") {
+      const lesson = await promptSheet({ title: "Hand in as failed", label: "Lesson learned (optional)", multiline: true, confirm: "Hand it in", hint: "Logged with 0 XP. No penalty beyond that." });
+      if (lesson == null) return;
+      ctx.fail(q, lesson.trim());
+      joySays(s, sayFailed());
+    }
     else if (act === "turnin") await turnIn(ctx, q, q.proof.type);
     else if (act?.startsWith("obj:")) { const next = await objectiveAction(ctx, q, act.slice(4)); return openQuest(ctx, next || ctx.quests().find((x) => x.id === q.id)); }
     else if (act === "encounter") await openEncounter(q, { taskTitle: ctx.taskTitle });
@@ -274,12 +287,21 @@ async function turnIn(ctx, q, type) {
   const after = ctx.derived();
   const gains = attributeGains(before.attributes, after.attributes)
     .map((g) => `${g.name}${g.xp ? ` +${g.xp} XP` : ""}${g.from !== g.to ? ` (tier ${g.from || "–"} → ${g.to || "–"})` : ""}`).join(" · ");
-  toast(`${stamped(done, done.xp, Date.now())}${gains ? ` ${gains}.` : ""}`, { timeout: 6000 });
+  toast(`${stamped(done, done.xp)}${gains ? ` ${gains}.` : ""}`, { timeout: 6000 });
   const s = ctx.settings();
-  if (s.voice) speak(cheerTurnIn(done, done.xp, { chattiness: s.chattiness, seed: Date.now() }), s);
+  const levelUp = after.level.level > before.level.level;
+  const ding = levelUp && cheerLevel(after.level.level, { chattiness: s.chattiness });
+  if (s.voice) speak(ding || cheerTurnIn(done, done.xp, { chattiness: s.chattiness }), s);
+  if (ding && s.relay) toast(`${s.relayName}: ${ding}`, { timeout: 6000 });
   celebrate();
   if (done.encounter) await openEncounter(done, { taskTitle: ctx.taskTitle });
   await announce(before, after);
+}
+
+/** A line from Joy: a toast with her name, and her voice when it's on. */
+function joySays(s, line) {
+  if (s.relay) toast(`${s.relayName}: ${line}`);
+  if (s.voice) speak(line, s);
 }
 
 function celebrate() {

@@ -18,7 +18,7 @@ export const DEFAULTS = {
   publicRepo: "tasks",
   folder: "quests",
   relay: true,
-  relayName: "Relay",
+  relayName: "Joy",
   chattiness: "normal",
   voice: false,
   voiceName: "",
@@ -49,7 +49,10 @@ export function createContext(host) {
   const ctx = {
     store,
     host,
-    settings() { return { ...DEFAULTS, ...(host?.defaults || {}), ...store.settings }; },
+    settings() {
+      const s = { ...DEFAULTS, ...(host?.defaults || {}), ...store.settings };
+      return s.relayName === "Relay" ? { ...s, relayName: DEFAULTS.relayName } : s; // the receptionist's old default name
+    },
     today() { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date()); },
     now() { return new Date().toISOString(); },
     token() {
@@ -118,6 +121,27 @@ export function createContext(host) {
           if (t?.repo === "private") store.queueTaskOp({ op: "note", taskId: id, noteId: `n-guild-${done.id}`.slice(0, 60), text: `⚔ ${note}` });
         }
       }
+    },
+    /** Un-accept or fail: the quest lets go of the Guild task it made; a private task it's built on gets a note. */
+    release(q, next, note) {
+      if (q.taskCreated) {
+        store.queueTaskOp({ op: "drop", taskId: q.taskCreated, questId: q.id });
+        store.tasks = { ...store.tasks, active: store.tasks.active.filter((t) => t.id !== q.taskCreated) };
+        next = { ...next, taskIds: q.taskIds.filter((id) => id !== q.taskCreated), taskCreated: undefined };
+      } else if (note) {
+        for (const id of q.taskIds) {
+          const t = store.tasks.active.find((x) => x.id === id);
+          if (t?.repo === "private") store.queueTaskOp({ op: "note", taskId: id, noteId: `n-guild-${q.id}-${Date.now().toString(36)}`.slice(0, 60), text: `⚔ ${note}` });
+        }
+      }
+      store.put(next);
+    },
+    /** Back to the board, no penalty. Objectives you ticked stay ticked. */
+    abandon(q) { ctx.release(q, { ...q, status: "posted", accepted: undefined }); },
+    /** Handed in as failed: logged, 0 XP, with what you learned if you said. */
+    fail(q, lesson) {
+      ctx.release(q, { ...q, status: "failed", completed: ctx.now(), evidence: { type: "failed", ...(lesson ? { note: lesson } : {}) }, xp: 0 },
+        `Quest handed in as failed.${lesson ? ` Lesson: ${lesson}` : ""}`);
     },
     payout,
     /** An accepted quest whose linked tasks were all finished in Tasks: its XP is waiting on a turn-in. */
