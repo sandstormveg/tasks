@@ -19,6 +19,7 @@ export const DEFAULTS = {
   folder: "quests",
   relay: true,
   relayName: "Joy",
+  voicePack: "cori",
   chattiness: "normal",
   voice: false,
   voiceName: "",
@@ -28,6 +29,7 @@ export const DEFAULTS = {
   coachVoice: true,
   coachName: "Sergeant Brass",
   coachVoiceName: "",
+  coachVoicePack: "northern",
   coachVolume: 1,
   autoSync: true,
 };

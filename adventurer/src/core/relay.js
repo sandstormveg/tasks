@@ -79,9 +79,8 @@ export function explainTier(a) {
   return `${a.name} ${a.tier.id} (${a.tier.label}). ${where}${next}`;
 }
 
-export function inferredIntro(q) {
-  return pick(["This one came in with your name on it. In pencil.", "I think this one's meant for you.", "Someone had you in mind for this."]);
-}
+const INFERRED = ["This one came in with your name on it. In pencil.", "I think this one's meant for you.", "Someone had you in mind for this."];
+export const inferredIntro = () => pick(INFERRED);
 
 // Lines Joy says (and shows) at each moment, by chattiness. Short, so they finish before the toast does.
 const ACCEPT = {
@@ -117,6 +116,22 @@ export function questPitch(q, xp, label, seed) {
   if (q.status !== "posted") return "Off the board. Want it back up?";
   const hard = q.difficulty === "hard" || q.difficulty === "epic";
   return pick(hard
-    ? [`A ${label.toLowerCase()} one. You like those.`, "Spicy. Interested?", `${xp} XP, if you're brave.`]
+    ? [`${q.difficulty === "epic" ? "An epic" : "A hard"} one. You like those.`, "Spicy. Interested?", `${xp} XP. If you're brave.`]
     : ["Fresh off the board. Want it?", `${xp} XP. Interested?`, "This one's got your name on it. In pencil.", "Ooh, I like this one."], seed);
+}
+
+/** Every line Joy can say out loud, for tools/render-voices.mjs. xps: the rewards a quest can pay. */
+export function voiceLines(xps = []) {
+  const out = [];
+  for (const c of Object.keys(ACCEPT)) {
+    out.push(...ACCEPT[c], ...TURN_IN[c]);
+    for (let n = 1; n <= 60; n++) out.push(...LEVEL[c].map((f) => f(n)));
+  }
+  out.push(...ABANDON, ...FAILED);
+  for (let seed = 0; seed < 6; seed++) {
+    for (const status of ["accepted", "done", "failed", "declined"]) out.push(questPitch({ status }, 0, "", seed));
+    for (const xp of xps) for (const [difficulty, label] of [["normal", "Normal"], ["hard", "Hard"], ["epic", "Epic"]]) out.push(questPitch({ status: "posted", difficulty }, xp, label, seed));
+  }
+  out.push(...INFERRED);
+  return out;
 }

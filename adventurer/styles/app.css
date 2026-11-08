@@ -124,6 +124,8 @@ a { color: var(--accent-2); }
 .obj-xp { font-weight: bold; color: var(--amber); white-space: nowrap; }
 .info-tip { border: 0; background: none; color: inherit; opacity: .6; padding: 0 4px; font: inherit; cursor: help; }
 .info-tip:hover, .info-tip:focus-visible { opacity: 1; }
+.pack-list { display: grid; gap: 2px; }
+.pack-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .relay-name { font-weight: bold; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
 .relay-first { display: none; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay:not([open]) .relay-first { display: block; flex: 1; min-width: 0; }

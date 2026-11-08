@@ -1,5 +1,5 @@
 {
- "version": "ac841aedf315",
+ "version": "88d7a8bcc626",
  "files": [
   "./",
   "icons/icon.svg",
@@ -24,6 +24,7 @@
   "src/core/skills.js",
   "src/core/stats.js",
   "src/core/tasklink.js",
+  "src/core/voicepack.js",
   "src/data/github.js",
   "src/data/media.js",
   "src/data/store.js",
