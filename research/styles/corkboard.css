@@ -52,12 +52,12 @@ body.board-mode .content { max-width: none; padding: 0; }
 .pushpin::after { content: ""; position: absolute; inset: -12px; } /* a bigger target for fingers */
 .pin.by-claude .pushpin { background: radial-gradient(circle at 35% 30%, #b39ddb 0 2px, #7e57c2 3px, #4527a0 9px); }
 .pin-by { position: absolute; top: 4px; right: 6px; font: 600 10px/1 var(--font-ui); color: #6a4fb3; background: #efe8ff; padding: 2px 5px; border-radius: 999px; }
-.pin-title { font-weight: 700; font-size: 15px; line-height: 1.25; margin-bottom: 4px; overflow-wrap: anywhere; }
-.pin-text { font-size: 13px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; color: #3d372e; }
+.pin-title { font-weight: 700; font-size: calc(15px * var(--ps, 1)); line-height: 1.25; margin-bottom: 4px; overflow-wrap: anywhere; }
+.pin-text { font-size: calc(13px * var(--ps, 1)); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; color: #3d372e; }
 .pin-kicker { font: 600 10px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: #8a7a62; margin-bottom: 3px; }
 .pin-meta { font: 12px/1.3 var(--font-ui); color: #7a6d5a; display: block; overflow-wrap: anywhere; }
 .pin-foot { position: absolute; bottom: 8px; left: 14px; right: 14px; font: 12px var(--font-ui); }
-.pin-quote { margin: 0; font-style: italic; font-size: 14px; line-height: 1.4; border-left: 3px solid #c62828; padding-left: 8px; }
+.pin-quote { margin: 0; font-style: italic; font-size: calc(14px * var(--ps, 1)); line-height: 1.4; border-left: 3px solid #c62828; padding-left: 8px; }
 .pin-source { border-top: 5px solid #5b7fa6; }
 .pin[data-lod="0"] .pin-body > :not(.pin-title):not(.ix-card):not(.pin-quote) { display: none; }
 .pin[data-lod="0"] .pin-quote { font-size: 22px; max-height: 100%; overflow: hidden; }
@@ -111,6 +111,8 @@ body.board-mode .content { max-width: none; padding: 0; }
 .cork-tools .btn { white-space: nowrap; }
 .cork-tools-gap { width: 4px; flex: none; }
 @media (max-width: 520px) { .cork-tools .btn span { display: none; } .cork-tools .btn.small { padding: 0 10px; } }
+/* With the Aa in it the dock is ten buttons: keep them all on a phone's width. */
+@media (max-width: 430px) { .cork-tools { gap: 3px; padding: 5px; } .cork-tools .btn.small { padding: 0 7px; min-width: 32px; } .cork-tools .btn.icon.small { width: 32px; min-width: 32px; } .cork-tools-gap { width: 0; } }
 .cork-sel {
   position: absolute; z-index: 5; display: flex; gap: 4px; padding: 5px; border-radius: 12px; background: var(--surface);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); white-space: nowrap;
@@ -120,6 +122,53 @@ body.board-mode .content { max-width: none; padding: 0; }
   background: color-mix(in srgb, var(--surface) 95%, transparent); color: var(--ink); padding: 9px 14px; border-radius: 12px;
   font-size: 0.88rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); text-align: center;
 }
+/* ---- whole-pin style from the Aa inspector (pin.style). Pins are always paper, so the
+   text colours are fixed inks that read on every card colour, in any theme. */
+.pin.ps-small { --ps: 0.85; } .pin.ps-large { --ps: 1.25; } .pin.ps-xl { --ps: 1.6; }
+.pin.ps-c-red .pin-body { --ps-ink: #c62828; } .pin.ps-c-orange .pin-body { --ps-ink: #c45000; }
+.pin.ps-c-yellow .pin-body { --ps-ink: #9a6b00; } .pin.ps-c-green .pin-body { --ps-ink: #2e7d32; }
+.pin.ps-c-purple .pin-body { --ps-ink: #6a1b9a; } .pin.ps-c-grey .pin-body { --ps-ink: #6b6358; }
+.pin[class*="ps-c-"] :is(.pin-title, .pin-text, .pin-quote) { color: var(--ps-ink); }
+.pin.ps-f-sans { font-family: var(--font-ui); }
+.pin.ps-f-type { font-family: "Courier Prime", "Courier New", Courier, ui-monospace, monospace; }
+.pin.ps-f-hand { font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Neue", "Comic Sans MS", cursive; }
+.pin.ps-a-center .pin-body { text-align: center; } .pin.ps-a-right .pin-body { text-align: right; }
+.pin.ps-b :is(.pin-title, .pin-text, .pin-quote) { font-weight: 700; }
+.pin.ps-i :is(.pin-title, .pin-text, .pin-quote) { font-style: italic; }
+.pin-frame.ps-small .frame-title { font-size: 0.85em; } .pin-frame.ps-large .frame-title { font-size: 1.25em; } .pin-frame.ps-xl .frame-title { font-size: 1.6em; }
+
+/* the Aa inspector sits just above the dock */
+.cork-aa { font: 700 .95rem/1 var(--font-ui); min-width: 40px; letter-spacing: -0.02em; }
+.cork-aa small { font-size: .72em; }
+.cork-aa.on { color: var(--accent); border-color: var(--accent); }
+.cork-aa.dim:not(.on) { opacity: .6; }
+.cork-style {
+  position: absolute; left: 50%; bottom: calc(70px + var(--safe-b)); transform: translateX(-50%); z-index: 6;
+  display: grid; gap: 6px; padding: 8px; border-radius: 14px; background: var(--surface); color: var(--ink);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32); width: max-content; max-width: calc(100% - 16px);
+}
+.cork-style[hidden] { display: none; }
+.cork-style p { margin: 4px 6px; max-width: 32ch; }
+.cs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cork-style button {
+  min-width: 36px; min-height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface-2); color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer; display: inline-grid; place-items: center;
+}
+.cork-style button.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cork-style .fmt-size-small { font-size: .8rem; } .cork-style .fmt-size-large { font-size: 1.05rem; } .cork-style .fmt-size-xl { font-size: 1.25rem; font-weight: 600; }
+.cork-style .fmt-dot { padding: 0; }
+.cork-style .fmt-dot span { width: 18px; height: 18px; border-radius: 50%; background: currentColor; }
+.cork-style .fmt-dot span.ink { background: #2a2620; box-shadow: 0 0 0 1.5px var(--ink-3); }
+.cork-style .fmt-red { color: #c62828; } .cork-style .fmt-orange { color: #c45000; } .cork-style .fmt-yellow { color: #d9a400; }
+.cork-style .fmt-green { color: #2e7d32; } .cork-style .fmt-purple { color: #6a1b9a; } .cork-style .fmt-grey { color: #8a8174; }
+.cork-style .ps-f-serif { font-family: var(--font-write); } .cork-style .ps-f-sans { font-family: var(--font-ui); }
+.cork-style .ps-f-type { font-family: "Courier Prime", "Courier New", Courier, monospace; }
+.cork-style .ps-f-hand { font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", cursive; }
+.cork-style .swatch-dot { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 6px; background: #fffdf6; }
+.cork-style .swatch-dot.c-yellow { background: #fff3a8; } .cork-style .swatch-dot.c-pink { background: #ffd6e0; } .cork-style .swatch-dot.c-blue { background: #d6ecff; }
+.cork-style .swatch-dot.c-green { background: #d9f5d6; } .cork-style .swatch-dot.c-lilac { background: #e9ddff; }
+.cork-style .fmt-sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
+
 #curator-btn.warn { border-color: #d4a017; color: #a07400; }
 :root[data-theme="dark"] #curator-btn.warn { color: #ffd166; }
 #curator-btn span { white-space: nowrap; }

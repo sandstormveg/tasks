@@ -303,7 +303,7 @@ export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: g
   on(box, "click", "[data-md-mode]", (e, b) => {
     try { localStorage.setItem(MD_MODE, b.dataset.mdMode); } catch { /* a private window: just don't remember */ }
     set(b.dataset.mdMode);
-    if (b.dataset.mdMode === "edit") ta.focus();
+    if (b.dataset.mdMode === "edit") ta.focus(); // the live editor, when the Aa has drawn one
   });
   return { refresh: () => { if (box.dataset.mode === "preview") set("preview"); } };
 }

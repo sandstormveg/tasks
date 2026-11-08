@@ -23,7 +23,8 @@ import { searchSources, formatAuthors } from "../../core/sources.js";
 import { renderMarkdown } from "../../core/markdown.js";
 import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
-import { fmtButton, fmtPreview, wireFormat, formatted } from "../../ui/textformat.js";
+import { formatted } from "../../ui/textformat.js";
+import { SIZES, COLOURS, PIN_FONTS, PIN_ALIGNS, cleanPinStyle, migratePinMarkup } from "../../core/textformat.js";
 
 const MIN_Z = 0.08;
 const MAX_Z = 6;
@@ -57,12 +58,14 @@ export async function mount(el, ctx, route, ui) {
     </div>
     <div class="cork-hint" id="cork-hint" hidden></div>
     <div class="cork-sel" id="cork-sel" hidden></div>
+    <div class="cork-style" id="cork-style" role="toolbar" aria-label="Style the selected pin" hidden></div>
     <div class="cork-tools" role="toolbar" aria-label="Add to the board">
       <button class="btn small" data-tool="note">${raw(icon("edit"))}<span>Note</span></button>
       <button class="btn small" data-tool="card">${raw(icon("sparkle"))}<span>Card</span></button>
       <button class="btn small" data-tool="source">${raw(icon("bookmark"))}<span>Source</span></button>
       <button class="btn small" data-tool="image">${raw(icon("camera"))}<span>Picture</span></button>
       <button class="btn small" data-tool="frame">${raw(icon("map"))}<span>Frame</span></button>
+      <button class="btn small cork-aa" data-tool="style" aria-label="Style the selected pin: text size, colour, font, alignment, card" aria-expanded="false" title="Style the selected pin">A<small>a</small></button>
       <span class="cork-tools-gap"></span>
       <button class="btn icon small" data-tool="zoom-out" aria-label="Zoom out">−</button>
       <button class="btn icon small" data-tool="fit" aria-label="Fit everything">${raw(icon("compass"))}</button>
@@ -226,7 +229,7 @@ export async function mount(el, ctx, route, ui) {
       pinsEl.appendChild(node);
     }
     const lod = lodOf(p);
-    node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${selected === p.id ? " sel" : ""}${lifted.has(p.id) ? " lift" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
+    node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${styleClasses(p)}${selected === p.id ? " sel" : ""}${lifted.has(p.id) ? " lift" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
     node.dataset.lod = lod;
     node.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--tilt:${p.kind === "frame" ? 0 : tiltOf(p.id)}deg`;
     if (lod === 3) node.style.setProperty("--u", (1 / cam.z).toFixed(4));
@@ -344,7 +347,6 @@ export async function mount(el, ctx, route, ui) {
       ${p.kind === "card" ? html`<button class="btn small" data-sel="open">${raw(icon("external"))}Open</button>` : html`<button class="btn small" data-sel="zoom">${raw(icon("search"))}Zoom</button>`}
       ${p.kind !== "card" && p.kind !== "source" ? html`<button class="btn small" data-sel="edit">${raw(icon("edit"))}Edit</button>` : ""}
       ${p.kind !== "frame" ? html`<button class="btn small ${connectFrom ? "primary" : ""}" data-sel="connect">〰 Connect</button>` : ""}
-      ${p.kind === "note" || p.kind === "frame" ? html`<button class="btn icon small" data-sel="color" aria-label="Colour">●</button>` : ""}
       <button class="btn icon small danger" data-sel="delete" aria-label="Remove from board">${raw(icon("trash"))}</button>`);
     positionSelection();
   }
@@ -372,6 +374,7 @@ export async function mount(el, ctx, route, ui) {
     for (const [pid, node] of pinEls) node.classList.toggle("sel", pid === id);
     applyLift(liftFor(id));
     renderSelection();
+    renderStyle();
     if (pinById(id)?.kind === "frame" && !connectFrom) showHint("Drag inside the frame to move it with everything in it — or drag its corner to resize.", { timeout: 3500 });
   }
 
@@ -617,10 +620,10 @@ export async function mount(el, ctx, route, ui) {
       title: p.kind === "quote" ? "Quote" : p.kind === "link" ? "Link" : "Note",
       body: html`<label class="field"><span>${p.kind === "quote" ? "Who said it / where" : "Title"}</span><input class="input" data-t value="${p.title || ""}" autocomplete="off"></label>
         ${p.kind === "link" ? html`<label class="field"><span>Link</span><input class="input" data-u value="${p.url || ""}" inputmode="url" autocomplete="off"></label>` : ""}
-        <div class="fmt-scope"><label class="field"><span>${p.kind === "quote" ? "The words" : "Text"}</span><textarea class="textarea" data-b data-fmtable rows="6">${p.body || ""}</textarea></label>${fmtButton("Text")}${p.kind === "note" ? "" : fmtPreview}</div>
+        <label class="field"><span>${p.kind === "quote" ? "The words" : "Text"}</span><textarea class="textarea" data-b rows="6">${p.body || ""}</textarea></label>
         ${isClaude(p.author) ? html`<p class="small faint">Pinned by Claude. Editing it makes it yours.</p>` : ""}`,
       foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button>`,
-      setup: (d, close) => { wireFormat(d); d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })); },
+      setup: (d, close) => { d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })); },
     });
     if (!res) return;
     await savePin(p, { title: res.title.trim() || undefined, body: res.body.replace(/\s+$/, ""), ...(p.kind === "link" ? { url: res.url.trim() || undefined } : {}), author: "self" });
@@ -660,14 +663,13 @@ export async function mount(el, ctx, route, ui) {
             : cardsById[a?.card]?.source === "atlas" && cardsById[b?.card]?.source === "atlas" ? html`<p class="small atlas-says">Uncharted: the Atlas doesn't link these yet.</p>` : "";
         })()}
         <label class="field"><span>Label <span class="faint">(optional, shown on the string)</span></span><input class="input" data-f="label" value="${s.label || ""}" autocomplete="off"></label>
-        <div class="fmt-scope"><label class="field"><span>How do they connect?</span><textarea class="textarea" data-f="text" data-fmtable rows="4" placeholder="In your words — this is the synthesis">${s.body || ""}</textarea></label>${fmtButton("How do they connect?")}${fmtPreview}</div>
+        <label class="field"><span>How do they connect?</span><textarea class="textarea" data-f="text" rows="4" placeholder="In your words — this is the synthesis">${s.body || ""}</textarea></label>
         <label class="field"><span>Kind of connection <span class="faint">(the Atlas's tiers)</span></span><select class="select" data-f="tier"><option value="">—</option>${Object.entries(TIERS).map(([k, t]) => html`<option value="${k}" ${s.tier === k ? "selected" : ""}>${t.name} — ${t.hint}</option>`)}</select></label>
         <label class="field"><span>Holds in</span><input class="input" data-f="holds_in" value="${s.holds_in || ""}" placeholder="Where this connection works" autocomplete="off"></label>
         <label class="field"><span>Breaks at</span><input class="input" data-f="breaks_at" value="${s.breaks_at || ""}" placeholder="Where it stops working" autocomplete="off"></label>
         <div class="curator-says" data-problems></div>`,
       foot: html`<button class="btn danger ghost" data-del>${raw(icon("trash"))}</button>${syn ? html`<button class="btn" data-red>Back to red</button>` : ""}<span class="grow"></span><button class="btn" data-close>Close</button><button class="btn primary" data-ok>${syn ? "Save" : "Synthesise"}</button>`,
       setup: (d, close) => {
-        wireFormat(d);
         const val = (k) => d.querySelector(`[data-f="${k}"]`).value;
         d.querySelector("[data-del]").addEventListener("click", () => close({ op: "delete" }));
         d.querySelector("[data-red]")?.addEventListener("click", () => close({ op: "red" }));
@@ -838,15 +840,85 @@ export async function mount(el, ctx, route, ui) {
     await ctx.store.put({ ...card, body: addEntry(card.body, ctx.today(), text), updated: now() });
   }
 
-  async function chooseColor(id) {
-    const p = pinById(id);
-    const res = await sheet({
-      title: "Colour",
-      body: html`<div class="chips">${PIN_COLORS.map((c) => html`<button type="button" class="chip swatch c-${c} ${p.color === c || (!p.color && c === "paper") ? "on" : ""}" data-c="${c}">${c}</button>`)}</div>`,
-      foot: html`<button class="btn" data-close>Done</button>`,
-      setup: (d, close) => on(d, "click", "[data-c]", (e, b) => close(b.dataset.c)),
-    });
-    if (res) await savePin(p, { color: res === "paper" ? undefined : res });
+  // ---- style inspector (the Aa in the dock)
+  // Like a drawing app's style panel: select a pin, then size, colour, font, alignment and card
+  // colour apply to the whole pin. Kept as the pin's own `style` field, never as marks in its words.
+  const styleEl = el.querySelector("#cork-style");
+  const styleBtn = el.querySelector('[data-tool="style"]');
+  const TEXT_KINDS = new Set(["note", "quote", "link", "frame"]);
+  const styleable = (p) => !!p && (TEXT_KINDS.has(p.kind) || (p.kind === "source" && !imageOf(sourcesById[p.source])));
+  const cardable = (p) => !!p && (p.kind === "note" || p.kind === "frame" || p.kind === "quote" || p.kind === "link");
+  function styleClasses(p) {
+    const st = cleanPinStyle(p.style);
+    if (!st) return "";
+    return [" styled", st.size && `ps-${st.size}`, st.colour && `ps-c-${st.colour}`, st.font && `ps-f-${st.font}`, st.align && `ps-a-${st.align}`, st.bold && "ps-b", st.italic && "ps-i"].filter(Boolean).join(" ");
+  }
+  let styleOpen = false;
+  function renderStyle() {
+    styleBtn.setAttribute("aria-expanded", String(styleOpen));
+    styleBtn.classList.toggle("on", styleOpen);
+    const p = selected && pinById(selected);
+    styleBtn.classList.toggle("dim", !styleable(p));
+    if (!styleOpen) { styleEl.hidden = true; return; }
+    styleEl.hidden = false;
+    if (!styleable(p)) {
+      styleEl.innerHTML = String(html`<p class="small muted">${p ? "A card or picture keeps its own look." : "Select a pin, then style it here: text size, colour, font, alignment and card colour."}</p>`);
+      return;
+    }
+    const st = cleanPinStyle(p.style) || {};
+    const on_ = (v) => (v ? "on" : "");
+    styleEl.innerHTML = String(html`
+      <div class="cs-row" aria-label="Text">
+        <button type="button" class="${on_(st.bold)}" data-st="bold" aria-pressed="${!!st.bold}" aria-label="Bold"><b>B</b></button>
+        <button type="button" class="${on_(st.italic)}" data-st="italic" aria-pressed="${!!st.italic}" aria-label="Italic"><i>I</i></button>
+        <span class="fmt-sep"></span>
+        ${SIZES.map(([k, l]) => html`<button type="button" class="${on_((st.size || "") === k)} fmt-size-${k || "m"}" data-st-size="${k}" aria-pressed="${(st.size || "") === k}" aria-label="Text size ${l}">${l}</button>`)}
+      </div>
+      <div class="cs-row" aria-label="Text colour">
+        <button type="button" class="fmt-dot ${on_(!st.colour)}" data-st-colour="" aria-label="Ink" title="Ink"><span class="ink"></span></button>
+        ${COLOURS.map(([k, l]) => html`<button type="button" class="fmt-dot fmt-${k} ${on_(st.colour === k)}" data-st-colour="${k}" aria-label="${l} text" title="${l}"><span></span></button>`)}
+      </div>
+      <div class="cs-row" aria-label="Font and alignment">
+        ${PIN_FONTS.map(([k, l]) => html`<button type="button" class="${on_((st.font || "") === k)} ps-f-${k || "serif"}" data-st-font="${k}" aria-pressed="${(st.font || "") === k}">${l}</button>`)}
+        <span class="fmt-sep"></span>
+        ${PIN_ALIGNS.map(([k, l]) => html`<button type="button" class="${on_((st.align || "") === k)}" data-st-align="${k}" aria-pressed="${(st.align || "") === k}" aria-label="Align ${l}">${raw(alignIcon(k))}</button>`)}
+      </div>
+      ${cardable(p) ? html`<div class="cs-row" aria-label="Card colour">${PIN_COLORS.map((c) => html`<button type="button" class="swatch-dot c-${c} ${on_(p.color === c || (!p.color && c === "paper"))}" data-st-card="${c}" aria-label="${c} card" title="${c} card"></button>`)}
+        <span class="fmt-sep"></span><button type="button" data-st="reset">Reset</button></div>` : html`<div class="cs-row"><button type="button" data-st="reset">Reset</button></div>`}`);
+  }
+  const alignIcon = (k) => {
+    const lines = k === "center" ? [[3, 13], [5, 11], [3, 13]] : k === "right" ? [[3, 13], [7, 13], [5, 13]] : [[3, 13], [3, 9], [3, 11]];
+    return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">${lines.map(([a, b], i) => `<line x1="${a}" x2="${b}" y1="${4 + i * 4}" y2="${4 + i * 4}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`).join("")}</svg>`;
+  };
+  function toggleStyle() {
+    styleOpen = !styleOpen;
+    if (styleOpen && !styleable(selected && pinById(selected))) showHint("Select a pin to style it.", { timeout: 2500 });
+    renderStyle();
+  }
+  // Buttons in the inspector don't take focus from the board, so keys like Delete still work there.
+  on(styleEl, "pointerdown", "button", (e) => e.preventDefault());
+  on(styleEl, "click", "button", async (e, b) => {
+    const p = selected && pinById(selected);
+    if (!styleable(p)) return;
+    const d = b.dataset;
+    const st = { ...(cleanPinStyle(p.style) || {}) };
+    const patch = {};
+    if (d.st === "bold") st.bold = !st.bold;
+    else if (d.st === "italic") st.italic = !st.italic;
+    else if (d.stSize !== undefined) st.size = d.stSize;
+    else if (d.stColour !== undefined) st.colour = d.stColour;
+    else if (d.stFont !== undefined) st.font = d.stFont;
+    else if (d.stAlign !== undefined) st.align = d.stAlign;
+    else if (d.stCard !== undefined) patch.color = d.stCard === "paper" ? undefined : d.stCard;
+    if (d.st === "reset") { patch.style = undefined; if (cardable(p)) patch.color = undefined; }
+    else if (d.stCard === undefined) patch.style = cleanPinStyle(st);
+    await savePin(p, patch);
+  });
+
+  // Pins styled with the first Aa carried marks in their words; move those into the pin's style
+  // (or unwrap them, keeping every word) and drop the stray placeholder "text" it could leave.
+  async function migrateMarkup() {
+    for (const p of parts.pins) { const m = migratePinMarkup(p); if (m) await savePin(p, m); }
   }
 
   function openCurator() {
@@ -916,6 +988,7 @@ export async function mount(el, ctx, route, ui) {
     if (t === "source") addSourcePin();
     if (t === "image") pickImages().then(addImagePins);
     if (t === "frame") addFrame();
+    if (t === "style") toggleStyle();
     if (t === "fit") fit();
     if (t === "zoom-in") zoomAt(r.width / 2, r.height / 2, 1.35);
     if (t === "zoom-out") zoomAt(r.width / 2, r.height / 2, 1 / 1.35);
@@ -925,7 +998,6 @@ export async function mount(el, ctx, route, ui) {
     if (a === "open" || a === "zoom") openPin(selected);
     if (a === "edit") editPin(selected);
     if (a === "connect") { if (connectFrom) { connectFrom = null; hideHint(); renderSelection(); } else startConnect(); }
-    if (a === "color") chooseColor(selected);
     if (a === "delete") removePin(selected);
   });
   on(pinsEl, "click", "[data-act=card-entry]", (e, b) => { e.stopPropagation(); addCardEntry(b.dataset.card); });
@@ -936,6 +1008,7 @@ export async function mount(el, ctx, route, ui) {
     if (gesture?.type === "pin") return; // don't yank a pin out from under your finger
     load();
     renderAll();
+    renderStyle();
   });
   const ro = new ResizeObserver(() => positionSelection());
   ro.observe(vp);
@@ -945,6 +1018,8 @@ export async function mount(el, ctx, route, ui) {
   if (!cam) { cam = { x: 0, y: 0, z: 1 }; requestAnimationFrame(() => { fit(null, { animate: false, maxZ: 1 }); renderAll(); }); }
   applyCam();
   renderAll();
+  renderStyle();
+  migrateMarkup();
   vp.focus({ preventScroll: true });
   // Opened from a deposit or a curator link: #/board/<id>?focus=<pin>
   if (route.query.focus) requestAnimationFrame(() => { const p = pinById(route.query.focus); if (p) { select(p.id); fit(boundsOf([p]), { pad: 120, maxZ: 1.2 }); } });

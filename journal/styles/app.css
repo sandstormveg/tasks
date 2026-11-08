@@ -644,6 +644,7 @@ body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--sa
 .fmt-btn small { font-size: .72em; }
 .fmt-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
 .fmt-scope > .fmt-btn { position: absolute; right: 0; top: -4px; }
+.fmt-scope > .field > span:first-child { display: block; padding-right: 44px; } /* a long label wraps before the Aa */
 .notes-head .fmt-btn { margin-left: auto; margin-right: 8px; }
 .md-box[data-mode="preview"] .fmt-btn { visibility: hidden; }
 .fmt-panel {
@@ -663,5 +664,13 @@ body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--sa
 .fmt-dot span.none { background: none; border: 2px dashed var(--ink-3); }
 .fmt-sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
 .fmt-hint { font-size: .78rem; color: var(--ink-3); }
-.fmt-preview { margin: -4px 0 10px; padding: 6px 10px; border-left: 3px solid var(--line); font-size: .95rem; overflow-wrap: anywhere; }
+.fmt-hint.nudge { color: var(--accent); animation: fmt-nudge .35s ease-in-out 2; }
+@keyframes fmt-nudge { 50% { transform: translateX(3px); } }
+
+/* The live editor drawn in place of a formattable field: words show formatted, never the codes. */
+.rich-field { display: block; height: auto; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; text-align: left; }
+.rich-field.input { min-height: 44px; line-height: 1.45; }
+.rich-field:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+.rich-field:empty::before { content: attr(data-placeholder); color: var(--ink-3); pointer-events: none; }
+.md-box[data-mode="preview"] .rich-field { display: none; }
 .fmt-scope + .fmt-scope, .field + .fmt-scope, .fmt-scope + .field { margin-top: 12px; }

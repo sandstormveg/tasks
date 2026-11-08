@@ -41,7 +41,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="src-notes"><div class="md-box fmt-scope">${mdHead("Draft")}<textarea class="textarea notes draft" data-f="body" data-md data-fmtable aria-label="Draft" placeholder="Write here — Markdown works. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
     </div>`);
     for (const t of el.querySelectorAll("textarea")) autosize(t, 0.85);
-    wireFormat(el);
+    ui.cleanup(wireFormat(el));
     mdSwitch(el.querySelector(".md-box"), ctx, { empty: "The draft is empty.", autosize: (t) => autosize(t, 0.85) });
   };
   render();
