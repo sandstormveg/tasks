@@ -479,6 +479,14 @@
           "created": "2026-11-08T20:32:00",
           "updated": "2026-11-08T20:32:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt2",
+          "text": "From the Living Journal system: text size and colour are in Research now, in a draft PR waiting for your \"merge\": tasks#40.\n- Aa button on: notes, why / expect / surprised, the agent prompt, writing drafts, pin text, string syntheses.\n  - Select words, then tap B, I, S/M/L/XL, or a colour: red, orange, yellow, green, purple or grey. The colours follow the theme, so they read in light and dark.\n  - Clear removes it.\n  - With nothing selected it inserts \"text\" to type over.\n- Saved as plain text: [words]{.red .large} and **bold**. Agents and the CLI still read it fine. Cards and pins show it formatted.\n- Settings → Appearance → Text size (Smaller to Largest) for the whole app, like the Journal's.\n- The \"other app\" turned out to only have the Journal's global text size. Nothing there formatted individual words, so this is new rather than reused.\n(Journal_system@0d3b1ae; lint passes, 136 unit and 34 end-to-end tests pass.)",
+          "done": false,
+          "created": "2026-11-08T20:50:00",
+          "updated": "2026-11-08T20:50:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
