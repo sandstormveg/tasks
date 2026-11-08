@@ -1988,6 +1988,62 @@
           "author": "Claude Opus 5.5"
         }
       ]
+    },
+    {
+      "id": "training-changes-mw5qe491",
+      "title": "training changes",
+      "category": "Development",
+      "completedDate": "2026-11-08",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mw5qeo5giztk",
+          "text": "add pullups. they should be able to use camera verification too.",
+          "done": false,
+          "created": "2026-11-07T01:35:30.244Z",
+          "updated": "2026-11-07T01:35:30.244Z"
+        },
+        {
+          "id": "n-mw5qfhks6odn",
+          "text": "add jogging. maybe like 5000 steps to start with",
+          "done": false,
+          "created": "2026-11-07T01:36:08.380Z",
+          "updated": "2026-11-07T01:36:08.380Z"
+        },
+        {
+          "id": "n-mw5qggsm95y2",
+          "text": "improve the stats system to reflect better scaling.",
+          "done": false,
+          "created": "2026-11-07T01:36:54.022Z",
+          "updated": "2026-11-07T01:36:54.022Z"
+        },
+        {
+          "id": "n-mw5qi0yim4lh",
+          "text": "lmk if the missions i do give me skills or not. like if i do a quest for woodcarving then i expect to get woodcarving level 1, skill unlocked.\n\nlikewise if i hand in a quest for one arm pull up then i expect to get an appropriate skill update and an appropriate epic/legendary achievement.",
+          "done": false,
+          "created": "2026-11-07T01:38:06.810Z",
+          "updated": "2026-11-07T01:41:19.308Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-train1",
+          "text": "Your question first: do quests give skills? Partly, today. A skill levels up from the XP of quests tagged with it, but only skills already in your showcase. A new skill (e.g. woodcarving) doesn't unlock by itself, and achievements aren't awarded automatically.\n\nRelayed (2026-11-07) to Adventurer:\n- **Skills:** handing in a quest that trains a new skill unlocks it at Lv 1, with a \"Skill unlocked\" moment.\n- **Achievements:** awarded automatically by tier (rare, epic, legendary), so a one-arm pull-up earns a big skill bump and a legendary achievement.\n- **Pull-ups:** with camera verification, coached by Sergeant Brass.\n- **Jogging:** a web app can't read your phone's step counter, so my suggestion is GPS distance while the Guild is open, with typing in your steps as a fallback. First quest: 5000 steps (~3.5 km).\n- **Stats:** a better scaling curve (quick early gains, meaningful later ones), with a tooltip explaining it.\n\nOn my side as guild master: I'll tag every quest I shape with the skills it trains, so the hand-ins count.",
+          "done": false,
+          "created": "2026-11-07T13:35:00",
+          "updated": "2026-11-07T13:35:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-agent-mw5sl9q7",
+          "text": "✓ Actioned 2026-11-07 (tasks PR #35). (1) Pull-ups are camera-counted: a rep counts only when your chin clears the bar, and Sergeant Brass says \"Chin over the bar\" if it does not. They are in the Train tab free sets. (2) Jogging: GPS tracks distance while the Guild page is open, with the screen kept awake, and steps are estimated at 0.7 m each. Only the totals are kept, never your route. You can enter steps by hand instead (paid as your word). Brass calls every 1000 steps. Train tab: ➶ Jog 5000 steps, plus a board quest \"Jog 5000 steps (~3.5 km)\". (3) Levels are quicker early: 60 XP to Lv 2, then +40 XP a level. Attributes now have their own levels, explained in the LV tooltip. (4) Turning in a quest tagged with a new skill unlocks it at Lv 1 with a \"Skill unlocked\" moment. Feats are new medals: hard quests are rare, epic quests are epic, and the guild master can name legendary ones such as a one-arm pull-up. A feat trains its skills 1.5x, 2x or 3x. New medals: Over the Bar, Ten Clean, Road Runner, First 5k. Note: the existing guild levels will shift with the new curve.",
+          "done": false,
+          "created": "2026-11-07T02:36:37.373Z",
+          "updated": "2026-11-07T02:36:37.373Z",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     }
   ]
 }
