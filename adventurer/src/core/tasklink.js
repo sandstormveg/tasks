@@ -39,6 +39,12 @@ export function applyTaskOps(tasks, history, ops, now = new Date().toISOString()
       }
       t = t.filter((x) => x.id !== op.taskId);
       tasksChanged = true;
+    } else if (op.op === "drop") {
+      // An abandoned or failed quest: its Guild task goes, unless you've written notes on it.
+      const task = t.find((x) => x.id === op.taskId);
+      if (!task || task.questId !== op.questId || task.noteItems?.length) continue;
+      t = t.filter((x) => x !== task);
+      tasksChanged = true;
     } else if (op.op === "note") {
       const task = t.find((x) => x.id === op.taskId);
       if (!task || (task.claudeNotes || []).some((n) => n.id === op.noteId)) continue;

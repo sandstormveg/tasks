@@ -1,5 +1,5 @@
 // Sergeant Brass on screen: a brass drill automaton portrait (animated like
-// Relay's, and still under reduced motion), his line, and his voice when
+// Joy's, and still under reduced motion), his line, and his voice when
 // Settings › Training coach has it on. Lines come from core/coach.js.
 
 import { html, raw } from "./dom.js";

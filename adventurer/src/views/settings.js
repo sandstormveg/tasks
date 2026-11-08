@@ -96,7 +96,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Relay").trim().slice(0, 24) || "Relay", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync });
+      relay: !!f.relay, relayName: (f.relayName || "Joy").trim().slice(0, 24) || "Joy", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

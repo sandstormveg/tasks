@@ -52,14 +52,14 @@ a { color: var(--accent-2); }
 .chip.on { border-color: var(--accent-2); color: var(--text); }
 :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 
-/* Relay, the receptionist */
+/* Joy, the receptionist */
 .relay { border: 1px solid var(--amber); border-radius: 8px; background: linear-gradient(180deg, rgba(255, 176, 0, .06), transparent); margin-bottom: 14px; color: var(--amber); }
 .relay summary { display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; list-style: none; }
 .relay summary::-webkit-details-marker { display: none; }
 .portrait { width: 44px; height: 44px; flex: none; border: 1px solid var(--amber); border-radius: 4px; overflow: hidden; position: relative; background: #140d00; }
 .portrait::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .35) 0 1px, transparent 1px 3px); }
 .portrait-svg { width: 100%; height: 100%; animation: flicker 6s infinite steps(1); }
-/* Relay idles (blink, slight bob) and talks (mouth flaps) — all off under reduced motion. */
+/* Joy idles (blink, slight bob) and talks (mouth flaps) — all off under reduced motion. */
 .portrait-svg .eyes, .portrait-svg .mouth-open { transform-box: fill-box; transform-origin: center; }
 .portrait-svg .eyes { animation: blink 5s infinite; }
 .portrait-svg .mouth-open { opacity: 0; }
@@ -122,6 +122,8 @@ a { color: var(--accent-2); }
 .obj-main { flex: 1; min-width: 0; }
 .obj-type { display: inline-block; width: 1.3em; text-align: center; }
 .obj-xp { font-weight: bold; color: var(--amber); white-space: nowrap; }
+.info-tip { border: 0; background: none; color: inherit; opacity: .6; padding: 0 4px; font: inherit; cursor: help; }
+.info-tip:hover, .info-tip:focus-visible { opacity: 1; }
 .relay-name { font-weight: bold; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
 .relay-first { display: none; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay:not([open]) .relay-first { display: block; flex: 1; min-width: 0; }
@@ -198,6 +200,7 @@ dialog.sheet::backdrop { background: rgba(0, 0, 0, .7); }
 .sheet-head .btn { background: none; border: none; }
 .sheet-body { padding: 8px 14px; overflow: auto; }
 .sheet-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding: 10px 14px 14px; }
+.sheet-more { order: -1; flex-basis: 100%; display: flex; gap: 8px; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; font-size: .9rem; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; }
