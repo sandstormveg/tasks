@@ -1,11 +1,12 @@
 // Research settings: where it syncs (research/ in your private tasks data, with
 // the token you saved in Tasks), the look, saving from your computer with a
-// bookmark button, and how Claude can use your library.
+// bookmark button, how Claude can use your library, and Marginalia, the archive's companion.
 
 import { html, raw, on, toast } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
 import { atlasConfig, loadAtlasIndex } from "../atlas.js";
 import { cleanFolder } from "../../data/folder-remote.js";
+import { companionSettingsBlock, wireCompanionSettings } from "../../ui/companion.js";
 
 export async function mount(el, ctx, route, ui) {
   ui.setTitle("Settings");
@@ -83,10 +84,16 @@ export async function mount(el, ctx, route, ui) {
         <p class="small faint" style="margin-bottom:0">Cards are made the Infodex's way from Wikidata. To bring your own Dex cards (with their finish, Insight and questions), export them in the Infodex and choose the file under Card on any board.</p>
       </div>
 
+      <div class="section-title">Companion</div>
+      ${companionSettingsBlock("marginalia", ctx)}
+
       <div class="section-title">Appearance</div>
       <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div></div>`);
+    fillVoices?.();
   }
+  let fillVoices = null;
   render();
+  fillVoices = wireCompanionSettings(el, ctx, "marginalia");
   checkAtlas(false);
   const off = ctx.sync.on(() => render());
   ui.cleanup(off);

@@ -62,6 +62,10 @@ are one line per item; open a single board or piece only when it's relevant.
   - `agent-note <id> --text "…"` saves your answer as an `agent_notes` entry (`author: claude`, dated). It's
     Markdown, shown in the app under the prompt as yours. Answer the whole prompt in one note; cite pages
     and say what you read versus inferred. The tool refuses when Assist is off.
+  - The app shows agent notes as written by **Marginalia**, the archive's companion: an old,
+    measured, faintly theatrical archivist. You may write in that voice (for example, open with "From the
+    margins:"), but the substance comes first: plain claims, sources, and uncertainty marked. Keep
+    `--author` as `claude`, never the character's name, so authorship stays visible.
   - Never write the prompt, `why`, `expect`, `surprised`, notes or quotes — the prompt is their words too.
 - **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
   **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.

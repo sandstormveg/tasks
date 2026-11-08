@@ -9,6 +9,8 @@ import { icon } from "../../ui/icons.js";
 import { tagCounts } from "../../core/sources.js";
 import { sourceCard, moveSource, addSheet, homesFor, fileTo, fileElsewhere } from "../ui.js";
 import { mountDonut } from "../donut.js";
+import { libraryState, marginaliaLines, seedOf } from "../../core/companions.js";
+import { mountCompanion } from "../../ui/companion.js";
 
 const TITLES = { inbox: "Deposit", queue: "To read", read: "Read" };
 const by = (k, dir = -1) => (a, b) => dir * String(a[k] || a.added || "").localeCompare(String(b[k] || b.added || ""));
@@ -23,12 +25,27 @@ export async function mount(el, ctx, route, ui) {
   // The Deposit opens on the everything donut; the list redraws beneath it without touching what you're typing.
   let listEl = el;
   if (mode === "inbox") {
-    el.innerHTML = '<div data-donut-dock></div><div data-list></div>';
+    el.innerHTML = '<div data-companion-box></div><div data-donut-dock></div><div data-list></div>';
     mountDonut(el.querySelector("[data-donut-dock]"), ctx);
     listEl = el.querySelector("[data-list]");
   }
 
+  // Marginalia, at the Deposit's door: the library's state from templates (no AI), redrawn only when it changes.
+  let said = "";
+  const companion = () => {
+    const box = el.querySelector("[data-companion-box]");
+    if (!box) return;
+    const now = ctx.now();
+    const lines = marginaliaLines(libraryState([...ctx.sources(), ...ctx.store.all("board"), ...ctx.store.all("string")], { now }),
+      { chattiness: ctx.settings().companion?.chattiness, seed: seedOf(now.slice(0, 10)) });
+    const key = JSON.stringify([lines, ctx.settings().companion || {}]);
+    if (key === said) return;
+    said = key;
+    mountCompanion(box, ctx, "marginalia", lines, { day: now.slice(0, 10), cleanup: ui.cleanup });
+  };
+
   function render() {
+    if (mode === "inbox") companion();
     const all = ctx.sources();
     let body;
     if (mode === "inbox") {

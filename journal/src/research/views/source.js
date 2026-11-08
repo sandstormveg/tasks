@@ -10,6 +10,8 @@ import { html, raw, on, debounce, autosize, sheet, toast } from "../../ui/dom.js
 import { icon } from "../../ui/icons.js";
 import { STATUSES, KINDS, statusPatch, formatAuthors, normalizeUrl, siteOf, findDoi, assistWaiting } from "../../core/sources.js";
 import { renderMarkdown } from "../../core/markdown.js";
+import { companionSettings, COMPANIONS } from "../../core/companions.js";
+import { portrait } from "../../ui/companion.js";
 import { tagInput, deleteSource, mdHead, mdPreview, mdSwitch } from "../ui.js";
 import { imageOf } from "../images.js";
 
@@ -100,8 +102,9 @@ export async function mount(el, ctx, route, ui) {
     el.querySelector("[data-assist-state]").textContent = !on_ ? "" : !String(s.prompt || "").trim() ? "Write what you'd like and an agent picks it up on its next pass."
       : assistWaiting(s) ? "Waiting — an agent picks this up on its next pass." : "Answered. Change the prompt to ask again.";
     const ns = s.agent_notes || [];
+    const cs = companionSettings(ctx.settings());
     el.querySelector("[data-agent-notes]").innerHTML = String(ns.length ? html`${[...ns].reverse().map((n) => html`<article class="agent-note">
-        <header><span class="badge ai">${whoIs(n.author)}</span><span class="faint small">${when(n.date)}</span><span class="grow"></span><button type="button" class="btn icon small ghost" data-act="rm-agent-note" data-id="${n.id}" aria-label="Remove this agent note">${raw(icon("trash"))}</button></header>
+        <header>${cs.on ? html`${portrait("marginalia", { label: cs.name || COMPANIONS.marginalia.name, still: true })}<b class="small">${cs.name || COMPANIONS.marginalia.name}</b>` : ""}<span class="badge ai" title="Written by">${whoIs(n.author)}</span><span class="faint small">${when(n.date)}</span><span class="grow"></span><button type="button" class="btn icon small ghost" data-act="rm-agent-note" data-id="${n.id}" aria-label="Remove this agent note">${raw(icon("trash"))}</button></header>
         <div class="prose">${raw(renderMarkdown(n.text, { tags: false, concepts: false }))}</div></article>`)}` : "");
   }
   renderAssist();
