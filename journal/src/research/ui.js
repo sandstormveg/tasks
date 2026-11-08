@@ -12,6 +12,7 @@ import { makePin, makeString, placeNear, defaultSize, boardParts } from "../core
 import { suggestHomes, homesFrom } from "../core/deposit.js";
 import { saveImages, imageOf, imagePinSize, imagesFrom } from "./images.js";
 import { renderMarkdown } from "../core/markdown.js";
+import { fmtButton, formatted } from "../ui/textformat.js";
 
 // What a card offers, by status: the next step in reading, without opening it.
 const NEXT = {
@@ -31,7 +32,7 @@ export function sourceCard(s, { actions = true, extra = "" } = {}) {
       <div class="src-title">${s.favourite ? html`<span class="fav" aria-label="Favourite">${raw(icon("star"))}</span>` : ""}${s.title || s.url}</div>
       <div class="src-meta">${[s.site, by, s.kind && s.kind !== "article" ? KINDS[s.kind] : ""].filter(Boolean).join(" · ")}</div>
       ${s.tags?.length ? html`<div class="src-tags">${s.tags.map((t) => html`<span class="tag">#${t}</span>`)}</div>` : ""}
-      ${s.why ? html`<div class="src-why">${s.why}</div>` : ""}
+      ${s.why ? html`<div class="src-why">${formatted(s.why)}</div>` : ""}
       ${s.kind === "thought" && s.body ? html`<div class="src-thought">${s.body.slice(0, 280)}${s.body.length > 280 ? "…" : ""}</div>` : ""}
     </a>
     ${actions && NEXT[s.status]?.length ? html`<div class="src-actions">${NEXT[s.status].map(([st, label]) => html`<button class="btn small ${st === "dropped" ? "ghost" : ""}" data-act="move" data-id="${s.id}" data-to="${st}">${label}</button>`)}</div>` : ""}
@@ -282,8 +283,8 @@ export async function deleteSource(ctx, id) {
 const MD_MODE = "research.notes-mode";
 export const mdMode = () => { try { return localStorage.getItem(MD_MODE) === "preview" ? "preview" : "edit"; } catch { return "edit"; } };
 
-/** The head row: a label and the switch. Put it, a `textarea[data-md]` and `mdPreview` inside an element with class "md-box". */
-export const mdHead = (label) => html`<div class="notes-head"><span class="label">${label}</span>
+/** The head row: a label, the Aa button and the switch. Put it, a `textarea[data-md][data-fmtable]` and `mdPreview` inside an element with classes "md-box fmt-scope". */
+export const mdHead = (label) => html`<div class="notes-head"><span class="label">${label}</span>${fmtButton(label)}
   <div class="status-seg small" role="group" aria-label="${label}: edit or preview"><button type="button" data-md-mode="edit">Edit</button><button type="button" data-md-mode="preview">Preview</button></div></div>`;
 export const mdPreview = html`<div class="prose notes-preview" data-md-preview></div>`;
 

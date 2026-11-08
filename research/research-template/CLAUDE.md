@@ -67,6 +67,10 @@ are one line per item; open a single board or piece only when it's relevant.
     margins:"), but the substance comes first: plain claims, sources, and uncertainty marked. Keep
     `--author` as `claude`, never the character's name, so authorship stays visible.
   - Never write the prompt, `why`, `expect`, `surprised`, notes or quotes — the prompt is their words too.
+- **Formatting** in their text is theirs: `**bold**`, `*italic*` and `[words]{.red .large}` (sizes `small`,
+  `large`, `xl`; colours `red`, `orange`, `yellow`, `green`, `purple`, `grey`) come from the app's Aa button.
+  Read it as plain text (the words in brackets are the words), keep it when you quote them exactly, and
+  never add or remove formatting in their fields. Your own notes are Markdown; don't colour them.
 - **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
   **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.
 - **Never** write or edit their words: `why` (beyond quoting them as above), `expect`, `surprised`, notes,

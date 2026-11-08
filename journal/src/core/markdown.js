@@ -4,7 +4,10 @@
 //
 // Extras: #tags become tag links, @concept-id becomes a knowledge-system badge
 // (same convention as the Atlas), and ![caption](media:m-…) becomes a figure
-// placeholder the UI fills in lazily.
+// placeholder the UI fills in lazily. [words]{.red .large} is the Aa button's
+// size and colour (core/textformat.js).
+
+import { SPAN_RE, isFormatClass, stripFormat } from "./textformat.js";
 
 export function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -41,6 +44,11 @@ function inline(text, opts) {
   s = s.replace(/!\[([^\]]*)\]\(media:([a-zA-Z0-9._-]+)\)/g, (_, alt, id) =>
     park(`<span class="md-media" role="figure" data-media-id="${id}"><span class="md-media-ph"></span>${alt ? `<span class="md-caption">${alt}</span>` : ""}</span>`));
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt) => park(`<span class="md-img-missing">[image${alt ? ": " + alt : ""}]</span>`));
+  // [words]{.red .large}: the Aa button's size and colour (core/textformat.js). Known classes only.
+  s = s.replace(SPAN_RE, (m, label, attr) => {
+    const cls = attr.trim().split(/\s+/).map((c) => c.replace(/^\./, "")).filter(isFormatClass);
+    return cls.length ? park(`<span class="${cls.map((c) => `fmt-${c}`).join(" ")}">`) + label + park("</span>") : m;
+  });
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, url) => {
     const u = url.replace(/&amp;/g, "&");
     if (u.startsWith("#/")) return park(`<a href="${url}">`) + label + park("</a>");
@@ -65,6 +73,11 @@ function inline(text, opts) {
 // Inline variants also accept a preceding ">" (e.g. **#tag** after <strong>).
 const TAG_INLINE_RE = /(^|[\s(>])#([\p{L}\p{N}][\p{L}\p{N}_-]{0,40})/gu;
 const CONCEPT_INLINE_RE = /(^|[\s(>])@([a-z0-9][a-z0-9-]{1,80})/g;
+
+/** One line or short field -> safe inline HTML (bold, italic, size, colour, links); no blocks. */
+export function renderInline(src, opts = {}) {
+  return String(src || "").split(/\r?\n/).map((l) => inline(escapeHtml(l), { tags: false, concepts: false, ...opts })).join("<br>");
+}
 
 /** Markdown -> safe HTML string. */
 export function renderMarkdown(src, opts = {}) {
@@ -122,7 +135,7 @@ export function renderMarkdown(src, opts = {}) {
 
 /** Plain-text excerpt (markdown syntax removed), for cards and snippets. */
 export function plainExcerpt(src, max = 220) {
-  const s = String(src || "")
+  const s = stripFormat(src)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/^#{1,6}\s+/gm, "")

@@ -23,6 +23,7 @@ import { searchSources, formatAuthors } from "../../core/sources.js";
 import { renderMarkdown } from "../../core/markdown.js";
 import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
+import { fmtButton, fmtPreview, wireFormat, formatted } from "../../ui/textformat.js";
 
 const MIN_Z = 0.08;
 const MAX_Z = 6;
@@ -186,12 +187,12 @@ export async function mount(el, ctx, route, ui) {
       return html`${by}<div class="pin-kicker">${s?.site || "Source"}${s?.status ? html` · ${s.status === "inbox" ? "deposit" : s.status}` : ""}</div>
         <div class="pin-title">${s?.title || p.title || p.url || "Source"}</div>
         ${s?.authors?.length ? html`<div class="pin-meta">${formatAuthors(s.authors)}${s.year ? `, ${s.year}` : ""}</div>` : ""}
-        ${lod >= 1 && (s?.why || p.body) ? html`<div class="pin-text">${s?.why || p.body}</div>` : ""}
+        ${lod >= 1 && (s?.why || p.body) ? html`<div class="pin-text">${formatted(s?.why || p.body)}</div>` : ""}
         ${lod >= 2 ? html`<div class="pin-foot"><a href="#/source/${p.source}" class="pin-open">Open in Research</a>${s?.url ? html` · <a href="${s.url}" target="_blank" rel="noopener noreferrer">Link</a>` : ""}</div>` : ""}`;
     }
-    if (p.kind === "quote") return html`${by}<blockquote class="pin-quote">${p.body}</blockquote>${p.title ? html`<div class="pin-meta">— ${p.title}</div>` : ""}`;
-    if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? html`<a class="pin-meta" href="${p.url}" target="_blank" rel="noopener noreferrer">${p.url.replace(/^https?:\/\//, "").slice(0, 60)}</a>` : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${p.body}</div>` : ""}`;
-    return html`${by}${p.title ? html`<div class="pin-title">${p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : p.body}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
+    if (p.kind === "quote") return html`${by}<blockquote class="pin-quote">${formatted(p.body)}</blockquote>${p.title ? html`<div class="pin-meta">— ${p.title}</div>` : ""}`;
+    if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? html`<a class="pin-meta" href="${p.url}" target="_blank" rel="noopener noreferrer">${p.url.replace(/^https?:\/\//, "").slice(0, 60)}</a>` : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${formatted(p.body)}</div>` : ""}`;
+    return html`${by}${p.title ? html`<div class="pin-title">${p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : formatted(p.body)}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
   }
 
   function pageCtx(p) {
@@ -616,10 +617,10 @@ export async function mount(el, ctx, route, ui) {
       title: p.kind === "quote" ? "Quote" : p.kind === "link" ? "Link" : "Note",
       body: html`<label class="field"><span>${p.kind === "quote" ? "Who said it / where" : "Title"}</span><input class="input" data-t value="${p.title || ""}" autocomplete="off"></label>
         ${p.kind === "link" ? html`<label class="field"><span>Link</span><input class="input" data-u value="${p.url || ""}" inputmode="url" autocomplete="off"></label>` : ""}
-        <label class="field"><span>${p.kind === "quote" ? "The words" : "Text"}</span><textarea class="textarea" data-b rows="6">${p.body || ""}</textarea></label>
+        <div class="fmt-scope"><label class="field"><span>${p.kind === "quote" ? "The words" : "Text"}</span><textarea class="textarea" data-b data-fmtable rows="6">${p.body || ""}</textarea></label>${fmtButton("Text")}${p.kind === "note" ? "" : fmtPreview}</div>
         ${isClaude(p.author) ? html`<p class="small faint">Pinned by Claude. Editing it makes it yours.</p>` : ""}`,
       foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button>`,
-      setup: (d, close) => d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })),
+      setup: (d, close) => { wireFormat(d); d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })); },
     });
     if (!res) return;
     await savePin(p, { title: res.title.trim() || undefined, body: res.body.replace(/\s+$/, ""), ...(p.kind === "link" ? { url: res.url.trim() || undefined } : {}), author: "self" });
@@ -659,13 +660,14 @@ export async function mount(el, ctx, route, ui) {
             : cardsById[a?.card]?.source === "atlas" && cardsById[b?.card]?.source === "atlas" ? html`<p class="small atlas-says">Uncharted: the Atlas doesn't link these yet.</p>` : "";
         })()}
         <label class="field"><span>Label <span class="faint">(optional, shown on the string)</span></span><input class="input" data-f="label" value="${s.label || ""}" autocomplete="off"></label>
-        <label class="field"><span>How do they connect?</span><textarea class="textarea" data-f="text" rows="4" placeholder="In your words — this is the synthesis">${s.body || ""}</textarea></label>
+        <div class="fmt-scope"><label class="field"><span>How do they connect?</span><textarea class="textarea" data-f="text" data-fmtable rows="4" placeholder="In your words — this is the synthesis">${s.body || ""}</textarea></label>${fmtButton("How do they connect?")}${fmtPreview}</div>
         <label class="field"><span>Kind of connection <span class="faint">(the Atlas's tiers)</span></span><select class="select" data-f="tier"><option value="">—</option>${Object.entries(TIERS).map(([k, t]) => html`<option value="${k}" ${s.tier === k ? "selected" : ""}>${t.name} — ${t.hint}</option>`)}</select></label>
         <label class="field"><span>Holds in</span><input class="input" data-f="holds_in" value="${s.holds_in || ""}" placeholder="Where this connection works" autocomplete="off"></label>
         <label class="field"><span>Breaks at</span><input class="input" data-f="breaks_at" value="${s.breaks_at || ""}" placeholder="Where it stops working" autocomplete="off"></label>
         <div class="curator-says" data-problems></div>`,
       foot: html`<button class="btn danger ghost" data-del>${raw(icon("trash"))}</button>${syn ? html`<button class="btn" data-red>Back to red</button>` : ""}<span class="grow"></span><button class="btn" data-close>Close</button><button class="btn primary" data-ok>${syn ? "Save" : "Synthesise"}</button>`,
       setup: (d, close) => {
+        wireFormat(d);
         const val = (k) => d.querySelector(`[data-f="${k}"]`).value;
         d.querySelector("[data-del]").addEventListener("click", () => close({ op: "delete" }));
         d.querySelector("[data-red]")?.addEventListener("click", () => close({ op: "red" }));
