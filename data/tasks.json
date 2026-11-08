@@ -461,7 +461,16 @@
       "category": "Development",
       "created": "2026-11-08",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mw7k1okkfvy0",
+          "text": "make sure the text size and colour can be changed in this app. like in the notes.",
+          "done": false,
+          "created": "2026-11-08T08:12:58.916Z",
+          "updated": "2026-11-08T08:12:58.916Z"
+        }
+      ]
     }
   ]
 }
