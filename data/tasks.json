@@ -470,6 +470,16 @@
           "created": "2026-11-08T08:12:58.916Z",
           "updated": "2026-11-08T08:14:30.646Z"
         }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-resfmt",
+          "text": "Relayed (2026-11-08) to the Living Journal system session, which owns Research. Suggested: an 'Aa' text-format button in the Research editors (notes, why/expect/surprised, pin text, prompts) with size S/M/L/XL and a colour palette that works in both themes, plus bold/italic. Reuse the Journal's control if that's 'the other app', so they match. Also a global reading-size setting. It's a cloud session, so it builds the next time you run it there. If you meant a different app's editor, tell me which one.",
+          "done": false,
+          "created": "2026-11-08T20:32:00",
+          "updated": "2026-11-08T20:32:00",
+          "author": "Claude Opus 5.5"
+        }
       ]
     }
   ]
