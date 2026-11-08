@@ -504,56 +504,6 @@
           "author": "Claude Opus 5.5"
         }
       ]
-    },
-    {
-      "id": "uninstall-of-task-all-is-saying-the-app-is-already-installed-it-s-a-bug-mw5xxqpm",
-      "title": "uninstall of task all is saying the app is already installed. it's a bug",
-      "category": "Development",
-      "created": "2026-11-07",
-      "notes": "",
-      "assist": true,
-      "noteItems": [
-        {
-          "id": "n-mw5xyczb2hmf",
-          "text": "i did this to see if i can see the other apps when i hold it down.",
-          "done": false,
-          "created": "2026-11-07T05:06:46.199Z",
-          "updated": "2026-11-07T05:06:46.199Z"
-        },
-        {
-          "id": "n-mw607gefwdv0",
-          "text": "still not working. I remember doing a fix for this when we were installing it initially. and didn't we build a fix in like the pwa settings?",
-          "done": false,
-          "created": "2026-11-07T06:09:49.761Z",
-          "updated": "2026-11-07T06:09:49.761Z"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-director-c7-webapk",
-          "text": "This is almost certainly Chrome on Android, not the Tasks app. The app has no install code of its own, so the \"already installed\" message comes from Chrome. Chrome installs web apps as a hidden Android app (a \"WebAPK\"), and it often keeps thinking it's installed after you remove the icon. Try these in order:\n1. Removing the icon from the home screen isn't an uninstall. Go to Android Settings › Apps, find \"Tasks\" (it may be listed under its site name), and choose Uninstall. Then reopen the site in Chrome.\n2. If Chrome still says it's installed, go to Chrome › ⋮ › Settings › Site settings › All sites, find the Tasks site, then Delete data & reset permissions. Close Chrome fully, or restart the phone, and reopen the site.\n3. Then use ⋮ › Install app (or Add to Home screen › Install).\nOnce it's reinstalled, long-pressing the icon should show the new Research, Journal and Guild shortcuts (PR #33). If step 2 still doesn't fix it, add a note here and I'll get Adventurer to dig in.",
-          "done": false,
-          "created": "2026-11-07T16:35:00",
-          "updated": "2026-11-07T16:35:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-director-c7-webapk2",
-          "text": "Thanks for trying. Handed to Adventurer (2026-11-07) to fix properly. I couldn't find the earlier fix you remember in the tasks history, so I've asked Adventurer to check. Two likely causes: (1) the app's manifest has no stable id, and (2) the Journal, Research and Guild pages inside Tasks may install as separate hidden apps, and Chrome may be confusing one of them with Tasks. I've also asked for a 'Reinstall app help' button in Settings that resets the app's offline copy. You'll get step-by-step reinstall instructions here when it ships.",
-          "done": false,
-          "created": "2026-11-07T17:35:00",
-          "updated": "2026-11-07T17:35:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-agent-mw6109lf",
-          "text": "✓ Fixed 2026-11-07 (tasks PR #37). The cause: the app had no fixed ID, so Chrome identified it by its address, and after an uninstall Chrome can keep that address marked as installed. The app now has a new ID, so Chrome sees it as a new app it can install. To reinstall: (1) If the old Tasks icon or app is still there, long-press it › App info › Uninstall. (2) Wait a few minutes after this update. Then open sandstormveg.github.io/tasks in Chrome, tap ⚙ Settings › App install › Reset app files, and confirm. The page reloads and keeps your key, tasks and journal. (3) Fully close Chrome by swiping it away in recent apps, then reopen the site. (4) If Settings › App install shows an Install Tasks button, tap it. Otherwise use Chrome ⋮ › Install app (or Add to Home screen › Install). (5) Long-press the new icon: you should see Research, Journal and Guild. If Chrome still says it is installed, restart the phone and repeat steps 3 and 4. About the fix you remembered: I could not find one in the Tasks history. The install button you may be thinking of is in the Infodex (Atlas), not in Tasks. Settings › App install is now the built-in fix.",
-          "done": false,
-          "created": "2026-11-07T06:32:13.969Z",
-          "updated": "2026-11-07T06:32:13.969Z",
-          "author": "Claude Opus 5.5"
-        }
-      ]
     }
   ]
 }
