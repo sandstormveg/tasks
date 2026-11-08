@@ -619,6 +619,9 @@ body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--sa
 @media (prefers-reduced-motion: reduce) { .companion-line { animation: none; } }
 @media (max-width: 460px) { .companion .portrait:not(.small) { width: 46px; height: 46px; } .companion-line { font-size: .92rem; } }
 .companion-settings .check { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; }
+.companion-settings .pack-list { display: grid; gap: 0; }
+.companion-settings .pack-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.companion-settings .pack-row .check { margin: 6px 0; }
 .agent-note header .portrait.small { --c: var(--warn); }
 
 /* ---------- Aa: size and colour of particular words (core/textformat.js, ui/textformat.js) ---------- */

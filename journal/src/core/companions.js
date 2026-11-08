@@ -35,6 +35,8 @@ export function companionSettings(s = {}) {
     name: String(c.name || "").trim().slice(0, 24),
     voice: c.voice === true,
     voiceName: c.voiceName || "",
+    // The rendered voice (core/voicepack.js): null for the companion's first, "" for the device's own.
+    voicePack: typeof c.voicePack === "string" ? c.voicePack : null,
     voiceRate: Number.isFinite(Number(c.voiceRate)) && c.voiceRate !== "" && c.voiceRate != null ? Number(c.voiceRate) : null,
     voicePitch: Number.isFinite(Number(c.voicePitch)) && c.voicePitch !== "" && c.voicePitch != null ? Number(c.voicePitch) : null,
     themes: c.themes === true,
