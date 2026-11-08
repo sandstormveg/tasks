@@ -8,6 +8,7 @@ import { PIECE_STATUSES, wordCount } from "../../core/writing.js";
 import { makeBoard, boardParts, boardSummary } from "../../core/boards.js";
 import { searchSources } from "../../core/sources.js";
 import { mdHead, mdPreview, mdSwitch } from "../ui.js";
+import { wireFormat } from "../../ui/textformat.js";
 
 export async function mount(el, ctx, route, ui) {
   const id = route.params[0];
@@ -37,9 +38,10 @@ export async function mount(el, ctx, route, ui) {
         <p class="small faint" style="margin-top:18px">${wordCount(p.body)} words · started ${String(p.created || "").slice(0, 10)}</p>
         <button class="btn small danger ghost" data-act-inline="delete">${raw(icon("trash"))}Delete piece</button>
       </div>
-      <div class="src-notes"><div class="md-box">${mdHead("Draft")}<textarea class="textarea notes draft" data-f="body" data-md aria-label="Draft" placeholder="Write here — Markdown works. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
+      <div class="src-notes"><div class="md-box fmt-scope">${mdHead("Draft")}<textarea class="textarea notes draft" data-f="body" data-md data-fmtable aria-label="Draft" placeholder="Write here — Markdown works. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
     </div>`);
     for (const t of el.querySelectorAll("textarea")) autosize(t, 0.85);
+    wireFormat(el);
     mdSwitch(el.querySelector(".md-box"), ctx, { empty: "The draft is empty.", autosize: (t) => autosize(t, 0.85) });
   };
   render();

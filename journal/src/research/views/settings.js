@@ -8,6 +8,9 @@ import { atlasConfig, loadAtlasIndex } from "../atlas.js";
 import { cleanFolder } from "../../data/folder-remote.js";
 import { companionSettingsBlock, wireCompanionSettings } from "../../ui/companion.js";
 
+// Same steps as the Journal's Settings → Appearance → Text size.
+const TEXT_SIZES = [[0.9, "Smaller"], [1, "Default"], [1.1, "Larger"], [1.22, "Largest"]];
+
 export async function mount(el, ctx, route, ui) {
   ui.setTitle("Settings");
   // The bookmarklet opens this app with the page you're on; it's dragged, never run here.
@@ -88,7 +91,10 @@ export async function mount(el, ctx, route, ui) {
       ${companionSettingsBlock("marginalia", ctx)}
 
       <div class="section-title">Appearance</div>
-      <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div></div>`);
+      <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div>
+        <span class="label" style="display:block;margin-top:12px">Text size <span class="faint">— the whole app, for reading (the same choices as the Journal)</span></span>
+        <div class="chips">${TEXT_SIZES.map(([v, label]) => html`<button class="chip ${Number(s.textScale || 1) === v ? "on" : ""}" data-text-scale="${v}">${label}</button>`)}</div>
+        <p class="small faint" style="margin-bottom:0">For the size or colour of particular words, select them and use the <b>Aa</b> button by any of your notes.</p></div>`);
     fillVoices?.();
   }
   let fillVoices = null;
@@ -106,6 +112,7 @@ export async function mount(el, ctx, route, ui) {
     b.disabled = false;
   });
   on(el, "click", "[data-theme]", async (e, b) => { await ctx.saveSettings({ theme: b.dataset.theme }); render(); });
+  on(el, "click", "[data-text-scale]", async (e, b) => { await ctx.saveSettings({ textScale: Number(b.dataset.textScale) }); render(); });
   on(el, "change", "[data-secret]", async (e, f) => { await ctx.saveSecrets({ githubToken: f.value.trim(), ignoreHostToken: false }); toast("Saved"); render(); ctx.sync.syncNow(); });
   on(el, "click", "[data-act=atlas-refresh]", () => checkAtlas(true));
   on(el, "change", "[data-atlas-set]", async (e, f) => { await ctx.saveSettings({ atlas: { ...atlasConfig(ctx), [f.dataset.atlasSet]: f.value.trim() } }); await ctx.store.deleteKv("atlas-index"); toast("Saved"); checkAtlas(true); });

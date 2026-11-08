@@ -620,3 +620,45 @@ body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--sa
 @media (max-width: 460px) { .companion .portrait:not(.small) { width: 46px; height: 46px; } .companion-line { font-size: .92rem; } }
 .companion-settings .check { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; }
 .agent-note header .portrait.small { --c: var(--warn); }
+
+/* ---------- Aa: size and colour of particular words (core/textformat.js, ui/textformat.js) ---------- */
+/* Colours come from each theme's tokens, so they stay readable in Paper, Ink, Lantern and Terminal. */
+.fmt-small { font-size: .85em; }
+.fmt-large { font-size: 1.2em; }
+.fmt-xl { font-size: 1.45em; line-height: 1.25; }
+.fmt-red, .fmt-panel .fmt-dot.fmt-red { color: var(--danger); }
+.fmt-orange, .fmt-panel .fmt-dot.fmt-orange { color: var(--accent); }
+.fmt-yellow, .fmt-panel .fmt-dot.fmt-yellow { color: var(--warn); }
+.fmt-green, .fmt-panel .fmt-dot.fmt-green { color: var(--ok); }
+.fmt-purple, .fmt-panel .fmt-dot.fmt-purple { color: var(--ai); }
+.fmt-grey, .fmt-panel .fmt-dot.fmt-grey { color: var(--ink-3); }
+
+.fmt-scope { position: relative; }
+.fmt-btn {
+  font: 700 .95rem/1 var(--font-ui, inherit); color: var(--ink-2, inherit); background: none;
+  border: 1px solid var(--line); border-radius: 8px; padding: 3px 7px; cursor: pointer; min-width: 34px; min-height: 28px;
+}
+.fmt-btn small { font-size: .72em; }
+.fmt-btn[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.fmt-scope > .fmt-btn { position: absolute; right: 0; top: -4px; }
+.notes-head .fmt-btn { margin-left: auto; margin-right: 8px; }
+.md-box[data-mode="preview"] .fmt-btn { visibility: hidden; }
+.fmt-panel {
+  display: grid; gap: 6px; margin: 6px 0 10px; padding: 8px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / .12);
+}
+.fmt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fmt-panel button {
+  min-width: 36px; min-height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface-2); color: var(--ink); font: inherit; cursor: pointer;
+}
+.fmt-panel button:hover { border-color: var(--accent); }
+.fmt-panel .fmt-size-small { font-size: .8rem; } .fmt-panel .fmt-size-m { font-size: .95rem; }
+.fmt-panel .fmt-size-large { font-size: 1.1rem; } .fmt-panel .fmt-size-xl { font-size: 1.3rem; font-weight: 600; }
+.fmt-panel .fmt-dot { padding: 0; display: grid; place-items: center; }
+.fmt-dot span { width: 18px; height: 18px; border-radius: 50%; background: currentColor; }
+.fmt-dot span.none { background: none; border: 2px dashed var(--ink-3); }
+.fmt-sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
+.fmt-hint { font-size: .78rem; color: var(--ink-3); }
+.fmt-preview { margin: -4px 0 10px; padding: 6px 10px; border-left: 3px solid var(--line); font-size: .95rem; overflow-wrap: anywhere; }
+.fmt-scope + .fmt-scope, .field + .fmt-scope, .fmt-scope + .field { margin-top: 12px; }

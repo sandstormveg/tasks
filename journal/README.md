@@ -5,4 +5,4 @@ generated from `sandstormveg/Journal_system` by `tools/install-into.mjs` and rep
 
     node tools/install-into.mjs <this folder> --host tasks
 
-Source: `sandstormveg/Journal_system@5ed35f81a796`. Journal data never lives here: it's on your devices and in your private data repo.
+Source: `sandstormveg/Journal_system@0d3b1ae713c6`. Journal data never lives here: it's on your devices and in your private data repo.

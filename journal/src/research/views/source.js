@@ -14,6 +14,7 @@ import { companionSettings, COMPANIONS } from "../../core/companions.js";
 import { portrait } from "../../ui/companion.js";
 import { tagInput, deleteSource, mdHead, mdPreview, mdSwitch } from "../ui.js";
 import { imageOf } from "../images.js";
+import { fmtButton, fmtPreview, wireFormat } from "../../ui/textformat.js";
 
 const metaLine = (s) => [s.site, formatAuthors(s.authors), s.year, KINDS[s.kind]].filter(Boolean).join(" · ");
 // What a field shows for a stored value (the inverse of valueOf below).
@@ -34,8 +35,9 @@ export async function mount(el, ctx, route, ui) {
   ui.setActions(html`${s.url ? html`<a class="btn small" href="${s.url}" target="_blank" rel="noopener noreferrer">${raw(icon("external"))}Open</a>` : ""}`);
 
   const tagger = tagInput(ctx, s.tags || []);
-  const field = (k, label, ph, { rows = 2, hint = "" } = {}) => html`<label class="field"><span>${label}${hint ? html` <span class="faint">${hint}</span>` : ""}</span>
-    <textarea class="textarea" data-f="${k}" rows="${rows}" placeholder="${ph}">${s[k] || ""}</textarea></label>`;
+  // Your own fields take the Aa button (bold, italic, size, colour), with a formatted line under them.
+  const field = (k, label, ph, { rows = 2, hint = "" } = {}) => html`<div class="fmt-scope"><label class="field"><span>${label}${hint ? html` <span class="faint">${hint}</span>` : ""}</span>
+    <textarea class="textarea" data-f="${k}" data-fmtable rows="${rows}" placeholder="${ph}">${s[k] || ""}</textarea></label>${fmtButton(label)}${fmtPreview}</div>`;
 
   const pic = imageOf(s);
   const kept = (s.media || []).filter((m) => m.type === "file");
@@ -48,7 +50,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="status-seg" role="group" aria-label="Status">${Object.entries(STATUSES).map(([k, label]) => html`<button type="button" data-status="${k}" class="${s.status === k ? "on" : ""}">${label}</button>`)}</div>
       <button type="button" class="btn small fav-btn ${s.favourite ? "on" : ""}" data-act="fav" aria-pressed="${String(!!s.favourite)}">${raw(icon("star"))}${s.favourite ? "Favourite" : "Mark as favourite"}</button>
       <div class="field"><span class="label">Tags</span>${tagger.markup}</div>
-      <label class="field"><span>Why I saved it</span><input class="input" data-f="why" value="${s.why || ""}" placeholder="One line for future you" autocomplete="off"></label>
+      <div class="fmt-scope"><label class="field"><span>Why I saved it</span><input class="input" data-f="why" data-fmtable value="${s.why || ""}" placeholder="One line for future you" autocomplete="off"></label>${fmtButton("Why I saved it")}${fmtPreview}</div>
       ${field("expect", "Before reading", "What do you expect it to argue?", { hint: "— a guess helps you notice what changes" })}
       ${field("surprised", "After reading", "What surprised you?", { hint: "— where your thinking moved" })}
       <div class="section-title">Quotes</div>
@@ -65,13 +67,13 @@ export async function mount(el, ctx, route, ui) {
       </details>
     </div>
     <div class="src-notes">
-      <div class="md-box">${mdHead("Notes")}
-      <textarea class="textarea notes" data-f="body" data-md aria-label="Notes" placeholder="Your notes — Markdown works: # heading, **bold**, *italic*, - lists, > quotes, [links](https://…)">${s.body || ""}</textarea>
+      <div class="md-box fmt-scope">${mdHead("Notes")}
+      <textarea class="textarea notes" data-f="body" data-md data-fmtable aria-label="Notes" placeholder="Your notes — Markdown works: # heading, **bold**, *italic*, - lists, > quotes, [links](https://…)">${s.body || ""}</textarea>
       ${mdPreview}</div>
       <section class="src-assist" aria-label="Assist">
         <label class="assist-toggle"><input type="checkbox" data-assist ${s.assist === true ? "checked" : ""}><span><b>Assist</b> — let an agent work with this</span></label>
         <div class="assist-body">
-          <label class="field"><span>Your prompt <span class="faint">— what you'd like it to do</span></span><textarea class="textarea" data-f="prompt" rows="3" placeholder="e.g. Find the strongest critique of this and say where it lands">${s.prompt || ""}</textarea></label>
+          <div class="fmt-scope"><label class="field"><span>Your prompt <span class="faint">— what you'd like it to do</span></span><textarea class="textarea" data-f="prompt" data-fmtable rows="3" placeholder="e.g. Find the strongest critique of this and say where it lands">${s.prompt || ""}</textarea></label>${fmtButton("Your prompt")}${fmtPreview}</div>
           <p class="small faint" data-assist-state></p>
         </div>
         <div data-agent-notes></div>
@@ -90,6 +92,7 @@ export async function mount(el, ctx, route, ui) {
   });
 
   for (const t of el.querySelectorAll("textarea")) autosize(t);
+  wireFormat(el);
 
   // Notes: Edit or Preview, remembered on this device.
   const md = mdSwitch(el.querySelector(".md-box"), ctx, { empty: "No notes yet.", autosize });
