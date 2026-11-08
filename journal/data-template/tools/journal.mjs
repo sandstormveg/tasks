@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:992e4563084434e8
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:abaf011e149d6bc2
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs

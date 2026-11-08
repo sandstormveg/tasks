@@ -24,7 +24,7 @@ import { renderMarkdown } from "../../core/markdown.js";
 import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 import { formatted } from "../../ui/textformat.js";
-import { SIZES, COLOURS, PIN_FONTS, PIN_ALIGNS, cleanPinStyle, migratePinMarkup } from "../../core/textformat.js";
+import { SIZES, COLOURS, PIN_FONTS, PIN_ALIGNS, PIN_BASE_PX, PIN_MIN_PX, PIN_MAX_PX, PIN_PRESET_PX, pinTextPx, cleanPinStyle, migratePinMarkup } from "../../core/textformat.js";
 
 const MIN_Z = 0.08;
 const MAX_Z = 6;
@@ -236,6 +236,7 @@ export async function mount(el, ctx, route, ui) {
     node.innerHTML = String(html`${p.kind !== "frame" ? html`<span class="pushpin" data-pushpin title="Drag to another pin to connect"></span>` : ""}<div class="pin-body">${pinInner(p, lod)}</div>${resizable(p) ? html`<span class="pin-grip" data-grip title="Drag to resize" aria-hidden="true"></span>` : ""}`);
     node._lod = lod;
     if (node.querySelector("img[data-media]")) ctx.media.hydrate(node);
+    sizeText(p, node);
   }
 
   // While you drag a pin its strings belly away from the motion, then settle back with a little spring.
@@ -498,6 +499,7 @@ export async function mount(el, ctx, route, ui) {
       const n = pinEls.get(p.id);
       n.style.width = `${p.w}px`;
       n.style.height = `${p.h}px`;
+      sizeText(p, n);
       gesture.moved = true;
       renderStrings();
       positionSelection();
@@ -851,8 +853,59 @@ export async function mount(el, ctx, route, ui) {
   function styleClasses(p) {
     const st = cleanPinStyle(p.style);
     if (!st) return "";
-    return [" styled", st.size && `ps-${st.size}`, st.colour && `ps-c-${st.colour}`, st.font && `ps-f-${st.font}`, st.align && `ps-a-${st.align}`, st.bold && "ps-b", st.italic && "ps-i"].filter(Boolean).join(" ");
+    return [" styled", typeof st.size === "string" && `ps-${st.size}`, st.colour && `ps-c-${st.colour}`, st.font && `ps-f-${st.font}`, st.align && `ps-a-${st.align}`, st.bold && "ps-b", st.italic && "ps-i"].filter(Boolean).join(" ");
   }
+  // ---- text size: fixed (a preset or any px) or fitted to the card
+  // Auto-size is a fit-to-box search: the largest size whose text still fits the card, between
+  // FIT_MIN and PIN_MAX_PX, redone when the card's size or words change (and live while resizing).
+  const FIT_MIN = 9;
+  const FIT_KINDS = new Set(["note", "quote", "link", "source"]);
+  const autoFit = (p) => {
+    if (!styleable(p) || !FIT_KINDS.has(p.kind)) return false;
+    const fit = cleanPinStyle(p.style)?.fit;
+    return fit === "auto" || (fit !== "fixed" && !!ctx.settings().corkAutoFit);
+  };
+  const shownPx = (p) => (autoFit(p) ? Math.round((pinEls.get(p.id)?._fit?.ps || 1) * PIN_BASE_PX) : pinTextPx(cleanPinStyle(p.style)));
+  function sizeText(p, node) {
+    const st = cleanPinStyle(p.style);
+    const body = node.querySelector(".pin-body");
+    if (!autoFit(p) || !body || node._lod < 1) {
+      node._fit = null;
+      node.classList.remove("fitted");
+      if (typeof st?.size === "number") node.style.setProperty("--ps", (st.size / PIN_BASE_PX).toFixed(4));
+      else node.style.removeProperty("--ps");
+      return;
+    }
+    node.classList.add("fitted");
+    const key = `${p.w}x${p.h}|${body.innerHTML}`;
+    if (node._fit?.key === key) { node.style.setProperty("--ps", node._fit.ps.toFixed(4)); return; }
+    const fits = (px) => {
+      node.style.setProperty("--ps", (px / PIN_BASE_PX).toFixed(4));
+      return body.scrollHeight <= body.clientHeight + 1 && body.scrollWidth <= body.clientWidth + 1;
+    };
+    let lo = FIT_MIN, hi = PIN_MAX_PX;
+    if (!fits(lo)) hi = lo;
+    else while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    const ps = lo / PIN_BASE_PX;
+    node.style.setProperty("--ps", ps.toFixed(4));
+    node._fit = { key, ps };
+  }
+  // The size slider shows its size on the pin as you drag, and saves when you let go.
+  on(styleEl, "input", "[data-st-range]", (e, r) => {
+    const p = selected && pinById(selected), node = p && pinEls.get(p.id);
+    if (!node) return;
+    node._fit = null;
+    node.classList.remove("fitted");
+    node.style.setProperty("--ps", (Number(r.value) / PIN_BASE_PX).toFixed(4));
+    const n = styleEl.querySelector("[data-st-px]");
+    if (n) n.value = r.value;
+  });
+  on(styleEl, "change", "[data-st-range], [data-st-px]", async (e, r) => {
+    const p = selected && pinById(selected);
+    if (!styleable(p) || r.value === "") return;
+    await savePin(p, { style: cleanPinStyle({ ...(cleanPinStyle(p.style) || {}), size: Number(r.value), fit: "fixed" }) });
+  });
+  on(styleEl, "keydown", "[data-st-px]", (e, r) => { if (e.key === "Enter") { e.preventDefault(); r.blur(); } e.stopPropagation(); });
   let styleOpen = false;
   function renderStyle() {
     styleBtn.setAttribute("aria-expanded", String(styleOpen));
@@ -866,13 +919,26 @@ export async function mount(el, ctx, route, ui) {
       return;
     }
     const st = cleanPinStyle(p.style) || {};
+    const auto = autoFit(p);
+    const px = auto ? Math.round((pinEls.get(p.id)?._fit?.ps || 1) * PIN_BASE_PX) : pinTextPx(st);
     const on_ = (v) => (v ? "on" : "");
     styleEl.innerHTML = String(html`
       <div class="cs-row" aria-label="Text">
         <button type="button" class="${on_(st.bold)}" data-st="bold" aria-pressed="${!!st.bold}" aria-label="Bold"><b>B</b></button>
         <button type="button" class="${on_(st.italic)}" data-st="italic" aria-pressed="${!!st.italic}" aria-label="Italic"><i>I</i></button>
         <span class="fmt-sep"></span>
-        ${SIZES.map(([k, l]) => html`<button type="button" class="${on_((st.size || "") === k)} fmt-size-${k || "m"}" data-st-size="${k}" aria-pressed="${(st.size || "") === k}" aria-label="Text size ${l}">${l}</button>`)}
+        ${SIZES.map(([k, l]) => html`<button type="button" class="${on_(!auto && typeof st.size !== "number" && (st.size || "") === k)} fmt-size-${k || "m"}" data-st-size="${k}" aria-pressed="${!auto && (st.size || "") === k}" aria-label="Text size ${l}">${l}</button>`)}
+      </div>
+      <div class="cs-row cs-size" aria-label="Text size in px">
+        <button type="button" data-st-step="-1" aria-label="Smaller text">−</button>
+        <input type="number" class="cs-px" data-st-px min="${PIN_MIN_PX}" max="${PIN_MAX_PX}" step="1" value="${px}" aria-label="Text size, px" inputmode="numeric">
+        <button type="button" data-st-step="1" aria-label="Bigger text">+</button>
+        <input type="range" class="cs-range" data-st-range min="${PIN_MIN_PX}" max="${PIN_MAX_PX}" step="1" value="${px}" aria-label="Text size slider">
+      </div>
+      <div class="cs-row" aria-label="Fit text to the card">
+        <span class="small muted">Fit to card</span>
+        <button type="button" class="${on_(auto)}" data-st-fit="auto" aria-pressed="${auto}" title="The text grows and shrinks with the card">Auto</button>
+        <button type="button" class="${on_(!auto)}" data-st-fit="fixed" aria-pressed="${!auto}" title="The text keeps its size">Fixed</button>
       </div>
       <div class="cs-row" aria-label="Text colour">
         <button type="button" class="fmt-dot ${on_(!st.colour)}" data-st-colour="" aria-label="Ink" title="Ink"><span class="ink"></span></button>
@@ -905,7 +971,9 @@ export async function mount(el, ctx, route, ui) {
     const patch = {};
     if (d.st === "bold") st.bold = !st.bold;
     else if (d.st === "italic") st.italic = !st.italic;
-    else if (d.stSize !== undefined) st.size = d.stSize;
+    else if (d.stSize !== undefined) { st.size = d.stSize; st.fit = "fixed"; }
+    else if (d.stStep !== undefined) { st.size = shownPx(p) + Number(d.stStep); st.fit = "fixed"; }
+    else if (d.stFit !== undefined) { st.fit = d.stFit; if (d.stFit === "fixed" && autoFit(p)) st.size = shownPx(p); }
     else if (d.stColour !== undefined) st.colour = d.stColour;
     else if (d.stFont !== undefined) st.font = d.stFont;
     else if (d.stAlign !== undefined) st.align = d.stAlign;

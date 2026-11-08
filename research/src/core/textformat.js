@@ -100,11 +100,20 @@ export function applyFormat(value, start, end, fmt) {
 
 // ── Whole-pin style on the corkboard ─────────────────────────────────────────────────
 // A pin is styled as a whole, from the board's Aa inspector, and the style is kept as
-// its own field (pin.style) rather than as markup in its words.
+// its own field (pin.style) rather than as markup in its words. size is a preset name or a
+// number of px; fit is "auto" (text scales to fill the card) or "fixed", and when it's absent
+// the pin follows the board setting "Auto-size pin text".
 
 export const PIN_FONTS = [["", "Serif"], ["sans", "Sans"], ["type", "Typewriter"], ["hand", "Hand"]];
 export const PIN_ALIGNS = [["", "Left"], ["center", "Centre"], ["right", "Right"]];
 const FONT_SET = new Set(PIN_FONTS.map(([k]) => k).filter(Boolean));
+// Pin text sizes in px: the presets are quick picks; any whole size in [PIN_MIN_PX, PIN_MAX_PX] works too.
+export const PIN_BASE_PX = 13;
+export const PIN_MIN_PX = 10;
+export const PIN_MAX_PX = 72;
+export const PIN_PRESET_PX = { small: 11, "": 13, large: 16, xl: 21 };
+/** The text size in px a pin's style asks for (a preset or a number). */
+export const pinTextPx = (st) => (typeof st?.size === "number" ? st.size : PIN_PRESET_PX[st?.size || ""] ?? PIN_BASE_PX);
 const ALIGN_SET = new Set(PIN_ALIGNS.map(([k]) => k).filter(Boolean));
 
 /** Only the style keys and values the app knows; undefined when nothing is left. */
@@ -112,6 +121,8 @@ export function cleanPinStyle(st) {
   if (!st || typeof st !== "object") return undefined;
   const out = {};
   if (SIZE_SET.has(st.size)) out.size = st.size;
+  else if ((typeof st.size === "number" && Number.isFinite(st.size)) || /^\d+(\.\d+)?$/.test(st.size ?? "")) out.size = Math.max(PIN_MIN_PX, Math.min(PIN_MAX_PX, Math.round(Number(st.size))));
+  if (st.fit === "auto" || st.fit === "fixed") out.fit = st.fit;
   if (COLOUR_SET.has(st.colour)) out.colour = st.colour;
   if (FONT_SET.has(st.font)) out.font = st.font;
   if (ALIGN_SET.has(st.align)) out.align = st.align;

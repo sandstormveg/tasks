@@ -168,6 +168,13 @@ body.board-mode .content { max-width: none; padding: 0; }
 .cork-style .swatch-dot.c-yellow { background: #fff3a8; } .cork-style .swatch-dot.c-pink { background: #ffd6e0; } .cork-style .swatch-dot.c-blue { background: #d6ecff; }
 .cork-style .swatch-dot.c-green { background: #d9f5d6; } .cork-style .swatch-dot.c-lilac { background: #e9ddff; }
 .cork-style .fmt-sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
+.cork-style .cs-size { flex-wrap: nowrap; }
+.cork-style .cs-size button { font-size: 1.1rem; }
+.cork-style .cs-px {
+  width: 4.2em; min-height: 36px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface-2); color: var(--ink); font: inherit; font-size: .9rem; text-align: center;
+}
+.cork-style .cs-range { flex: 1; min-width: 110px; accent-color: var(--accent); }
 
 #curator-btn.warn { border-color: #d4a017; color: #a07400; }
 :root[data-theme="dark"] #curator-btn.warn { color: #ffd166; }
