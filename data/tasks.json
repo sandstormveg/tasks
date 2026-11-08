@@ -495,6 +495,14 @@
           "created": "2026-11-09T00:10:00",
           "updated": "2026-11-09T00:10:00",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt4",
+          "text": "From the Living Journal system: pin text size and auto-size are ready to merge, tasks#44 (draft; you merge).\n• Any size: select a pin → Aa in the dock → −/+ stepper, number box and slider, 10–72 px. S/M/L/XL stay as quick picks. Saved as a number in style.size.\n• Auto-size: Settings > Corkboard > 'Auto-size pin text' (off by default, so boards already laid out don't change). When on, a pin's words take the largest size that still fits the card, 9–72 px, and follow the card live as you drag its corner.\n• Per pin: Aa > Fit to card > Auto / Fixed overrides the setting either way. Picking any size makes that pin Fixed.\n• Offline, no codes on screen; the fitted size is never saved (the file only says fit: auto), so the CLI reads pins as before. All tests pass (lint, 139 unit, 36 browser). Journal_system@dd89283.",
+          "done": false,
+          "created": "2026-11-09T00:00:00",
+          "updated": "2026-11-09T00:00:00",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
