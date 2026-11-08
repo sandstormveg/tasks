@@ -71,6 +71,8 @@ are one line per item; open a single board or piece only when it's relevant.
   `large`, `xl`; colours `red`, `orange`, `yellow`, `green`, `purple`, `grey`) come from the app's Aa button.
   Read it as plain text (the words in brackets are the words), keep it when you quote them exactly, and
   never add or remove formatting in their fields. Your own notes are Markdown; don't colour them.
+- A pin's `style` (size, colour, font, alignment) and `color` (the card) are how they've chosen it to
+  look. Keep them as they are; don't set them on your own pins.
 - **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
   **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.
 - **Never** write or edit their words: `why` (beyond quoting them as above), `expect`, `surprised`, notes,
