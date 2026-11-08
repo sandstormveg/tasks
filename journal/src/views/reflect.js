@@ -8,6 +8,10 @@
 //
 // The meta-record is a model, not a verdict: you can correct, retire or
 // overrule anything, and its history is kept.
+//
+// Quicksilver (core/companions.js) sits above each tab, if you leave "Insights in
+// Reflect" on, and points out what's worth a look there. Templates over counts and
+// statistics worked out here; no AI, and never the text of an entry.
 
 import { html, raw, on, sheet, toast, errorToast, promptSheet, confirmSheet } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
@@ -18,6 +22,8 @@ import { compareGroups, ratingSummary, monthlyRatings, coverage, onScale } from 
 import { formatDay, formatMonth, addDays, compareDays, weekdayIndex, daysBetween } from "../core/dates.js";
 import { originBadge, authorBadge, evidenceList, coverageLine, whyList } from "../ui/components.js";
 import { newId } from "../core/ids.js";
+import { reflectLines, seedOf, companionSettings } from "../core/companions.js";
+import { mountCompanion } from "../ui/companion.js";
 
 const TABS = [["", "Overview"], ["review", "Review"], ["questions", "Questions"], ["patterns", "Patterns"], ["changes", "Changes"]];
 
@@ -33,10 +39,96 @@ export async function mount(el, ctx, route, ui) {
     return html`<nav class="tabs">${TABS.map(([k, label]) => html`<a href="#/reflect${k ? "/" + k : ""}" class="${k === tab ? "active" : ""}">${label}${k === "review" && pending ? html`<span class="count">${pending}</span>` : ""}${k === "questions" && open ? html`<span class="count" style="background:var(--ink-3)">${open}</span>` : ""}</a>`)}</nav>`;
   }
 
+  // The companion's box sits outside the part that redraws, so it only changes when its lines do.
+  el.innerHTML = '<div data-tabs></div><div data-companion-box></div><div data-body></div>';
+  let shownLines = "";
   function render() {
     const body = tab === "review" ? reviewHtml() : tab === "questions" ? questionsHtml() : tab === "patterns" ? patternsHtml() : tab === "changes" ? changesHtml() : overviewHtml();
-    el.innerHTML = String(html`${tabsHtml()}${body}`);
+    el.querySelector("[data-tabs]").innerHTML = String(tabsHtml());
+    el.querySelector("[data-body]").innerHTML = String(body);
     ctx.media.hydrate(el);
+    companion();
+  }
+
+  function companion() {
+    const cs = companionSettings(ctx.settings());
+    const lines = cs.reflect ? reflectLines(tab, insightState(), { chattiness: cs.chattiness, seed: seedOf(ctx.today() + tab) }) : [];
+    const key = JSON.stringify([lines, ctx.settings().companion]);
+    if (key === shownLines) return;
+    shownLines = key;
+    mountCompanion(el.querySelector("[data-companion-box]"), ctx, "quicksilver", lines, { day: ctx.today(), place: "reflect", cleanup: ui.cleanup });
+  }
+
+  // What Quicksilver may see on this tab: counts, ids, section names and statistics.
+  function insightState() {
+    const today = ctx.today();
+    const claims = ctx.store.all("claim");
+    const proposals = ctx.store.all("proposal");
+    const ago = (iso) => (iso ? daysBetween(String(iso).slice(0, 10), today) : 0);
+    if (tab === "") {
+      const active = claims.filter((c) => c.status === "active");
+      // "Looked at" is the claim's own history (written, accepted, edited, reviewed), not a sync touch.
+      const touched = (c) => (c.history || []).map((h) => h.at).filter(Boolean).sort().pop() || c.updated;
+      const stale = active.filter((c) => ago(touched(c)) >= 90).sort((a, b) => String(touched(a)).localeCompare(String(touched(b))))[0];
+      return {
+        claims: claims.filter((c) => c.status !== "retired").length,
+        pending: reviewQueue(proposals, today).length,
+        stale: stale ? { id: stale.id, section: ((CLAIM_SECTIONS.find((x) => x.id === stale.section) || {}).label || "oldest").toLowerCase(), days: ago(touched(stale)) } : null,
+        underReview: claims.filter((c) => c.status === "under-review").length,
+        unevidenced: active.filter((c) => !(c.evidence || []).length).length,
+      };
+    }
+    if (tab === "review") {
+      const queue = reviewQueue(proposals, today);
+      const sums = queue.map((p) => evidenceSummary(verifyEvidence(p.evidence, lookup)));
+      const cal = calibration(proposals);
+      const [r, n] = Object.entries(cal.reasons || {}).sort((a, b) => b[1] - a[1])[0] || [];
+      return {
+        pending: queue.length,
+        unverified: sums.filter((x) => x.n && x.verified < x.n).length,
+        privateHits: sums.filter((x) => x.privateHits).length,
+        cal: cal.n ? { n: cal.n, base: cal.base, meanPred: cal.meanPred } : null,
+        topReject: r && n >= 2 ? { label: (REJECT_REASONS.find((x) => x.id === r) || { label: r }).label, n } : null,
+      };
+    }
+    if (tab === "questions") {
+      const qs = ctx.store.all("question");
+      const ranked = rankQuestions(qs, { today, prefs: ctx.prefs(), includeSensitive: false });
+      const open = qs.filter((q) => q.status === "open");
+      const oldest = [...open].sort((a, b) => String(a.created).localeCompare(String(b.created)))[0];
+      return {
+        open: open.length,
+        top: ranked[0] ? { id: ranked[0].q.id } : null,
+        oldest: oldest ? { id: oldest.id, weeks: Math.floor(ago(oldest.created) / 7) } : null,
+        answeredMonth: qs.filter((q) => q.status === "answered" && ago(q.updated) <= 30).length,
+      };
+    }
+    if (tab === "patterns") {
+      const rated = ctx.store.all("day").filter((d) => normRating(d) != null);
+      const preds = ctx.store.config("self-predictions", { list: [] }).list || [];
+      const done = preds.filter((p) => p.outcome);
+      const out = { rated: rated.length, guessFirst: rated.length >= 10 && !revealed(preds), predictions: { total: done.length, matched: done.filter((p) => p.outcome === "matched").length, partly: done.filter((p) => p.outcome === "partly").length, missed: done.filter((p) => p.outcome === "missed").length } };
+      if (rated.length >= 10 && !out.guessFirst) {
+        const scale = ctx.prefs().rating_scale || 10;
+        const { higher, lower } = patternResults(rated);
+        const one = (x) => x && { f: x.f, diff: `${x.r.diff > 0 ? "+" : ""}${(x.r.diff * (scale - 1)).toFixed(1)}`, nWith: x.r.nWith, nWithout: x.r.nWithout };
+        out.higher = one(higher[0]); out.lower = one(lower[0]);
+      }
+      return out;
+    }
+    const events = claims.flatMap((c) => (c.history || []).map((h) => ({ at: h.at, h, c })));
+    const mine = events.filter((e) => ["accepted", "corrected", "revised", "retired", "edited"].includes(e.h.action)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    return {
+      total: events.length,
+      recent30: events.filter((e) => ago(e.at) <= 30).length,
+      lastRevision: mine[0] ? { id: mine[0].c.id, day: formatDay(String(mine[0].at).slice(0, 10), { day: "numeric", month: "short" }) } : null,
+      rejected30: proposals.filter((p) => p.status === "rejected" && ago(p.decided) <= 30).length,
+    };
+  }
+
+  // Guess first: the analysis shows once you've guessed (or skipped) in the last week.
+  function revealed(preds) {
+    return route.query.reveal === "1" || preds.some((p) => p.revealed && p.at && daysBetween(p.at.slice(0, 10), ctx.today()) <= 7);
   }
 
   // ---------- overview ----------
@@ -175,6 +267,26 @@ export async function mount(el, ctx, route, ui) {
     return byDay;
   }
 
+  // Cached until the store changes: the bootstrap is the slow part, and Quicksilver reads it too.
+  let patternCache = null;
+  function patternResults(rated) {
+    const key = rated.length;
+    if (patternCache?.key === key) return patternCache.value;
+    const fs = featureSets();
+    const counts = new Map();
+    for (const set of fs.values()) for (const f of set) counts.set(f, (counts.get(f) || 0) + 1);
+    const feats = [...counts.entries()].filter(([, n]) => n >= 5).map(([f]) => f);
+    feats.push("weekend");
+    const res = feats.map((f) => ({ f, r: compareGroups(rated, (d) => (f === "weekend" ? [0, 6].includes(weekdayIndex(d.date)) : !!fs.get(d.date)?.has(f))) })).filter((x) => x.r.verdict !== "too-few");
+    const value = {
+      higher: res.filter((x) => x.r.verdict === "higher").sort((a, b) => b.r.diff - a.r.diff).slice(0, 6),
+      lower: res.filter((x) => x.r.verdict === "lower").sort((a, b) => a.r.diff - b.r.diff).slice(0, 4),
+      unclear: res.filter((x) => x.r.verdict === "unclear"),
+    };
+    patternCache = { key, value };
+    return value;
+  }
+
   function patternsHtml() {
     const days = ctx.store.all("day");
     const rated = days.filter((d) => normRating(d) != null);
@@ -186,19 +298,11 @@ export async function mount(el, ctx, route, ui) {
     const preds = ctx.store.config("self-predictions", { list: [] }).list || [];
     const pending = preds.find((p) => !p.revealed);
     // Ask for a fresh guess at most once a week; otherwise show the analysis.
-    const revealedNow = route.query.reveal === "1" || preds.some((p) => p.revealed && p.at && daysBetween(p.at.slice(0, 10), ctx.today()) <= 7);
+    const revealedNow = revealed(preds);
 
     let analysis = "";
     if (rated.length >= 10) {
-      const fs = featureSets();
-      const counts = new Map();
-      for (const set of fs.values()) for (const f of set) counts.set(f, (counts.get(f) || 0) + 1);
-      const feats = [...counts.entries()].filter(([, n]) => n >= 5).map(([f]) => f);
-      feats.push("weekend");
-      const res = feats.map((f) => ({ f, r: compareGroups(rated, (d) => (f === "weekend" ? [0, 6].includes(weekdayIndex(d.date)) : !!fs.get(d.date)?.has(f))) })).filter((x) => x.r.verdict !== "too-few");
-      const higher = res.filter((x) => x.r.verdict === "higher").sort((a, b) => b.r.diff - a.r.diff).slice(0, 6);
-      const lower = res.filter((x) => x.r.verdict === "lower").sort((a, b) => a.r.diff - b.r.diff).slice(0, 4);
-      const unclear = res.filter((x) => x.r.verdict === "unclear");
+      const { higher, lower, unclear } = patternResults(rated);
       const fmt = (v) => onScale(v, scale).toFixed(1);
       const row = (x) => html`<div class="bar-row"><span><b>${x.f}</b> <span class="faint">${fmt(x.r.meanWith)} vs ${fmt(x.r.meanWithout)} · n=${x.r.nWith}/${x.r.nWithout}</span></span><span class="faint small">${x.r.diff > 0 ? "+" : ""}${(x.r.diff * (scale - 1)).toFixed(1)}</span></div>`;
       analysis = html`
@@ -252,7 +356,7 @@ export async function mount(el, ctx, route, ui) {
   }
 
   render();
-  ui.onStore(() => render());
+  ui.onStore(() => { patternCache = null; render(); });
 
   on(el, "click", "[data-act]", async (e, b) => {
     const act = b.dataset.act;

@@ -107,19 +107,22 @@ if (typeof document !== "undefined" && typeof speechSynthesis !== "undefined") {
 
 // ---------- on a page ----------
 
-const HIDDEN = (id) => `companion-hidden-${id}`;
-const hiddenToday = (id, day) => { try { return localStorage.getItem(HIDDEN(id)) === day; } catch { return false; } };
+// Hidden-for-today is kept per place, so hiding Quicksilver on Today leaves it in Reflect.
+const HIDDEN = (id, place) => `companion-hidden-${id}${place ? `-${place}` : ""}`;
+const hiddenToday = (key, day) => { try { return localStorage.getItem(key) === day; } catch { return false; } };
 
 /**
  * Put a companion into `box`, unless they're off or hidden for today. Tapping the portrait
  * speaks the lines (if the voice is on) or hushes them; × hides them until tomorrow.
  * onPrompt(text) is called when a prompt line is tapped. Returns true when shown.
  */
-export function mountCompanion(box, ctx, id, lines, { day, onPrompt, cleanup } = {}) {
+export function mountCompanion(box, ctx, id, lines, { day, onPrompt, cleanup, place = "" } = {}) {
   if (!box) return false;
   const s = companionSettings(ctx.settings());
-  box._companion = { lines, day, onPrompt };
-  if (!s.on || !lines.length || hiddenToday(id, day)) { box.innerHTML = ""; return false; }
+  const key = HIDDEN(id, place);
+  box._companion = { lines, day, onPrompt, place };
+  const shown = place === "reflect" ? s.reflect : s.on;
+  if (!shown || !lines.length || hiddenToday(key, day)) { box.innerHTML = ""; return false; }
   box.innerHTML = String(companionCard(id, lines, s));
   if (box._wired) return true;
   // Wired once per box; redraws only replace the markup and box._companion.
@@ -133,11 +136,11 @@ export function mountCompanion(box, ctx, id, lines, { day, onPrompt, cleanup } =
   });
   on(box, "click", "[data-companion-prompt]", (e, b) => box._companion.onPrompt?.(b.dataset.companionPrompt));
   on(box, "click", "[data-companion-hide]", () => {
-    const { day: d, lines: ls, onPrompt: op } = box._companion;
-    try { localStorage.setItem(HIDDEN(id), d); } catch { /* private window: hidden until reload */ }
+    const { day: d, lines: ls, onPrompt: op, place: pl } = box._companion;
+    try { localStorage.setItem(key, d); } catch { /* private window: hidden until reload */ }
     hush();
     box.innerHTML = "";
-    toast(`${name()} will be back tomorrow.`, { action: "Undo", onAction: () => { try { localStorage.removeItem(HIDDEN(id)); } catch { /* fine */ } mountCompanion(box, ctx, id, ls, { day: d, onPrompt: op }); } });
+    toast(`${name()} will be back tomorrow.`, { action: "Undo", onAction: () => { try { localStorage.removeItem(key); } catch { /* fine */ } mountCompanion(box, ctx, id, ls, { day: d, onPrompt: op, place: pl }); } });
   });
   cleanup?.(() => { if (speaking === id) hush(); });
   return true;
@@ -146,13 +149,14 @@ export function mountCompanion(box, ctx, id, lines, { day, onPrompt, cleanup } =
 // ---------- settings ----------
 
 /** The companion's block for a Settings page. Wire it with wireCompanionSettings. */
-export function companionSettingsBlock(id, ctx, { themes = false } = {}) {
+export function companionSettingsBlock(id, ctx, { themes = false, reflect = false } = {}) {
   const c = COMPANIONS[id];
   const s = companionSettings(ctx.settings());
   return html`<div class="card flat companion-settings" data-companion-settings="${id}">
     <div class="row" style="gap:12px;align-items:center">${portrait(id, { label: `Hear ${s.name || c.name}` })}
-      <p class="small" style="margin:0"><b>${s.name || c.name}</b> — ${id === "marginalia" ? "an ancient archive automaton who greets you with the library's state, points out gaps and red strings, and suggests what to read next." : "a wandering bard-alchemist who offers a gentle question when you open the Journal, and asks rather than tells."} Lines come from templates — no AI runs when you open the app.</p></div>
-    <label class="check"><input type="checkbox" data-cs="on" ${s.on ? "checked" : ""}> Show ${c.name}</label>
+      <p class="small" style="margin:0"><b>${s.name || c.name}</b> — ${id === "marginalia" ? "an ancient archive automaton who greets you with the library's state, points out gaps and red strings, and suggests what to read next." : "a wandering bard-alchemist who offers a gentle question when you open the Journal, notices what's moving in Reflect, and asks rather than tells."} Lines come from templates — no AI runs when you open the app.</p></div>
+    <label class="check"><input type="checkbox" data-cs="on" ${s.on ? "checked" : ""}> ${reflect ? html`Show ${c.name} on Today` : html`Show ${c.name}`}</label>
+    ${reflect ? html`<label class="check"><input type="checkbox" data-cs="reflect" ${s.reflect ? "checked" : ""}> Insights in Reflect: as you open Overview, Review, Questions, Patterns or Changes, ${c.name} points out what's worth a look (worked out on this device from your meta-record and ratings; no AI, never quoting entries)</label>` : ""}
     <div class="row wrap">
       <label class="field grow"><span>Name</span><input class="input" data-cs="name" value="${s.name}" placeholder="${c.name}" maxlength="24" autocomplete="off"></label>
       <label class="field grow"><span>Chattiness</span><select class="select" data-cs="chattiness">${Object.entries(CHATTINESS).map(([k, label]) => html`<option value="${k}" ${s.chattiness === k ? "selected" : ""}>${label}</option>`)}</select></label>

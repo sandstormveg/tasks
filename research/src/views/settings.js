@@ -19,7 +19,7 @@ const SECTIONS = [
   ["voice", "mic", "Voice", "Dictation and transcription engines"],
   ["privacy", "lock", "Privacy & sealing", "Passphrase-encrypted entries, what's never tracked"],
   ["prompts", "question", "Prompts", "How often the journal asks, and about what"],
-  ["companion", "sparkle", "Companion", "Quicksilver: a gentle question when you open the Journal"],
+  ["companion", "sparkle", "Companion", "Quicksilver: a gentle question on Today, insights in Reflect"],
   ["appearance", "moon", "Appearance", "Theme and text size"],
   ["days", "calendar", "Days & ratings", "Rating scale, when a day ends"],
   ["integrations", "link", "Tasks & Atlas", "Send tasks; link ideas from your knowledge system"],
@@ -455,6 +455,6 @@ async function act(ctx, name, b, el, render) {
 }
 
 function companion(ctx) {
-  return html`<p class="view-sub">Quicksilver is a wandering bard-alchemist, in the old-tech world of the Guild. Each time you open Today, they offer a greeting and one gentle question. Tap the question to answer it. Their lines come from templates: no AI runs, and nothing leaves this device.</p>
-    ${companionSettingsBlock("quicksilver", ctx, { themes: true })}`;
+  return html`<p class="view-sub">Quicksilver is a wandering bard-alchemist, in the old-tech world of the Guild. On Today, they offer a greeting and one gentle question; tap it to answer. In Reflect, they point out what's moving: statements gone stale, how well the AI predicts you, a question that's waited a while, what goes with your better days. Their lines come from templates: no AI runs, and nothing leaves this device.</p>
+    ${companionSettingsBlock("quicksilver", ctx, { themes: true, reflect: true })}`;
 }

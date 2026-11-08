@@ -26,7 +26,7 @@ export const COMPANIONS = {
 
 export const CHATTINESS = { quiet: "Quiet", normal: "Normal", chatty: "Chatty" };
 
-/** Device settings for one companion, with defaults: shown, voice off, normal chattiness. */
+/** Device settings for one companion, with defaults: shown, voice off, normal chattiness, themes off. */
 export function companionSettings(s = {}) {
   const c = s.companion || {};
   return {
@@ -38,6 +38,8 @@ export function companionSettings(s = {}) {
     voiceRate: Number.isFinite(Number(c.voiceRate)) && c.voiceRate !== "" && c.voiceRate != null ? Number(c.voiceRate) : null,
     voicePitch: Number.isFinite(Number(c.voicePitch)) && c.voicePitch !== "" && c.voicePitch != null ? Number(c.voicePitch) : null,
     themes: c.themes === true,
+    // Quicksilver only: "on" is Today; "reflect" is the Reflect tabs (on unless turned off).
+    reflect: c.reflect !== false,
   };
 }
 
@@ -188,5 +190,73 @@ export function quicksilverLines(st, { chattiness = "normal", seed = 0 } = {}) {
   }
   // Quiet keeps just one line: the day's question if there's no entry yet, else the greeting.
   if (chattiness === "quiet") return [lines.find((l) => l.prompt) || lines[0]];
+  return limit(lines, chattiness);
+}
+
+// ---------- Quicksilver in Reflect ----------
+
+const pct = (x) => `${Math.round(x * 100)}%`;
+const monthsAgo = (days) => (days >= 60 ? `${Math.round(days / 30)} months` : `${Math.round(days / 7)} weeks`);
+
+/**
+ * Quicksilver's notes on a Reflect tab: what's worth a look, as questions. `st` is worked
+ * out by the view from the meta-record, proposals, questions and ratings: counts, ids,
+ * section names and statistics, never the text of an entry. Tabs: "" (Overview), review,
+ * questions, patterns, changes. Lines are { text, href? }, limited by chattiness.
+ */
+export function reflectLines(tab, st, { chattiness = "normal", seed = 0 } = {}) {
+  const lines = [];
+  const add = (text, href) => lines.push(href ? { text, href } : { text });
+
+  if (tab === "") {
+    if (st.pending) add(`${N(st.pending, "proposal")} waiting for you. Best read while the ink's still wet.`, "#/reflect/review");
+    if (st.stale) add(`Your ${st.stale.section} statement hasn't been looked at in ${monthsAgo(st.stale.days)}. Does it still fit the person writing now?`, `#/claim/${st.stale.id}`);
+    if (st.underReview) add(`${N(st.underReview, "statement")} under review since something changed. Ready to settle ${st.underReview === 1 ? "it" : "them"}?`);
+    if (st.unevidenced) add(`${N(st.unevidenced, "statement")} without a single entry linked. What would count as evidence, for or against?`);
+    if (!st.claims) add("Nothing in your meta-record yet. Start with one line about what you're trying to understand. Add it in your own words below.");
+    else if (!lines.length) add(pick(["Everything here has been looked at lately. A good moment to ask what's missing.", "Your model of yourself is in good repair. What's the one part you're least sure of?"], seed));
+  }
+
+  if (tab === "review") {
+    if (st.privateHits) add(`Careful: ${N(st.privateHits, "proposal")} cite${st.privateHits === 1 ? "s" : ""} an entry you kept from AI. I'd reject ${st.privateHits === 1 ? "it" : "them"} and ask how it happened.`);
+    if (st.unverified) add(`${st.unverified === 1 ? "One proposal quotes" : `${st.unverified} proposals quote`} words I can't find in your entries. Read those quotes closely.`);
+    if (st.cal && st.cal.n >= 5) {
+      const gap = st.cal.meanPred - st.cal.base;
+      add(gap > 0.15 ? `The AI expected you'd take up ${pct(st.cal.meanPred)} of its ideas; you've taken ${pct(st.cal.base)}. It thinks it knows you better than it does. Every rejection teaches it.`
+        : gap < -0.15 ? `The AI guessed you'd take up ${pct(st.cal.meanPred)}; you took ${pct(st.cal.base)}. It's more timid about you than it needs to be.`
+          : `Over ${st.cal.n} decisions the AI's guesses about you are roughly right (${pct(st.cal.meanPred)} predicted, ${pct(st.cal.base)} taken up). Calibrated, but is it surprising you?`);
+    } else if (st.cal?.n) add(`${N(st.cal.n, "decision")} so far. A few more and we'll see how well the AI predicts you.`);
+    if (st.topReject) add(`Your most common reason to reject: “${st.topReject.label}” (${st.topReject.n}). Worth teaching it.`);
+    if (st.pending && !lines.length) add(`${N(st.pending, "proposal")} to weigh. Edit any of them into your own words; that's what they're for.`);
+    if (!st.pending && !lines.length) add("Nothing to weigh just now. The quiet between proposals is yours.");
+  }
+
+  if (tab === "questions") {
+    if (st.top) add("This one rose to the top today. Even a sentence counts as an answer.", `#/today?q=${st.top.id}`);
+    if (st.oldest && st.oldest.weeks >= 4 && st.oldest.id !== st.top?.id) add(`One question has waited ${st.oldest.weeks} weeks. Still worth asking, or has it answered itself?`, `#/today?q=${st.oldest.id}`);
+    if (st.answeredMonth) add(`${N(st.answeredMonth, "question")} answered this month. Do the answers agree with each other?`);
+    if (!st.open) add("No open questions. Is there something you keep circling without asking it outright?");
+  }
+
+  if (tab === "patterns") {
+    if (st.rated < 10) add(st.rated ? `${N(st.rated, "rated day")} so far; at 10 I can start to look for patterns. Unrated days stay unrated, never zero.` : "Rate a day now and then and patterns will appear here. Ratings are optional, and a missing one counts as nothing at all.");
+    else if (st.guessFirst) add("Guess before you look. A wrong guess is the most interesting result there is.");
+    else {
+      if (st.higher) add(`Days with ${st.higher.f} rate ${st.higher.diff} higher (${st.higher.nWith} days with, ${st.higher.nWithout} without). Cause, consequence or coincidence? What does this reveal?`);
+      if (st.lower) add(`${st.lower.f} tends to come with lower-rated days (${st.lower.diff}). Does it weigh on the day, or turn up on days that were already heavy?`);
+      if (!st.higher && !st.lower) add("Nothing stands out clearly yet. That's information too: no single thing makes or breaks your days.");
+    }
+    if (st.predictions && st.predictions.total >= 2) add(st.predictions.missed ? `You've surprised yourself ${st.predictions.missed} of ${st.predictions.total} times guessing your best days. Those are the ones that teach.` : `Your guesses have matched ${st.predictions.matched + st.predictions.partly} of ${st.predictions.total} times. You know yourself well, or the patterns are obvious.`);
+  }
+
+  if (tab === "changes") {
+    if (st.lastRevision) add(`You last changed your mind on ${st.lastRevision.day}. What did you see then that you hadn't before?`, `#/claim/${st.lastRevision.id}`);
+    if (st.recent30) add(`${N(st.recent30, "change")} in the last month. A model that moves is a model that's learning.`);
+    else if (st.total) add("No changes in the last month. Steady, or just unexamined?");
+    if (st.rejected30) add(`You turned down ${N(st.rejected30, "suggestion")} this month. Saying no is how the picture stays yours.`);
+    if (!st.total) add("No history yet. Once you accept, correct or retire something, its story is kept here.");
+  }
+
+  if (chattiness === "chatty") add(pick(["Lead into gold takes time. So does a self.", "I only ask questions. The meaning is yours to keep.", "A surprise is just your model learning out loud.", "Every revision is a better verse."], seed >> 4));
   return limit(lines, chattiness);
 }
