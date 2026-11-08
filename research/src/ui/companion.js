@@ -1,12 +1,14 @@
 // The companions on screen: an original portrait in a brass frame that blinks and
 // talks (Marginalia in Research, Quicksilver in the Journal), a card of their
-// lines, their voice, and their settings block. In the Guild's style (Relay,
-// Sergeant Brass): the browser's own speech (speechSynthesis), so nothing is sent
-// anywhere and no AI runs; the voice is off until you turn it on, and only plays
+// lines, their voice, and their settings block. In the Guild's style (Joy,
+// Sergeant Brass): each line plays from the companion's pre-rendered Piper clips
+// when it has them (core/voicepack.js), else in the browser's own speech
+// (speechSynthesis), so nothing is sent anywhere and no AI runs; the voice is off until you turn it on, and only plays
 // when you tap the portrait. Tap again to hush. Motion stops under reduced motion.
 
 import { html, raw, on, toast } from "./dom.js";
 import { COMPANIONS, CHATTINESS, companionSettings } from "../core/companions.js";
+import { PACKS, clipPaths } from "../core/voicepack.js";
 
 // Marginalia: a tall brass automaton with scrolls at the shoulders, one great lens, a quill in ink-stained fingers.
 const MARGINALIA = `<svg viewBox="0 0 64 64" aria-hidden="true" class="portrait-svg">
@@ -67,6 +69,17 @@ const OLDER = [/ryan.*natural/i, /thomas.*natural/i, /oliver.*natural/i, /alfie.
 const WARM = [/sonia.*natural/i, /libby.*natural/i, /maisie.*natural/i, /hollie.*natural/i, /bella.*natural/i, /natural/i,
   /google uk english female/i, /\bserena\b/i, /\bkate\b/i, /\bmartha\b/i, /\bstephanie\b/i, /\bhazel\b/i, /samantha/i, /female/i];
 
+// The clips on hand: voices/index.json, read once. Browsers that can't play Opus use device speech.
+let clips = null;
+if (typeof Audio !== "undefined" && new Audio().canPlayType('audio/ogg; codecs="opus"')) {
+  fetch(new URL("../../voices/index.json", import.meta.url)).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    clips = j && Object.fromEntries(Object.entries(j).map(([who, vs]) => [who, Object.fromEntries(Object.entries(vs).map(([v, x]) => [v, new Set(x.keys)]))]));
+  }).catch(() => {});
+}
+/** "quicksilver:poppy": the chosen rendered voice, the first one by default, "" for the device's. */
+const packOf = (id, s) => (s.voicePack === "" ? "" : `${id}:${s.voicePack || PACKS[id].voices[0].id}`);
+export const hasClips = (pack, text) => !!clipPaths(clips, pack, text);
+
 export const voices = () => (typeof speechSynthesis !== "undefined" ? speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang)) : []);
 
 function pickVoice(name, kind) {
@@ -82,10 +95,45 @@ const num = (x, d, lo, hi) => { const n = Number(x); return x != null && Number.
 let speaking = "";
 const setTalking = (id) => { speaking = id; document.querySelectorAll(".portrait[data-who]").forEach((p) => p.classList.toggle("talking", !!id && p.dataset.who === id)); };
 
-/** Say some text in a companion's voice (their settings, else their defaults). */
+let turn = 0, audio = [];
+
+/**
+ * Say a companion's lines in their voice (their settings, else their defaults): one after another,
+ * each from clips when every sentence has one, else in device speech. s.pack overrides the voice.
+ */
 export function speak(id, text, s = {}) {
-  if (typeof speechSynthesis === "undefined" || !text) return false;
-  speechSynthesis.cancel();
+  const lines = (Array.isArray(text) ? text : [text]).filter(Boolean);
+  const pack = s.pack ?? packOf(id, s);
+  const queue = lines.map((t) => ({ text: t, paths: clipPaths(clips, pack, t) }));
+  if (!queue.length || (typeof speechSynthesis === "undefined" && queue.some((q) => !q.paths))) return false;
+  hush();
+  const mine = ++turn;
+  const next = (i) => {
+    if (mine !== turn) return;
+    if (i >= queue.length) return setTalking("");
+    const q = queue[i], done = () => next(i + 1);
+    if (q.paths) playClips(id, q.paths, s, done, () => deviceSay(id, q.text, s, done));
+    else deviceSay(id, q.text, s, done);
+  };
+  next(0);
+  return true;
+}
+
+function playClips(id, paths, s, done, fail) {
+  const list = paths.map((p) => { const a = new Audio(new URL(`../../${p}`, import.meta.url).href); a.preload = "auto"; a.playbackRate = num(s.voiceRate, 1, 0.5, 2); return a; });
+  audio = list;
+  const at = (i) => {
+    if (audio !== list) return;
+    if (i >= list.length) return done();
+    list[i].onended = () => at(i + 1);
+    list[i].onerror = () => { audio = []; fail(); };
+    list[i].play().then(() => setTalking(id), () => list[i].onerror?.());
+  };
+  at(0);
+}
+
+function deviceSay(id, text, s, done) {
+  if (typeof speechSynthesis === "undefined") return done();
   const c = COMPANIONS[id];
   const u = new SpeechSynthesisUtterance(text);
   const v = pickVoice(s.voiceName, c.voice.kind);
@@ -93,12 +141,17 @@ export function speak(id, text, s = {}) {
   u.rate = num(s.voiceRate, c.voice.rate, 0.5, 2);
   u.pitch = num(s.voicePitch, c.voice.pitch, 0, 2);
   u.onstart = () => setTalking(id);
-  u.onend = u.onerror = () => setTalking("");
+  u.onend = u.onerror = done;
   u.onboundary = () => document.querySelectorAll(`.portrait[data-who="${id}"]`).forEach((p) => { p.classList.remove("snap"); void p.offsetWidth; p.classList.add("snap"); });
   speechSynthesis.speak(u);
-  return true;
 }
-export function hush() { if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel(); setTalking(""); }
+export function hush() {
+  turn++;
+  audio.forEach((a) => { a.onended = a.onerror = null; a.pause(); });
+  audio = [];
+  if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  setTalking("");
+}
 
 if (typeof document !== "undefined" && typeof speechSynthesis !== "undefined") {
   speechSynthesis.getVoices(); // Chrome lists voices late; this starts it
@@ -132,7 +185,7 @@ export function mountCompanion(box, ctx, id, lines, { day, onPrompt, cleanup, pl
     const now = companionSettings(ctx.settings());
     if (speaking === id) return hush();
     if (!now.voice) return toast(`Turn on ${name()}'s voice in Settings to hear them.`, { action: "Settings", onAction: () => ctx.navigate(id === "quicksilver" ? "#/settings/companion" : "#/settings") });
-    if (!speak(id, box._companion.lines.map((l) => l.text).join(" "), now)) toast("This browser can't speak.", { error: true });
+    if (!speak(id, box._companion.lines.map((l) => l.text), now)) toast("This browser can't speak.", { error: true });
   });
   on(box, "click", "[data-companion-prompt]", (e, b) => box._companion.onPrompt?.(b.dataset.companionPrompt));
   on(box, "click", "[data-companion-hide]", () => {
@@ -162,9 +215,14 @@ export function companionSettingsBlock(id, ctx, { themes = false, reflect = fals
       <label class="field grow"><span>Chattiness</span><select class="select" data-cs="chattiness">${Object.entries(CHATTINESS).map(([k, label]) => html`<option value="${k}" ${s.chattiness === k ? "selected" : ""}>${label}</option>`)}</select></label>
     </div>
     ${themes ? html`<label class="check"><input type="checkbox" data-cs="themes" ${s.themes ? "checked" : ""}> Notice themes: mention a #tag that keeps coming back this week (counted on this device from entries that aren't sealed; nothing is sent anywhere)</label>` : ""}
-    <label class="check"><input type="checkbox" data-cs="voice" ${s.voice ? "checked" : ""}> Voice: tap the portrait to hear ${c.name} (your device's own speech; tap again to hush)</label>
+    <label class="check"><input type="checkbox" data-cs="voice" ${s.voice ? "checked" : ""}> Voice: tap the portrait to hear ${c.name} (tap again to hush)</label>
+    <div class="field"><span>Voice</span><div class="pack-list">
+      ${PACKS[id].voices.map((v, i) => html`<div class="pack-row"><label class="check"><input type="radio" name="voicePack-${id}" data-cs="voicePack" value="${v.id}" ${(s.voicePack ?? PACKS[id].voices[0].id) === v.id ? "checked" : ""}> ${v.label}</label><button type="button" class="btn small ghost" data-cs-preview="${id}:${v.id}" aria-label="Hear ${v.label}">▶</button></div>`)}
+      <div class="pack-row"><label class="check"><input type="radio" name="voicePack-${id}" data-cs="voicePack" value="" ${s.voicePack === "" ? "checked" : ""}> This device's voice (set below)</label></div>
+    </div></div>
+    <p class="small muted">The named voices are recorded with Piper, a free offline voice engine, and play from this site. Lines with your own words in them (titles, tags) always use the device voice, so nothing personal is ever recorded.</p>
     <div class="row wrap">
-      <label class="field grow"><span>Voice</span><select class="select" data-cs="voiceName" data-cs-voices></select></label>
+      <label class="field grow"><span>Device voice</span><select class="select" data-cs="voiceName" data-cs-voices></select></label>
       <label class="field grow"><span>Speed</span><input class="input" type="range" data-cs="voiceRate" min="0.6" max="1.6" step="0.05" value="${s.voiceRate ?? c.voice.rate}"></label>
       <label class="field grow"><span>Pitch</span><input class="input" type="range" data-cs="voicePitch" min="0.5" max="2" step="0.05" value="${s.voicePitch ?? c.voice.pitch}"></label>
     </div>
@@ -192,8 +250,14 @@ export function wireCompanionSettings(el, ctx, id) {
   const test = () => {
     const s = companionSettings(ctx.settings());
     if (speaking === id) return hush();
-    speak(id, id === "marginalia" ? `Ah. A new reader. I am ${s.name || c.name}. ${c.question}` : `Hello there. I'm ${s.name || c.name}. Pour it out, and we'll see what crystallises.`, s) || toast("This browser can't speak.", { error: true });
+    const lines = PACKS[id].preview;
+    speak(id, lines[Math.floor(Math.random() * lines.length)], s) || toast("This browser can't speak.", { error: true });
   };
+  on(el, "click", `[data-companion-settings="${id}"] [data-cs-preview]`, (e, b) => {
+    const s = companionSettings(ctx.settings()), lines = PACKS[id].preview, line = lines[Math.floor(Math.random() * lines.length)];
+    if (!hasClips(b.dataset.csPreview, line)) toast("That voice isn't on this device yet; the device voice will say it.");
+    speak(id, line, { ...s, pack: b.dataset.csPreview }) || toast("This browser can't speak.", { error: true });
+  });
   on(el, "click", `[data-companion-settings="${id}"] [data-cs-test]`, test);
   on(el, "click", `[data-companion-settings="${id}"] .portrait`, test);
   return fill; // call again after the settings page redraws

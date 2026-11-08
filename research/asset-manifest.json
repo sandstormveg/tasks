@@ -1,5 +1,5 @@
 {
- "version": "7ba37cfea69a",
+ "version": "5f6924a7743e",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -57,6 +57,7 @@
   "src/core/sources.js",
   "src/core/stats.js",
   "src/core/textformat.js",
+  "src/core/voicepack.js",
   "src/core/writing.js",
   "src/core/zip.js",
   "src/data/backend.js",
