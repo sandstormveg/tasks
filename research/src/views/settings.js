@@ -1,5 +1,6 @@
 // Settings. Device-only things (tokens, keys, theme) stay on this device;
 // journal preferences (prompt rules, rating scale, chapters) sync with it.
+// Quicksilver, the Journal's companion, has a section of its own (device-only).
 
 import { html, raw, on, toast, errorToast, confirmSheet, sheet, download, bytes, promptSheet } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
@@ -10,6 +11,7 @@ import { QUESTION_KINDS, PRIVACY_LEVELS } from "../core/model.js";
 import { createSealing, unlockSealing } from "../core/crypto.js";
 import { webSpeechSupported } from "../voice/transcribe.js";
 import { addDays, formatDay } from "../core/dates.js";
+import { companionSettingsBlock, wireCompanionSettings } from "../ui/companion.js";
 
 const SECTIONS = [
   ["sync", "cloud", "Sync & backup", "Your private GitHub repository"],
@@ -17,6 +19,7 @@ const SECTIONS = [
   ["voice", "mic", "Voice", "Dictation and transcription engines"],
   ["privacy", "lock", "Privacy & sealing", "Passphrase-encrypted entries, what's never tracked"],
   ["prompts", "question", "Prompts", "How often the journal asks, and about what"],
+  ["companion", "sparkle", "Companion", "Quicksilver: a gentle question on Today, insights in Reflect"],
   ["appearance", "moon", "Appearance", "Theme and text size"],
   ["days", "calendar", "Days & ratings", "Rating scale, when a day ends"],
   ["integrations", "link", "Tasks & Atlas", "Send tasks; link ideas from your knowledge system"],
@@ -27,15 +30,17 @@ export async function mount(el, ctx, route, ui) {
   const section = route.params[0] || "";
   const S = SECTIONS.find((s) => s[0] === section);
   ui.setTitle(S ? S[2] : "Settings", { back: S ? "#/settings" : undefined });
-  const renderers = { sync, ai, voice, privacy, prompts, appearance, days, integrations, data };
+  const renderers = { sync, ai, voice, privacy, prompts, companion, appearance, days, integrations, data };
   if (!S) {
     el.innerHTML = String(html`<h2 class="view-title">Settings</h2>
       <div class="stack-sm">${SECTIONS.map(([k, ic, t, d]) => html`<a class="entry-card row" href="#/settings/${k}">${raw(icon(ic))}<div class="grow"><div class="title">${t}</div><div class="small muted">${d}</div></div>${raw(icon("chevron"))}</a>`)}</div>
       <p class="small faint" style="margin-top:24px">Living Journal · local-first · your words stay yours. <a href="https://github.com/sandstormveg/Journal_system/blob/main/docs/PRODUCT.md" target="_blank" rel="noopener">How it works</a></p>`);
     return;
   }
-  const render = () => { el.innerHTML = String(renderers[section](ctx)); };
+  let fillVoices = null;
+  const render = () => { el.innerHTML = String(renderers[section](ctx)); fillVoices?.(); };
   render();
+  if (section === "companion") fillVoices = wireCompanionSettings(el, ctx, "quicksilver");
   ui.onStore((c) => { if (c.op === "kv" && (c.key === "settings" || c.key === "secrets")) return; if (c.types?.includes("config") || c.op === "unlock" || c.op === "lock") render(); });
   const off = ctx.sync.on(() => { if (section === "sync") render(); });
   ui.cleanup(off);
@@ -447,4 +452,9 @@ async function act(ctx, name, b, el, render) {
     location.hash = "#/today";
     location.reload();
   }
+}
+
+function companion(ctx) {
+  return html`<p class="view-sub">Quicksilver is a wandering bard-alchemist, in the old-tech world of the Guild. On Today, they offer a greeting and one gentle question; tap it to answer. In Reflect, they point out what's moving: statements gone stale, how well the AI predicts you, a question that's waited a while, what goes with your better days. Their lines come from templates: no AI runs, and nothing leaves this device.</p>
+    ${companionSettingsBlock("quicksilver", ctx, { themes: true, reflect: true })}`;
 }

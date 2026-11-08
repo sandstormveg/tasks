@@ -575,3 +575,48 @@ body:has(.select-bar) .content { padding-bottom: calc(var(--tabbar-h) + var(--sa
   .topbar .host-nav .host-app { font-size: 0.8rem; padding: 6px 3px; }
   .topbar .host-nav .host-app::before { margin-right: 3px; }
 }
+
+/* The companions (src/ui/companion.js): Marginalia in Research (brass), Quicksilver in the Journal
+   (quicksilver). A framed portrait that blinks, bobs while talking and moves its mouth; still under
+   reduced motion. Colours come from each theme's own tokens, so every theme keeps them legible. */
+.companion { --c: var(--warn); position: relative; display: flex; gap: 12px; align-items: flex-start; margin: 0 0 14px; padding: 12px 40px 12px 12px;
+  border: 1px solid color-mix(in srgb, var(--c) 55%, var(--line)); border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, var(--surface)), var(--surface) 70%); }
+.companion[data-companion="quicksilver"], .portrait[data-who="quicksilver"] { --c: var(--ai); }
+.portrait { --c: var(--warn); flex: none; width: 56px; height: 56px; padding: 0; position: relative; overflow: hidden; cursor: pointer; color: var(--c);
+  border: 2px solid var(--c); border-radius: 10px; background: color-mix(in srgb, var(--c) 10%, var(--surface)); box-shadow: inset 0 0 0 2px var(--surface), 0 1px 0 rgba(0,0,0,.08); }
+.portrait.small { width: 28px; height: 28px; border-width: 1.5px; border-radius: 7px; cursor: default; box-shadow: none; }
+.portrait::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, color-mix(in srgb, var(--c) 14%, transparent) 0 1px, transparent 1px 3px); }
+.portrait-svg { display: block; width: 100%; height: 100%; }
+.portrait-svg .eyes, .portrait-svg .mouth-open { transform-box: fill-box; transform-origin: center; }
+.portrait-svg .eyes { animation: comp-blink 5.5s infinite; }
+.portrait[data-who="quicksilver"] .vials { animation: comp-glow 3.2s infinite alternate ease-in-out; }
+.portrait-svg .mouth-open { opacity: 0; }
+.portrait.talking { box-shadow: inset 0 0 0 2px var(--surface), 0 0 12px var(--c); }
+.portrait.talking .mouth-shut { opacity: 0; }
+.portrait.talking .mouth-open { animation: comp-talk .22s infinite alternate steps(2); }
+.portrait.talking.snap .mouth-open { animation: comp-talk .22s infinite alternate steps(2), comp-snap .12s; }
+.portrait.talking .portrait-svg { animation: comp-bob .5s infinite alternate ease-in-out; }
+@keyframes comp-blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@keyframes comp-talk { from { opacity: 1; transform: scaleY(.4); } to { opacity: 1; transform: scaleY(1); } }
+@keyframes comp-snap { from { transform: scaleY(1.3); } }
+@keyframes comp-bob { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+@keyframes comp-glow { from { opacity: .7; } to { opacity: 1; filter: drop-shadow(0 0 2px currentColor); } }
+@media (prefers-reduced-motion: reduce) {
+  .portrait-svg .eyes, .portrait .vials, .portrait.talking .portrait-svg, .portrait.talking .mouth-open { animation: none; }
+  .portrait.talking .mouth-shut { opacity: 1; } .portrait.talking .mouth-open { opacity: 0; }
+}
+.companion-body { min-width: 0; flex: 1; }
+.companion-name { font-family: var(--font-ui); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .78rem; color: var(--c); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.companion-q { font-weight: 500; letter-spacing: 0; text-transform: none; font-style: italic; color: var(--ink-3, var(--ink-2)); }
+.companion-lines { margin-top: 4px; }
+.companion-line { margin: 3px 0 0; font-size: .95rem; line-height: 1.45; color: var(--ink); animation: comp-in .35s both; animation-delay: calc(var(--i) * 120ms); }
+.companion-line a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--c) 60%, transparent); text-underline-offset: 3px; }
+.companion-prompt { all: unset; cursor: pointer; font-style: italic; border-bottom: 1px dashed var(--c); }
+.companion-prompt:hover, .companion-prompt:focus-visible { color: var(--c); }
+.companion-prompt:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+.companion-x { position: absolute; top: 6px; right: 6px; font-size: 1.1rem; line-height: 1; }
+@keyframes comp-in { from { opacity: 0; transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .companion-line { animation: none; } }
+@media (max-width: 460px) { .companion .portrait:not(.small) { width: 46px; height: 46px; } .companion-line { font-size: .92rem; } }
+.companion-settings .check { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; }
+.agent-note header .portrait.small { --c: var(--warn); }

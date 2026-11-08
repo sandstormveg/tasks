@@ -6,6 +6,9 @@
 // everything on it — heading, composer, rating and moments — is about that day,
 // and it helps you remember: what your records say (tasks, calendar, the days
 // either side) and a short walk through the day, morning to night (core/recall.js).
+//
+// On Today, Quicksilver (the companion, core/companions.js) offers a greeting and one
+// gentle question from templates, with no AI. Tapping the question puts it above the box.
 
 import { html, raw, on, debounce, autosize, toast, sheet, pickFiles, errorToast } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
@@ -19,6 +22,8 @@ import { plainExcerpt } from "../core/markdown.js";
 import { loadDraft, blankDraft, saveDraft, clearDraft, saveDraftAsEntry, storePhotos, draftHasContent } from "../app/actions.js";
 import { RECALL_STEPS, assembleWalkthrough, taskCuesForDay, neighbourCues } from "../core/recall.js";
 import { addPhotosForDays } from "../ui/photo-days.js";
+import { journalState, quicksilverLines, seedOf, companionSettings } from "../core/companions.js";
+import { mountCompanion } from "../ui/companion.js";
 
 const PROMPT_STATE = "prompt-state";
 
@@ -91,7 +96,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="date">${formatDay(day, { weekday: "long", day: "numeric", month: "long", year: day.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric" })}</div>
       <div class="sub">${chapter ? html`${chapter.name} · day ${daysBetween(chapter.from, day) + 1} · ` : ""}${isToday ? "What would you like to capture or reflect on?" : html`${ago === 1 ? "Yesterday" : `${ago} days ago`} · What do you remember?`}</div>
     </div>
-    ${isToday ? "" : html`<div class="recall card flat" id="cues"></div>`}
+    ${isToday ? html`<div id="companion"></div>` : html`<div class="recall card flat" id="cues"></div>`}
     <div class="composer" id="composer">
       <div id="qchip"></div>
       <label class="sr-only" for="compose">Write</label>
@@ -346,6 +351,16 @@ export async function mount(el, ctx, route, ui) {
   }
 
   renderQuestion(); renderMeta(); renderMedia(); renderPrompts(); renderWalk(); renderDay(); renderList(); renderMemories(); renderNudge();
+
+  // Quicksilver: a greeting and one gentle question (templates; themes only if you turned them on).
+  if (isToday) {
+    const cs = companionSettings(ctx.settings());
+    const st = journalState(ctx.store.all("entry"), { today, hour: new Date().getHours(), themes: cs.themes, addDays });
+    mountCompanion(el.querySelector("#companion"), ctx, "quicksilver", quicksilverLines(st, { chattiness: cs.chattiness, seed: seedOf(today) }), {
+      day: today, cleanup: ui.cleanup,
+      onPrompt: (q) => { draft.questionText = q; draft.questionId = null; renderQuestion(); persist(); ta.focus(); },
+    });
+  }
   loadCues();
   wireDayPanel(el.querySelector("#daypanel"), ctx, day, { onExpand: () => { expanded = true; renderDay(); } });
   ui.onStore((c) => {

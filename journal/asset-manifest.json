@@ -1,5 +1,5 @@
 {
- "version": "36f571fc2f97",
+ "version": "7801dbd90584",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -31,6 +31,7 @@
   "src/app/sync-service.js",
   "src/core/atlas.js",
   "src/core/boards.js",
+  "src/core/companions.js",
   "src/core/context.js",
   "src/core/conversation.js",
   "src/core/crypto.js",
@@ -83,6 +84,7 @@
   "src/research/views/settings.js",
   "src/research/views/source.js",
   "src/research/views/writing.js",
+  "src/ui/companion.js",
   "src/ui/components.js",
   "src/ui/day-panel.js",
   "src/ui/dom.js",
