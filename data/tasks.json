@@ -403,6 +403,14 @@
           "created": "2026-11-09T05:15:24.000Z",
           "updated": "2026-11-09T05:15:24.000Z",
           "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "c-dir-1109c",
+          "text": "Built by the director, since Adventurer could not reach this repo: tasks#45 (draft). The tip is removed. There is a Board settings gear in the dock with the auto-size toggle, double-click adds a note, right-drag or the Frame tool draws a frame, and a String mode lets you tap pin A then pin B. Research notes and drafts now show as a Markdown preview until you tap to edit. Say merge to ship it.",
+          "done": false,
+          "created": "2026-11-09T09:17:55.000Z",
+          "updated": "2026-11-09T09:17:55.000Z",
+          "author": "Claude Opus 5.5"
         }
       ]
     }
