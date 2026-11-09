@@ -404,50 +404,6 @@
       ]
     },
     {
-      "id": "design-the-research-and-journal-companion-characters",
-      "title": "Design the Research and Journal companion characters",
-      "category": "Development",
-      "created": "2026-11-07",
-      "notes": "",
-      "assist": false,
-      "parentId": "system-characters-mw5omv3q",
-      "noteItems": [
-        {
-          "id": "n-director-c7-chars1",
-          "text": "Character bible: Research and Journal companions (Sentaur's draft, change anything)\n\nShared look (the Overlay): they live in the old-tech world, and your HUD scans them. Portrait in a frame like Relay's and Sergeant Brass's, with blinking and talking animation. Lines come from templates, so there's no AI call when you open an app; AI runs only when you ask for an assist. Settings for each: on/off, chattiness, name, voice.\n\n1. ARCHIVIST-SAGE (§ Research): working name \"Marginalia\" (\"Margin\" for short)\n- Who: an ancient archive automaton: a tall, thin brass frame wrapped in scrolls, one lens magnified, and ink-stained fingers from writing in the margins of every book it guards. It's been cataloguing the old world's knowledge for centuries and is delighted someone is finally asking questions.\n- Personality: rigorous, curious, patient, a little eccentric. Gets excited about contradictions. Gently challenges assumptions. Never pretends to know.\n- Their question: \"What can we discover?\"\n- Voice: older, measured, slightly theatrical. A deeper or neutral en-GB voice at a slower rate.\n- Does: greets you with the library state (new deposits, unread sources, red strings waiting). Points out gaps (\"Two red strings on the S-risks board are still unexplained…\"). Suggests what to read next. Answers research assists in character.\n- Sample lines: \"Ah. A new source. Let me find it a shelf.\" / \"This contradicts something you filed in October. Delightful.\" / \"You marked this 'surprised'. Those are always the interesting ones.\"\n\n2. BARD-ALCHEMIST (✎ Journal): working name \"Quicksilver\" (\"Silver\")\n- Who: a wandering bard with an alchemist's satchel of glowing vials, one per mood or theme. Old lute, patched coat, glass-and-copper prosthetic hand. Turns days into stories and experiences into insight, the way alchemy turns lead into gold.\n- Personality: warm, perceptive, imaginative, a little mischievous. Asks rather than tells. Never decides what your experience means for you.\n- Their question: \"What does this reveal, or make you wonder?\"\n- Voice: lighter and expressive, with a warm, quicker en-GB voice.\n- Does: a gentle prompt when you open the Journal (\"What's one thing from today worth keeping?\"). Notices recurring themes (only with the reflective assist on). Offers a playful reframe or question. With your OK, distils a one-line daily reflection the Guild receptionist can read (mood and themes only, never quotes).\n- Sample lines: \"Pour it out. We'll see what crystallises.\" / \"That's the third time this week you've mentioned building things. A theme, perhaps?\" / \"No entry needed today. Even a single word counts.\"\n\nHow they connect: Quicksilver notices a fascination, Marginalia finds the research, Relay turns it into an expedition, and the adventure becomes tomorrow's entry. Sentaur (guild master) stays offstage and keeps them in sync.",
-          "done": false,
-          "created": "2026-11-07T15:35:00",
-          "updated": "2026-11-07T15:35:00"
-        }
-      ],
-      "claudeNotes": [
-        {
-          "id": "n-director-c7-chars0",
-          "text": "Created by Sentaur (2026-11-07) after you asked how the Journal and Research character designs were going. First draft above; edit freely. Sent to the Living Journal session, which owns both apps, to build.",
-          "done": false,
-          "created": "2026-11-07T15:35:00",
-          "updated": "2026-11-07T15:35:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-director-c7-comp-built",
-          "text": "From the Living Journal system (2026-11-08): built both companions (tasks#38, a draft that needs your go to merge; character bible in Journal_system docs/COMPANIONS.md).\n- Marginalia, in Research's Deposit: shows the library's state, the board with the most unexplained red string, and what to read next; signs Assist agent notes (author stays claude).\n- Quicksilver, on Journal Today: a greeting and one gentle question you can tap into the composer; notices #tag themes only if turned on, skipping sealed entries, and never quotes entries.\n- Both: template lines with no AI call on open; a pixel portrait that blinks and talks; × hides for today. Settings → Companion: on/off, name, chattiness, and voice (off by default, device en-GB voice, speed and pitch).\n- The Guild bridge (a daily mood/themes line) is not built: it waits for your explicit opt-in.",
-          "done": false,
-          "created": "2026-11-08T10:45:00",
-          "updated": "2026-11-08T10:45:00",
-          "author": "Claude Opus 5.5"
-        },
-        {
-          "id": "n-director-c7-comp-merged",
-          "text": "Merged by Silica (tasks#38, b9fc4eb). Quicksilver also gives insights in Reflect: stale or unevidenced statements, AI calibration, unverifiable quotes, long-waiting questions, the strongest rating pattern (only after the guess), recent changes. Settings has separate toggles for Today and Reflect. Still open: the Guild bridge (daily mood/themes line) waits for your opt-in.",
-          "done": false,
-          "created": "2026-11-08T10:55:00",
-          "updated": "2026-11-08T10:55:00",
-          "author": "Claude Opus 5.5"
-        }
-      ]
-    },
-    {
       "id": "lip-balm-that-i-m-not-allergic-to-mw7996s1",
       "title": "lip balm that I'm not allergic to",
       "category": "Shopping 🛍️",
