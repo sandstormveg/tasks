@@ -354,6 +354,13 @@
           "created": "2026-11-09T04:18:06.785Z",
           "updated": "2026-11-09T04:18:06.785Z",
           "image": "images/development/research-changes-mw7k0foj-n-mw8r3hohl8zo.jpg"
+        },
+        {
+          "id": "n-mw9164iygba4",
+          "text": "kind of seems like the above note didnt get actioned.\nalso in research make sure when writing notes, markdown is active and when it is saved/not being written the note is a markdown preview.",
+          "done": false,
+          "created": "2026-11-09T09:00:05.866Z",
+          "updated": "2026-11-09T09:00:05.866Z"
         }
       ],
       "claudeNotes": [
