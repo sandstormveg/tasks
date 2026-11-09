@@ -2213,6 +2213,88 @@
         "AliExpress search pages to browse once you know the size: aliexpress.com/w/wholesale-mini-pool-balls.html (mini/38mm-range sets) and aliexpress.com/w/wholesale-mini-billiard-balls.html. Look for phenolic resin sets (more durable, truer roll than cheap plastic) with 16 balls (15 numbered + cue ball); many listings include a mini rack too.",
         "Nothing purchasable on your behalf here (no payment access) — once you confirm the size, picking a highly-rated seller with resin balls and ordering directly is a 2-minute job."
       ]
+    },
+    {
+      "id": "research-changes-mw7k0foj",
+      "title": "Research changes",
+      "category": "Development",
+      "completedDate": "2026-11-09",
+      "note": "",
+      "images": [],
+      "noteItems": [
+        {
+          "id": "n-mw7k1okkfvy0",
+          "text": "make sure the text size and colour can be changed in this app. like in the notes.but other places to. include it in a text editing button. you know like the other app had i think",
+          "done": false,
+          "created": "2026-11-08T08:12:58.916Z",
+          "updated": "2026-11-08T08:14:30.646Z"
+        },
+        {
+          "id": "n-mw8r3hohl8zo",
+          "text": "remove this tip. add settings in boards. \nmake it so double clicking adds a note. \nmake it a click and drag option for framing things. like right click and drag maybe. \nmake a mode for connecting items with string.",
+          "done": false,
+          "created": "2026-11-09T04:18:06.785Z",
+          "updated": "2026-11-09T04:18:06.785Z",
+          "image": "images/development/research-changes-mw7k0foj-n-mw8r3hohl8zo.jpg"
+        },
+        {
+          "id": "n-mw9164iygba4",
+          "text": "kind of seems like the above note didnt get actioned.\nalso in research make sure when writing notes, markdown is active and when it is saved/not being written the note is a markdown preview.",
+          "done": false,
+          "created": "2026-11-09T09:00:05.866Z",
+          "updated": "2026-11-09T09:00:05.866Z"
+        }
+      ],
+      "claudeNotes": [
+        {
+          "id": "n-director-c7-resfmt",
+          "text": "Relayed (2026-11-08) to the Living Journal system session, which owns Research. Suggested: an 'Aa' text-format button in the Research editors (notes, why/expect/surprised, pin text, prompts) with size S/M/L/XL and a colour palette that works in both themes, plus bold/italic. Reuse the Journal's control if that's 'the other app', so they match. Also a global reading-size setting. It's a cloud session, so it builds the next time you run it there. If you meant a different app's editor, tell me which one.",
+          "done": false,
+          "created": "2026-11-08T20:32:00",
+          "updated": "2026-11-08T20:32:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt2",
+          "text": "From the Living Journal system: text size and colour are in Research now, in a draft PR waiting for your \"merge\": tasks#40.\n- Aa button on: notes, why / expect / surprised, the agent prompt, writing drafts, pin text, string syntheses.\n  - Select words, then tap B, I, S/M/L/XL, or a colour: red, orange, yellow, green, purple or grey. The colours follow the theme, so they read in light and dark.\n  - Clear removes it.\n  - With nothing selected it inserts \"text\" to type over.\n- Saved as plain text: [words]{.red .large} and **bold**. Agents and the CLI still read it fine. Cards and pins show it formatted.\n- Settings → Appearance → Text size (Smaller to Largest) for the whole app, like the Journal's.\n- The \"other app\" turned out to only have the Journal's global text size. Nothing there formatted individual words, so this is new rather than reused.\n(Journal_system@0d3b1ae; lint passes, 136 unit and 34 end-to-end tests pass.)",
+          "done": false,
+          "created": "2026-11-08T20:50:00",
+          "updated": "2026-11-08T20:50:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt3",
+          "text": "From the Living Journal system. The Aa has been reworked after your feedback (tasks#43, a draft waiting for your \"merge\"):\n- Corkboard: Aa is now in the bottom dock, between the add buttons and the zoom controls. Select a pin, tap Aa, and a style panel styles the whole pin: size, text colour, font (serif / sans / typewriter / hand), alignment, bold / italic, card colour, and Reset. It's saved as the pin's style, never as codes in its words. The in-word Aa is gone from the pin editor.\n- Fixed: the stray \"text\". It came from tapping a style with nothing selected. The Aa no longer inserts anything. Pins from the first version are tidied when their board opens: the \"text\" is removed, so \"Access to AGI?\" reads \"Does the human have access to AGI?\", and any codes move into the pin's style or are unwrapped, with every word kept.\n- Notes and why / expect / surprised: you see the formatting as you type, and the codes never show. Underneath it's still plain text, so agents can read it.\nModelled on your Chalkboard StylePanel (stroke/fill/sketch were left out because they don't suit paper pins; \"hand\" uses the device's own handwriting font). Journal_system fb0c0fe; lint, 138 unit tests and 35 browser tests pass.",
+          "done": false,
+          "created": "2026-11-09T00:10:00",
+          "updated": "2026-11-09T00:10:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "n-director-c7-resfmt4",
+          "text": "From the Living Journal system: pin text size and auto-size are ready to merge, tasks#44 (draft; you merge).\n• Any size: select a pin → Aa in the dock → −/+ stepper, number box and slider, 10–72 px. S/M/L/XL stay as quick picks. Saved as a number in style.size.\n• Auto-size: Settings > Corkboard > 'Auto-size pin text' (off by default, so boards already laid out don't change). When on, a pin's words take the largest size that still fits the card, 9–72 px, and follow the card live as you drag its corner.\n• Per pin: Aa > Fit to card > Auto / Fixed overrides the setting either way. Picking any size makes that pin Fixed.\n• Offline, no codes on screen; the fitted size is never saved (the file only says fit: auto), so the CLI reads pins as before. All tests pass (lint, 139 unit, 36 browser). Journal_system@dd89283.",
+          "done": false,
+          "created": "2026-11-09T00:00:00",
+          "updated": "2026-11-09T00:00:00",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "c-dir-1109b",
+          "text": "Sent to Adventurer (queued until it reconnects): remove the dock tip, add board settings, double-click to add a note, right-click drag to make a frame (plus a Frame tool), and a red-string connect mode, reusing Chalkboard's frame tool and connectorPhysics (catenary sag, strings stay attached to pins).",
+          "done": false,
+          "created": "2026-11-09T05:15:24.000Z",
+          "updated": "2026-11-09T05:15:24.000Z",
+          "author": "Claude Opus 5.5"
+        },
+        {
+          "id": "c-dir-1109c",
+          "text": "Built by the director, since Adventurer could not reach this repo: tasks#45 (draft). The tip is removed. There is a Board settings gear in the dock with the auto-size toggle, double-click adds a note, right-drag or the Frame tool draws a frame, and a String mode lets you tap pin A then pin B. Research notes and drafts now show as a Markdown preview until you tap to edit. Say merge to ship it.",
+          "done": false,
+          "created": "2026-11-09T09:17:55.000Z",
+          "updated": "2026-11-09T09:17:55.000Z",
+          "author": "Claude Opus 5.5"
+        }
+      ]
     }
   ]
 }
