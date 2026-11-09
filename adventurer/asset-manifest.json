@@ -1,5 +1,5 @@
 {
- "version": "88d7a8bcc626",
+ "version": "78a44b67678d",
  "files": [
   "./",
   "icons/icon.svg",
@@ -46,6 +46,7 @@
   "src/vision/reps-sheet.js",
   "styles/app.css",
   "styles/train.css",
-  "host.json"
+  "host.json",
+  "voices/index.json"
  ]
 }
