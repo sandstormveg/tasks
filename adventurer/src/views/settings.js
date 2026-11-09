@@ -8,8 +8,8 @@ import { speak, voices, bestVoice, hasClips } from "../ui/voice.js";
 import { PACKS } from "../core/voicepack.js";
 import { coachVoice } from "../ui/coach.js";
 
-const coachOpts = (f) => ({ coachVoice: !!f.coachVoice, coachName: (f.coachName || "Sergeant Brass").trim().slice(0, 24) || "Sergeant Brass", coachVoiceName: f.coachVoiceName || "", coachVoicePack: f.coachVoicePack ?? "", coachVolume: Number(f.coachVolume) });
-const voiceOpts = (f) => ({ voicePack: f.voicePack ?? "", voiceName: f.voiceName || "", voiceVolume: Number(f.voiceVolume), voiceRate: Number(f.voiceRate), voicePitch: Number(f.voicePitch) });
+const coachOpts = (f) => ({ coachVoice: !!f.coachVoice, coachName: (f.coachName || "Sergeant Brass").trim().slice(0, 24) || "Sergeant Brass", coachVoiceName: f.coachVoiceName || "", coachVoicePack: f.coachVoicePack ?? "", coachVolume: Number(f.coachVolume), coachRate: Number(f.coachRate), coachPitch: Number(f.coachPitch), deviceFallback: !!f.deviceFallback });
+const voiceOpts = (f) => ({ voicePack: f.voicePack ?? "", deviceFallback: !!f.deviceFallback, voiceName: f.voiceName || "", voiceVolume: Number(f.voiceVolume), voiceRate: Number(f.voiceRate), voicePitch: Number(f.voicePitch) });
 
 // A character's rendered voices to pick from, each with ▶ to hear a line, then "This device's voice".
 function packPicker(who, name, chosen) {
@@ -59,8 +59,9 @@ export async function mount(el, ctx, route, ui) {
           <label class="field"><span>Speed</span><input class="input" type="range" name="voiceRate" min="0.6" max="1.6" step="0.05" value="${s.voiceRate ?? 1}"></label>
           <label class="field"><span>Pitch</span><input class="input" type="range" name="voicePitch" min="0.5" max="2" step="0.05" value="${s.voicePitch ?? 1.1}"></label>
         </div>
+        <label class="check"><input type="checkbox" name="deviceFallback" ${s.deviceFallback ? "checked" : ""}> Device voice for lines without a Piper clip (Joy and the coach)</label>
         <button type="button" class="btn small" data-a="voice-test">▶ Hear her</button>
-        <p class="hint">The named voices are recorded with Piper, a free offline voice engine, and play from this site. A line they don't cover, and anything on a browser that can't play them, uses the device voice. Device voices: on Windows the "Online (Natural)" voices (Aria, Jenny) sound the most human; on iPhone, download an "Enhanced" voice in Settings › Accessibility › Spoken Content.</p>
+        <p class="hint">The named voices are recorded with Piper, a free offline voice engine, and play from this site; speed and pitch apply to them too. With the box above off, a sentence they don't cover is skipped rather than said in another voice. Device voices: on Windows the "Online (Natural)" voices (Aria, Jenny) sound the most human; on iPhone, download an "Enhanced" voice in Settings › Accessibility › Spoken Content.</p>
       </fieldset>
       <fieldset><legend>Training coach</legend>
         <label class="check"><input type="checkbox" name="coachVoice" ${s.coachVoice ? "checked" : ""}> Coach's voice: he counts your reps, calls the tempo, cues your form and calls your rest out loud (tap his portrait to hush)</label>
@@ -71,9 +72,11 @@ export async function mount(el, ctx, route, ui) {
         <div class="grid2">
           <label class="field"><span>Device voice</span><select class="input" name="coachVoiceName" data-coach-voices><option value="">Best on this device</option></select></label>
           <label class="field"><span>Volume</span><input class="input" type="range" name="coachVolume" min="0" max="1" step="0.05" value="${s.coachVolume ?? 1}"></label>
+          <label class="field"><span>Speed</span><input class="input" type="range" name="coachRate" min="0.6" max="1.6" step="0.05" value="${s.coachRate ?? 1}"></label>
+          <label class="field"><span>Pitch</span><input class="input" type="range" name="coachPitch" min="0.6" max="1.5" step="0.05" value="${s.coachPitch ?? 1}"></label>
         </div>
         <button type="button" class="btn small" data-a="coach-test">▶ Hear him</button>
-        <p class="hint">Rep counts and the like play as a chain of short clips; anything the clips don't cover uses the device voice. For that he picks a male voice, British if your device has one (on Windows, "Ryan" or "Thomas Online (Natural)"). Phones that only name voices by language get the UK one, pitched down.</p>
+        <p class="hint">Rep counts and the like play as a chain of short clips. Anything the clips don't cover uses the device voice only if "Device voice for lines without a Piper clip" is on. For that he picks a male voice, British if your device has one (on Windows, "Ryan" or "Thomas Online (Natural)"). Phones that only name voices by language get the UK one, pitched down.</p>
       </fieldset>
       <fieldset><legend>Stats profile</legend>
         <p class="hint">Only used to pick the right population table. Synced to your private repo.</p>

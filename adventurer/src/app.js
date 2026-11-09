@@ -26,11 +26,14 @@ export const DEFAULTS = {
   voiceVolume: 1,
   voiceRate: 1,
   voicePitch: 1.1,
+  deviceFallback: false,
   coachVoice: true,
   coachName: "Sergeant Brass",
   coachVoiceName: "",
   coachVoicePack: "northern",
   coachVolume: 1,
+  coachRate: 1,
+  coachPitch: 1,
   autoSync: true,
 };
 
