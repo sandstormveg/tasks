@@ -137,6 +137,13 @@ body.board-mode .content { max-width: none; padding: 0; }
 .pin.ps-i :is(.pin-title, .pin-text, .pin-quote) { font-style: italic; }
 .pin-frame.ps-small .frame-title { font-size: 0.85em; } .pin-frame.ps-large .frame-title { font-size: 1.25em; } .pin-frame.ps-xl .frame-title { font-size: 1.6em; }
 
+/* String and Frame are modes: lit while on. */
+.cork-tools [data-tool="string"].on, .cork-tools [data-tool="frame"].on { color: var(--accent); border-color: var(--accent); }
+.cork[data-mode="string"] .pin:not(.pin-frame) { cursor: crosshair; }
+.cork[data-mode="frame"] .cork-viewport { cursor: crosshair; }
+/* The frame being drawn (right-drag, or the Frame tool). */
+.cork-draw { position: absolute; pointer-events: none; border: calc(2px / var(--z, 1)) dashed var(--accent); border-radius: 6px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.cork-draw[hidden] { display: none; }
 /* the Aa inspector sits just above the dock */
 .cork-aa { font: 700 .95rem/1 var(--font-ui); min-width: 40px; letter-spacing: -0.02em; }
 .cork-aa small { font-size: .72em; }

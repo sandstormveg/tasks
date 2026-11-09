@@ -278,15 +278,14 @@ export async function deleteSource(ctx, id) {
   toast("Deleted", { action: "Undo", timeout: 8000, onAction: async () => { await ctx.store.put(copy); toast("Restored"); } });
 }
 
-// Edit / Preview for Markdown you write: the switch sits in a head row; the preview is the
-// Journal's renderer (escaped first, so nothing typed can run). The choice is remembered per device.
-const MD_MODE = "research.notes-mode";
-export const mdMode = () => { try { return localStorage.getItem(MD_MODE) === "preview" ? "preview" : "edit"; } catch { return "edit"; } };
+// Edit / Preview for Markdown you write: while you're writing it's the editor, and once you click
+// away it shows as formatted Markdown (the Journal's renderer, escaped first, so nothing typed can
+// run). Tap the preview to write again. The Edit / Preview switch in the head row still works by hand.
 
 /** The head row: a label, the Aa button and the switch. Put it, a `textarea[data-md][data-fmtable]` and `mdPreview` inside an element with classes "md-box fmt-scope". */
 export const mdHead = (label) => html`<div class="notes-head"><span class="label">${label}</span>${fmtButton(label)}
   <div class="status-seg small" role="group" aria-label="${label}: edit or preview"><button type="button" data-md-mode="edit">Edit</button><button type="button" data-md-mode="preview">Preview</button></div></div>`;
-export const mdPreview = html`<div class="prose notes-preview" data-md-preview></div>`;
+export const mdPreview = html`<div class="prose notes-preview" data-md-preview title="Tap to edit"></div>`;
 
 /** Wire one .md-box; returns { refresh } to redraw the preview when the text changes from elsewhere. */
 export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: grow } = {}) {
@@ -299,11 +298,16 @@ export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: g
       ctx.media?.hydrate?.(box);
     } else grow?.(ta);
   };
-  set(mdMode());
-  on(box, "click", "[data-md-mode]", (e, b) => {
-    try { localStorage.setItem(MD_MODE, b.dataset.mdMode); } catch { /* a private window: just don't remember */ }
-    set(b.dataset.mdMode);
-    if (b.dataset.mdMode === "edit") ta.focus(); // the live editor, when the Aa has drawn one
-  });
+  const edit = () => { set("edit"); ta.focus(); }; // ta.focus reaches the live editor when the Aa has drawn one
+  // Nothing written yet: open straight onto the editor so its placeholder shows.
+  set(ta.value.trim() ? "preview" : "edit");
+  on(box, "click", "[data-md-mode]", (e, b) => { if (b.dataset.mdMode === "edit") edit(); else set("preview"); });
+  // Tap the formatted notes to write (but let links in them work).
+  on(box, "click", "[data-md-preview]", (e) => { if (!e.target.closest("a")) edit(); });
+  // Leaving the box shows the preview again (not when focus only moved to its own Aa panel).
+  box.addEventListener("focusout", () => setTimeout(() => {
+    if (box.contains(document.activeElement) || box.querySelector(".fmt-panel")) return;
+    if (box.dataset.mode === "edit" && ta.value.trim()) set("preview");
+  }, 0));
   return { refresh: () => { if (box.dataset.mode === "preview") set("preview"); } };
 }

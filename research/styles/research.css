@@ -124,6 +124,8 @@ button.tag { cursor: pointer; }
 .md-box[data-mode="preview"] textarea[data-md] { display: none; }
 .md-box[data-mode="edit"] .notes-preview, .md-box:not([data-mode]) .notes-preview { display: none; }
 .notes-preview { min-height: 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.md-box[data-mode="preview"] .notes-preview { cursor: text; }
+.md-box[data-mode="preview"] .notes-preview a { cursor: pointer; }
 .src-assist { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .src-assist.on { border-color: var(--ai); background: var(--ai-soft); }
 .assist-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 32px; }
