@@ -94,7 +94,12 @@ export async function mount(el, ctx, route, ui) {
       <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div>
         <span class="label" style="display:block;margin-top:12px">Text size <span class="faint">— the whole app, for reading (the same choices as the Journal)</span></span>
         <div class="chips">${TEXT_SIZES.map(([v, label]) => html`<button class="chip ${Number(s.textScale || 1) === v ? "on" : ""}" data-text-scale="${v}">${label}</button>`)}</div>
-        <p class="small faint" style="margin-bottom:0">For the size or colour of particular words, select them and use the <b>Aa</b> button by any of your notes.</p></div>`);
+        <p class="small faint" style="margin-bottom:0">For the size or colour of particular words, select them and use the <b>Aa</b> button by any of your notes.</p></div>
+
+      <div class="section-title">Corkboard</div>
+      <div class="card flat">
+        <label class="check"><input type="checkbox" data-cork-autofit ${s.corkAutoFit ? "checked" : ""}> <span>Auto-size pin text <span class="faint">— the words grow and shrink to fill each card, and follow it when you resize</span></span></label>
+        <p class="small faint" style="margin-bottom:0">Any pin can choose for itself under <b>Aa › Fit to card</b>: <b>Auto</b> or <b>Fixed</b>. Setting a size there makes it Fixed.</p></div>`);
     fillVoices?.();
   }
   let fillVoices = null;
@@ -112,6 +117,7 @@ export async function mount(el, ctx, route, ui) {
     b.disabled = false;
   });
   on(el, "click", "[data-theme]", async (e, b) => { await ctx.saveSettings({ theme: b.dataset.theme }); render(); });
+  on(el, "change", "[data-cork-autofit]", async (e, f) => { await ctx.saveSettings({ corkAutoFit: f.checked }); toast(f.checked ? "Pin text fits its card" : "Pin text keeps its size"); });
   on(el, "click", "[data-text-scale]", async (e, b) => { await ctx.saveSettings({ textScale: Number(b.dataset.textScale) }); render(); });
   on(el, "change", "[data-secret]", async (e, f) => { await ctx.saveSecrets({ githubToken: f.value.trim(), ignoreHostToken: false }); toast("Saved"); render(); ctx.sync.syncNow(); });
   on(el, "click", "[data-act=atlas-refresh]", () => checkAtlas(true));
