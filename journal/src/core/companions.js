@@ -42,6 +42,8 @@ export function companionSettings(s = {}) {
     themes: c.themes === true,
     // Quicksilver only: "on" is Today; "reflect" is the Reflect tabs (on unless turned off).
     reflect: c.reflect !== false,
+    // The day you last marked Quicksilver's week review done (Reflect › Review).
+    weekReviewed: /^\d{4}-\d\d-\d\d$/.test(c.weekReviewed || "") ? c.weekReviewed : "",
   };
 }
 
@@ -216,10 +218,22 @@ export function reflectLines(tab, st, { chattiness = "normal", seed = 0 } = {}) 
     if (st.underReview) add(`${N(st.underReview, "statement")} under review since something changed. Ready to settle ${st.underReview === 1 ? "it" : "them"}?`);
     if (st.unevidenced) add(`${N(st.unevidenced, "statement")} without a single entry linked. What would count as evidence, for or against?`);
     if (!st.claims) add("Nothing in your meta-record yet. Start with one line about what you're trying to understand. Add it in your own words below.");
+    if (st.weekDue) add("Your week's review is ready. Seven days, one look back.", "#/reflect/review");
     else if (!lines.length) add(pick(["Everything here has been looked at lately. A good moment to ask what's missing.", "Your model of yourself is in good repair. What's the one part you're least sure of?"], seed));
   }
 
   if (tab === "review") {
+    const w = st.week;
+    if (w?.due) {
+      if (!w.entries && !w.rated) add("A week's gone by, and a quiet one on the page. That's information too.");
+      else {
+        if (w.entries) add(`A week's gone by. ${N(w.entries, "entry", "entries")} this week. You wrote on ${N(w.daysWritten, "day")} of 7.`);
+        if (w.avg != null) add(`Your days averaged ${w.avg} out of 10.${w.trend === "up" ? " Lighter than the week before. What helped?" : w.trend === "down" ? " Heavier than the week before. What weighed?" : w.trend === "same" ? " Much like the week before." : ""}`);
+        if (w.feelings?.length) add(`The feeling that came up most: ${w.feelings[0][0]}.`);
+        add(pick(["What would you keep from this week?", "What's one thing you'd do differently next week?", "Which day would you live again?"], seed));
+      }
+      if (w.kept) add(`${N(w.kept, "entry", "entries")} stayed private, so I left ${w.kept === 1 ? "it" : "them"} out.`);
+    }
     if (st.privateHits) add(`Careful: ${N(st.privateHits, "proposal")} cite${st.privateHits === 1 ? "s" : ""} an entry you kept from AI. I'd reject ${st.privateHits === 1 ? "it" : "them"} and ask how it happened.`);
     if (st.unverified) add(`${st.unverified === 1 ? "One proposal quotes" : `${st.unverified} proposals quote`} words I can't find in your entries. Read those quotes closely.`);
     if (st.cal && st.cal.n >= 5) {

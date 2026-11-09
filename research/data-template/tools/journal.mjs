@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:abaf011e149d6bc2
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:db2fb917670d4812
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1723,7 +1723,7 @@ ${text2}
   parts.reverse();
   const keptIds = new Set(kept.map((e) => e.id));
   const privateDays = new Set(allEntries.filter((e) => e.type === "entry" && !e.deleted && !aiReadable(e)).map((e) => e.day));
-  const dayLines = [];
+  const dayLines = [], includedDays = [];
   excluded.days = 0;
   for (const d of opts.days || []) {
     if (from && compareDays(d.date, from) < 0 || to && compareDays(d.date, to) > 0) continue;
@@ -1732,6 +1732,7 @@ ${text2}
       continue;
     }
     if (d.rating == null && !d.best && !d.hardest && !(d.emotions || []).length) continue;
+    includedDays.push(d.date);
     const r = normRating(d) != null ? `${d.rating}/${d.rating_scale || 10}` : "not rated";
     dayLines.push(`<day date="${d.date}" rating="${r}"${d.best ? ` best="${attr(d.best)}"` : ""}${d.hardest ? ` hardest="${attr(d.hardest)}"` : ""}${(d.emotions || []).length ? ` feelings="${attr(d.emotions.join(", "))}"` : ""}/>`);
   }
@@ -1760,7 +1761,7 @@ ${questionLines.join("\n")}
 ${boundaries.join("\n")}
 </boundaries>` : ""
   ].filter(Boolean).join("\n");
-  return { text, includedIds: [...keptIds], excluded, truncated, range, coverage: cov, chars: text.length };
+  return { text, includedIds: [...keptIds], includedDays, excluded, truncated, range, coverage: cov, chars: text.length };
 }
 
 // src/core/metarecord.js

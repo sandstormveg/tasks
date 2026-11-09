@@ -23,6 +23,7 @@ import { formatDay, formatMonth, addDays, compareDays, weekdayIndex, daysBetween
 import { originBadge, authorBadge, evidenceList, coverageLine, whyList } from "../ui/components.js";
 import { newId } from "../core/ids.js";
 import { reflectLines, seedOf, companionSettings } from "../core/companions.js";
+import { weekReview } from "../core/context.js";
 import { mountCompanion } from "../ui/companion.js";
 
 const TABS = [["", "Overview"], ["review", "Review"], ["questions", "Questions"], ["patterns", "Patterns"], ["changes", "Changes"]];
@@ -75,6 +76,7 @@ export async function mount(el, ctx, route, ui) {
         pending: reviewQueue(proposals, today).length,
         stale: stale ? { id: stale.id, section: ((CLAIM_SECTIONS.find((x) => x.id === stale.section) || {}).label || "oldest").toLowerCase(), days: ago(touched(stale)) } : null,
         underReview: claims.filter((c) => c.status === "under-review").length,
+        weekDue: week().due,
         unevidenced: active.filter((c) => !(c.evidence || []).length).length,
       };
     }
@@ -84,6 +86,7 @@ export async function mount(el, ctx, route, ui) {
       const cal = calibration(proposals);
       const [r, n] = Object.entries(cal.reasons || {}).sort((a, b) => b[1] - a[1])[0] || [];
       return {
+        week: week(),
         pending: queue.length,
         unverified: sums.filter((x) => x.n && x.verified < x.n).length,
         privateHits: sums.filter((x) => x.privateHits).length,
@@ -172,12 +175,34 @@ export async function mount(el, ctx, route, ui) {
   }
 
   // ---------- review ----------
+  // The last 7 days through the privacy gate (core/context.js weekReview): no entry text.
+  function week() {
+    return weekReview(ctx.store.all("entry"), ctx.store.all("day"), { today: ctx.today(), reviewed: companionSettings(ctx.settings()).weekReviewed });
+  }
+  function weekHtml() {
+    const w = week();
+    if (!w.due) return "";
+    return html`<div class="section-title">Your week · ${formatDay(w.from)} to ${formatDay(w.to)}</div>
+      <div class="card flat week-review">
+        ${w.entries || w.rated ? html`<div class="stat-grid">
+            <div class="stat"><div class="v">${w.entries}</div><div class="k">entr${w.entries === 1 ? "y" : "ies"}</div></div>
+            <div class="stat"><div class="v">${w.daysWritten}/7</div><div class="k">days written</div></div>
+            <div class="stat"><div class="v">${w.avg ?? "–"}${w.avg != null ? html`<small>/10</small>` : ""}</div><div class="k">${w.rated ? `average of ${w.rated} rated day${w.rated === 1 ? "" : "s"}` : "no days rated"}</div></div>
+            <div class="stat"><div class="v">${{ up: "↑", down: "↓", same: "≈" }[w.trend] || "–"}</div><div class="k">${{ up: "lighter than the week before", down: "heavier than the week before", same: "like the week before" }[w.trend] || "no week before to compare"}</div></div></div>
+          ${w.feelings.length ? html`<p class="small" style="margin-bottom:0">Feelings named most: ${w.feelings.map(([f, n]) => `${f} (${n})`).join(" · ")}</p>` : ""}`
+          : html`<p class="small" style="margin:0">No entries or ratings this week. A quiet week is information too.</p>`}
+        <p class="small muted">Only what an AI is allowed to read counts here${w.kept ? `; ${w.kept} private entr${w.kept === 1 ? "y" : "ies"} left out` : ""}. Worked out on this device; nothing is sent.</p>
+        <div class="btn-row"><button class="btn small" data-act="week-done">Done for this week</button></div>
+      </div>`;
+  }
+
   function reviewHtml() {
     const queue = reviewQueue(ctx.store.all("proposal"), ctx.today());
     const all = ctx.store.all("proposal");
     const cal = calibration(all);
     const byAuthor = [...new Set(all.map((p) => p.author))].map((a) => ({ a, c: calibration(all, { author: a }) })).filter((x) => x.c.n);
     return html`
+      ${weekHtml()}
       <p class="view-sub">Suggestions from an AI (in the app, or a Claude Code steward). Each is a hypothesis with quotes from your entries. Accepting adds it to your meta-record; correcting keeps your wording; rejecting teaches it what not to suggest.</p>
       ${!queue.length ? html`<div class="empty">${raw(icon("check"))}<h3>Nothing to review</h3><p>${ctx.ai.configured() ? "Ask for suggestions from Overview → Look for patterns, or let a steward session propose some." : "Proposals arrive from a Claude Code steward session, or from the in-app AI once you add an API key in Settings → AI."}</p></div>` : ""}
       ${queue.map((p) => proposalCard(p))}
@@ -363,6 +388,7 @@ export async function mount(el, ctx, route, ui) {
     try {
       if (act === "propose") { const { proposeUpdates } = await import("../ai/flows.js"); return proposeUpdates(ctx); }
       if (act === "steward") return stewardInfo();
+      if (act === "week-done") { await ctx.saveSettings({ companion: { ...(ctx.settings().companion || {}), weekReviewed: ctx.today() } }); toast("See you next week."); return render(); }
       if (act === "changed") return somethingChanged();
       if (act === "add-claim") {
         const text = await promptSheet({ title: (CLAIM_SECTIONS.find((s) => s.id === b.dataset.section) || {}).label, label: "In your own words", multiline: true, placeholder: "e.g. I'm trying to understand what kind of structure helps me, and what kind wears me down.", confirm: "Add" });
