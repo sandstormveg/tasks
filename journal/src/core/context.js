@@ -5,8 +5,8 @@
 // the UI can show it before anything is sent.
 
 import { aiReadable, entryText, normRating } from "./model.js";
-import { compareDays } from "./dates.js";
-import { coverage } from "./stats.js";
+import { compareDays, addDays, daysBetween } from "./dates.js";
+import { coverage, onScale } from "./stats.js";
 
 const clip = (s, n) => (s.length > n ? s.slice(0, n) + "…" : s);
 const attr = (s) => String(s ?? "").replace(/"/g, "'").replace(/\s+/g, " ").trim();
@@ -58,12 +58,13 @@ export function buildContext(allEntries, opts = {}) {
   // A day with any private (No-AI / sealed / uncleared) entry is private to AI
   // as a whole: its best/hardest moments and feelings often describe the same thing.
   const privateDays = new Set(allEntries.filter((e) => e.type === "entry" && !e.deleted && !aiReadable(e)).map((e) => e.day));
-  const dayLines = [];
+  const dayLines = [], includedDays = [];
   excluded.days = 0;
   for (const d of opts.days || []) {
     if ((from && compareDays(d.date, from) < 0) || (to && compareDays(d.date, to) > 0)) continue;
     if (privateDays.has(d.date)) { excluded.days++; continue; }
     if (d.rating == null && !d.best && !d.hardest && !(d.emotions || []).length) continue;
+    includedDays.push(d.date);
     const r = normRating(d) != null ? `${d.rating}/${d.rating_scale || 10}` : "not rated";
     dayLines.push(`<day date="${d.date}" rating="${r}"${d.best ? ` best="${attr(d.best)}"` : ""}${d.hardest ? ` hardest="${attr(d.hardest)}"` : ""}${(d.emotions || []).length ? ` feelings="${attr(d.emotions.join(", "))}"` : ""}/>`);
   }
@@ -91,7 +92,42 @@ export function buildContext(allEntries, opts = {}) {
     boundaries.length ? `<boundaries>\n${boundaries.join("\n")}\n</boundaries>` : "",
   ].filter(Boolean).join("\n");
 
-  return { text, includedIds: [...keptIds], excluded, truncated, range, coverage: cov, chars: text.length };
+  return { text, includedIds: [...keptIds], includedDays, excluded, truncated, range, coverage: cov, chars: text.length };
+}
+
+/**
+ * Quicksilver's review of the last 7 days, made only from what passes the gate above (the same
+ * entries and days an AI would be allowed to read): counts, the average rating, how it compares
+ * with the week before, and the feelings named most. No entry text. `due` once 7 days have
+ * passed since you last marked a week done (reviewed: "YYYY-MM-DD" or "").
+ */
+export function weekReview(allEntries, days = [], { today, reviewed = "" } = {}) {
+  const from = addDays(today, -6);
+  const look = (a, b) => {
+    const pack = buildContext(allEntries, { from: a, to: b, days, maxChars: Infinity, perEntryMax: 1 });
+    const want = new Set(pack.includedDays);
+    const ds = days.filter((d) => want.has(d.date));
+    const vals = ds.map((d) => normRating(d)).filter((v) => v != null);
+    return { pack, ds, avg: vals.length ? vals.reduce((x, y) => x + y, 0) / vals.length : null, rated: vals.length };
+  };
+  const now = look(from, today), before = look(addDays(from, -7), addDays(from, -1));
+  const kept = allEntries.filter((e) => now.pack.includedIds.includes(e.id));
+  const feel = {};
+  for (const d of now.ds) for (const f of d.emotions || []) feel[f] = (feel[f] || 0) + 1;
+  const ten = (v) => (v == null ? null : Math.round(onScale(v, 10)));
+  const diff = now.avg != null && before.avg != null ? (now.avg - before.avg) * 9 : null;
+  const ex = now.pack.excluded;
+  return {
+    due: !reviewed || daysBetween(reviewed, today) >= 7,
+    from, to: today,
+    entries: kept.length,
+    daysWritten: new Set(kept.map((e) => e.day)).size,
+    rated: now.rated,
+    avg: ten(now.avg),
+    trend: diff == null ? null : diff >= 0.75 ? "up" : diff <= -0.75 ? "down" : "same",
+    feelings: Object.entries(feel).sort((a, b) => b[1] - a[1]).slice(0, 3),
+    kept: ex.noAi + ex.sealed + ex.documents,
+  };
 }
 
 /** One-line description of what will be sent, for the confirmation sheet. */
