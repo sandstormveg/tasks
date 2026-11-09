@@ -1,5 +1,38 @@
 /* Research: on top of app.css (same themes, same shell). */
 .tabbar.four { grid-template-columns: repeat(4, 1fr); }
+.tabbar.six { grid-template-columns: repeat(6, 1fr); }
+
+.video-archive { max-width: 1080px; margin: 0 auto; }
+.video-add { display: flex; align-items: end; gap: 10px; margin: 8px 0 24px; }
+.video-add .field { flex: 1; }
+.video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.video-card { display: flex; flex-direction: column; overflow: hidden; color: inherit; text-decoration: none; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.video-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--surface-2); }
+.video-card div { display: grid; gap: 5px; padding: 12px; }
+.video-card span, .video-card small { color: var(--ink-2); }
+.video-detail-head, .video-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.video-player { width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #090909; }
+.video-player iframe { display: block; width: 100%; height: 100%; border: 0; }
+.video-title { margin: 16px 0 4px; }
+.video-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.video-panel { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.video-panel h3 { margin: 0 0 6px; }
+.video-panel .field { margin-top: 14px; }
+.video-transcript, .video-notes { min-height: 220px; width: 100%; }
+.transcript-results { max-height: 260px; overflow: auto; margin-top: 10px; }
+.transcript-results p { margin: 6px 0; padding: 7px; border-radius: 6px; background: var(--surface-2); }
+.video-ai-panel { margin-bottom: 28px; }
+.video-analysis { margin: 16px 0; }
+.video-analysis h4 { margin: 14px 0 6px; }
+.video-chat { display: flex; align-items: end; gap: 10px; margin-top: 16px; }
+.video-chat .field { flex: 1; }
+.video-chat-log { display: grid; gap: 8px; margin-top: 12px; }
+.video-chat-msg { padding: 10px 12px; border-radius: 8px; background: var(--surface-2); }
+.video-chat-msg p { white-space: pre-wrap; margin: 4px 0 0; }
+@media (max-width: 720px) {
+  .video-add, .video-chat { align-items: stretch; flex-direction: column; }
+  .video-columns { grid-template-columns: 1fr; }
+}
 .list-hint { margin: 2px 0 10px; }
 
 /* A source in a list. */

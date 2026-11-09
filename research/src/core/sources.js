@@ -145,13 +145,19 @@ export function makeSource(fields = {}, { now, device = "", via = "app" } = {}) 
   const added = fields.added || now;
   const url = normalizeUrl(fields.url) || undefined;
   const doi = fields.doi || findDoi(url || "") || undefined;
+  const kind = fields.kind || kindFromUrl(url, { doi });
   return {
     id: fields.id || newId("s", added),
     type: "source",
-    kind: fields.kind || kindFromUrl(url, { doi }),
-    title: String(fields.title || "").trim() || (url ? guessTitle(url) : ""),
+    kind,
+    title: String(fields.title || "").trim() || (url && kind !== "video" ? guessTitle(url) : ""),
     url,
     doi,
+    videoId: fields.videoId || undefined,
+    author: fields.author || undefined,
+    thumbnail: fields.thumbnail || undefined,
+    transcript: fields.transcript || undefined,
+    videoAnalysis: fields.videoAnalysis || undefined,
     authors: fields.authors?.length ? fields.authors : undefined,
     year: fields.year || undefined,
     site: fields.site || (url ? siteOf(url) : undefined),

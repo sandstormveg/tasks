@@ -14,6 +14,7 @@ import { mediaPath, MIME_EXT } from "../core/format.js";
 import { newId } from "../core/ids.js";
 import { capture, addSheet } from "./ui.js";
 import { saveImages } from "./images.js";
+import { videoArchiveRoute } from "./video-routing.js";
 
 const MAX_FILE = 25 * 1024 * 1024; // the sync repo holds files; keep them reasonable
 const TEXT_FILE = /^text\/|\/(json|xml|markdown)$/;
@@ -51,6 +52,7 @@ export function preview(text = "", files = []) {
 export async function depositAnything(ctx, { text = "", files = [] } = {}, fields = { status: "inbox" }) {
   const counts = {};
   const saved = [];
+  const videos = [];
   const bump = (k, rec) => { counts[k] = (counts[k] || 0) + 1; if (rec) saved.push(rec); };
   const all = [...files];
   // A text file is words: sort what's in it like anything pasted.
@@ -66,9 +68,10 @@ export async function depositAnything(ctx, { text = "", files = [] } = {}, field
     if (it.sort === "quote") { bump("quote", await saveQuote(ctx, it, fields)); continue; }
     const { source, existing } = await capture(ctx, { text: it.text, via: "app" }, { ...fields });
     if (!source) continue;
+    if (source.kind === "video") videos.push(source);
     bump(existing ? "dup" : it.sort, existing ? null : source);
   }
-  return { counts, saved };
+  return { counts, saved, videos };
 }
 
 const READ_CLIPBOARD = typeof navigator !== "undefined" && !!navigator.clipboard?.read;
@@ -110,9 +113,16 @@ export function mountDonut(el, ctx) {
     if (!payload.text?.trim() && !payload.files?.length) return;
     dock.classList.add("eating");
     try {
-      const { counts, saved } = await depositAnything(ctx, payload);
+      const { counts, saved, videos } = await depositAnything(ctx, payload);
       const said = tally(counts);
       if (!said) { toast("Nothing in that to save.", { error: true }); return; }
+      const videoRoute = videoArchiveRoute(videos[0]);
+      if (videoRoute) {
+        ctx.navigate(videoRoute);
+        toast("Opened in Video archive");
+        if (payload.text && payload.text === input.value) { input.value = ""; show(); }
+        return;
+      }
       toast(`Deposited: ${said}`, saved.length === 1 ? { action: "Open", onAction: () => ctx.navigate(`#/source/${saved[0].id}`) } : {});
       if (payload.text && payload.text === input.value) { input.value = ""; show(); }
     } finally { setTimeout(() => dock.classList.remove("eating"), 700); }

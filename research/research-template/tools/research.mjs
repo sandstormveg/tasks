@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:3bc7742906dcf3e1
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:c5ee00b1b07862bd
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1130,6 +1130,11 @@ var FIELD_ORDER = {
     "status",
     "favourite",
     "tags",
+    "videoId",
+    "author",
+    "thumbnail",
+    "transcript",
+    "videoAnalysis",
     "added",
     "updated",
     "started",
@@ -1672,13 +1677,19 @@ function makeSource(fields = {}, { now, device = "", via = "app" } = {}) {
   const added = fields.added || now;
   const url = normalizeUrl(fields.url) || void 0;
   const doi = fields.doi || findDoi(url || "") || void 0;
+  const kind = fields.kind || kindFromUrl(url, { doi });
   return {
     id: fields.id || newId("s", added),
     type: "source",
-    kind: fields.kind || kindFromUrl(url, { doi }),
-    title: String(fields.title || "").trim() || (url ? guessTitle(url) : ""),
+    kind,
+    title: String(fields.title || "").trim() || (url && kind !== "video" ? guessTitle(url) : ""),
     url,
     doi,
+    videoId: fields.videoId || void 0,
+    author: fields.author || void 0,
+    thumbnail: fields.thumbnail || void 0,
+    transcript: fields.transcript || void 0,
+    videoAnalysis: fields.videoAnalysis || void 0,
     authors: fields.authors?.length ? fields.authors : void 0,
     year: fields.year || void 0,
     site: fields.site || (url ? siteOf(url) : void 0),

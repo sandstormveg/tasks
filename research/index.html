@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Tasks">
 <meta name="referrer" content="no-referrer">
-<!-- Scripts only from this origin; network to GitHub (sync), Crossref/DataCite (paper details) and Wikidata/Wikipedia (Infodex cards); card pictures from Wikimedia Commons. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://commons.wikimedia.org https://upload.wikimedia.org; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- Scripts only from this origin; external video metadata and thumbnails are fetched from YouTube. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://commons.wikimedia.org https://upload.wikimedia.org https://img.youtube.com https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
@@ -31,6 +31,7 @@
     <a href="#/read" data-tab="read" data-icon="check">Read</a>
     <a href="#/writing" data-tab="writing" data-icon="edit">Writing</a>
     <a href="#/boards" data-tab="boards" data-icon="map">Boards</a>
+    <a href="#/videos" data-tab="videos" data-icon="play">Video archive</a>
     <a href="#/search" data-tab="search" data-icon="search">Search</a>
     <div class="spacer"></div>
     <a href="#/settings" data-tab="settings" data-icon="settings">Settings</a>
@@ -50,12 +51,13 @@
     </main>
   </div>
 </div>
-<nav class="tabbar" aria-label="Main">
+<nav class="tabbar six" aria-label="Main">
   <a href="#/inbox" data-tab="inbox" data-icon="inbox"><span>Deposit</span></a>
   <a href="#/queue" data-tab="queue" data-icon="bookmark"><span>To read</span></a>
   <a href="#/read" data-tab="read" data-icon="check"><span>Read</span></a>
   <a href="#/writing" data-tab="writing" data-icon="edit"><span>Writing</span></a>
   <a href="#/boards" data-tab="boards" data-icon="map"><span>Boards</span></a>
+  <a href="#/videos" data-tab="videos" data-icon="play"><span>Videos</span></a>
 </nav>
 <noscript><p style="padding:24px">Research needs JavaScript to run.</p></noscript>
 <script type="module" src="src/research/main.js"></script>
