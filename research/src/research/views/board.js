@@ -1,6 +1,7 @@
 // A corkboard. Pin notes, sources, quotes and Infodex cards; draw red string
-// between them (drag from a pin's pushpin, or Connect); frame regions and give
-// them an address. Tap a string to synthesise it — say how the two connect —
+// between them (drag from a pin's pushpin, Connect, or the String mode); frame regions
+// (right-drag, or the Frame tool and drag) and give them an address. Double-click the
+// board to pin a note there. Tap a string to synthesise it — say how the two connect —
 // and the curator checks it against the Atlas's rules first. Zoom into a card
 // and it becomes its page; zoom back out and it's a card again.
 //
@@ -54,6 +55,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="cork-pins" id="cork-pins"></div>
         <svg class="cork-strings cork-strings-top" id="cork-svg-top" aria-hidden="true"></svg>
         <svg class="cork-strings cork-labels" id="cork-labels" aria-hidden="true"></svg>
+        <div class="cork-draw" id="cork-draw" hidden></div>
       </div>
     </div>
     <div class="cork-hint" id="cork-hint" hidden></div>
@@ -64,9 +66,11 @@ export async function mount(el, ctx, route, ui) {
       <button class="btn small" data-tool="card">${raw(icon("sparkle"))}<span>Card</span></button>
       <button class="btn small" data-tool="source">${raw(icon("bookmark"))}<span>Source</span></button>
       <button class="btn small" data-tool="image">${raw(icon("camera"))}<span>Picture</span></button>
-      <button class="btn small" data-tool="frame">${raw(icon("map"))}<span>Frame</span></button>
+      <button class="btn small" data-tool="frame" aria-pressed="false" title="Drag on the board to draw a frame (right-drag works any time)">${raw(icon("map"))}<span>Frame</span></button>
+      <button class="btn small" data-tool="string" aria-pressed="false" title="Tap a pin, then another, to tie red string">〰<span>String</span></button>
       <button class="btn small cork-aa" data-tool="style" aria-label="Style the selected pin: text size, colour, font, alignment, card" aria-expanded="false" title="Style the selected pin">A<small>a</small></button>
       <span class="cork-tools-gap"></span>
+      <button class="btn icon small" data-tool="board" aria-label="Board settings" title="Board settings">${raw(icon("settings"))}</button>
       <button class="btn icon small" data-tool="zoom-out" aria-label="Zoom out">−</button>
       <button class="btn icon small" data-tool="fit" aria-label="Fit everything">${raw(icon("compass"))}</button>
       <button class="btn icon small" data-tool="zoom-in" aria-label="Zoom in">+</button>
@@ -94,6 +98,7 @@ export async function mount(el, ctx, route, ui) {
   let cam = loadCam() || null;
   let selected = null;
   let connectFrom = null;
+  let mode = null; // "string" or "frame" while that dock tool is on
   let flash = new Set();
   const pinEls = new Map();
 
@@ -305,7 +310,8 @@ export async function mount(el, ctx, route, ui) {
     renderStrings();
     renderCuratorBadge();
     renderSelection();
-    if (!parts.pins.length) showHint("Empty board. Add a note, an Infodex card or a source below — then drag from one pin's pushpin to another to tie red string.");
+    if (!parts.pins.length && !mode) showHint("Empty board. Double-click to pin a note, or add a card or source below — then drag from one pin's pushpin to another (or use String) to tie red string.");
+    else if (mode) showModeHint();
     else hideHint();
   }
 
@@ -385,11 +391,11 @@ export async function mount(el, ctx, route, ui) {
     const cur = ctx.store.get(p.id) || p;
     await ctx.store.put({ ...cur, ...patch, updated: now() });
   }
-  async function addPin(fields, { near = null } = {}) {
+  async function addPin(fields, { near = null, at = null } = {}) {
     const size = defaultSize(fields.kind);
     const anchor = near ? pinById(near) : null;
     const c = viewCenter();
-    const spot = anchor ? placeNear(parts.pins, { anchor, ...size }) : placeNear(parts.pins.filter((p) => Math.abs(p.x - c.x) < 1200 && Math.abs(p.y - c.y) < 900), { anchor: { x: c.x - size.w / 2, y: c.y - size.h / 2, ...size }, ...size });
+    const spot = at ? { x: at.x - size.w / 2, y: at.y - size.h / 2 } : anchor ? placeNear(parts.pins, { anchor, ...size }) : placeNear(parts.pins.filter((p) => Math.abs(p.x - c.x) < 1200 && Math.abs(p.y - c.y) < 900), { anchor: { x: c.x - size.w / 2, y: c.y - size.h / 2, ...size }, ...size });
     const pin = makePin({ board: boardId, ...spot, ...fields }, { now: now() });
     await ctx.store.put(pin);
     select(pin.id);
@@ -409,12 +415,19 @@ export async function mount(el, ctx, route, ui) {
   let lastTap = { id: null, t: 0 };
 
   vp.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const right = e.pointerType === "mouse" && e.button === 2;
+    if (e.button !== 0 && e.pointerType === "mouse" && !right) return;
     if (e.target.closest("a, input, textarea, select, button:not([data-pushpin])")) return;
     if (e.target.closest(".pin[data-lod='3'] .pin-page")) return; // a card's page scrolls like a page
     vp.setPointerCapture?.(e.pointerId);
     cancelAnimationFrame(anim);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // Right-drag (or the Frame tool) on the board draws a frame — from the board or a frame, not from a note or card.
+    if ((right || (mode === "frame" && pointers.size === 1)) && !e.target.closest(".pin:not(.pin-frame)")) {
+      gesture = { type: "frame-draw", x0: e.clientX, y0: e.clientY, right };
+      return;
+    }
+    if (right) { pointers.delete(e.pointerId); return; }
     if (pointers.size === 2) {
       const [p1, p2] = [...pointers.values()];
       gesture = { type: "pinch", d: Math.hypot(p2.x - p1.x, p2.y - p1.y), z: cam.z, cx: (p1.x + p2.x) / 2, cy: (p1.y + p2.y) / 2, cam: { ...cam } };
@@ -428,7 +441,8 @@ export async function mount(el, ctx, route, ui) {
       gesture = { type: "resize", id: p.id, x0: e.clientX, y0: e.clientY, w: p.w, h: p.h, ratio: p.kind === "source" ? (p.h - 34) / p.w : 0 };
       return;
     }
-    if (e.target.closest("[data-pushpin]") && pinNode) {
+    // In String mode a whole pin is its pushpin: drag to another pin, or tap one then the other.
+    if (pinNode && (e.target.closest("[data-pushpin]") || (mode === "string" && pinById(pinNode.dataset.id)?.kind !== "frame"))) {
       gesture = { type: "string", from: pinNode.dataset.id, x0: e.clientX, y0: e.clientY };
       return;
     }
@@ -503,6 +517,10 @@ export async function mount(el, ctx, route, ui) {
       gesture.moved = true;
       renderStrings();
       positionSelection();
+    } else if (gesture.type === "frame-draw") {
+      const r = drawRect(gesture, e);
+      Object.assign(drawEl.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+      drawEl.hidden = Math.abs(dx) + Math.abs(dy) < 6;
     } else if (gesture.type === "string") {
       const a = pinById(gesture.from);
       const w = toWorld(e.clientX, e.clientY);
@@ -521,9 +539,29 @@ export async function mount(el, ctx, route, ui) {
     if (!g) return;
     if (g.type === "pan") {
       if (!g.moved) {
-        if (g.frameTap) { if (connectFrom) return; select(g.frameTap); }
-        else { select(null); connectFrom = null; hideHint(); }
+        if (g.frameTap) { if (connectFrom) return; select(g.frameTap); return; }
+        // Double-click (or double-tap) the board: a new note, pinned where you clicked.
+        const t = performance.now();
+        if (lastTap.id === "board" && t - lastTap.t < 400 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24) {
+          lastTap = { id: null, t: 0 };
+          addNote({ at: toWorld(e.clientX, e.clientY) });
+          return;
+        }
+        lastTap = { id: "board", t, x: e.clientX, y: e.clientY };
+        select(null);
+        connectFrom = null;
+        if (mode) showModeHint(); else hideHint();
       }
+      return;
+    }
+    if (g.type === "frame-draw") {
+      drawEl.hidden = true;
+      const tap = Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8;
+      if (tap && g.right) return; // a plain right-click draws nothing
+      const r = drawRect(g, e);
+      const size = defaultSize("frame");
+      const at = toWorld(e.clientX, e.clientY);
+      await createFrame(tap ? { x: at.x - size.w / 2, y: at.y - size.h / 2, w: size.w, h: size.h } : { ...r, w: Math.max(120, r.w), h: Math.max(80, r.h) });
       return;
     }
     if (g.type === "resize") {
@@ -536,7 +574,11 @@ export async function mount(el, ctx, route, ui) {
       const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(".pin:not(.pin-frame)");
       renderStrings();
       if (over && over.dataset.id !== g.from) await connect(g.from, over.dataset.id);
-      else if (Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8) { select(g.from); startConnect(); }
+      else if (Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8) {
+        if (mode !== "string") { select(g.from); startConnect(); }
+        else if (connectFrom && connectFrom !== g.from) { const from = connectFrom; connectFrom = null; await connect(from, g.from); select(g.from); showModeHint(); }
+        else { connectFrom = g.from; select(g.from); showHint("Now tap the pin to tie it to."); }
+      }
       return;
     }
     if (g.type === "pin") {
@@ -579,11 +621,30 @@ export async function mount(el, ctx, route, ui) {
     else if (e.key === "ArrowRight") { cam.x -= step; applyCam(); }
     else if (e.key === "ArrowUp") { cam.y += step; applyCam(); }
     else if (e.key === "ArrowDown") { cam.y -= step; applyCam(); }
-    else if (e.key === "Escape") { select(null); connectFrom = null; hideHint(); }
+    else if (e.key === "Escape") { select(null); connectFrom = null; if (mode) setMode(null); else hideHint(); }
     else if ((e.key === "Delete" || e.key === "Backspace") && selected) removePin(selected);
     else return;
     e.preventDefault();
   });
+
+  // ---- modes: String (tap a pin, then another) and Frame (drag to draw); tap the tool again to finish
+  const drawEl = el.querySelector("#cork-draw");
+  function drawRect(g, e) {
+    const a = toWorld(g.x0, g.y0), b = toWorld(e.clientX, e.clientY);
+    return { x: Math.round(Math.min(a.x, b.x)), y: Math.round(Math.min(a.y, b.y)), w: Math.round(Math.abs(b.x - a.x)), h: Math.round(Math.abs(b.y - a.y)) };
+  }
+  function showModeHint() {
+    if (mode === "string") showHint("String: tap a pin, then another, to tie red string — or drag between them. Tap String again to finish.");
+    else if (mode === "frame") showHint("Drag on the board to draw a frame, or tap to drop one. (Right-drag draws a frame any time.)");
+  }
+  function setMode(m) {
+    mode = m && mode !== m ? m : null;
+    connectFrom = null;
+    for (const b of el.querySelectorAll('[data-tool="string"], [data-tool="frame"]')) { b.classList.toggle("on", b.dataset.tool === mode); b.setAttribute("aria-pressed", String(b.dataset.tool === mode)); }
+    el.querySelector("#cork").dataset.mode = mode || "";
+    if (mode) showModeHint(); else hideHint();
+    renderSelection();
+  }
 
   // ---- actions
   function startConnect() {
@@ -703,23 +764,21 @@ export async function mount(el, ctx, route, ui) {
     }
   }
 
-  async function addNote() {
+  async function addNote({ at = null } = {}) {
     const res = await promptSheet({ title: "New note", label: "Note", multiline: true, placeholder: "A thought, a claim, a question…", confirm: "Pin it" });
     if (!res?.trim()) return;
     const [first, ...rest] = res.trim().split("\n");
     const title = first.length <= 80 && rest.length ? first : undefined;
-    await addPin({ kind: "note", title, text: title ? rest.join("\n").trim() : res.trim() }, { near: selected });
+    await addPin({ kind: "note", title, text: title ? rest.join("\n").trim() : res.trim() }, at ? { at } : { near: selected });
   }
 
-  async function addFrame() {
-    const title = await promptSheet({ title: "New frame", label: "Name the region", placeholder: "e.g. Psychology", confirm: "Add frame" });
-    if (title == null) return;
-    const c = viewCenter();
-    const size = defaultSize("frame");
-    const pin = makePin({ board: boardId, kind: "frame", title: title.trim() || "Frame", x: c.x - size.w / 2, y: c.y - size.h / 2 }, { now: now() });
+  // A frame drawn on the board (or dropped where you tapped), called "Frame" until you double-tap its name.
+  async function createFrame(rect) {
+    const pin = makePin({ board: boardId, kind: "frame", title: "Frame", ...rect }, { now: now() });
     await ctx.store.put(pin);
+    if (mode === "frame") setMode(null);
     select(pin.id);
-    toast("Frame added — drag pins into it; tap its name to move it, Edit to give it an address", { timeout: 4500 });
+    toast("Frame added — double-tap its name to rename it or give it an address; drag pins into it", { timeout: 4500 });
   }
 
   async function addSourcePin() {
@@ -914,10 +973,7 @@ export async function mount(el, ctx, route, ui) {
     styleBtn.classList.toggle("dim", !styleable(p));
     if (!styleOpen) { styleEl.hidden = true; return; }
     styleEl.hidden = false;
-    if (!styleable(p)) {
-      styleEl.innerHTML = String(html`<p class="small muted">${p ? "A card or picture keeps its own look." : "Select a pin, then style it here: text size, colour, font, alignment and card colour."}</p>`);
-      return;
-    }
+    if (!styleable(p)) { styleEl.hidden = true; return; } // the Aa stays dimmed until there's a pin to style
     const st = cleanPinStyle(p.style) || {};
     const auto = autoFit(p);
     const px = auto ? Math.round((pinEls.get(p.id)?._fit?.ps || 1) * PIN_BASE_PX) : pinTextPx(st);
@@ -958,7 +1014,6 @@ export async function mount(el, ctx, route, ui) {
   };
   function toggleStyle() {
     styleOpen = !styleOpen;
-    if (styleOpen && !styleable(selected && pinById(selected))) showHint("Select a pin to style it.", { timeout: 2500 });
     renderStyle();
   }
   // Buttons in the inspector don't take focus from the board, so keys like Delete still work there.
@@ -1018,13 +1073,15 @@ export async function mount(el, ctx, route, ui) {
 
   async function boardMenu() {
     const res = await sheet({
-      title: "Board",
+      title: "Board settings",
       body: html`<label class="field"><span>Name</span><input class="input" data-t value="${board.title}" autocomplete="off"></label>
         <label class="field"><span>What it's for</span><input class="input" data-a value="${board.about || ""}" autocomplete="off"></label>
+        <label class="check"><input type="checkbox" data-autofit ${ctx.settings().corkAutoFit ? "checked" : ""}> <span>Auto-size pin text <span class="faint">— the words grow and shrink to fit each card (a pin set to Fixed in Aa keeps its size)</span></span></label>
+        <p class="small faint">Double-click the board to pin a note · right-drag to draw a frame · String to tie pins together.</p>
         <p class="small faint">${isClaude(board.author) ? "Started by Claude. " : ""}Created ${String(board.created || "").slice(0, 10)}.</p>`,
       foot: html`<button class="btn danger ghost" data-del>${raw(icon("trash"))}Delete board</button><span class="grow"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button>`,
       setup: (d, close) => {
-        d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value.trim(), about: d.querySelector("[data-a]").value.trim() }));
+        d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value.trim(), about: d.querySelector("[data-a]").value.trim(), autofit: d.querySelector("[data-autofit]").checked }));
         d.querySelector("[data-del]").addEventListener("click", () => close({ del: true }));
       },
     });
@@ -1036,6 +1093,7 @@ export async function mount(el, ctx, route, ui) {
       ctx.navigate("#/boards", { replace: true });
       return;
     }
+    if (res.autofit !== !!ctx.settings().corkAutoFit) { await ctx.saveSettings({ corkAutoFit: res.autofit }); renderAll(); }
     await ctx.store.put({ ...ctx.store.get(boardId), title: res.title || board.title, about: res.about || undefined, updated: now() });
     ui.setTitle(res.title || board.title, { back: board.piece ? `#/piece/${board.piece}` : "#/boards" });
   }
@@ -1045,6 +1103,8 @@ export async function mount(el, ctx, route, ui) {
   const onPaste = (e) => { if (e.target.closest?.("input, textarea, [contenteditable]")) return; const imgs = imagesFrom(e.clipboardData); if (imgs.length) { e.preventDefault(); addImagePins(imgs); } };
   document.addEventListener("paste", onPaste);
   ui.cleanup(() => document.removeEventListener("paste", onPaste));
+  // The right button draws frames here, so the browser's own menu stays away (except in a text field).
+  vp.addEventListener("contextmenu", (e) => { if (!e.target.closest("input, textarea, [contenteditable]")) e.preventDefault(); });
   vp.addEventListener("dragover", (e) => { if ([...(e.dataTransfer?.items || [])].some((i) => i.type.startsWith("image/"))) e.preventDefault(); });
   vp.addEventListener("drop", (e) => { const imgs = imagesFrom(e.dataTransfer); if (imgs.length) { e.preventDefault(); addImagePins(imgs); } });
   ui.onAction((e, b) => { if (b.dataset.act === "curator") openCurator(); if (b.dataset.act === "board-menu") boardMenu(); });
@@ -1055,7 +1115,8 @@ export async function mount(el, ctx, route, ui) {
     if (t === "card") addCardPin();
     if (t === "source") addSourcePin();
     if (t === "image") pickImages().then(addImagePins);
-    if (t === "frame") addFrame();
+    if (t === "frame" || t === "string") setMode(t);
+    if (t === "board") boardMenu();
     if (t === "style") toggleStyle();
     if (t === "fit") fit();
     if (t === "zoom-in") zoomAt(r.width / 2, r.height / 2, 1.35);
