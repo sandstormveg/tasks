@@ -1,5 +1,5 @@
 {
- "version": "46bb30c1698b",
+ "version": "eab75a052ff9",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -78,6 +78,7 @@
   "src/research/images.js",
   "src/research/lookup.js",
   "src/research/main.js",
+  "src/research/transcript-helper.js",
   "src/research/ui.js",
   "src/research/video-ai.js",
   "src/research/video-routing.js",

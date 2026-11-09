@@ -1,11 +1,12 @@
 // YouTube sources live in the same Research store as every other source.
-import { html, raw, on, toast } from "../../ui/dom.js";
+import { html, raw, on, toast, confirmSheet } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
 import { makeSource, findDuplicate, normalizeUrl } from "../../core/sources.js";
 import { extractYouTubeVideoId, getYouTubeThumbnail, searchTranscript } from "../../core/youtube.js";
 import { buildVideoContext } from "../../core/context.js";
 import { summarizeVideo, chatAboutVideo } from "../video-ai.js";
 import { fillEmptyVideoMetadata, videoArchiveRoute } from "../video-routing.js";
+import { fetchTranscript, prepareTranscriptUpdate } from "../transcript-helper.js";
 
 const videos = (ctx) => ctx.sources().filter((s) => s.kind === "video" && extractYouTubeVideoId(s.url || ""))
   .sort((a, b) => String(b.added || "").localeCompare(String(a.added || "")));
@@ -58,7 +59,7 @@ export async function mount(el, ctx, route, ui) {
   ui.wide(true);
   ui.setActions(html`<button class="btn small primary" data-act="add-video">${raw(icon("plus"))}Add video</button>`);
   const selectedId = route.query.id || "";
-  let transcriptDraft = null, notesDraft = null, transcriptSearch = "", busy = false, chat = [], offs = [];
+  let transcriptDraft = null, notesDraft = null, transcriptSearch = "", helperMessage = "", busy = false, chat = [], offs = [];
   const metadataAttempts = new Set();
 
   function fetchMissingMetadata(source, id) {
@@ -70,6 +71,90 @@ export async function mount(el, ctx, route, ui) {
       const filled = fillEmptyVideoMetadata(current, found);
       if (["title", "author", "thumbnail"].some((key) => filled[key] !== current[key])) await ctx.store.put(filled);
     }).catch(() => {});
+  }
+
+  function showHelperMessage(message) {
+    helperMessage = message;
+    const status = el.querySelector("[data-helper-status]");
+    if (status) status.textContent = message;
+  }
+
+  async function fetchAndApplyTranscript(analyseAfter = false) {
+    if (busy) return;
+    showHelperMessage("");
+    const videoId = extractYouTubeVideoId(ctx.store.get(selectedId)?.url || "");
+    const fetched = await fetchTranscript(videoId);
+    if (!fetched.ok) {
+      const message = fetched.reason === "unavailable" || fetched.reason === "service-error"
+        ? "Transcript helper isn't running on this PC — start video-helper, or paste the transcript"
+        : fetched.reason === "no-captions"
+          ? "No captions were found for this video. You can paste a transcript instead."
+          : "Couldn't fetch this transcript. You can paste it instead.";
+      showHelperMessage(message);
+      return;
+    }
+
+    let current = ctx.store.get(selectedId);
+    let input = el.querySelector("[data-transcript]");
+    const textFor = (source, field) => {
+      const draft = field?.value ?? transcriptDraft;
+      return String(draft || "").trim() ? draft : String(source.transcript || "");
+    };
+    let candidate = { ...current, transcript: textFor(current, input) };
+    let update = prepareTranscriptUpdate(candidate, fetched);
+    if (update.needsConfirmation) {
+      const replace = await confirmSheet(
+        "Replace the current transcript? The existing text will be kept as a revision.",
+        { title: "Replace transcript?", confirm: "Replace transcript", danger: true },
+      );
+      if (!replace) return;
+      current = ctx.store.get(selectedId);
+      input = el.querySelector("[data-transcript]");
+      candidate = { ...current, transcript: textFor(current, input) };
+      update = prepareTranscriptUpdate(candidate, fetched, { confirmReplacement: true });
+    }
+    if (!update.ok) {
+      showHelperMessage(update.reason === "no-captions" ? "No captions were found for this video." : "Couldn't use this transcript.");
+      return;
+    }
+    const savedTranscript = String(current.transcript || "");
+    const candidateTranscript = String(update.previous?.transcript || "");
+    if (savedTranscript.trim()) await ctx.store.saveRevision(current, "transcript-replaced");
+    if (candidateTranscript.trim() && candidateTranscript !== savedTranscript) {
+      await ctx.store.saveRevision({ ...current, transcript: candidateTranscript }, "transcript-replaced");
+    }
+    await ctx.store.put(update.record);
+    transcriptDraft = update.record.transcript;
+    helperMessage = `Fetched ${fetched.data.lines.length} caption lines (${fetched.data.language}).`;
+    toast("Transcript fetched");
+    render();
+    if (analyseAfter) await analyzeCurrentTranscript();
+  }
+
+  async function analyzeCurrentTranscript() {
+    if (busy) return;
+    const input = el.querySelector("[data-transcript]");
+    const text = String(input?.value || transcriptDraft || "").trim();
+    if (!text) {
+      showHelperMessage("Paste or fetch a transcript before analysing.");
+      return;
+    }
+    const latest = ctx.store.get(selectedId);
+    if (text !== String(latest.transcript || "")) await ctx.store.put({ ...latest, transcript: text });
+    transcriptDraft = text;
+    busy = true;
+    render();
+    try {
+      const result = await summarizeVideo(ctx, selectedId);
+      const fresh = ctx.store.get(selectedId);
+      const previous = Array.isArray(fresh.videoAnalysis) ? fresh.videoAnalysis : fresh.videoAnalysis ? [fresh.videoAnalysis] : [];
+      await ctx.store.put({ ...fresh, videoAnalysis: [...previous, {
+        ...result, author: "ai:" + (result.model || ctx.settings().ai.model), created: ctx.now(), status: "proposal",
+      }] });
+      toast("AI proposal saved");
+    } catch (err) { toast(err.message || String(err), { error: true }); }
+    busy = false;
+    render();
   }
 
   function render() {
@@ -93,6 +178,11 @@ export async function mount(el, ctx, route, ui) {
           <section class="video-panel"><h3>Transcript</h3><p class="small faint">Paste a transcript to search it or ask AI about the video's words.</p>
             <textarea class="textarea video-transcript" data-transcript placeholder="Paste transcript here">${transcript}</textarea>
             <button class="btn small" data-act="save-transcript">Save transcript</button>
+            <div class="video-transcript-actions">
+              <button class="btn small" data-act="fetch-transcript" ${busy ? "disabled" : ""}>Fetch transcript</button>
+              <button class="btn small" data-act="fetch-analyze" ${busy ? "disabled" : ""}>Fetch &amp; analyse</button>
+            </div>
+            <p class="small muted" data-helper-status>${helperMessage}</p>
             <label class="field"><span>Find in transcript</span><input class="input" data-search value="${transcriptSearch}" placeholder="Search words or phrases"></label>
             <div data-matches>${transcriptSearch ? transcriptMatchesMarkup(matches) : ""}</div>
           </section>
@@ -135,24 +225,9 @@ export async function mount(el, ctx, route, ui) {
         notesDraft = na.value;
         toast("Notes saved");
       }));
-      offs.push(on(el, "click", "[data-act=analyze]", async () => {
-        const latest = ctx.store.get(selectedId);
-        if (ta.value.trim() !== String(latest.transcript || "")) await ctx.store.put({ ...latest, transcript: ta.value.trim() || undefined });
-        transcriptDraft = ta.value;
-        busy = true;
-        render();
-        try {
-          const result = await summarizeVideo(ctx, selectedId);
-          const fresh = ctx.store.get(selectedId);
-          const previous = Array.isArray(fresh.videoAnalysis) ? fresh.videoAnalysis : fresh.videoAnalysis ? [fresh.videoAnalysis] : [];
-          await ctx.store.put({ ...fresh, videoAnalysis: [...previous, {
-            ...result, author: "ai:" + (result.model || ctx.settings().ai.model), created: ctx.now(), status: "proposal",
-          }] });
-          toast("AI proposal saved");
-        } catch (err) { toast(err.message || String(err), { error: true }); }
-        busy = false;
-        render();
-      }));
+      offs.push(on(el, "click", "[data-act=fetch-transcript]", () => fetchAndApplyTranscript(false)));
+      offs.push(on(el, "click", "[data-act=fetch-analyze]", () => fetchAndApplyTranscript(true)));
+      offs.push(on(el, "click", "[data-act=analyze]", analyzeCurrentTranscript));
       offs.push(on(el, "submit", "[data-chat]", async (e, form) => {
         e.preventDefault();
         const question = form.querySelector("[data-chat-input]").value.trim();

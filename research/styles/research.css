@@ -19,6 +19,8 @@
 .video-panel h3 { margin: 0 0 6px; }
 .video-panel .field { margin-top: 14px; }
 .video-transcript, .video-notes { min-height: 220px; width: 100%; }
+.video-transcript-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.video-transcript-actions + .small { min-height: 1.5em; }
 .transcript-results { max-height: 260px; overflow: auto; margin-top: 10px; }
 .transcript-results p { margin: 6px 0; padding: 7px; border-radius: 6px; background: var(--surface-2); }
 .video-ai-panel { margin-bottom: 28px; }

@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Journal_system@7dbc0f1cb1fc",
+ "source": "sandstormveg/Journal_system@27fed10fc4a5",
  "files": [
   "data-template/.claude/skills/journal-steward/SKILL.md",
   "data-template/.gitattributes",
@@ -77,6 +77,7 @@
   "src/research/images.js",
   "src/research/lookup.js",
   "src/research/main.js",
+  "src/research/transcript-helper.js",
   "src/research/ui.js",
   "src/research/video-ai.js",
   "src/research/video-routing.js",
