@@ -13,7 +13,7 @@ import { enableSwipe } from "../ui/swipe.js";
 import { capture } from "./ui.js";
 import { takeSharedImages } from "./images.js";
 
-const TABS = ["inbox", "queue", "read", "writing", "boards"];
+const TABS = ["inbox", "queue", "read", "writing", "boards", "videos"];
 const ROUTES = [
   [/^inbox$/, "list", "inbox"],
   [/^queue$/, "list", "queue"],
@@ -22,6 +22,7 @@ const ROUTES = [
   [/^writing$/, "writing", "writing"],
   [/^piece\/([^/]+)$/, "piece", "writing"],
   [/^boards$/, "boards", "boards"],
+  [/^videos$/, "videos", "videos"],
   [/^board\/([^/]+)$/, "board", "boards"],
   [/^tag\/([^/]+)$/, "search", "search"],
   [/^source\/([^/]+)$/, "source", null],

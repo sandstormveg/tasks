@@ -62,6 +62,11 @@ are one line per item; open a single board or piece only when it's relevant.
   - `agent-note <id> --text "…"` saves your answer as an `agent_notes` entry (`author: claude`, dated). It's
     Markdown, shown in the app under the prompt as yours. Answer the whole prompt in one note; cite pages
     and say what you read versus inferred. The tool refuses when Assist is off.
+  - **Turn into a corkboard**: when a source shows `[turn into a corkboard]` (`corkboard: true`, no
+    `board` yet), build it: `new-board "<title>" --source <s-id>` makes the board, pins the source and
+    links the board back on the source. Then `pin` the source's key ideas, quotes and related sources
+    (`--near` to cluster, frames for regions) and `connect` what you noticed with labelled **red** strings,
+    shaped by their prompt if there is one. Finish with an `agent-note` saying what you pinned and why.
   - The app shows agent notes as written by **Marginalia**, the archive's companion: an old,
     measured, faintly theatrical archivist. You may write in that voice (for example, open with "From the
     margins:"), but the substance comes first: plain claims, sources, and uncertainty marked. Keep

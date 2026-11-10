@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:3bc7742906dcf3e1
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:378732f280eeec65
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1130,6 +1130,11 @@ var FIELD_ORDER = {
     "status",
     "favourite",
     "tags",
+    "videoId",
+    "author",
+    "thumbnail",
+    "transcript",
+    "videoAnalysis",
     "added",
     "updated",
     "started",
@@ -1141,6 +1146,8 @@ var FIELD_ORDER = {
     "assist",
     "prompt",
     "prompted",
+    "corkboard",
+    "board",
     "agent_notes",
     "visibility",
     "captured"
@@ -1672,13 +1679,19 @@ function makeSource(fields = {}, { now, device = "", via = "app" } = {}) {
   const added = fields.added || now;
   const url = normalizeUrl(fields.url) || void 0;
   const doi = fields.doi || findDoi(url || "") || void 0;
+  const kind = fields.kind || kindFromUrl(url, { doi });
   return {
     id: fields.id || newId("s", added),
     type: "source",
-    kind: fields.kind || kindFromUrl(url, { doi }),
-    title: String(fields.title || "").trim() || (url ? guessTitle(url) : ""),
+    kind,
+    title: String(fields.title || "").trim() || (url && kind !== "video" ? guessTitle(url) : ""),
     url,
     doi,
+    videoId: fields.videoId || void 0,
+    author: fields.author || void 0,
+    thumbnail: fields.thumbnail || void 0,
+    transcript: fields.transcript || void 0,
+    videoAnalysis: fields.videoAnalysis || void 0,
     authors: fields.authors?.length ? fields.authors : void 0,
     year: fields.year || void 0,
     site: fields.site || (url ? siteOf(url) : void 0),
@@ -1743,7 +1756,9 @@ function tagCounts(sources) {
   return [...m.entries()].sort((a, b2) => b2[1] - a[1] || a[0].localeCompare(b2[0]));
 }
 function assistWaiting(s) {
-  if (!s || s.deleted || s.assist !== true || !String(s.prompt || "").trim()) return false;
+  if (!s || s.deleted || s.assist !== true) return false;
+  if (s.corkboard === true && !s.board) return true;
+  if (!String(s.prompt || "").trim()) return false;
   const asked = Date.parse(s.prompted || "") || 0;
   return !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
 }
@@ -2445,6 +2460,7 @@ function describe(s) {
   if (String(s.body || "").trim()) out.push("", "## Notes", s.body.trim());
   if (s.assist === true || s.prompt) {
     out.push("", `## Assist \u2014 ${s.assist === true ? "on" : "off"}${assistWaiting(s) ? " \xB7 waiting for an answer" : ""}`);
+    if (s.corkboard === true) out.push(s.board ? `Corkboard: built (${s.board})` : 'Corkboard: asked for, not built yet \u2014 new-board "<title>" --source ' + s.id);
     if (s.prompt) out.push(`Their prompt${s.prompted ? ` (${String(s.prompted).slice(0, 16).replace("T", " ")})` : ""}:`, s.prompt.trim());
   }
   if (s.agent_notes?.length) out.push("", "## Agent notes", ...s.agent_notes.map((n) => `- ${String(n.date).slice(0, 16).replace("T", " ")} \xB7 ${n.author}: ${n.text}`));
@@ -2592,7 +2608,7 @@ ${rel2}`);
     case "assists": {
       const list = a.all ? sources.filter((x) => x.assist === true) : assistQueue(sources);
       if (a.json) return json(list);
-      print(list.length ? list.map((x) => `${line(x)}${assistWaiting(x) ? "" : "  (answered)"}
+      print(list.length ? list.map((x) => `${line(x)}${assistWaiting(x) ? "" : "  (answered)"}${x.corkboard === true ? x.board ? `  [corkboard ${x.board}]` : "  [turn into a corkboard]" : ""}
     \u2192 ${String(x.prompt || "(no prompt yet)").trim().split("\n")[0].slice(0, 160)}`).join("\n") : a.all ? "No source has Assist on." : "No prompts waiting.");
       return list;
     }
@@ -2693,7 +2709,7 @@ ${rel2}`);
     case "new-board": {
       const title = rest.join(" ").trim();
       if (!title) {
-        print("Usage: new-board <title> [--about \u2026] [--piece w-\u2026]");
+        print("Usage: new-board <title> [--about \u2026] [--piece w-\u2026] [--source s-\u2026]");
         return null;
       }
       const piece = str(a.piece) ? findPiece(a.piece) : null;
@@ -2701,14 +2717,35 @@ ${rel2}`);
         print(`No piece ${a.piece}.`);
         return null;
       }
-      const b2 = makeBoard({ title, about: str(a.about), piece: piece?.id }, { now, author: AUTHOR });
+      const src = str(a.source) ? sources.find((x) => x.id === a.source) : null;
+      if (str(a.source)) {
+        if (!src) {
+          print(`No source ${a.source}.`);
+          return null;
+        }
+        if (src.assist !== true || src.corkboard !== true) {
+          print(`${src.id} didn't ask for a corkboard \u2014 the owner ticks "Turn into a corkboard" (with Assist on).`);
+          return null;
+        }
+        if (src.board) {
+          print(`${src.id} already has its board: ${src.board}.`);
+          return null;
+        }
+      }
+      const b2 = makeBoard({ title, about: str(a.about) || (src ? `From \u201C${src.title || src.id}\u201D` : void 0), piece: piece?.id }, { now, author: AUTHOR });
       save(root, b2);
       if (piece && !piece.board) {
         const next = { ...piece, board: b2.id, updated: now };
         delete next._path;
         save(root, next);
       }
-      print(`New board: ${b2.title}  (${b2.id})`);
+      if (src) {
+        save(root, makePin({ board: b2.id, kind: "source", title: src.title, source: src.id, ...placeNear([], defaultSize("source")), ...defaultSize("source") }, { now, author: AUTHOR }));
+        const next = { ...src, board: b2.id, updated: now };
+        delete next._path;
+        save(root, next);
+      }
+      print(`New board: ${b2.title}  (${b2.id})${src ? ` \u2014 linked from ${src.id}, with the source pinned. Pin and connect from here, then leave an agent-note.` : ""}`);
       return b2;
     }
     case "pin": {
@@ -2924,7 +2961,7 @@ Library:   list [--status inbox|to-read|reading|read|dropped|filed] [--tag t] [-
            set <id> [--status \u2026] [--fav true|false] [--tags +a,-b]
 Assist:    assists [--all] \xB7 agent-note <id> --text "\u2026" [--author \u2026]   (only where the owner turned Assist on)
 Boards:    boards \xB7 board <id | words> \xB7 curate <board>
-           new-board <title> [--about \u2026] [--piece w-\u2026]
+           new-board <title> [--about \u2026] [--piece w-\u2026] [--source s-\u2026]
            pin <board> --title \u2026 [--text \u2026] [--kind note|link|quote|source|card] [--url \u2026] [--source s-\u2026] [--card Q\u2026] [--near p-\u2026]
            pin <board> --kind frame --title \u2026 [--domain \u2026] [--perspective \u2026] [--scale \u2026] [--time \u2026]   (then --near <frame> to pin inside it)
            connect <board> <pin> <pin> [--label \u2026]

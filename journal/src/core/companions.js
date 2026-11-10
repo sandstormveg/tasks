@@ -87,7 +87,8 @@ export function libraryState(records, { now = "" } = {}) {
     read: by("read").length,
     next: reading[0] ? { id: reading[0].id, title: reading[0].title, status: "reading" } : toRead[0] ? { id: toRead[0].id, title: toRead[0].title, status: "to-read" } : null,
     red: redBoard ? { board: redBoard, title: boards.get(redBoard).title, count: redCount, total: [...red.values()].reduce((a, b) => a + b, 0) } : null,
-    waiting: sources.filter((s) => s.assist === true && String(s.prompt || "").trim() && !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= (Date.parse(s.prompted || "") || 0))).length,
+    // Same rule as core/sources.js assistWaiting: a corkboard not built yet, or an unanswered prompt.
+    waiting: sources.filter((s) => s.assist === true && ((s.corkboard === true && !s.board) || (String(s.prompt || "").trim() && !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= (Date.parse(s.prompted || "") || 0))))).length,
     answered: answered.length ? { count: answered.length, id: answered[0].id, title: answered[0].title } : null,
     surprised: surprised[0] ? { id: surprised[0].id, title: surprised[0].title } : null,
   };

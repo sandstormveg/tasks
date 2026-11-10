@@ -8,6 +8,14 @@ import { aiReadable, entryText, normRating } from "./model.js";
 import { compareDays, addDays, daysBetween } from "./dates.js";
 import { coverage, onScale } from "./stats.js";
 
+/** The one privacy-gated path for a video transcript sent to an AI. */
+export function buildVideoContext(source) {
+  if (!aiReadable(source)) return { included: false, reason: "privacy", transcript: "" };
+  const transcript = String(source.transcript || "").trim();
+  if (!transcript) return { included: false, reason: "transcript", transcript: "" };
+  return { included: true, reason: "", transcript };
+}
+
 const clip = (s, n) => (s.length > n ? s.slice(0, n) + "…" : s);
 const attr = (s) => String(s ?? "").replace(/"/g, "'").replace(/\s+/g, " ").trim();
 
