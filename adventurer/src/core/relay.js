@@ -105,6 +105,8 @@ const tone = (c) => (c in ACCEPT ? c : "normal");
 export const cheerAccept = ({ chattiness, seed } = {}) => pick(ACCEPT[tone(chattiness)], seed);
 export const cheerTurnIn = (q, xp, { chattiness, seed } = {}) => pick(TURN_IN[tone(chattiness)], seed);
 export const cheerLevel = (level, { chattiness, seed } = {}) => pick(LEVEL[tone(chattiness)], seed)(level);
+/** A grade test passed. The title is the guild's own (core/grades.js), never yours. */
+export const cheerPromotion = (grade, title, seed) => `Grade ${grade}! ${title}. ${pick(["I'm making a banner. A big one.", "Look at you. I knew it.", "The whole guild heard that. Probably."], seed)}`;
 export const sayAbandon = (seed) => pick(ABANDON, seed);
 export const sayFailed = (seed) => pick(FAILED, seed);
 
@@ -133,5 +135,6 @@ export function voiceLines(xps = []) {
     for (const xp of xps) for (const [difficulty, label] of [["normal", "Normal"], ["hard", "Hard"], ["epic", "Epic"]]) out.push(questPitch({ status: "posted", difficulty }, xp, label, seed));
   }
   out.push(...INFERRED);
+  for (const [g, t] of [["D", "Iron Wayfarer"], ["C", "Bronze Vanguard"], ["B", "Silver Scoutmaster"], ["A", "Golden Sovereign"], ["S", "Mythic Vanguard"]]) for (let seed = 0; seed < 3; seed++) out.push(cheerPromotion(g, t, seed));
   return out;
 }

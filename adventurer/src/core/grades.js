@@ -53,6 +53,12 @@ export const PREREQ = {
   S: { sessions: 20, life: 10 },
 };
 
+/**
+ * Exercises the trainer works on beside the test's, so none gets left out: one a day, rotating,
+ * aimed at the next grade's rung (pull-ups have no norms either, so they use the guild's ladder).
+ */
+export const ACCESSORY = { situp: LADDER.situp, pullup: { D: 3, C: 5, B: 8, A: 12, S: 16 } };
+
 export const RETAKE_DAYS = 3;
 const MAX_EVERY_DAYS = 7;
 const PER_DAY = 2;
@@ -178,9 +184,13 @@ export function trainingPlan(quests, { profile = {}, today, now }) {
   const offset = Math.abs(Math.floor(Date.parse(`${today}T12:00:00Z`) / DAY)) % exercises.length;
   const order = exercises.slice(offset).concat(exercises.slice(0, offset));
   const missions = [];
-  for (const ex of order) {
-    if (missions.length >= PER_DAY) break;
-    const target = el.targets[ex];
+  const extra = Object.keys(ACCESSORY).filter((ex) => !exercises.includes(ex));
+  const accessory = extra.length ? extra[offset % extra.length] : null;
+  for (const ex of [...order, accessory]) {
+    if (!ex) continue;
+    const isExtra = ex === accessory;
+    if (!isExtra && missions.length >= PER_DAY) continue;
+    const target = isExtra ? ACCESSORY[ex][el.next.id] : el.targets[ex];
     const best = bestSet(quests, ex, today, 60);
     const lastMax = lastOf(quests, ex, (q) => q.kind === "max");
     const last = lastOf(quests, ex, (q) => q.kind !== "max");
@@ -190,18 +200,19 @@ export function trainingPlan(quests, { profile = {}, today, now }) {
     if (best == null) {
       kind = "max"; count = 1;
       note = "Assessment: as many clean reps as you can in one set. This sets your starting point.";
-    } else if (best >= target && el.eligible) {
+    } else if (best >= target && el.eligible && !isExtra) {
       continue; // ready for the test on this one
     } else if (!lastMax || daysBetween(dayOf(lastMax.completed), today) >= MAX_EVERY_DAYS) {
       kind = "max"; count = 1;
-      note = `Weekly max set: one all-out set. Your best is ${best}; the ${el.next.id} test needs ${target}.`;
+      note = isExtra ? `Weekly max set: one all-out set. Your best is ${best}; the ${el.next.id} rung is ${target}.` : `Weekly max set: one all-out set. Your best is ${best}; the ${el.next.id} test needs ${target}.`;
     } else {
       kind = "set";
       const lastTarget = last?.proof?.count || 0;
       const lastHit = last && last.status === "done" && (verifiedReps(last) ?? 0) >= lastTarget;
       const base = Math.ceil(best * 0.7);
       count = Math.min(target, Math.max(base, lastHit ? lastTarget + 1 : lastTarget || base));
-      note = lastHit ? `Last set ${lastTarget} — one more today. Best ${best}, test ${target}.` : last ? `Hold at ${count} until it's clean. Best ${best}, test ${target}.` : `${count} clean reps (about 70% of your best ${best}).`;
+      const aim = isExtra ? "aim" : "test";
+      note = lastHit ? `Last set ${lastTarget} — one more today. Best ${best}, ${aim} ${target}.` : last ? `Hold at ${count} until it's clean. Best ${best}, ${aim} ${target}.` : `${count} clean reps (about 70% of your best ${best}).`;
     }
     missions.push({
       id: `train-${today}-${ex}`,
@@ -213,9 +224,10 @@ export function trainingPlan(quests, { profile = {}, today, now }) {
       author: "trainer",
       kind,
       grade: el.next.id,
+      ...(isExtra ? { accessory: true } : {}),
       taskIds: [],
       difficulty: kind === "max" ? "normal" : "easy",
-      attributes: { str: ex === "situp" ? 0.5 : 1, vit: ex === "situp" ? 0.5 : 0 },
+      attributes: ex === "situp" ? { str: 0.5, vit: 0.5 } : { str: 1 },
       proof: { type: "reps", exercise: ex, count },
       posted: now,
       expires: today,

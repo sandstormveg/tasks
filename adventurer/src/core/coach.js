@@ -63,6 +63,10 @@ export const jogNoFix = () => "No GPS signal yet. Step outside, or enter your st
 export function restLine(left) {
   return { 60: "One minute.", 30: "Thirty seconds.", 10: "Ten seconds. Get in position.", 3: "Three.", 2: "Two.", 1: "One.", 0: "Up. Next set." }[left] ?? null;
 }
+/** A grade test passed: the letter in a sentence of its own, so the clips chain. */
+export const promoted = (grade, seed = 0) => `Grade ${grade}. ${pick(["Stand tall, soldier. You earned every rep of that.", "That's a promotion. I'm proud of you.", "Outstanding. The wall gets a new name today."], seed)}`;
+export const testShort = (seed = 0) => pick(["Not today. That's information, not failure. We train and we come back.", "Short this time. Three days, more sets, and we try again."], seed);
+
 /** Every line he can say out loud, for tools/render-voices.mjs. hints: the rep counter's form hints. */
 export function voiceLines(hints = []) {
   const out = [], S = [0, 1, 2, 3];
@@ -82,6 +86,8 @@ export function voiceLines(hints = []) {
     out.push(jogStart(k, s), jogMark(k, k, s), jogMark(k, k * 2, s), jogMark(k, 60000, s));
   }
   for (const t of [60, 30, 10, 3, 2, 1, 0]) out.push(restLine(t));
+  for (const g of ["D", "C", "B", "A", "S"]) for (const s of S) out.push(promoted(g, s));
+  for (const s of S) out.push(testShort(s));
   return out.filter(Boolean);
 }
 export const restStart = (seed = 0) => pick(["Rest. Breathe. Shake it out.", "Stand down. Water if you've got it.", "Good. Rest now. I'll call time."], seed);
