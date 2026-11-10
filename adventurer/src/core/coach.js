@@ -63,6 +63,16 @@ export const jogNoFix = () => "No GPS signal yet. Step outside, or enter your st
 export function restLine(left) {
   return { 60: "One minute.", 30: "Thirty seconds.", 10: "Ten seconds. Get in position.", 3: "Three.", 2: "Two.", 1: "One.", 0: "Up. Next set." }[left] ?? null;
 }
+/** His line at the top of Train. state: { sets, done, rest, ready, next }. */
+const NUM = ["no", "One", "Two", "Three", "Four", "Five"];
+export function coachGreet({ sets = 0, done = 0, rest = false, ready = false, next = null } = {}, seed = 0) {
+  if (ready && next) return `You're ready for the ${next} test. Sit it when you're warm.`;
+  if (rest) return pick(["Rest day. Muscles grow while you sleep. That's an order.", "Stand down today. Rest is training too."], seed);
+  if (sets && done >= sets) return pick(["Every set's in. Dismissed.", "All done today. Good work, soldier."], seed);
+  if (sets) { const left = sets - done; return `${NUM[Math.min(left, 5)]} set${left === 1 ? "" : "s"} left today. ${pick(["Tap one when you're ready.", "Let's move.", "On my count."], seed)}`; }
+  return pick(["Free sets count too. Pick one.", "Nothing set. Show me what you've got."], seed);
+}
+
 /** A grade test passed: the letter in a sentence of its own, so the clips chain. */
 export const promoted = (grade, seed = 0) => `Grade ${grade}. ${pick(["Stand tall, soldier. You earned every rep of that.", "That's a promotion. I'm proud of you.", "Outstanding. The wall gets a new name today."], seed)}`;
 export const testShort = (seed = 0) => pick(["Not today. That's information, not failure. We train and we come back.", "Short this time. Three days, more sets, and we try again."], seed);
@@ -88,6 +98,8 @@ export function voiceLines(hints = []) {
   for (const t of [60, 30, 10, 3, 2, 1, 0]) out.push(restLine(t));
   for (const g of ["D", "C", "B", "A", "S"]) for (const s of S) out.push(promoted(g, s));
   for (const s of S) out.push(testShort(s));
+  for (const s of S) for (const st of [{ rest: true }, { sets: 3, done: 3 }, {}, ...[1, 2, 3, 4, 5].map((n) => ({ sets: 5, done: 5 - n }))]) out.push(coachGreet(st, s));
+  for (const g of ["D", "C", "B", "A", "S"]) out.push(coachGreet({ ready: true, next: g }));
   return out.filter(Boolean);
 }
 export const restStart = (seed = 0) => pick(["Rest. Breathe. Shake it out.", "Stand down. Water if you've got it.", "Good. Rest now. I'll call time."], seed);

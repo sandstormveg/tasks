@@ -62,12 +62,14 @@ async function boot() {
     // quest tapped after a few tab switches opened several stacked pop-ups (Close took two taps).
     const old = $("#content"), el = old.cloneNode(false);
     old.replaceWith(el);
+    if (swipeIn) { el.classList.add(swipeIn); swipeIn = ""; }
     try { await mod.mount(el, ctx, r, ui); } catch (err) {
       console.error(err);
       el.innerHTML = String(html`<div class="empty"><h3>That view broke</h3><p>${err.message}</p></div>`);
     }
   }
   addEventListener("hashchange", show);
+  swipeTabs();
   await show();
 
   if (ctx.settings().autoSync) {
@@ -85,5 +87,32 @@ async function boot() {
     })).catch(() => {});
   }
 }
+
+// Swipe left or right on a view to go to the next or previous tab. Ignores sheets, maps,
+// sliders and anything that scrolls sideways, and gestures that are mostly vertical.
+let swipeIn = "";
+function swipeTabs() {
+  let x0 = null, y0 = 0, t0 = 0;
+  const order = () => $("[data-tab]").map((a) => a.dataset.tab);
+  addEventListener("touchstart", (e) => {
+    const t = e.touches[0], el = e.target;
+    x0 = e.touches.length === 1 && el.closest("#content") && !el.closest("input, textarea, select, canvas, .questmap, .leaflet-container, .sheet, [data-noswipe]") && !scrollsSideways(el) ? t.clientX : null;
+    y0 = t.clientY; t0 = Date.now();
+  }, { passive: true });
+  addEventListener("touchend", (e) => {
+    if (x0 == null || document.querySelector("dialog[open]")) return (x0 = null);
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < 2 * Math.abs(dy) || Date.now() - t0 > 600) return;
+    const tabs = order(), i = tabs.indexOf(route().name), j = i + (dx < 0 ? 1 : -1);
+    if (i < 0 || j < 0 || j >= tabs.length) return;
+    swipeIn = dx < 0 ? "swipe-in-right" : "swipe-in-left";
+    location.hash = `#/${tabs[j]}`;
+  }, { passive: true });
+}
+const scrollsSideways = (el) => {
+  for (let n = el; n && n !== document.body; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 4 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true;
+  return false;
+};
 
 boot();

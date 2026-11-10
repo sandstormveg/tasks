@@ -18,13 +18,14 @@ import { relayCounter, relayBubble } from "../ui/relay.js";
 import { announce } from "../ui/moments.js";
 import { trackJog } from "../ui/jog.js";
 import { attributeGains } from "../core/stats.js";
-import { recommend, suggestionQuest } from "../core/balance.js";
+import { recommend, suggestionQuest, SUGGEST } from "../core/balance.js";
 import { uploadPhoto } from "../data/media.js";
 
 const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted", training: "Trainer", test: "Grade test" };
 const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
 
 export async function mount(el, ctx, route, ui) {
+  postBalance(ctx);
   let filter = "open";
   let nudged = false;
   // A push-up quest on the board: warm the pose model now so its camera turn-in is instant.
@@ -51,8 +52,7 @@ export async function mount(el, ctx, route, ui) {
       toast(ready.length === 1 ? `“${ready[0].title}” — its task is done in Tasks. Turn the quest in to claim the XP.` : `${ready.length} quests have their tasks done in Tasks. Turn them in to claim the XP.`, { timeout: 7000 });
     }
     el.innerHTML = String(html`
-      ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness })) : ""}
-      ${s.relay ? balanceTip(d) : ""}
+      ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness }), balanceTip(d)) : ""}
       <div class="board-head">
         <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span><span class="muted">Lv ${d.level.level} · ${d.xp} XP</span></div>
         <div class="row wrap">
@@ -77,9 +77,11 @@ export async function mount(el, ctx, route, ui) {
     // Joy's nudge toward the attribute furthest behind on the radar (core/balance.js).
     function balanceTip(d) {
       const today = ctx.today(), all = ctx.quests();
+      const pinned = all.find((q) => q.id.startsWith("joy-") && OPEN.has(q.status));
+      if (pinned) { const a = pinned.id.split("-")[1]; return html`<div class="joy-tip"><span class="small" data-line><b>${s.relayName}:</b> ${SUGGEST[a]?.line || ""} It's on the board.</span></div>`; }
       const rec = recommend(d.attributes, { skip: (a) => all.some((q) => q.id.startsWith(`joy-${a}-`) && (OPEN.has(q.status) || (q.status === "done" && (q.completed || "").slice(0, 10) === today))) });
       if (!rec) return "";
-      return html`<div class="joy-tip"><span class="small"><b>${s.relayName}:</b> ${rec.line}${rec.measure ? ` ${rec.measure}` : ""}</span>
+      return html`<div class="joy-tip"><span class="small" data-line><b>${s.relayName}:</b> ${rec.line}${rec.measure ? ` ${rec.measure}` : ""}</span>
         ${rec.quest ? html`<button class="btn small" data-act="balance" data-attr="${rec.attr}">Post it</button>` : rec.act ? html`<button class="btn small" data-act="${rec.act}">${rec.label}</button>` : rec.go ? html`<a class="btn small" href="${rec.go}">${rec.label}</a>` : ""}</div>`;
     }
     function note(q) {
@@ -110,6 +112,12 @@ export async function mount(el, ctx, route, ui) {
   ui.onStore((c) => { if (["quest", "sync", "sync-end", "settings", "stats", "showcase"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
+    // Tap Joy's box: she says what's on it (her voice, or the device's if that's allowed).
+    if (e.target.closest("[data-say-joy]") && !e.target.closest("button, a")) {
+      const s = ctx.settings();
+      const text = [...el.querySelectorAll("[data-say-joy] [data-line]")].map((p) => p.textContent.replace(/^>\s*/, "").replace(new RegExp(`^${s.relayName}:\\s*`), "")).join(" ");
+      return speak(text, s);
+    }
     const f = e.target.closest("[data-filter]");
     if (f) { filter = f.dataset.filter; draw(); return; }
     const card = e.target.closest(".quest[data-id], .note[data-id]");
@@ -129,12 +137,24 @@ export async function mount(el, ctx, route, ui) {
   });
 }
 
+function postBalance(ctx) {
+  try {
+    if (!ctx.settings().relay) return;
+    const all = ctx.quests(), today = ctx.today();
+    if (all.some((q) => q.id.startsWith("joy-") && (OPEN.has(q.status) || (q.posted || "").slice(0, 10) === today || q.id.endsWith(today)))) return;
+    const rec = recommend(ctx.derived().attributes, { skip: (a) => !SUGGEST[a]?.quest });
+    if (!rec?.quest) return;
+    ctx.store.put(suggestionQuest(rec, { today, now: ctx.now() }));
+    ctx.syncNow();
+  } catch (err) { console.warn("Joy couldn't pin a quest", err); }
+}
+
 async function scout(ctx) {
   try {
     const pos = await position({ highAccuracy: false });
     const res = await fetch(geosearchUrl(pos));
     const data = await res.json();
-    const found = scoutQuests(data?.query?.geosearch, { taken: ctx.store.ids(), now: ctx.now() });
+    const found = scoutQuests(data?.query?.pages || data?.query?.geosearch, { taken: ctx.store.ids(), now: ctx.now() });
     if (!found.length) return toast("No new landmarks within 5 km. Try again somewhere else.");
     for (const q of found) ctx.store.put(q);
     toast(`${found.length} scouting quest${found.length > 1 ? "s" : ""} posted.`);
