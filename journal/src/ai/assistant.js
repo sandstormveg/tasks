@@ -12,8 +12,9 @@
 //
 // Every call goes through the privacy gate first (src/core/context.js).
 
-import { CLEANUP_SYSTEM, COMPANION_SYSTEM, DRAFT_SYSTEM, DOCUMENT_SYSTEM, STEWARD_SYSTEM } from "./prompts.js";
+import { CLEANUP_SYSTEM, COMPANION_SYSTEM, DRAFT_SYSTEM, DOCUMENT_SYSTEM, STEWARD_SYSTEM, VIDEO_CHAT_SYSTEM, videoSummaryPrompt } from "./prompts.js";
 import { SECTION_IDS, QUESTION_KINDS } from "../core/model.js";
+import { buildVideoContext } from "../core/context.js";
 
 export const MODELS = {
   "claude-opus-5-5": { label: "Claude Opus 5.5", note: "Most thoughtful. Default." },
@@ -103,6 +104,32 @@ export async function createAssistant(ctx) {
         const msg = await stream.finalMessage();
         checkStop(msg);
         return textOf(msg).trim();
+      } catch (err) { throw explain(err); }
+    },
+
+    async summarizeVideo(source, options = {}) {
+      const gated = buildVideoContext(source);
+      if (!gated.included) throw new AiError(gated.reason === "transcript" ? "Paste the transcript to analyse" : "AI is not allowed to read this source");
+      const prompt = videoSummaryPrompt(gated.transcript, options);
+      const { data, model: used } = await json(prompt.system, prompt.user, prompt.schema, { effort: "high" });
+      return { ...data, model: used };
+    },
+
+    async chatAboutVideo(source, messages, { onText } = {}) {
+      const gated = buildVideoContext(source);
+      if (!gated.included) throw new AiError(gated.reason === "transcript" ? "Paste the transcript to analyse" : "AI is not allowed to read this source");
+      try {
+        const stream = client.beta.messages.stream({
+          model, max_tokens: 8000,
+          system: `${VIDEO_CHAT_SYSTEM}\n\nPasted transcript (the only video evidence):\n${JSON.stringify(gated.transcript)}`,
+          messages,
+          output_config: { effort: "low" },
+          ...fallback,
+        });
+        if (onText) stream.on("text", (_delta, snapshot) => onText(snapshot));
+        const msg = await stream.finalMessage();
+        checkStop(msg);
+        return { text: textOf(msg).trim(), model: msg.model };
       } catch (err) { throw explain(err); }
     },
 

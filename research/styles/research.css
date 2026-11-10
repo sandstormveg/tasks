@@ -149,6 +149,10 @@ button.tag { cursor: pointer; }
   .donut { --d: 116px; align-self: center; }
 }
 .src-file { display: inline-flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.src-files { display: flex; flex-wrap: wrap; gap: 6px; }
+.donut-held { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.held-file { display: inline-flex; align-items: center; gap: 4px; }
+.corkboard-toggle { margin: 4px 0 6px; }
 .card-hit { cursor: default; } .card-boards { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 
 /* Notes: Edit / Preview; and Assist, an agent's help with this one source (its notes stay its own). */

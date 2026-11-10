@@ -14,6 +14,7 @@ import { companionSettings, COMPANIONS } from "../../core/companions.js";
 import { portrait } from "../../ui/companion.js";
 import { tagInput, deleteSource, mdHead, mdPreview, mdSwitch } from "../ui.js";
 import { imageOf } from "../images.js";
+import { attachFiles } from "../donut.js";
 import { fmtButton, wireFormat } from "../../ui/textformat.js";
 
 const metaLine = (s) => [s.site, formatAuthors(s.authors), s.year, KINDS[s.kind]].filter(Boolean).join(" · ");
@@ -40,11 +41,10 @@ export async function mount(el, ctx, route, ui) {
     <textarea class="textarea" data-f="${k}" data-fmtable rows="${rows}" placeholder="${ph}">${s[k] || ""}</textarea></label>${fmtButton(label)}</div>`;
 
   const pic = imageOf(s);
-  const kept = (s.media || []).filter((m) => m.type === "file");
   el.innerHTML = String(html`<div class="src-page">
     ${pic ? html`<button type="button" class="src-picture" data-act="zoom" aria-label="Show the picture full size"><img data-media="${pic.path}" data-fallback="${pic.thumb || ""}" alt="${s.title || "Picture"}"></button>` : ""}
     <div class="src-side">
-      ${kept.map((m) => html`<button type="button" class="btn small src-file" data-file="${m.path}" data-name="${m.original_name || ""}">${raw(icon("file"))}Open ${m.original_name || "the file"}${m.size ? html` <span class="faint">· ${Math.max(1, Math.round(m.size / 1024))} KB</span>` : ""}</button>`)}
+      <div class="src-files" data-files></div>
       <textarea class="src-title-in" data-f="title" rows="1" aria-label="Title" placeholder="Title">${s.title || ""}</textarea>
       <div class="src-meta">${metaLine(s)}</div>
       <div class="status-seg" role="group" aria-label="Status">${Object.entries(STATUSES).map(([k, label]) => html`<button type="button" data-status="${k}" class="${s.status === k ? "on" : ""}">${label}</button>`)}</div>
@@ -73,6 +73,8 @@ export async function mount(el, ctx, route, ui) {
       <section class="src-assist" aria-label="Assist">
         <label class="assist-toggle"><input type="checkbox" data-assist ${s.assist === true ? "checked" : ""}><span><b>Assist</b> — let an agent work with this</span></label>
         <div class="assist-body">
+          <label class="check corkboard-toggle"><input type="checkbox" data-corkboard ${s.corkboard === true ? "checked" : ""}> Turn into a corkboard <span class="faint">— the agent builds a board from this and links it here</span></label>
+          <p class="small" data-board-link></p>
           <div class="fmt-scope"><label class="field"><span>Your prompt <span class="faint">— what you'd like it to do</span></span><textarea class="textarea" data-f="prompt" data-fmtable rows="3" placeholder="e.g. Find the strongest critique of this and say where it lands">${s.prompt || ""}</textarea></label>${fmtButton("Your prompt")}</div>
           <p class="small faint" data-assist-state></p>
         </div>
@@ -97,12 +99,36 @@ export async function mount(el, ctx, route, ui) {
   // Notes: Edit or Preview, remembered on this device.
   const md = mdSwitch(el.querySelector(".md-box"), ctx, { empty: "No notes yet.", autosize });
 
+  // Kept files: open one, or attach more (a PDF that goes with this, say).
+  function renderFiles() {
+    const kept = (s.media || []).filter((m) => m.type === "file");
+    el.querySelector("[data-files]").innerHTML = String(html`${kept.map((m) => html`<button type="button" class="btn small src-file" data-file="${m.path}" data-name="${m.original_name || ""}">${raw(icon("file"))}Open ${m.original_name || "the file"}${m.size ? html` <span class="faint">· ${Math.max(1, Math.round(m.size / 1024))} KB</span>` : ""}</button>`)}
+      <button type="button" class="btn small ghost src-file" data-act="attach">${raw(icon("upload"))}Attach a file</button><input type="file" multiple hidden data-attach-in>`);
+  }
+  renderFiles();
+  on(el, "click", "[data-act=attach]", () => el.querySelector("[data-attach-in]").click());
+  on(el, "change", "[data-attach-in]", async (e, inp) => {
+    const files = [...inp.files];
+    inp.value = "";
+    if (!files.length) return;
+    await flush.flush();
+    const n = await attachFiles(ctx, s, files);
+    s = ctx.store.get(id) || s;
+    renderFiles();
+    if (n) toast(`Attached ${n} file${n === 1 ? "" : "s"}.`);
+  });
+
   // Assist: the toggle, whether it's waiting, and the agent's notes.
   function renderAssist() {
     const on_ = s.assist === true;
     el.querySelector(".src-assist").classList.toggle("on", on_);
     el.querySelector("[data-assist]").checked = on_;
-    el.querySelector("[data-assist-state]").textContent = !on_ ? "" : !String(s.prompt || "").trim() ? "Write what you'd like and an agent picks it up on its next pass."
+    el.querySelector("[data-corkboard]").checked = s.corkboard === true;
+    const board = s.board && ctx.store.get(s.board);
+    el.querySelector("[data-board-link]").innerHTML = String(board && !board.deleted ? html`Its corkboard: <a href="#/board/${board.id}">${board.title}</a>`
+      : s.corkboard === true ? html`<span class="faint">An agent builds the board on its next pass.</span>` : "");
+    el.querySelector("[data-assist-state]").textContent = !on_ ? "" : s.corkboard === true && !s.board ? (String(s.prompt || "").trim() ? "Waiting — an agent builds the board (with your prompt in mind) on its next pass." : "Waiting for the board. Add a prompt if you'd like it shaped a particular way.")
+      : !String(s.prompt || "").trim() ? "Write what you'd like and an agent picks it up on its next pass."
       : assistWaiting(s) ? "Waiting — an agent picks this up on its next pass." : "Answered. Change the prompt to ask again.";
     const ns = s.agent_notes || [];
     const cs = companionSettings(ctx.settings());
@@ -116,6 +142,11 @@ export async function mount(el, ctx, route, ui) {
     await save({ assist: e.target.checked ? true : undefined });
     renderAssist();
     if (e.target.checked) el.querySelector("[data-f=prompt]").focus();
+  });
+  el.querySelector("[data-corkboard]").addEventListener("change", async (e) => {
+    await flush.flush();
+    await save({ corkboard: e.target.checked ? true : undefined });
+    renderAssist();
   });
   const save = async (patch) => {
     s = { ...ctx.store.get(id), ...patch };
@@ -167,6 +198,8 @@ export async function mount(el, ctx, route, ui) {
       if (f.tagName === "TEXTAREA") autosize(f);
     }
     for (const x of el.querySelectorAll("[data-status]")) x.classList.toggle("on", x.dataset.status === now.status);
+    renderFiles();
+    renderAssist();
     if (shown("body", now) !== shown("body", last)) md.refresh();
     renderAssist();
     last = now;

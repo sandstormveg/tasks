@@ -145,13 +145,19 @@ export function makeSource(fields = {}, { now, device = "", via = "app" } = {}) 
   const added = fields.added || now;
   const url = normalizeUrl(fields.url) || undefined;
   const doi = fields.doi || findDoi(url || "") || undefined;
+  const kind = fields.kind || kindFromUrl(url, { doi });
   return {
     id: fields.id || newId("s", added),
     type: "source",
-    kind: fields.kind || kindFromUrl(url, { doi }),
-    title: String(fields.title || "").trim() || (url ? guessTitle(url) : ""),
+    kind,
+    title: String(fields.title || "").trim() || (url && kind !== "video" ? guessTitle(url) : ""),
     url,
     doi,
+    videoId: fields.videoId || undefined,
+    author: fields.author || undefined,
+    thumbnail: fields.thumbnail || undefined,
+    transcript: fields.transcript || undefined,
+    videoAnalysis: fields.videoAnalysis || undefined,
     authors: fields.authors?.length ? fields.authors : undefined,
     year: fields.year || undefined,
     site: fields.site || (url ? siteOf(url) : undefined),
@@ -249,10 +255,14 @@ export function fromDataCite(a = {}) {
 // Assist: the owner can let an agent work with one source, like Assist on a task. `prompt` is
 // their instruction (their words, edited only in the app); `prompted` is when they last changed it.
 // The agent answers in `agent_notes` — its own, authored and dated, never in why/expect/surprised/notes.
+// `corkboard: true` (the owner's tick box) asks the agent to build a Research board from the source;
+// the agent links it back as `board` (tools/research.mjs new-board --source).
 
-/** True when assist is on, there's a prompt, and no agent note has answered it since it last changed. */
+/** True when assist is on and there's an unanswered ask: a corkboard not built yet, or a prompt no agent note has answered since it last changed. */
 export function assistWaiting(s) {
-  if (!s || s.deleted || s.assist !== true || !String(s.prompt || "").trim()) return false;
+  if (!s || s.deleted || s.assist !== true) return false;
+  if (s.corkboard === true && !s.board) return true;
+  if (!String(s.prompt || "").trim()) return false;
   const asked = Date.parse(s.prompted || "") || 0;
   return !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
 }

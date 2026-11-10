@@ -1,5 +1,5 @@
 {
- "version": "fb49dce808e2",
+ "version": "359c4a772fa3",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -59,6 +59,7 @@
   "src/core/textformat.js",
   "src/core/voicepack.js",
   "src/core/writing.js",
+  "src/core/youtube.js",
   "src/core/zip.js",
   "src/data/backend.js",
   "src/data/export.js",
@@ -77,7 +78,10 @@
   "src/research/images.js",
   "src/research/lookup.js",
   "src/research/main.js",
+  "src/research/transcript-helper.js",
   "src/research/ui.js",
+  "src/research/video-ai.js",
+  "src/research/video-routing.js",
   "src/research/views/board.js",
   "src/research/views/boards.js",
   "src/research/views/list.js",
@@ -85,6 +89,7 @@
   "src/research/views/search.js",
   "src/research/views/settings.js",
   "src/research/views/source.js",
+  "src/research/views/videos.js",
   "src/research/views/writing.js",
   "src/ui/companion.js",
   "src/ui/components.js",
