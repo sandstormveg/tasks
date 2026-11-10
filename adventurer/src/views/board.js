@@ -18,6 +18,7 @@ import { relayCounter, relayBubble } from "../ui/relay.js";
 import { announce } from "../ui/moments.js";
 import { trackJog } from "../ui/jog.js";
 import { attributeGains } from "../core/stats.js";
+import { recommend, suggestionQuest } from "../core/balance.js";
 import { uploadPhoto } from "../data/media.js";
 
 const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted", training: "Trainer", test: "Grade test" };
@@ -51,6 +52,7 @@ export async function mount(el, ctx, route, ui) {
     }
     el.innerHTML = String(html`
       ${s.relay ? relayCounter(s.relayName, greet(board, { chattiness: s.chattiness })) : ""}
+      ${s.relay ? balanceTip(d) : ""}
       <div class="board-head">
         <div class="rankline"><span class="rank-badge">${d.rank.id}</span><span>${d.rank.title}</span><span class="muted">Lv ${d.level.level} · ${d.xp} XP</span></div>
         <div class="row wrap">
@@ -72,6 +74,14 @@ export async function mount(el, ctx, route, ui) {
           <h2 class="cork-title">Quest Board</h2>
           ${posted.length ? html`<div class="notes">${posted.map(note)}</div>` : html`<p class="cork-empty">Nothing pinned. Scout nearby, file a request, or wait for the guild master's next pass.</p>`}
         </section>`}`);
+    // Joy's nudge toward the attribute furthest behind on the radar (core/balance.js).
+    function balanceTip(d) {
+      const today = ctx.today(), all = ctx.quests();
+      const rec = recommend(d.attributes, { skip: (a) => all.some((q) => q.id.startsWith(`joy-${a}-`) && (OPEN.has(q.status) || (q.status === "done" && (q.completed || "").slice(0, 10) === today))) });
+      if (!rec) return "";
+      return html`<div class="joy-tip"><span class="small"><b>${s.relayName}:</b> ${rec.line}${rec.measure ? ` ${rec.measure}` : ""}</span>
+        ${rec.quest ? html`<button class="btn small" data-act="balance" data-attr="${rec.attr}">Post it</button>` : rec.act ? html`<button class="btn small" data-act="${rec.act}">${rec.label}</button>` : rec.go ? html`<a class="btn small" href="${rec.go}">${rec.label}</a>` : ""}</div>`;
+    }
     function note(q) {
       const tilt = ((seedOf(q.id) % 7) - 3) * 0.6;
       const tasks = q.taskIds.length;
@@ -108,6 +118,13 @@ export async function mount(el, ctx, route, ui) {
     if (act === "scout") return scout(ctx);
     if (act === "request") return fileRequest(ctx);
     if (act === "new") return postOwn(ctx);
+    if (act === "balance") {
+      const rec = recommend(ctx.derived().attributes, { skip: (a) => a !== e.target.closest("[data-attr]").dataset.attr });
+      if (!rec?.quest) return;
+      ctx.store.put(suggestionQuest(rec, { today: ctx.today(), now: ctx.now() }));
+      ctx.syncNow();
+      return toast(`On the board: “${rec.quest.title}”.`);
+    }
     if (act === "map") { const id = await questMap(ctx.quests().filter((q) => OPEN.has(q.status) && q.giver !== "trainer")); if (id) openQuest(ctx, ctx.quests().find((q) => q.id === id)); return; }
   });
 }

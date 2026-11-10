@@ -14,8 +14,11 @@ import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
 import { trackJog } from "../ui/jog.js";
 import { announce } from "../ui/moments.js";
-import { coachSet, coachBubble, coachSay, coachName } from "../ui/coach.js";
-import { restLine, restStart } from "../core/coach.js";
+import { coachSet, coachBubble, coachSay, coachName, coachVoice } from "../ui/coach.js";
+import { restLine, restStart, promoted, testShort } from "../core/coach.js";
+import { cheerPromotion } from "../core/relay.js";
+import { speak } from "../ui/voice.js";
+import { attributeGains } from "../core/stats.js";
 import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPlan, testSets, attempts } from "../core/grades.js";
 
 const dayOf = localDay;
@@ -243,6 +246,7 @@ async function sitTest(ctx) {
   const list = sets.map((q) => `${q.proof.count} ${q.proof.exercise}s`).join(", then ");
   const go = await confirmSheet(`${list}. Each set must reach its target, counted by the camera. Rest as long as you like between sets.`, { title: `${g.id}-grade test`, confirm: "Begin", detail: `Stop partway and it counts as a failed attempt (retake after ${RETAKE_DAYS} days). Stopping before the first set is counted changes nothing.` });
   if (!go) return;
+  const before = ctx.derived();
   const done = [];
   try {
     for (const [i, q] of sets.entries()) {
@@ -264,16 +268,38 @@ async function sitTest(ctx) {
   if (!done.length) return;
   ctx.syncNow();
   const passed = done.length === sets.length && done.every((r) => r.status === "done");
+  const s = ctx.settings(), seed = Date.now() & 0xff;
   if (passed) {
+    const after = ctx.derived();
+    const gains = attributeGains(before.attributes, after.attributes);
+    const nextG = GRADES[GRADES.findIndex((x) => x.id === g.id) + 1];
+    const nextSets = nextG ? testSets(nextG.id, { profile, now: ctx.now() }).map((q) => q.proof.exercise) : [];
+    const newEx = nextSets.filter((ex) => !sets.some((q) => q.proof.exercise === ex));
     celebrate();
-    await sheet({
+    // Brass says it, then Joy; each in their own voice when it's on.
+    const brass = promoted(g.id, seed), joy = cheerPromotion(g.id, g.title, seed);
+    if (s.coachVoice) speak(brass, coachVoice(s));
+    else if (s.voice) speak(joy, s);
+    const wait = sheet({
       title: `Promoted: grade ${g.id}`,
       body: html`<p class="promo"><span class="grade-badge big">${g.id}</span></p><p>You're now <b>${g.title}</b>. Every set reached its target, counted by the camera.</p>
-        ${GRADES[GRADES.findIndex((x) => x.id === g.id) + 1] ? html`<p class="muted">The trainer now works you toward the next test.</p>` : ""}`,
+        <div class="coach-say-line"><b>${coachName(s)}:</b> ${brass}</div>
+        ${s.relay ? html`<div class="coach-say-line"><b>${s.relayName}:</b> ${joy}</div>` : ""}
+        <ul class="promo-gains">
+          ${before.level.level < after.level.level ? html`<li>Level ${before.level.level} → <b>${after.level.level}</b></li>` : ""}
+          <li>+${after.xp - before.xp} XP from the test</li>
+          ${gains.map((x) => html`<li>${x.name} +${x.xp} XP${x.from !== x.to ? html` · tier ${x.from || "–"} → <b>${x.to || "–"}</b>` : ""}</li>`)}
+        </ul>
+        ${nextG ? html`<p class="muted">The trainer now works you toward the ${nextG.id} test${newEx.length ? `, which adds ${newEx.map((e) => `${e}s`).join(" and ")}` : ""}. Sit-ups and pull-ups get a set of their own most days too.</p>` : ""}`,
       foot: html`<button class="btn primary" data-close>On we go</button>`,
     });
+    // Joy follows once Brass has had his say.
+    if (s.coachVoice && s.voice) setTimeout(() => speak(joy, s), 4500);
+    await wait;
+    await announce(before, after);
   } else {
     const retake = new Date(Date.parse(`${ctx.today()}T12:00:00Z`) + RETAKE_DAYS * 864e5).toISOString().slice(0, 10);
+    if (s.coachVoice) speak(testShort(seed), coachVoice(s));
     toast(`Not this time. Keep training — you can retake it from ${retake}.`, { timeout: 7000 });
   }
 }
