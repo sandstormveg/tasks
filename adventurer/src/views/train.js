@@ -14,9 +14,9 @@ import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
 import { trackJog } from "../ui/jog.js";
 import { announce } from "../ui/moments.js";
-import { coachSet, coachBubble, coachSay, coachName, coachVoice } from "../ui/coach.js";
-import { restLine, restStart, promoted, testShort } from "../core/coach.js";
-import { cheerPromotion } from "../core/relay.js";
+import { coachSet, coachBubble, coachSay, coachName, coachVoice, coachCounter } from "../ui/coach.js";
+import { restLine, restStart, promoted, testShort, coachGreet } from "../core/coach.js";
+import { cheerPromotion, seedOf } from "../core/relay.js";
 import { speak } from "../ui/voice.js";
 import { attributeGains } from "../core/stats.js";
 import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPlan, testSets, attempts } from "../core/grades.js";
@@ -38,7 +38,10 @@ export async function mount(el, ctx, route, ui) {
     const todays = quests.filter((q) => q.origin === "training" && dayOf(q.posted) === today);
     const plan = todays.length ? null : trainingPlan(quests, { profile, today, now: ctx.now() });
     const record = attempts(quests).slice(0, 6);
+    const s = ctx.settings();
+    const line = coachGreet({ sets: todays.length, done: todays.filter((q) => q.status === "done" || q.status === "failed").length, rest: !!plan?.rest, ready: !!(el2.eligible && next), next: next?.id }, seedOf(today));
     el.innerHTML = String(html`
+      ${coachCounter(coachName(s), line)}
       <section class="grade-head">
         <div class="grade-badge">${grade.id}</div>
         <div class="grow">
@@ -72,6 +75,7 @@ export async function mount(el, ctx, route, ui) {
   ui.onStore((c) => { if (["quest", "sync", "sync-end", "stats"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
+    if (e.target.closest("[data-say-coach]")) { const s = ctx.settings(); return speak(el.querySelector(".coach-line").textContent.replace(/^>\s*/, ""), coachVoice(s)); }
     const m = e.target.closest("[data-mission]");
     if (m) return runMission(ctx, ctx.quests().find((q) => q.id === m.dataset.mission));
     if (e.target.closest("[data-sit]")) return sitTest(ctx);

@@ -28,6 +28,14 @@ export function coachBubble(name, line) {
   return html`<div class="relay relay-bubble coach-bubble"><span class="portrait" data-who="coach">${raw(PORTRAIT)}</span><div><span class="relay-name">${name}</span><p class="relay-say coach-say" aria-live="polite">${line}</p></div></div>`;
 }
 
+/** Brass at the top of Train: always open; tap and he says it. */
+export function coachCounter(name, line) {
+  return html`<div class="relay relay-counter coach-bubble coach-counter" data-say-coach role="button" tabindex="0" title="Tap to hear ${name}">
+    <div class="relay-head"><span class="portrait" data-who="coach">${raw(PORTRAIT)}</span><span class="relay-name">Trainer: ${name}</span></div>
+    <div class="relay-box"><p class="coach-line">&gt; ${line}</p></div>
+  </div>`;
+}
+
 /** Shows a line in his bubble (inside d, the open sheet) and says it if his voice is on. */
 export function coachSay(s, d, line) {
   const p = (d || document).querySelector(".coach-say");

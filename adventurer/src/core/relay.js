@@ -17,6 +17,8 @@ function pick(arr, seed) {
   return arr[i];
 }
 
+import { SUGGEST } from "./balance.js";
+
 /** A small stable number from a string, so the same day gets the same greeting. */
 export function seedOf(s) {
   let h = 0;
@@ -25,6 +27,7 @@ export function seedOf(s) {
 }
 
 const N = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+const STREAK = [(n) => `Day ${n} streak. I'm invested now.`, (n) => `${n} days running! Don't stop, I've made a chart.`, (n) => `Streak: ${n}. Keep it warm.`];
 
 const OPENERS = ["Hi! Joy here.", "Oh good, it's you.", "Welcome back, hero.", "Desk's open. Mostly.", "Hey, you!", "There you are."];
 const IDLE = ["Quiet board. Suspiciously quiet.", "Nothing new. I've alphabetised the pens.", "Board's empty. Got a wish to file?", "Slow day. I'm practising my stamp.", "No quests yet. The guild master's thinking very hard."];
@@ -44,7 +47,7 @@ export function greet(board, { chattiness = "normal", seed } = {}) {
   else lines.push(`${opener} ${pick(IDLE, s(3))}`);
 
   if (board.expiringSoon) lines.push(`${N(board.expiringSoon, "quest")} closing soon. Tick tock.`);
-  else if (board.streak >= 2) lines.push(pick([`Day ${board.streak} streak. I'm invested now.`, `${board.streak} days running! Don't stop, I've made a chart.`, `Streak: ${board.streak}. Keep it warm.`], s(5)));
+  else if (board.streak >= 2) lines.push(pick(STREAK, s(5))(board.streak));
 
   if (chattiness === "chatty") lines.push(board.rankUp ? `Rank ${board.rankUp}! I'm making a banner.` : pick(QUIPS, s(7)));
   return chattiness === "quiet" ? lines.slice(0, 1) : lines.slice(0, chattiness === "chatty" ? 3 : 2);
@@ -135,6 +138,12 @@ export function voiceLines(xps = []) {
     for (const xp of xps) for (const [difficulty, label] of [["normal", "Normal"], ["hard", "Hard"], ["epic", "Epic"]]) out.push(questPitch({ status: "posted", difficulty }, xp, label, seed));
   }
   out.push(...INFERRED);
+  // The counter's greeting (tap her box to hear it), and her balance nudges (core/balance.js).
+  out.push(...OPENERS, ...IDLE, ...QUIPS, "Someone asked for you. Well, for your vibe.", "It's on the board.");
+  for (let n = 1; n <= 12; n++) out.push(`${N(n, "new quest")}, still warm.`, `${N(n, "quest")} on the go. No pressure. Some pressure.`, `${N(n, "quest")} closing soon. Tick tock.`);
+  for (let n = 2; n <= 60; n++) out.push(...STREAK.map((f) => f(n)));
+  for (const g of ["E", "D", "C", "B", "A", "S"]) out.push(`Rank ${g}! I'm making a banner.`);
+  for (const k of Object.values(SUGGEST)) out.push(k.line, ...(k.measure ? [k.measure] : []));
   for (const [g, t] of [["D", "Iron Wayfarer"], ["C", "Bronze Vanguard"], ["B", "Silver Scoutmaster"], ["A", "Golden Sovereign"], ["S", "Mythic Vanguard"]]) for (let seed = 0; seed < 3; seed++) out.push(cheerPromotion(g, t, seed));
   return out;
 }

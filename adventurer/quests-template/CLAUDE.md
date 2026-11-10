@@ -53,6 +53,24 @@ Dex card), `{kind: "babel", label, why}` (a Babel run), `{kind: "task", taskId, 
 them from what Silica is into: their tasks, research, and the journal only through its gate (themes, never quotes).
 Keep the place public and the coordinates in this private repo.
 
+## Every pass: balance and events
+
+The app already covers some things without you. Joy pins one easy quest a day for the attribute furthest behind on
+the radar (`core/balance.js`), Scout nearby turns Wikipedia landmarks into quests, and the trainer handles STR. Your
+job is what those can't do:
+
+- **Something for the weak attributes.** Look at `index.json` (attribute XP) and post one or two quests a week aimed at the
+  lowest attributes, built from Silica's own tasks, research and interests (VIT: a walk or a swim somewhere specific;
+  INT: a book or paper on their list; CHA: a meetup in their field; WIS: a reflection on something they're working on).
+  Make them specific. A generic "go for a walk" is Joy's job.
+- **Events they'd like.** Up to three a week, found by web search: talks, meetups, workshops, gigs, markets, exhibitions,
+  open days. Match them to their tasks, research tags and Atlas interests, and use the journal only through its gate, as
+  themes. Use **public venues only**, near the coarse area in `stats.json` (or ask the director for the city; never use or
+  store a street address of theirs). Post each one as an expedition with a gps objective at the venue
+  (`@gps:lat=…,lng=…,place=<venue>,radius=120`), `--expires <event date>`, and the date, time, price and link in `--detail`.
+  Title it `Event: <name> (<Mon 12 Nov>)` and say in `--why` why it fits them. Skip anything that costs a lot or needs
+  booking far ahead, unless it really fits.
+
 ## Expeditions (quests with several objectives)
 
 An expedition is a quest with `objectives`. Each objective has a **type** (exploration, social, research, creation,

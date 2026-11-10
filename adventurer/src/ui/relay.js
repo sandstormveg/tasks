@@ -1,6 +1,6 @@
 // Joy's counter: a small CRT portrait and a speech box. The portrait is an
 // original synthetic clerk drawn in SVG (scanlines and flicker in CSS, which
-// stop under reduced motion). She blinks and bobs; her mouth moves while the voice talks. On phones it folds to one line; tap to open.
+// stop under reduced motion). She blinks and bobs; her mouth moves while the voice talks. Tap her box and she says it.
 
 import { html, raw } from "./dom.js";
 
@@ -20,9 +20,10 @@ export function relayBubble(name, line) {
   return html`<div class="relay relay-bubble"><span class="portrait">${raw(PORTRAIT)}</span><div><span class="relay-name">Receptionist: ${name}</span><p class="relay-say">${line}</p></div></div>`;
 }
 
-export function relayCounter(name, lines) {
-  return html`<details class="relay" open>
-    <summary><span class="portrait">${raw(PORTRAIT)}</span><span class="relay-name">Receptionist: ${name}</span><span class="relay-first">${lines[0] || ""}</span></summary>
-    <div class="relay-box" aria-live="polite">${lines.map((l, i) => html`<p class="type" style="--i:${i}">&gt; ${l}</p>`)}</div>
-  </details>`;
+export function relayCounter(name, lines, tail = "") {
+  return html`<div class="relay relay-counter" data-say-joy role="button" tabindex="0" title="Tap to hear ${name}">
+    <div class="relay-head"><span class="portrait">${raw(PORTRAIT)}</span><span class="relay-name">Receptionist: ${name}</span></div>
+    <div class="relay-box" aria-live="polite">${lines.map((l, i) => html`<p class="type" style="--i:${i}" data-line>&gt; ${l}</p>`)}</div>
+    ${tail}
+  </div>`;
 }
