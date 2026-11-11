@@ -220,7 +220,8 @@
       "category": "Life Admin",
       "created": "2026-10-28",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "questNominated": true
     },
     {
       "id": "coefficient-giving-note-on-model-personas-mvykt6vn",
