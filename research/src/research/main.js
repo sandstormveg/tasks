@@ -13,16 +13,20 @@ import { enableSwipe } from "../ui/swipe.js";
 import { capture } from "./ui.js";
 import { takeSharedImages } from "./images.js";
 
-const TABS = ["inbox", "queue", "read", "writing", "boards", "videos"];
+const TABS = ["inbox", "library", "writing", "boards", "experiments", "videos"];
 const ROUTES = [
   [/^inbox$/, "list", "inbox"],
-  [/^queue$/, "list", "queue"],
-  [/^read$/, "list", "read"],
+  [/^library$/, "list", "library"],
+  // To read and Read became the Library; their old addresses open it filtered.
+  [/^queue$/, "list", "library"],
+  [/^read$/, "list", "library"],
   [/^search$/, "search", "search"],
   [/^writing$/, "writing", "writing"],
   [/^piece\/([^/]+)$/, "piece", "writing"],
   [/^boards$/, "boards", "boards"],
   [/^videos$/, "videos", "videos"],
+  [/^experiments$/, "experiments", "experiments"],
+  [/^experiment\/([^/]+)$/, "experiment", "experiments"],
   [/^board\/([^/]+)$/, "board", "boards"],
   [/^tag\/([^/]+)$/, "search", "search"],
   [/^source\/([^/]+)$/, "source", null],

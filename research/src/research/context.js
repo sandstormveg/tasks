@@ -74,9 +74,10 @@ export async function createResearchContext({ backend, host = null } = {}) {
     sources() { return store.all("source").filter((s) => !s.deleted); },
     boards() { return store.all("board").filter((b) => !b.deleted); },
     pieces() { return store.all("piece").filter((p) => !p.deleted); },
+    experiments() { return store.all("experiment").filter((x) => !x.deleted); },
     cards() { return store.all("card").filter((c) => !c.deleted); },
     /** Everything for the corkboard and the Deposit, in one list. */
-    records() { return ["board", "pin", "string", "card", "piece", "source"].flatMap((t) => store.all(t)); },
+    records() { return ["board", "pin", "string", "card", "piece", "source", "experiment"].flatMap((t) => store.all(t)); },
   };
   ctx.sync = new SyncService(ctx, { template: RESEARCH_TEMPLATE, templateDir: "research-template", label: "research" });
   ctx.media = new MediaService(ctx); // pictures in image sources: lazy, downloaded on first view on a new device

@@ -81,6 +81,18 @@ are one line per item; open a single board or piece only when it's relevant.
   `fixed`. Keep them as they are; don't set them on your own pins.
 - **Writing**: `new-piece "<title>" [--task-id … --task-title …]` starts a piece and its board with an
   **empty draft**. Notes, reviews and suggestions go on the piece's board as your pins — never into the draft.
+- **Experiments** (the Experiments tab: Propositions → Active → Done; files in `experiments/`):
+  - `exps [--status proposed|active|done|shelved]` lists them; `exp <id | words>` shows one with its log.
+  - **Propose**: `exp-add "<question>" --title "…" --why "…" --method "…" [--hours … --money … --gpu …]
+    [--sources s-…,s-…]` adds a proposition marked as yours (`author: claude`). Keep the method to a line or
+    two and the cost honest. The tool refuses duplicates.
+  - **Log**: `exp-log <id> --text "…"` adds a dated step, marked as yours, to an **active** experiment's log —
+    what you ran, what came out, where it lives.
+  - **Never select.** Choosing a proposition to run is theirs, done in the app; the tool refuses
+    `exp-move --to active`. Move one only when they ask (`exp-move <id> --to done|proposed|shelved`).
+  - **Never write** `hypothesis`, `expected`, `result`, `surprised` or `verdict`. They write the hypothesis
+    and expected result before starting (like a source's `expect`), and the result, surprise and verdict at
+    the end. Quote them; never fill them in, even when the log makes the answer look obvious.
 - **Never** write or edit their words: `why` (beyond quoting them as above), `expect`, `surprised`, notes,
   quotes, drafts, card entries, syntheses, or pins they made.
 - Run `node tools/research.mjs validate` before committing. Commit with a plain message, e.g.

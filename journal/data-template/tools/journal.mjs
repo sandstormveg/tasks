@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:756ff07f0f344c85
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:a9e76cde2147dd31
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1154,7 +1154,7 @@ var FIELD_ORDER = {
   ],
   // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
   // A pin's body is its note; a string's body is your synthesis — how the two connect.
-  board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],
+  board: ["id", "type", "title", "about", "piece", "experiment", "tags", "author", "created", "updated", "visibility"],
   pin: [
     "id",
     "type",
@@ -1229,7 +1229,34 @@ var FIELD_ORDER = {
     "updated"
   ],
   // A piece of writing (src/core/writing.js); the body is your draft.
-  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"]
+  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
+  // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
+  experiment: [
+    "id",
+    "type",
+    "title",
+    "question",
+    "why",
+    "method",
+    "cost",
+    "sources",
+    "status",
+    "hypothesis",
+    "expected",
+    "board",
+    "log",
+    "result",
+    "surprised",
+    "verdict",
+    "produced",
+    "author",
+    "created",
+    "updated",
+    "selected",
+    "finished",
+    "visibility"
+  ]
 };
 var SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
 var BODY_TYPES = /* @__PURE__ */ new Set([
@@ -1284,13 +1311,15 @@ function pathFor(rec) {
       return `cards/${rec.id}.md`;
     case "piece":
       return `writing/${rec.id}.md`;
+    case "experiment":
+      return `experiments/${rec.id}.md`;
     case "config":
       return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default:
       return null;
   }
 }
-var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "config/"];
+var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "experiments/", "config/"];
 function isRecordPath(p) {
   if (!TEXT_PREFIXES.some((pre) => p.startsWith(pre))) return false;
   return p.startsWith("config/") ? p.endsWith(".yaml") : p.endsWith(".md");
@@ -1343,8 +1372,8 @@ var DUMP_OPTS = { schema: vr, lineWidth: -1, noRefs: true, sortKeys: false, quot
 function yamlDump(obj) {
   return wr(obj, DUMP_OPTS);
 }
-function yamlLoad(text) {
-  return Cr(text, { schema: vr });
+function yamlLoad(text2) {
+  return Cr(text2, { schema: vr });
 }
 function serialize(rec) {
   if (rec.type === "config") {
@@ -1360,8 +1389,8 @@ ${yamlDump(data)}${FM}
 `;
   return out;
 }
-function splitFrontmatter(text) {
-  const t = String(text).replace(/^﻿/, "").replace(/\r\n/g, "\n");
+function splitFrontmatter(text2) {
+  const t = String(text2).replace(/^﻿/, "").replace(/\r\n/g, "\n");
   if (!t.startsWith(FM + "\n")) return { data: {}, body: t, hadFrontmatter: false };
   const end = t.indexOf(`
 ${FM}`, FM.length);
@@ -1372,13 +1401,13 @@ ${FM}`, FM.length);
   const data = yamlLoad(yamlText) || {};
   return { data, body: rest, hadFrontmatter: true };
 }
-function parse(path2, text) {
+function parse(path2, text2) {
   if (path2.startsWith("config/")) {
-    const data2 = yamlLoad(text) || {};
+    const data2 = yamlLoad(text2) || {};
     const name = path2.slice(7).replace(/\.yaml$/, "");
     return { ...data2, id: `config:${name}`, type: "config" };
   }
-  const { data, body } = splitFrontmatter(text);
+  const { data, body } = splitFrontmatter(text2);
   if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(`${path2}: frontmatter is not a mapping`);
   const rec = { ...data };
   if (!rec.type) rec.type = inferType(path2);
@@ -1402,6 +1431,7 @@ function inferType(path2) {
   if (path2.startsWith("boards/")) return /^boards\/[^/]+\/pins\//.test(path2) ? "pin" : /^boards\/[^/]+\/strings\//.test(path2) ? "string" : "board";
   if (path2.startsWith("cards/")) return "card";
   if (path2.startsWith("writing/")) return "piece";
+  if (path2.startsWith("experiments/")) return "experiment";
   if (path2.startsWith("config/")) return "config";
   return null;
 }
@@ -1488,8 +1518,26 @@ function compareDays(a, b2) {
   return a < b2 ? -1 : a > b2 ? 1 : 0;
 }
 
+// src/core/experiments.js
+var EXP_STATUSES = { proposed: "Proposition", active: "Active", done: "Done", shelved: "Set aside" };
+var VERDICTS = { confirmed: "Confirmed", refuted: "Refuted", unclear: "Unclear" };
+var COSTS = [["hours", "Hours"], ["money", "Money"], ["gpu", "GPU"]];
+var text = (v2) => String(v2 ?? "").trim();
+function validateExperiment(rec) {
+  const errors = [];
+  if (!text(rec.question) && !text(rec.title)) errors.push("experiment needs a question");
+  if (!EXP_STATUSES[rec.status]) errors.push(`unknown experiment status "${rec.status}"`);
+  if (rec.verdict != null && !VERDICTS[rec.verdict]) errors.push(`unknown verdict "${rec.verdict}"`);
+  if (rec.cost != null && (typeof rec.cost !== "object" || Array.isArray(rec.cost))) errors.push("cost must be a map of hours / money / gpu");
+  else for (const k2 of Object.keys(rec.cost || {})) if (!COSTS.some(([c]) => c === k2)) errors.push(`unknown cost "${k2}"`);
+  for (const k2 of ["sources", "produced"]) if (rec[k2] != null && !Array.isArray(rec[k2])) errors.push(`${k2} must be a list of source ids`);
+  for (const s of rec.log || []) if (!s?.date || !s?.text || !s?.author) errors.push("a log step needs date, author and text");
+  if (rec.status === "proposed" && rec.verdict) errors.push("a proposition has no verdict yet");
+  return errors;
+}
+
 // src/core/model.js
-var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece"];
+var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece", "experiment"];
 var ENTRY_KINDS = {
   text: "Writing",
   voice: "Voice note",
@@ -1627,6 +1675,9 @@ function validateRecord(rec) {
       if (!rec.title) errors.push("piece needs a title");
       if (rec.status && !["idea", "drafting", "review", "done"].includes(rec.status)) errors.push(`unknown piece status "${rec.status}"`);
       break;
+    case "experiment":
+      errors.push(...validateExperiment(rec));
+      break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);
       if (!rec.statement) errors.push("claim has no statement");
@@ -1714,10 +1765,10 @@ function buildContext(allEntries, opts = {}) {
   const kept = [];
   let truncated = 0;
   for (const e of newestFirst) {
-    const text2 = clip(entryText(e), perEntryMax);
+    const text3 = clip(entryText(e), perEntryMax);
     const tags = (e.tags || []).join(",");
     const block = `<entry id="${e.id}" day="${e.day}" time="${(e.created || "").slice(11, 16)}" kind="${e.kind}"${tags ? ` tags="${attr(tags)}"` : ""}${e.kind === "document" && e.document?.author ? ` written_by="${attr(e.document.author)}"` : ""}>
-${text2}
+${text3}
 </entry>`;
     if (used + block.length > maxChars) {
       truncated++;
@@ -1751,7 +1802,7 @@ ${text2}
   if ((prefs.neverKinds || []).length) boundaries.push(`Never propose these kinds: ${prefs.neverKinds.join(", ")}`);
   const range = kept.length ? { from: kept.map((e) => e.day).sort()[0], to: kept.map((e) => e.day).sort().slice(-1)[0] } : { from, to };
   const cov = coverage(kept, { from: from || range.from, to: to || range.to });
-  const text = [
+  const text2 = [
     `<journal_context from="${range.from || ""}" to="${range.to || ""}" entries="${kept.length}" coverage="${attr(cov.note)}">`,
     ...parts,
     dayLines.length ? `<days>
@@ -1768,7 +1819,7 @@ ${questionLines.join("\n")}
 ${boundaries.join("\n")}
 </boundaries>` : ""
   ].filter(Boolean).join("\n");
-  return { text, includedIds: [...keptIds], includedDays, excluded, truncated, range, coverage: cov, chars: text.length };
+  return { text: text2, includedIds: [...keptIds], includedDays, excluded, truncated, range, coverage: cov, chars: text2.length };
 }
 
 // src/core/metarecord.js

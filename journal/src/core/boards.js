@@ -64,6 +64,7 @@ export function makeBoard(fields = {}, { now, author = "self" } = {}) {
     title: clean(fields.title) || "Untitled board",
     about: clean(fields.about) || undefined,
     piece: fields.piece || undefined,
+    experiment: fields.experiment || undefined,
     tags: fields.tags?.length ? fields.tags : undefined,
     author,
     created: now,
