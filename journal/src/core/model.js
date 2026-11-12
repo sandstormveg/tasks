@@ -8,8 +8,9 @@
 
 import { isoLocal, dayKey, deviceTimeZone, DEFAULT_ROLLOVER_HOUR } from "./dates.js";
 import { newId } from "./ids.js";
+import { validateExperiment } from "./experiments.js";
 
-export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece"];
+export const RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece", "experiment"];
 
 export const ENTRY_KINDS = {
   text: "Writing",
@@ -263,6 +264,9 @@ export function validateRecord(rec) {
     case "piece":
       if (!rec.title) errors.push("piece needs a title");
       if (rec.status && !["idea", "drafting", "review", "done"].includes(rec.status)) errors.push(`unknown piece status "${rec.status}"`);
+      break;
+    case "experiment":
+      errors.push(...validateExperiment(rec));
       break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);

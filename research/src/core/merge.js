@@ -8,7 +8,7 @@ function eq(a, b) {
 }
 
 // Append-only lists merge by union rather than conflicting.
-const UNION_KEYS = new Set(["history", "tags", "emotions", "answers", "evidence", "alternatives"]);
+const UNION_KEYS = new Set(["history", "tags", "emotions", "answers", "evidence", "alternatives", "log"]); // log: an experiment's dated steps
 const KEYED_UNION = new Set(["media"]);
 
 function unionList(a = [], b = []) {

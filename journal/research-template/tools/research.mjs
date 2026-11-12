@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:378732f280eeec65
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:eaf6e580f50004d6
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1154,7 +1154,7 @@ var FIELD_ORDER = {
   ],
   // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
   // A pin's body is its note; a string's body is your synthesis — how the two connect.
-  board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],
+  board: ["id", "type", "title", "about", "piece", "experiment", "tags", "author", "created", "updated", "visibility"],
   pin: [
     "id",
     "type",
@@ -1229,7 +1229,34 @@ var FIELD_ORDER = {
     "updated"
   ],
   // A piece of writing (src/core/writing.js); the body is your draft.
-  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"]
+  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
+  // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
+  experiment: [
+    "id",
+    "type",
+    "title",
+    "question",
+    "why",
+    "method",
+    "cost",
+    "sources",
+    "status",
+    "hypothesis",
+    "expected",
+    "board",
+    "log",
+    "result",
+    "surprised",
+    "verdict",
+    "produced",
+    "author",
+    "created",
+    "updated",
+    "selected",
+    "finished",
+    "visibility"
+  ]
 };
 var SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
 var BODY_TYPES = /* @__PURE__ */ new Set([
@@ -1284,13 +1311,15 @@ function pathFor(rec) {
       return `cards/${rec.id}.md`;
     case "piece":
       return `writing/${rec.id}.md`;
+    case "experiment":
+      return `experiments/${rec.id}.md`;
     case "config":
       return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default:
       return null;
   }
 }
-var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "config/"];
+var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "experiments/", "config/"];
 function isRecordPath(p) {
   if (!TEXT_PREFIXES.some((pre) => p.startsWith(pre))) return false;
   return p.startsWith("config/") ? p.endsWith(".yaml") : p.endsWith(".md");
@@ -1343,8 +1372,8 @@ var DUMP_OPTS = { schema: vr, lineWidth: -1, noRefs: true, sortKeys: false, quot
 function yamlDump(obj) {
   return wr(obj, DUMP_OPTS);
 }
-function yamlLoad(text) {
-  return Cr(text, { schema: vr });
+function yamlLoad(text2) {
+  return Cr(text2, { schema: vr });
 }
 function serialize(rec) {
   if (rec.type === "config") {
@@ -1360,8 +1389,8 @@ ${yamlDump(data)}${FM}
 `;
   return out;
 }
-function splitFrontmatter(text) {
-  const t = String(text).replace(/^﻿/, "").replace(/\r\n/g, "\n");
+function splitFrontmatter(text2) {
+  const t = String(text2).replace(/^﻿/, "").replace(/\r\n/g, "\n");
   if (!t.startsWith(FM + "\n")) return { data: {}, body: t, hadFrontmatter: false };
   const end = t.indexOf(`
 ${FM}`, FM.length);
@@ -1372,13 +1401,13 @@ ${FM}`, FM.length);
   const data = yamlLoad(yamlText) || {};
   return { data, body: rest, hadFrontmatter: true };
 }
-function parse(path2, text) {
+function parse(path2, text2) {
   if (path2.startsWith("config/")) {
-    const data2 = yamlLoad(text) || {};
+    const data2 = yamlLoad(text2) || {};
     const name2 = path2.slice(7).replace(/\.yaml$/, "");
     return { ...data2, id: `config:${name2}`, type: "config" };
   }
-  const { data, body } = splitFrontmatter(text);
+  const { data, body } = splitFrontmatter(text2);
   if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error(`${path2}: frontmatter is not a mapping`);
   const rec = { ...data };
   if (!rec.type) rec.type = inferType(path2);
@@ -1402,6 +1431,7 @@ function inferType(path2) {
   if (path2.startsWith("boards/")) return /^boards\/[^/]+\/pins\//.test(path2) ? "pin" : /^boards\/[^/]+\/strings\//.test(path2) ? "string" : "board";
   if (path2.startsWith("cards/")) return "card";
   if (path2.startsWith("writing/")) return "piece";
+  if (path2.startsWith("experiments/")) return "experiment";
   if (path2.startsWith("config/")) return "config";
   return null;
 }
@@ -1460,8 +1490,76 @@ function isoLocal(date = /* @__PURE__ */ new Date(), tz = deviceTimeZone()) {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)}${sign}${pad(Math.floor(a / 60))}:${pad(a % 60)}`;
 }
 
+// src/core/experiments.js
+var EXP_STATUSES = { proposed: "Proposition", active: "Active", done: "Done", shelved: "Set aside" };
+var VERDICTS = { confirmed: "Confirmed", refuted: "Refuted", unclear: "Unclear" };
+var COSTS = [["hours", "Hours"], ["money", "Money"], ["gpu", "GPU"]];
+var OWNER_FIELDS = ["hypothesis", "expected", "result", "surprised", "verdict"];
+var text = (v2) => String(v2 ?? "").trim();
+var ids = (v2) => Array.isArray(v2) && v2.length ? [...new Set(v2.map(String).filter(Boolean))] : void 0;
+function cleanCost(c) {
+  if (!c || typeof c !== "object") return void 0;
+  const out = {};
+  for (const [k2] of COSTS) if (text(c[k2])) out[k2] = text(c[k2]).slice(0, 80);
+  return Object.keys(out).length ? out : void 0;
+}
+function makeExperiment(fields = {}, { now, author = "self" } = {}) {
+  return {
+    id: fields.id || newId("x", now),
+    type: "experiment",
+    title: text(fields.title) || void 0,
+    question: text(fields.question),
+    why: text(fields.why) || void 0,
+    method: text(fields.method) || void 0,
+    cost: cleanCost(fields.cost),
+    sources: ids(fields.sources),
+    status: EXP_STATUSES[fields.status] ? fields.status : "proposed",
+    author,
+    created: now,
+    updated: now,
+    visibility: "private"
+  };
+}
+function addLogStep(exp, stepText, { now, author = "self" } = {}) {
+  const t = text(stepText);
+  if (!t) return exp.log || [];
+  return [...exp.log || [], { date: now, author, text: t }];
+}
+function movePatch(exp, to, { now, byOwner = false } = {}) {
+  if (!EXP_STATUSES[to]) return { error: `Unknown column "${to}". Use ${Object.keys(EXP_STATUSES).join(", ")}.` };
+  if (exp.status === to) return { error: `Already ${EXP_STATUSES[to]}.` };
+  if (to === "active" && !byOwner) return { error: "Only the owner selects a proposition \u2014 in the Experiments tab." };
+  const patch = { status: to, updated: now };
+  if (to === "active" && !exp.selected) patch.selected = now;
+  if (to === "done") patch.finished = now;
+  if (to !== "done" && exp.finished) patch.finished = void 0;
+  return patch;
+}
+function validateExperiment(rec) {
+  const errors = [];
+  if (!text(rec.question) && !text(rec.title)) errors.push("experiment needs a question");
+  if (!EXP_STATUSES[rec.status]) errors.push(`unknown experiment status "${rec.status}"`);
+  if (rec.verdict != null && !VERDICTS[rec.verdict]) errors.push(`unknown verdict "${rec.verdict}"`);
+  if (rec.cost != null && (typeof rec.cost !== "object" || Array.isArray(rec.cost))) errors.push("cost must be a map of hours / money / gpu");
+  else for (const k2 of Object.keys(rec.cost || {})) if (!COSTS.some(([c]) => c === k2)) errors.push(`unknown cost "${k2}"`);
+  for (const k2 of ["sources", "produced"]) if (rec[k2] != null && !Array.isArray(rec[k2])) errors.push(`${k2} must be a list of source ids`);
+  for (const s of rec.log || []) if (!s?.date || !s?.text || !s?.author) errors.push("a log step needs date, author and text");
+  if (rec.status === "proposed" && rec.verdict) errors.push("a proposition has no verdict yet");
+  return errors;
+}
+function columns(list) {
+  const live = list.filter((x) => !x.deleted);
+  const by = (k2) => (a, b2) => String(b2[k2] || b2.updated || "").localeCompare(String(a[k2] || a.updated || ""));
+  return {
+    proposed: live.filter((x) => x.status === "proposed").sort(by("created")),
+    active: live.filter((x) => x.status === "active").sort(by("selected")),
+    done: live.filter((x) => x.status === "done").sort(by("finished")),
+    shelved: live.filter((x) => x.status === "shelved").sort(by("updated"))
+  };
+}
+
 // src/core/model.js
-var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece"];
+var RECORD_TYPES = ["entry", "day", "event", "claim", "proposal", "question", "interpretation", "config", "report", "source", "board", "pin", "string", "card", "piece", "experiment"];
 var ENTRY_KINDS = {
   text: "Writing",
   voice: "Voice note",
@@ -1548,6 +1646,9 @@ function validateRecord(rec) {
       if (!rec.title) errors.push("piece needs a title");
       if (rec.status && !["idea", "drafting", "review", "done"].includes(rec.status)) errors.push(`unknown piece status "${rec.status}"`);
       break;
+    case "experiment":
+      errors.push(...validateExperiment(rec));
+      break;
     case "claim":
       if (!SECTION_IDS.includes(rec.section)) errors.push(`unknown section "${rec.section}"`);
       if (!rec.statement) errors.push("claim has no statement");
@@ -1585,11 +1686,11 @@ function foldWord(w2) {
   for (const ch of w2) s += foldChar(ch);
   return s;
 }
-function fold(text) {
-  return foldWord(String(text || ""));
+function fold(text2) {
+  return foldWord(String(text2 || ""));
 }
-function tokenize(text, { minLen = 2 } = {}) {
-  return fold(text).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= minLen);
+function tokenize(text2, { minLen = 2 } = {}) {
+  return fold(text2).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= minLen);
 }
 
 // src/core/sources.js
@@ -1618,16 +1719,16 @@ function siteOf(url) {
     return "";
   }
 }
-function firstUrl(text) {
-  const m = /https?:\/\/[^\s<>"'()]+[^\s<>"'().,;:!?]/i.exec(String(text || ""));
+function firstUrl(text2) {
+  const m = /https?:\/\/[^\s<>"'()]+[^\s<>"'().,;:!?]/i.exec(String(text2 || ""));
   return m ? m[0] : null;
 }
-function findDoi(text) {
-  const m = /\b(10\.\d{4,9}\/[^\s"<>]+)/i.exec(decodeURIComponentSafe(String(text || "")));
+function findDoi(text2) {
+  const m = /\b(10\.\d{4,9}\/[^\s"<>]+)/i.exec(decodeURIComponentSafe(String(text2 || "")));
   return m ? m[1].replace(/[.,;:)\]}>]+$/, "").replace(/\/(full|abstract|pdf)$/i, "") : null;
 }
-function findArxiv(text) {
-  const m = /(?:arxiv\.org\/(?:abs|pdf|html)\/|arxiv:\s*)(\d{4}\.\d{4,5})(v\d+)?/i.exec(String(text || ""));
+function findArxiv(text2) {
+  const m = /(?:arxiv\.org\/(?:abs|pdf|html)\/|arxiv:\s*)(\d{4}\.\d{4,5})(v\d+)?/i.exec(String(text2 || ""));
   return m ? m[1] : null;
 }
 function decodeURIComponentSafe(s) {
@@ -1658,15 +1759,15 @@ function guessTitle(url) {
   const words = seg.replace(/\.(html?|php|aspx?|pdf)$/i, "").replace(/[-_+]+/g, " ").replace(/\b[0-9a-f]{8,}\b/gi, "").replace(/\s+/g, " ").trim();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : siteOf(url);
 }
-function parseShared({ title = "", text = "", url = "" } = {}) {
-  const link = normalizeUrl(url) || normalizeUrl(firstUrl(text)) || normalizeUrl(firstUrl(title));
+function parseShared({ title = "", text: text2 = "", url = "" } = {}) {
+  const link = normalizeUrl(url) || normalizeUrl(firstUrl(text2)) || normalizeUrl(firstUrl(title));
   let name2 = String(title || "").trim();
   if (!name2 || normalizeUrl(name2) === link) {
-    const rest = String(text || "").replace(firstUrl(text) || "", "").replace(/\s+/g, " ").trim().replace(/[-–—:|]+$/, "").trim();
+    const rest = String(text2 || "").replace(firstUrl(text2) || "", "").replace(/\s+/g, " ").trim().replace(/[-–—:|]+$/, "").trim();
     name2 = rest && rest.length <= 300 ? rest : "";
   }
-  const doi = findDoi(link || "") || findDoi(text);
-  const arxiv = findArxiv(link || "") || findArxiv(text);
+  const doi = findDoi(link || "") || findDoi(text2);
+  const arxiv = findArxiv(link || "") || findArxiv(text2);
   return { url: link, title: name2, doi: doi || (arxiv ? `10.48550/arXiv.${arxiv}` : null) };
 }
 function cleanTag(tag) {
@@ -1765,8 +1866,8 @@ function assistWaiting(s) {
 function assistQueue(sources) {
   return sources.filter(assistWaiting).sort((a, b2) => String(a.prompted || a.added || "").localeCompare(String(b2.prompted || b2.added || "")));
 }
-function makeAgentNote(text, { author, now }) {
-  return { id: newId("an", now), author, date: now, text: String(text || "").trim() };
+function makeAgentNote(text2, { author, now }) {
+  return { id: newId("an", now), author, date: now, text: String(text2 || "").trim() };
 }
 
 // src/core/boards.js
@@ -1807,6 +1908,7 @@ function makeBoard(fields = {}, { now, author = "self" } = {}) {
     title: clean(fields.title) || "Untitled board",
     about: clean(fields.about) || void 0,
     piece: fields.piece || void 0,
+    experiment: fields.experiment || void 0,
     tags: fields.tags?.length ? fields.tags : void 0,
     author,
     created: now,
@@ -1868,8 +1970,8 @@ function boardParts(records, boardId) {
     if (r.type === "pin") pins.push(r);
     else if (r.type === "string") strings.push(r);
   }
-  const ids = new Set(pins.map((p) => p.id));
-  return { pins, strings: strings.filter((s) => ids.has(s.from) && ids.has(s.to)) };
+  const ids2 = new Set(pins.map((p) => p.id));
+  return { pins, strings: strings.filter((s) => ids2.has(s.from) && ids2.has(s.to)) };
 }
 function boardSummary(parts) {
   const items = parts.pins.filter((p) => p.kind !== "frame");
@@ -2306,8 +2408,8 @@ function makePiece(fields = {}, { now, author = "self" } = {}) {
     body: String(fields.body || "")
   };
 }
-function wordCount(text) {
-  return (String(text || "").match(/[\p{L}\p{N}'’-]+/gu) || []).length;
+function wordCount(text2) {
+  return (String(text2 || "").match(/[\p{L}\p{N}'’-]+/gu) || []).length;
 }
 
 // src/core/atlas.js
@@ -2397,7 +2499,7 @@ function walk(root, dir = "") {
 function loadAll(root) {
   const records = [];
   const problems = [];
-  for (const dir of ["sources", "boards", "cards", "writing"]) {
+  for (const dir of ["sources", "boards", "cards", "writing", "experiments"]) {
     for (const rel2 of walk(root, dir)) {
       if (!isRecordPath(rel2)) continue;
       try {
@@ -2489,6 +2591,8 @@ function run(argv, { cwd = process.cwd(), now = isoLocal(/* @__PURE__ */ new Dat
   const str = (v2) => typeof v2 === "string" ? v2 : "";
   const json = (v2) => print(JSON.stringify(v2, (k2, x) => k2 === "_path" ? void 0 : x, 2));
   const find = (q2) => sources.find((s) => s.id === q2) || (q2 ? searchSources(sources, q2)[0] : null);
+  const findExp = (q2) => byType("experiment").find((x) => x.id === q2) || (q2 ? byType("experiment").find((x) => fold(`${x.title || ""} ${x.question || ""}`).includes(fold(q2))) : null);
+  const expLine = (x) => `[${EXP_STATUSES[x.status] || x.status}${x.status === "done" && x.verdict ? `: ${VERDICTS[x.verdict]}` : ""}] ${x.title ? `${x.title} \u2014 ` : ""}${x.question}${by(x)}${x.log?.length ? ` \xB7 ${x.log.length} steps` : ""}${x.board ? ` \xB7 board ${x.board}` : ""}  (${x.id})`;
   switch (cmd) {
     case "list": {
       let list = sources;
@@ -2614,8 +2718,8 @@ ${rel2}`);
     }
     case "agent-note": {
       const s = sources.find((x) => x.id === rest[0]);
-      const text = str(a.text) || rest.slice(1).join(" ");
-      if (!s || !text.trim()) {
+      const text2 = str(a.text) || rest.slice(1).join(" ");
+      if (!s || !text2.trim()) {
         print('Usage: agent-note <source id> --text "\u2026"');
         return null;
       }
@@ -2623,7 +2727,7 @@ ${rel2}`);
         print(`Assist is off for ${s.id} \u2014 the owner hasn't asked for an agent here.`);
         return null;
       }
-      const note = makeAgentNote(text, { author: str(a.author) || AUTHOR, now });
+      const note = makeAgentNote(text2, { author: str(a.author) || AUTHOR, now });
       const next = { ...s, agent_notes: [...s.agent_notes || [], note], updated: now };
       delete next._path;
       save(root, next);
@@ -2631,8 +2735,8 @@ ${rel2}`);
       return note;
     }
     case "deposit": {
-      const text = [str(a.title), rest.join(" ")].filter(Boolean).join("\n").trim();
-      if (!text) {
+      const text2 = [str(a.title), rest.join(" ")].filter(Boolean).join("\n").trim();
+      if (!text2) {
         print("Usage: deposit <text or link> [--title \u2026] [--tags a,b]");
         return null;
       }
@@ -2645,8 +2749,8 @@ ${rel2}`);
           return dup;
         }
       }
-      const first = text.split("\n")[0];
-      const rec = shared.url || shared.doi ? makeSource({ url: shared.url || `https://doi.org/${shared.doi}`, title: shared.title, doi: shared.doi || void 0, tags }, { now, via: "claude" }) : makeSource({ kind: "thought", title: first.length > 120 ? `${first.slice(0, 117)}\u2026` : first, body: text === first && first.length <= 120 ? "" : text, tags }, { now, via: "claude" });
+      const first = text2.split("\n")[0];
+      const rec = shared.url || shared.doi ? makeSource({ url: shared.url || `https://doi.org/${shared.doi}`, title: shared.title, doi: shared.doi || void 0, tags }, { now, via: "claude" }) : makeSource({ kind: "thought", title: first.length > 120 ? `${first.slice(0, 117)}\u2026` : first, body: text2 === first && first.length <= 120 ? "" : text2, tags }, { now, via: "claude" });
       const rel2 = save(root, rec);
       print(`In the Deposit: ${line(rec)}
 ${rel2}`);
@@ -2946,10 +3050,117 @@ Saved ${pathFor(c)}`);
       print(`New piece: ${piece.title}  (${piece.id}) \u2014 its board ${b2.id}. The draft is empty: it's the owner's to write.`);
       return { piece, board: b2 };
     }
+    case "exps": {
+      const col = columns(byType("experiment"));
+      const list = a.status ? col[a.status] || [] : [...col.proposed, ...col.active, ...col.done];
+      if (a.json) return json(list);
+      print(list.length ? list.map(expLine).join("\n") : a.status ? "None." : 'No experiments yet. `exp-add "<question>"` proposes one.');
+      return list;
+    }
+    case "exp": {
+      const x = findExp(rest.join(" "));
+      if (!x) {
+        print("No experiment matches that. Try `exps`.");
+        return null;
+      }
+      if (a.json) return json(x);
+      const src = (ids2) => ids2.map((sid) => `${sourcesById[sid]?.title || sid} (${sid})`).join("; ");
+      const sum = x.board ? boardSummary(boardParts(records, x.board)) : null;
+      const owner = (k2, label) => x[k2] ? [`## ${label} (the owner's \u2014 quote, never edit)`, x[k2]] : [];
+      print([
+        `# ${x.title || x.question}`,
+        "",
+        `- id: ${x.id}`,
+        `- status: ${EXP_STATUSES[x.status] || x.status}${by(x)}`,
+        x.title ? `- question: ${x.question}` : "",
+        x.why ? `- why: ${x.why}` : "",
+        x.method ? `- method: ${x.method}` : "",
+        x.cost ? `- cost: ${COSTS.filter(([k2]) => x.cost[k2]).map(([k2, l]) => `${l.toLowerCase()} ${x.cost[k2]}`).join(" \xB7 ")}` : "",
+        x.sources?.length ? `- sources: ${src(x.sources)}` : "",
+        sum ? `- board: ${x.board} \u2014 ${sum.pins} pins, ${sum.red} red, ${sum.synthesised} synthesised` : "",
+        x.produced?.length ? `- produced: ${src(x.produced)}` : "",
+        ...[["hypothesis", "Hypothesis"], ["expected", "Expected result"], ["result", "Result"], ["surprised", "What surprised them"]].flatMap(([k2, l]) => x[k2] ? ["", ...owner(k2, l)] : []),
+        x.verdict ? `
+## Verdict: ${VERDICTS[x.verdict]}` : "",
+        x.log?.length ? ["", "## Log", ...x.log.map((st) => `- ${String(st.date).slice(0, 16).replace("T", " ")} \xB7 ${st.author === "self" ? "owner" : st.author}: ${st.text}`)].join("\n") : ""
+      ].filter((l) => l !== "").join("\n"));
+      return x;
+    }
+    case "exp-add": {
+      const question = rest.join(" ").trim();
+      if (!question) {
+        print('Usage: exp-add "<question>" [--title \u2026] [--why \u2026] [--method \u2026] [--hours \u2026] [--money \u2026] [--gpu \u2026] [--sources s-\u2026,s-\u2026]');
+        return null;
+      }
+      for (const k2 of OWNER_FIELDS) if (a[k2] !== void 0) {
+        print(`Not added: ${k2} is the owner's to write.`);
+        return null;
+      }
+      const ids2 = str(a.sources) ? str(a.sources).split(",").map((t) => t.trim()).filter(Boolean) : [];
+      const missing = ids2.filter((sid) => !sourcesById[sid]);
+      if (missing.length) {
+        print(`No source ${missing.join(", ")} here.`);
+        return null;
+      }
+      const dup = byType("experiment").find((x2) => fold(x2.question) === fold(question));
+      if (dup) {
+        print(`Already proposed: ${expLine(dup)}`);
+        return null;
+      }
+      const x = makeExperiment({ question, title: str(a.title), why: str(a.why), method: str(a.method), cost: { hours: str(a.hours), money: str(a.money), gpu: str(a.gpu) }, sources: ids2 }, { now, author: AUTHOR });
+      const errors = validateRecord(x);
+      if (errors.length) {
+        print(`Not added: ${errors.join("; ")}`);
+        return null;
+      }
+      const rel2 = save(root, x);
+      print(`Proposed: ${expLine(x)}
+${rel2}
+It waits in Propositions; only the owner selects it.`);
+      return x;
+    }
+    case "exp-log": {
+      const x = findExp(rest[0]);
+      if (!x) {
+        print(`No experiment ${rest[0] || ""}.`);
+        return null;
+      }
+      if (!str(a.text).trim()) {
+        print('Usage: exp-log <id> --text "\u2026"');
+        return null;
+      }
+      if (x.status !== "active") {
+        print(`Steps go in an active experiment's log; this one is ${EXP_STATUSES[x.status] || x.status}.`);
+        return null;
+      }
+      const next = { ...x, log: addLogStep(x, a.text, { now, author: AUTHOR }), updated: now };
+      delete next._path;
+      save(root, next);
+      print(`Logged in ${x.title || x.question}: ${str(a.text).trim()}  (${x.id}, step ${next.log.length})`);
+      return next;
+    }
+    case "exp-move": {
+      const x = findExp(rest[0]);
+      if (!x) {
+        print(`No experiment ${rest[0] || ""}.`);
+        return null;
+      }
+      const patch = movePatch(x, str(a.to), { now, byOwner: false });
+      if (patch.error) {
+        print(patch.error);
+        return null;
+      }
+      const next = { ...x, ...patch };
+      for (const [k2, v2] of Object.entries(patch)) if (v2 === void 0) delete next[k2];
+      delete next._path;
+      save(root, next);
+      print(`${x.title || x.question}: ${EXP_STATUSES[x.status]} \u2192 ${EXP_STATUSES[next.status]}  (${x.id})${next.status === "done" ? "\nThe result, surprise and verdict are the owner's to write." : ""}`);
+      return next;
+    }
     case "validate": {
       const errors = [...problems.map((p) => `${p.path}: ${p.message}`)];
       for (const r of records) for (const e of validateRecord(r)) errors.push(`${r._path}: ${e}`);
-      print(errors.length ? errors.join("\n") : `OK \u2014 ${sources.length} sources, ${byType("board").length} boards, ${byType("pin").length} pins, ${byType("string").length} strings, ${byType("card").length} cards, ${byType("piece").length} pieces.`);
+      print(errors.length ? errors.join("\n") : `OK \u2014 ${sources.length} sources, ${byType("board").length} boards, ${byType("pin").length} pins, ${byType("string").length} strings, ${byType("card").length} cards, ${byType("piece").length} pieces, ${byType("experiment").length} experiments.`);
       return errors;
     }
     default:
@@ -2969,9 +3180,13 @@ Boards:    boards \xB7 board <id | words> \xB7 curate <board>
 Atlas:     atlas <words> [--atlas-dir <clone of atlas_infodex>] \u2014 searches its small index, never the whole repo
            pin <board> --kind card --atlas <entry-id>
 Writing:   pieces \xB7 piece <id | words> \xB7 new-piece <title> [--task-id \u2026 --task-title \u2026]
+Experiments: exps [--status proposed|active|done|shelved] \xB7 exp <id | words>
+           exp-add "<question>" [--title \u2026] [--why \u2026] [--method \u2026] [--hours \u2026] [--money \u2026] [--gpu \u2026] [--sources s-\u2026,s-\u2026]
+           exp-log <id> --text "\u2026" \xB7 exp-move <id> --to done|proposed|shelved   (never selects)
            validate
 Options: --data <dir>, --json
-You (Claude) may pin and tie red string, marked as yours. Never synthesise a string, write a draft, or edit the owner's pins, notes or card entries.`);
+You (Claude) may pin and tie red string, marked as yours. Never synthesise a string, write a draft, or edit the owner's pins, notes or card entries.
+On experiments you may propose and log only: never select one, and never write its hypothesis, expectation, result, surprise or verdict.`);
       return null;
   }
 }

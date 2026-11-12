@@ -32,7 +32,7 @@ const FIELD_ORDER = {
     "videoId", "author", "thumbnail", "transcript", "videoAnalysis", "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "assist", "prompt", "prompted", "corkboard", "board", "agent_notes", "visibility", "captured"],
   // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
   // A pin's body is its note; a string's body is your synthesis — how the two connect.
-  board: ["id", "type", "title", "about", "piece", "tags", "author", "created", "updated", "visibility"],
+  board: ["id", "type", "title", "about", "piece", "experiment", "tags", "author", "created", "updated", "visibility"],
   pin: ["id", "type", "board", "kind", "title", "x", "y", "w", "h", "color", "card", "source", "url", "address",
     "author", "created", "updated"],
   string: ["id", "type", "board", "from", "to", "label", "state", "tier", "holds_in", "breaks_at", "author",
@@ -44,6 +44,10 @@ const FIELD_ORDER = {
     "lineage", "stats", "flavor", "questions", "bridges", "links", "by", "minted", "added", "updated"],
   // A piece of writing (src/core/writing.js); the body is your draft.
   piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
+  // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
+  experiment: ["id", "type", "title", "question", "why", "method", "cost", "sources", "status", "hypothesis", "expected",
+    "board", "log", "result", "surprised", "verdict", "produced", "author", "created", "updated", "selected", "finished", "visibility"],
 };
 
 const SEALED_NOTE = "_Sealed entry: its text is encrypted with your journal passphrase._";
@@ -79,12 +83,13 @@ export function pathFor(rec) {
     case "string": return isSafeId(rec.board) ? `boards/${rec.board}/strings/${rec.id}.md` : null;
     case "card": return `cards/${rec.id}.md`;
     case "piece": return `writing/${rec.id}.md`;
+    case "experiment": return `experiments/${rec.id}.md`;
     case "config": return rec.id.startsWith("config:") ? `config/${rec.id.slice(7)}.yaml` : null;
     default: return null;
   }
 }
 
-const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "config/"];
+const TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/proposals/", "meta/questions/", "interpretations/", "imports/", "sources/", "boards/", "cards/", "writing/", "experiments/", "config/"];
 
 /** Is this repo path one the app owns as a text record? */
 export function isRecordPath(p) {
@@ -213,6 +218,7 @@ export function inferType(path) {
   if (path.startsWith("boards/")) return /^boards\/[^/]+\/pins\//.test(path) ? "pin" : /^boards\/[^/]+\/strings\//.test(path) ? "string" : "board";
   if (path.startsWith("cards/")) return "card";
   if (path.startsWith("writing/")) return "piece";
+  if (path.startsWith("experiments/")) return "experiment";
   if (path.startsWith("config/")) return "config";
   return null;
 }

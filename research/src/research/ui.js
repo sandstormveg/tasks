@@ -5,7 +5,7 @@
 import { html, raw, sheet, toast, on, debounce } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
 import {
-  STATUSES, KINDS, makeSource, statusPatch, formatAuthors, findDuplicate, parseShared, cleanTags, tagCounts, guessTitle,
+  STATUSES, KINDS, makeSource, statusPatch, formatAuthors, findDuplicate, parseShared, cleanTags, tagCounts, guessTitle, searchSources,
 } from "../core/sources.js";
 import { lookupDoi } from "./lookup.js";
 import { makePin, makeString, placeNear, defaultSize, boardParts } from "../core/boards.js";
@@ -310,4 +310,26 @@ export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: g
     if (box.dataset.mode === "edit" && ta.value.trim()) set("preview");
   }, 0));
   return { refresh: () => { if (box.dataset.mode === "preview") set("preview"); } };
+}
+
+/** A sheet to pick one source from the library (searchable); resolves to its id, or null. */
+export async function pickSource(ctx, { title = "Link a source", exclude = [] } = {}) {
+  let picked = null;
+  await sheet({
+    title,
+    body: html`<input class="input" data-q placeholder="Search your library" autocomplete="off" autofocus><div class="pick-list" data-list></div>`,
+    foot: html`<button class="btn" data-close>Cancel</button>`,
+    setup: (d, close) => {
+      const list = d.querySelector("[data-list]");
+      const draw = () => {
+        const q = d.querySelector("[data-q]").value.trim();
+        const found = (q ? searchSources(ctx.sources(), q) : ctx.sources()).filter((s) => !exclude.includes(s.id)).slice(0, 30);
+        list.innerHTML = String(html`${found.map((s) => html`<button type="button" class="pick" data-id="${s.id}"><b>${s.title || s.url}</b><span>${s.site || ""}</span></button>`)}`);
+      };
+      d.querySelector("[data-q]").addEventListener("input", draw);
+      on(list, "click", "[data-id]", (ev, x) => { picked = x.dataset.id; close(true); });
+      draw();
+    },
+  });
+  return picked;
 }

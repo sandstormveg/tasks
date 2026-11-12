@@ -44,7 +44,7 @@ export async function mount(el, ctx, route, ui) {
   }
   document.body.classList.add("board-mode");
   ui.cleanup(() => document.body.classList.remove("board-mode"));
-  ui.setTitle(board.title, { back: board.piece ? `#/piece/${board.piece}` : "#/boards" });
+  ui.setTitle(board.title, { back: board.piece ? `#/piece/${board.piece}` : board.experiment ? `#/experiment/${board.experiment}` : "#/boards" });
   ui.setActions(html`<button class="btn small" data-act="curator" id="curator-btn">${raw(icon("shield"))}<span>Curator</span></button>
     <button class="btn icon small ghost" data-act="board-menu" aria-label="Board settings">${raw(icon("more"))}</button>`);
 
@@ -1095,7 +1095,7 @@ export async function mount(el, ctx, route, ui) {
     }
     if (res.autofit !== !!ctx.settings().corkAutoFit) { await ctx.saveSettings({ corkAutoFit: res.autofit }); renderAll(); }
     await ctx.store.put({ ...ctx.store.get(boardId), title: res.title || board.title, about: res.about || undefined, updated: now() });
-    ui.setTitle(res.title || board.title, { back: board.piece ? `#/piece/${board.piece}` : "#/boards" });
+    ui.setTitle(res.title || board.title, { back: board.piece ? `#/piece/${board.piece}` : board.experiment ? `#/experiment/${board.experiment}` : "#/boards" });
   }
 
   // ---- wiring
