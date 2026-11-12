@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:eaf6e580f50004d6
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:ad60635db989e695
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1134,6 +1134,8 @@ var FIELD_ORDER = {
     "author",
     "thumbnail",
     "transcript",
+    "transcriptSource",
+    "transcriptHistory",
     "videoAnalysis",
     "added",
     "updated",
@@ -2589,6 +2591,23 @@ function run(argv, { cwd = process.cwd(), now = isoLocal(/* @__PURE__ */ new Dat
   const pinName = (p) => p ? p.title || cards[p.card]?.label || sourcesById[p.source]?.title || String(p.body || "").split("\n")[0].slice(0, 60) || PIN_KINDS[p.kind] : "?";
   const by = (r) => r.author && r.author !== "self" ? ` (by ${r.author === "claude" || r.author === "claude-code" ? "Claude" : r.author})` : "";
   const str = (v2) => typeof v2 === "string" ? v2 : "";
+  const analyses = (s) => Array.isArray(s.videoAnalysis) ? s.videoAnalysis : s.videoAnalysis ? [s.videoAnalysis] : [];
+  const aiSummaries = (s) => analyses(s).filter((x) => String(x.text || x.executiveSummary || "").trim());
+  const readText = (file) => {
+    let t;
+    try {
+      t = readFileSync(path.resolve(cwd, file), "utf8");
+    } catch (e) {
+      print(`Can't read ${file}: ${e.code || e.message}`);
+      return null;
+    }
+    t = t.replace(/\r\n?/g, "\n").trim();
+    if (!t) {
+      print(`${file} is empty.`);
+      return null;
+    }
+    return t;
+  };
   const json = (v2) => print(JSON.stringify(v2, (k2, x) => k2 === "_path" ? void 0 : x, 2));
   const find = (q2) => sources.find((s) => s.id === q2) || (q2 ? searchSources(sources, q2)[0] : null);
   const findExp = (q2) => byType("experiment").find((x) => x.id === q2) || (q2 ? byType("experiment").find((x) => fold(`${x.title || ""} ${x.question || ""}`).includes(fold(q2))) : null);
@@ -2601,9 +2620,66 @@ function run(argv, { cwd = process.cwd(), now = isoLocal(/* @__PURE__ */ new Dat
       if (a.fav) list = list.filter((s) => s.favourite);
       if (a.kind) list = list.filter((s) => s.kind === a.kind);
       list = list.slice(0, Number(a.limit) || 200);
-      if (a.json) return json(list);
+      if (a.json) {
+        const out = a.kind === "video" ? list.map((s) => ({ ...s, hasTranscript: !!String(s.transcript || "").trim(), hasAiSummary: aiSummaries(s).length > 0 })) : list;
+        json(out);
+        return out;
+      }
       print(list.length ? list.map(line).join("\n") : "Nothing matches.");
       return list;
+    }
+    case "transcript": {
+      const s = sources.find((x) => x.id === rest[0]);
+      if (!s || !str(a.file)) {
+        print("Usage: transcript <source id> --file <path> [--source youtube-captions] [--replace]");
+        return null;
+      }
+      if (s.kind !== "video") {
+        print(`${s.id} is a ${s.kind}, not a video.`);
+        return null;
+      }
+      const text2 = readText(a.file);
+      if (text2 == null) return null;
+      const previous = String(s.transcript || "");
+      if (previous.trim() && previous.trim() === text2) {
+        print(`Unchanged: ${s.title || s.id} already has this transcript.`);
+        return s;
+      }
+      if (previous.trim() && !a.replace) {
+        print(`${s.title || s.id} already has a transcript. Add --replace to swap it; the old one is kept in transcriptHistory.`);
+        return null;
+      }
+      const next = { ...s, transcript: text2, transcriptSource: str(a.source) || "youtube-captions", updated: now };
+      if (previous.trim()) next.transcriptHistory = [...s.transcriptHistory || [], { text: previous, source: s.transcriptSource || "unknown", replaced: now }];
+      delete next._path;
+      save(root, next);
+      print(`Transcript saved to ${s.title || s.id} (${text2.split("\n").length} lines, ${next.transcriptSource})${previous.trim() ? "; the old one is kept in transcriptHistory" : ""}.`);
+      return next;
+    }
+    case "video-summary": {
+      const s = sources.find((x) => x.id === rest[0]);
+      const who = str(a.author).trim();
+      if (!s || !str(a.file) || !who) {
+        print('Usage: video-summary <source id> --file <path> --author "<model and harness>"');
+        return null;
+      }
+      if (s.kind !== "video") {
+        print(`${s.id} is a ${s.kind}, not a video.`);
+        return null;
+      }
+      if (!String(s.transcript || "").trim()) {
+        print(`${s.title || s.id} has no transcript yet \u2014 save one first (transcript <id> --file \u2026).`);
+        return null;
+      }
+      const text2 = readText(a.file);
+      if (text2 == null) return null;
+      const entry = { text: text2, author: who.startsWith("ai:") ? who : `ai:${who}`, created: now, status: "proposal", via: "research-tool" };
+      const kept = analyses(s).filter((x) => x.via !== "research-tool");
+      const next = { ...s, videoAnalysis: [...kept, entry], updated: now };
+      delete next._path;
+      save(root, next);
+      print(`AI summary saved to ${s.title || s.id}, by ${entry.author}.`);
+      return entry;
     }
     case "search": {
       const found = searchSources(sources, rest.join(" "));
@@ -3170,6 +3246,8 @@ Library:   list [--status inbox|to-read|reading|read|dropped|filed] [--tag t] [-
            add <link> [--title \u2026] [--tags a,b] [--why \u2026] [--status \u2026] [--kind \u2026] [--doi \u2026]
            deposit <text or link> [--title \u2026] [--tags a,b]
            set <id> [--status \u2026] [--fav true|false] [--tags +a,-b]
+Videos:    transcript <id> --file <path> [--source youtube-captions] [--replace]
+           video-summary <id> --file <path> --author "<model and harness>"   (needs a transcript; AI-written, shown as such)
 Assist:    assists [--all] \xB7 agent-note <id> --text "\u2026" [--author \u2026]   (only where the owner turned Assist on)
 Boards:    boards \xB7 board <id | words> \xB7 curate <board>
            new-board <title> [--about \u2026] [--piece w-\u2026] [--source s-\u2026]

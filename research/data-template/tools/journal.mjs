@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:a9e76cde2147dd31
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:674d39400d10173e
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1134,6 +1134,8 @@ var FIELD_ORDER = {
     "author",
     "thumbnail",
     "transcript",
+    "transcriptSource",
+    "transcriptHistory",
     "videoAnalysis",
     "added",
     "updated",

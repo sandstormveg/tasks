@@ -52,6 +52,14 @@ are one line per item; open a single board or piece only when it's relevant.
   - Your pins and strings are marked as Claude's (`author: claude`) and shown that way in the app.
   - **Never synthesise a string.** Synthesis is their act: their words for how two things connect. The tool
     has no command for it, on purpose. Suggest a synthesis in chat if useful.
+- **Videos** — a job may fill in what a video lacks (`list --kind video --json` marks each with
+  `hasTranscript` and `hasAiSummary`):
+  - `transcript <id> --file <path> [--source youtube-captions]` saves captions as the transcript. If one is
+    already there it refuses unless `--replace`, and then the old text is kept in `transcriptHistory`.
+  - `video-summary <id> --file <path> --author "<model and harness>"` saves an AI-written summary (Markdown)
+    as its own entry in `videoAnalysis`, shown in the app as **AI-written** with that author. It needs a
+    transcript first, and a new one replaces only this tool's earlier summary.
+  - Never put a summary in their notes, `why` or `expect`, and never edit a transcript by hand.
 - **Assist** — the owner can turn on Assist for one source and write a prompt (like Assist on a task).
   Only an explicit `assist: true` counts. Work only on those, and answer only with the tool:
   - `node tools/research.mjs assists` lists prompts waiting for an answer, oldest first (`--all`: every
