@@ -256,6 +256,16 @@ export function validateRecord(rec) {
       if (rec.from && rec.from === rec.to) errors.push("string joins a pin to itself");
       if (!["red", "synthesised"].includes(rec.state)) errors.push(`unknown string state "${rec.state}"`);
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
+      // Each end may sit anywhere on its pin, kept as fractions so a resize keeps it there.
+      for (const k of ["from_offset", "to_offset"]) {
+        const o = rec[k];
+        if (o == null || o === "") continue;
+        if (typeof o !== "object") { errors.push(`string ${k} must be an offset of fractions`); continue; }
+        for (const axis of ["x", "y"]) {
+          const v = Number(o[axis]);
+          if (!Number.isFinite(v) || v < 0 || v > 1 || o[axis] === null) errors.push(`string ${k}.${axis} must be between 0 and 1`);
+        }
+      }
       break;
     case "card":
       if (rec.source === "atlas") { if (!rec.atlas) errors.push("Atlas card needs its entry id"); }

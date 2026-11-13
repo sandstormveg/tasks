@@ -23,7 +23,7 @@ body.board-mode .content { max-width: none; padding: 0; }
 .cork-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .cork-strings { position: absolute; overflow: visible; pointer-events: none; }
 .cork-strings-top { z-index: 2; }
-.cork-labels { z-index: 4; }
+.cork-labels { z-index: 2; }
 /* What's selected (or inside a selected frame, or being dragged) rises above the string. */
 .pin.lift { z-index: 3; }
 .pin.lift:not(.pin-frame) { box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2), 0 12px 26px rgba(40, 24, 10, 0.38); }
@@ -54,6 +54,11 @@ body.board-mode .content { max-width: none; padding: 0; }
 .pin-by { position: absolute; top: 4px; right: 6px; font: 600 10px/1 var(--font-ui); color: #6a4fb3; background: #efe8ff; padding: 2px 5px; border-radius: 999px; }
 .pin-title { font-weight: 700; font-size: calc(15px * var(--ps, 1)); line-height: 1.25; margin-bottom: 4px; overflow-wrap: anywhere; }
 .pin-text { font-size: calc(13px * var(--ps, 1)); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; color: #3d372e; }
+.pin-inline-editor { position: relative; z-index: 3; display: flex; flex-direction: column; gap: 6px; height: 100%; user-select: text; -webkit-user-select: text; }
+.pin-inline-editor .input { flex: 0 0 auto; min-width: 0; padding: 4px 6px; font: 700 14px var(--font-write); }
+.pin-inline-editor .textarea { flex: 1 1 auto; min-height: 30px; resize: none; padding: 4px 6px; font: 13px/1.35 var(--font-write); }
+.pin-inline-editor .small { flex: 0 0 auto; font: 10px/1.2 var(--font-ui); }
+.pin-inline-editor :is(input, textarea) { user-select: text; -webkit-user-select: text; }
 .pin-kicker { font: 600 10px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: #8a7a62; margin-bottom: 3px; }
 .pin-meta { font: 12px/1.3 var(--font-ui); color: #7a6d5a; display: block; overflow-wrap: anywhere; }
 .pin-foot { position: absolute; bottom: 8px; left: 14px; right: 14px; font: 12px var(--font-ui); }
@@ -97,6 +102,29 @@ body.board-mode .content { max-width: none; padding: 0; }
 .str.syn .str-line { stroke: #2f2a24; stroke-width: 2.2; }
 :root[data-theme="dark"] .str.syn .str-line, :root[data-app-theme="ink"] .str.syn .str-line, :root[data-app-theme="terminal"] .str.syn .str-line { stroke: #f2e6cf; }
 .str.syn.bridge .str-line { stroke: #d4a017; stroke-width: 3; }
+/* The Strings settings: a colour preset, a thickness and a curve, for every string. */
+.str.sc-red .str-line { stroke: #c62828; } .str.sc-ink .str-line { stroke: #2f2a24; }
+.str.sc-blue .str-line { stroke: #2c5d8f; } .str.sc-green .str-line { stroke: #2e7d32; }
+.str.sc-purple .str-line { stroke: #6a1b9a; }
+:root[data-theme="dark"] .str.sc-ink .str-line, :root[data-app-theme="ink"] .str.sc-ink .str-line { stroke: #f2e6cf; }
+.str.sr-thin .str-line { stroke-width: 1.6; } .str.sr-normal .str-line { stroke-width: 2.6; }
+.str.sr-thick .str-line { stroke-width: 4; }
+/* The string you've picked up, and the ends you can drag. */
+.str.chosen .str-line { filter: drop-shadow(0 0 3px rgba(255, 209, 102, 0.95)); }
+.str-handle, .cork-labels .str-end { pointer-events: none; }
+.cork-labels .str-end { pointer-events: auto; cursor: grab; }
+.cork-labels .str-end-hit { fill: transparent; }
+.cork-labels .str-end-dot { fill: #ffd166; stroke: #8e1b1b; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.cork-labels .str-end:active { cursor: grabbing; }
+/* A string's word: a small translucent pill, drawn under any pin you've picked up. */
+.cork-labels .str-label rect { fill: rgba(40, 24, 10, 0.72); }
+.cork-labels .str-label text {
+  font-family: var(--font-ui); font-weight: 600; font-size: calc(var(--str-px, 13px) / var(--z, 1));
+  fill: #fff; pointer-events: none;
+}
+.cork-labels .sl-f-serif text { font-family: var(--font-write); }
+.cork-labels .sl-f-type text { font-family: "Courier Prime", ui-monospace, monospace; }
+.cork-labels .sl-f-hand text { font-family: "Patrick Hand", "Segoe Print", cursive; }
 .str.flash .str-line { animation: str-flash 0.6s ease-in-out 3; }
 @keyframes str-flash { 50% { stroke: #ffd166; stroke-width: 6; } }
 .str text { font: 600 13px var(--font-ui); fill: #fff; paint-order: stroke; stroke: rgba(60, 20, 10, 0.85); stroke-width: 3.5px; pointer-events: none; }
@@ -109,9 +137,35 @@ body.board-mode .content { max-width: none; padding: 0; }
   max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none;
 }
 .cork-tools .btn { white-space: nowrap; }
+/* One Add button, and the menu of things you can add, sitting just above it. */
+.cork-add.on, .cork-add.mode-on { color: var(--accent); border-color: var(--accent); }
+.cork-add-menu {
+  position: absolute; left: 50%; bottom: calc(70px + var(--safe-b)); transform: translateX(-50%); z-index: 6;
+  display: flex; flex-direction: column; gap: 2px; min-width: 156px; padding: 6px; border-radius: 14px;
+  background: var(--surface); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+.cork-add-menu[hidden] { display: none; }
+.cork-add-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--ink); font: inherit; font-size: 0.95rem; text-align: left; cursor: pointer;
+}
+.cork-add-menu button:hover, .cork-add-menu button:focus-visible { background: var(--surface-2); }
+.cork-add-menu button.on { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cork-add-menu svg { width: 18px; height: 18px; flex: none; }
+/* Chips for the Strings settings: a colour chip is the colour itself. */
+.chips .str-swatch { padding: 0 9px; }
+.chips .str-swatch span { display: block; width: 20px; height: 20px; border-radius: 50%; background: currentColor; }
+.chips .str-swatch.sc-red { color: #c62828; } .chips .str-swatch.sc-ink { color: #2f2a24; }
+.chips .str-swatch.sc-blue { color: #2c5d8f; } .chips .str-swatch.sc-green { color: #2e7d32; }
+.chips .str-swatch.sc-purple { color: #6a1b9a; }
+.str-settings .chips { margin: 0 0 8px; }
+/* The font chips show the font they set. */
+.chips .ps-f-serif { font-family: var(--font-write); } .chips .ps-f-sans { font-family: var(--font-ui); }
+.chips .ps-f-type { font-family: "Courier Prime", ui-monospace, monospace; }
+.chips .ps-f-hand { font-family: "Patrick Hand", "Segoe Print", cursive; }
 .cork-tools-gap { width: 4px; flex: none; }
-@media (max-width: 520px) { .cork-tools .btn span { display: none; } .cork-tools .btn.small { padding: 0 10px; } }
-/* With the Aa in it the dock is ten buttons: keep them all on a phone's width. */
+@media (max-width: 520px) { .cork-tools .btn span { display: none; } .cork-tools .btn.small { padding: 0 10px; } .cork-tools .cork-add span { display: inline; } }
+/* A short dock now: Add, Aa, board settings and fit keep their room on a phone. */
 @media (max-width: 430px) { .cork-tools { gap: 3px; padding: 5px; } .cork-tools .btn.small { padding: 0 7px; min-width: 32px; } .cork-tools .btn.icon.small { width: 32px; min-width: 32px; } .cork-tools-gap { width: 0; } }
 .cork-sel {
   position: absolute; z-index: 5; display: flex; gap: 4px; padding: 5px; border-radius: 12px; background: var(--surface);
@@ -130,8 +184,8 @@ body.board-mode .content { max-width: none; padding: 0; }
 .pin.ps-c-purple .pin-body { --ps-ink: #6a1b9a; } .pin.ps-c-grey .pin-body { --ps-ink: #6b6358; }
 .pin[class*="ps-c-"] :is(.pin-title, .pin-text, .pin-quote) { color: var(--ps-ink); }
 .pin.ps-f-sans { font-family: var(--font-ui); }
-.pin.ps-f-type { font-family: "Courier Prime", "Courier New", Courier, ui-monospace, monospace; }
-.pin.ps-f-hand { font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Neue", "Comic Sans MS", cursive; }
+.pin.ps-f-type { font-family: "Courier Prime", ui-monospace, "Courier New", Courier, monospace; }
+.pin.ps-f-hand { font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; }
 .pin.ps-a-center .pin-body { text-align: center; } .pin.ps-a-right .pin-body { text-align: right; }
 .pin.ps-b :is(.pin-title, .pin-text, .pin-quote) { font-weight: 700; }
 .pin.ps-i :is(.pin-title, .pin-text, .pin-quote) { font-style: italic; }
@@ -169,8 +223,8 @@ body.board-mode .content { max-width: none; padding: 0; }
 .cork-style .fmt-red { color: #c62828; } .cork-style .fmt-orange { color: #c45000; } .cork-style .fmt-yellow { color: #d9a400; }
 .cork-style .fmt-green { color: #2e7d32; } .cork-style .fmt-purple { color: #6a1b9a; } .cork-style .fmt-grey { color: #8a8174; }
 .cork-style .ps-f-serif { font-family: var(--font-write); } .cork-style .ps-f-sans { font-family: var(--font-ui); }
-.cork-style .ps-f-type { font-family: "Courier Prime", "Courier New", Courier, monospace; }
-.cork-style .ps-f-hand { font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", cursive; }
+.cork-style .ps-f-type { font-family: "Courier Prime", ui-monospace, "Courier New", Courier, monospace; }
+.cork-style .ps-f-hand { font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; }
 .cork-style .swatch-dot { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 6px; background: #fffdf6; }
 .cork-style .swatch-dot.c-yellow { background: #fff3a8; } .cork-style .swatch-dot.c-pink { background: #ffd6e0; } .cork-style .swatch-dot.c-blue { background: #d6ecff; }
 .cork-style .swatch-dot.c-green { background: #d9f5d6; } .cork-style .swatch-dot.c-lilac { background: #e9ddff; }

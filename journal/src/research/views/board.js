@@ -14,15 +14,17 @@ import { html, raw, on, sheet, toast, confirmSheet, promptSheet, debounce } from
 import { icon } from "../../ui/icons.js";
 import {
   PIN_KINDS, TIERS, PIN_COLORS, makePin, makeString, synthesisPatch, unsynthesisePatch, boardParts, boardSummary,
-  placeNear, tiltOf, boundsOf, framesOf, defaultSize, stringCurve,
+  placeNear, tiltOf, boundsOf, framesOf, defaultSize, stringCurve, stringLook, stringAnchor, offsetFromPoint,
+  cleanStringOffset, stringLabelSpot,
 } from "../../core/boards.js";
 import { searchAtlas, refreshAtlasCard, atlasCardId, atlasRelations, spriteSvg, readable } from "../../core/atlas.js";
 import { loadAtlasIndex, loadAtlasEntry, atlasFileUrl } from "../atlas.js";
 import { checkSynthesis, curate } from "../../core/curator.js";
 import { searchThings, fetchCard, cardFromDex, refreshCard, cardIdFor, searchCards } from "../../core/infodex.js";
 import { searchSources, formatAuthors } from "../../core/sources.js";
-import { renderMarkdown } from "../../core/markdown.js";
+import { renderMarkdown, renderInline, stripHeadingPrefix } from "../../core/markdown.js";
 import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
+import { stringsBlock, wireStringsBlock } from "../string-settings.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 import { formatted } from "../../ui/textformat.js";
 import { SIZES, COLOURS, PIN_FONTS, PIN_ALIGNS, PIN_BASE_PX, PIN_MIN_PX, PIN_MAX_PX, PIN_PRESET_PX, pinTextPx, cleanPinStyle, migratePinMarkup } from "../../core/textformat.js";
@@ -33,6 +35,61 @@ const MAX_Z = 6;
 // (where an opened card lands on a laptop, fitted to the screen's height), or once it fills most of a phone's width.
 const LOD = (screenW, vpW = 1200) => (screenW < 70 ? 0 : screenW < 300 ? 1 : screenW < Math.min(480, vpW * 0.8) ? 2 : 3);
 const isClaude = (a) => a === "claude" || a === "claude-code" || String(a || "").startsWith("ai:");
+
+function noteEditPreview(title, body) {
+  return html`<div class="note-popup-md">
+    <div class="notes-head"><span class="label">Note</span><div class="status-seg small" role="group" aria-label="Note: edit or preview"><button type="button" data-note-mode="edit" class="on" aria-pressed="true">Edit</button><button type="button" data-note-mode="preview" aria-pressed="false">Preview</button></div></div>
+    <div data-note-edit><label class="field"><span>Title</span><input class="input" data-t value="${title || ""}" autocomplete="off"></label><label class="field"><span>Text</span><textarea class="textarea" data-b rows="6">${body || ""}</textarea></label></div>
+    <div class="prose notes-preview" data-note-preview hidden></div>
+  </div>`;
+}
+function wireNoteEditPreview(d) {
+  const set = (mode) => {
+    const edit = mode === "edit";
+    d.querySelector("[data-note-edit]").hidden = !edit;
+    const preview = d.querySelector("[data-note-preview]");
+    preview.hidden = edit;
+    if (!edit) {
+      const title = d.querySelector("[data-t]").value;
+      const body = d.querySelector("[data-b]").value;
+      preview.innerHTML = `${title ? `<h3>${renderInline(stripHeadingPrefix(title), { tags: false, concepts: false })}</h3>` : ""}${renderMarkdown(body, { tags: false, concepts: false, headingOffset: 3 })}` || '<p class="faint">Nothing written yet.</p>';
+    }
+    for (const b of d.querySelectorAll("[data-note-mode]")) {
+      b.classList.toggle("on", b.dataset.noteMode === mode);
+      b.setAttribute("aria-pressed", String(b.dataset.noteMode === mode));
+    }
+  };
+  d.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-note-mode]");
+    if (b) set(b.dataset.noteMode);
+    else if (e.target.closest("[data-note-preview]")) set("edit");
+  });
+}
+function newNoteEditPreview() {
+  return html`<div class="note-popup-md">
+    <div class="notes-head"><span class="label">Note</span><div class="status-seg small" role="group" aria-label="Note: edit or preview"><button type="button" data-new-mode="edit" class="on" aria-pressed="true">Edit</button><button type="button" data-new-mode="preview" aria-pressed="false">Preview</button></div></div>
+    <div data-new-edit><label class="field"><span>Write a note</span><textarea class="textarea" data-new-body rows="8" placeholder="A thought, a claim, a question…"></textarea></label></div>
+    <div class="prose notes-preview" data-new-preview hidden></div>
+  </div>`;
+}
+function wireNewNotePreview(d) {
+  const set = (mode) => {
+    const edit = mode === "edit";
+    d.querySelector("[data-new-edit]").hidden = !edit;
+    const preview = d.querySelector("[data-new-preview]");
+    preview.hidden = edit;
+    if (!edit) preview.innerHTML = renderMarkdown(d.querySelector("[data-new-body]").value, { tags: false, concepts: false, headingOffset: 3 }) || '<p class="faint">Nothing written yet.</p>';
+    for (const b of d.querySelectorAll("[data-new-mode]")) {
+      b.classList.toggle("on", b.dataset.newMode === mode);
+      b.setAttribute("aria-pressed", String(b.dataset.newMode === mode));
+    }
+  };
+  d.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-new-mode]");
+    if (b) set(b.dataset.newMode);
+    else if (e.target.closest("[data-new-preview]")) set("edit");
+  });
+}
 
 export async function mount(el, ctx, route, ui) {
   const boardId = route.params[0];
@@ -61,19 +118,20 @@ export async function mount(el, ctx, route, ui) {
     <div class="cork-hint" id="cork-hint" hidden></div>
     <div class="cork-sel" id="cork-sel" hidden></div>
     <div class="cork-style" id="cork-style" role="toolbar" aria-label="Style the selected pin" hidden></div>
+    <div class="cork-add-menu" id="cork-add-menu" role="menu" aria-label="Add to the board" hidden>
+      <button type="button" role="menuitem" data-tool="note">${raw(icon("edit"))}<span>Note</span></button>
+      <button type="button" role="menuitem" data-tool="source">${raw(icon("bookmark"))}<span>Source</span></button>
+      <button type="button" role="menuitem" data-tool="card">${raw(icon("sparkle"))}<span>Card</span></button>
+      <button type="button" role="menuitem" data-tool="image">${raw(icon("camera"))}<span>Picture</span></button>
+      <button type="button" role="menuitem" data-tool="frame" aria-pressed="false" title="Drag on the board to draw a frame (right-drag works any time)">${raw(icon("map"))}<span>Frame</span></button>
+      <button type="button" role="menuitem" data-tool="string" aria-pressed="false" title="Tap a pin, then another, to tie red string">〰<span>String</span></button>
+    </div>
     <div class="cork-tools" role="toolbar" aria-label="Add to the board">
-      <button class="btn small" data-tool="note">${raw(icon("edit"))}<span>Note</span></button>
-      <button class="btn small" data-tool="card">${raw(icon("sparkle"))}<span>Card</span></button>
-      <button class="btn small" data-tool="source">${raw(icon("bookmark"))}<span>Source</span></button>
-      <button class="btn small" data-tool="image">${raw(icon("camera"))}<span>Picture</span></button>
-      <button class="btn small" data-tool="frame" aria-pressed="false" title="Drag on the board to draw a frame (right-drag works any time)">${raw(icon("map"))}<span>Frame</span></button>
-      <button class="btn small" data-tool="string" aria-pressed="false" title="Tap a pin, then another, to tie red string">〰<span>String</span></button>
+      <button class="btn small cork-add" data-tool="add" aria-haspopup="menu" aria-expanded="false" aria-controls="cork-add-menu" title="Add a note, source, card, picture, frame or string">${raw(icon("plus"))}<span>Add</span></button>
       <button class="btn small cork-aa" data-tool="style" aria-label="Style the selected pin: text size, colour, font, alignment, card" aria-expanded="false" title="Style the selected pin">A<small>a</small></button>
       <span class="cork-tools-gap"></span>
       <button class="btn icon small" data-tool="board" aria-label="Board settings" title="Board settings">${raw(icon("settings"))}</button>
-      <button class="btn icon small" data-tool="zoom-out" aria-label="Zoom out">−</button>
-      <button class="btn icon small" data-tool="fit" aria-label="Fit everything">${raw(icon("compass"))}</button>
-      <button class="btn icon small" data-tool="zoom-in" aria-label="Zoom in">+</button>
+      <button class="btn icon small" data-tool="fit" aria-label="Fit everything" title="Fit everything">${raw(icon("compass"))}</button>
     </div>
   </div>`);
 
@@ -97,9 +155,13 @@ export async function mount(el, ctx, route, ui) {
   let sourcesById = {};
   let cam = loadCam() || null;
   let selected = null;
+  let selectedString = null; // a string picked up: its ends can move, and its word can show
   let connectFrom = null;
   let mode = null; // "string" or "frame" while that dock tool is on
   let flash = new Set();
+  let inlineEditId = null;
+  let inlineCreated = false;
+  const inlineNotesEnabled = () => { try { return localStorage.getItem("research.board-inline-notes") === "true"; } catch { return false; } };
   const pinEls = new Map();
 
   function load() {
@@ -176,6 +238,11 @@ export async function mount(el, ctx, route, ui) {
 
   // ---- rendering
   function pinInner(p, lod) {
+    if (p.kind === "note" && inlineEditId === p.id) return html`<div class="pin-inline-editor" data-inline-editor>
+      <input class="input" data-inline-title aria-label="Note title" placeholder="Title" value="${p.title || ""}">
+      <textarea class="textarea" data-inline-body aria-label="Note text" placeholder="Write a note…">${p.body || ""}</textarea>
+      <span class="small faint">Click outside to save · Esc to cancel · Ctrl/Cmd+Enter to save</span>
+    </div>`;
     const by = isClaude(p.author) ? html`<span class="pin-by" title="Pinned by Claude">Claude</span>` : "";
     if (p.kind === "frame") {
       const a = p.address || {};
@@ -200,7 +267,7 @@ export async function mount(el, ctx, route, ui) {
     }
     if (p.kind === "quote") return html`${by}<blockquote class="pin-quote">${formatted(p.body)}</blockquote>${p.title ? html`<div class="pin-meta">— ${p.title}</div>` : ""}`;
     if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? html`<a class="pin-meta" href="${p.url}" target="_blank" rel="noopener noreferrer">${p.url.replace(/^https?:\/\//, "").slice(0, 60)}</a>` : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${formatted(p.body)}</div>` : ""}`;
-    return html`${by}${p.title ? html`<div class="pin-title">${p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : formatted(p.body)}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
+    return html`${by}${p.title ? html`<div class="pin-title">${p.kind === "note" ? raw(renderInline(stripHeadingPrefix(p.title), { tags: false, concepts: false })) : p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : formatted(p.body)}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
   }
 
   function pageCtx(p) {
@@ -233,7 +300,7 @@ export async function mount(el, ctx, route, ui) {
       pinEls.set(p.id, node);
       pinsEl.appendChild(node);
     }
-    const lod = lodOf(p);
+    const lod = inlineEditId === p.id ? Math.max(1, lodOf(p)) : lodOf(p);
     node.className = `pin pin-${p.kind}${p.color ? ` c-${p.color}` : ""}${styleClasses(p)}${selected === p.id ? " sel" : ""}${lifted.has(p.id) ? " lift" : ""}${flash.has(p.id) ? " flash" : ""}${isClaude(p.author) ? " by-claude" : ""}`;
     node.dataset.lod = lod;
     node.style.cssText = `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--tilt:${p.kind === "frame" ? 0 : tiltOf(p.id)}deg`;
@@ -244,16 +311,60 @@ export async function mount(el, ctx, route, ui) {
     sizeText(p, node);
   }
 
+  function startInlineEdit(id, created = false) {
+    inlineEditId = id;
+    inlineCreated = created;
+    const p = pinById(id);
+    if (p) renderPin(p);
+    queueMicrotask(() => pinEls.get(id)?.querySelector("[data-inline-title]")?.focus());
+  }
+  async function finishInlineEdit(save) {
+    if (!inlineEditId) return;
+    const id = inlineEditId;
+    const p = pinById(id);
+    const created = inlineCreated;
+    const node = pinEls.get(id);
+    inlineEditId = null;
+    inlineCreated = false;
+    if (!p) return;
+    if (save) {
+      const title = node?.querySelector("[data-inline-title]")?.value.trim() || "";
+      const body = (node?.querySelector("[data-inline-body]")?.value || "").replace(/\s+$/, "");
+      if (!title && !body) {
+        await ctx.store.remove(id, { reason: "empty note" });
+        return;
+      }
+      await savePin(p, { title: title || undefined, body, author: "self" });
+    } else if (created) await ctx.store.remove(id, { reason: "cancelled note" });
+    load();
+    renderAll();
+  }
+  const inlineOutside = (e) => {
+    if (inlineEditId && !e.target.closest("[data-inline-editor]")) finishInlineEdit(true);
+  };
+  document.addEventListener("pointerdown", inlineOutside, true);
+  ui.cleanup(() => document.removeEventListener("pointerdown", inlineOutside, true));
+  el.addEventListener("keydown", (e) => {
+    if (!inlineEditId || !e.target.closest("[data-inline-editor]")) return;
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finishInlineEdit(false); }
+    else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); finishInlineEdit(true); }
+  });
+
   // While you drag a pin its strings belly away from the motion, then settle back with a little spring.
   let sway = { ids: new Set(), vx: 0, vy: 0 };
   let settle = 0;
-  function stringPath(s) {
+  const lookNow = () => stringLook(ctx.settings().corkString);
+  // A string runs between the two spots its ends are attached to — the top of a pin
+  // until you drag an end somewhere else on it (then a fraction of the pin's size).
+  function stringPath(s, look = lookNow()) {
     const a = pinById(s.from);
     const b = pinById(s.to);
     if (!a || !b) return null;
     const moving = sway.ids.has(s.from) || sway.ids.has(s.to);
-    const c = stringCurve({ x: a.x + a.w / 2, y: a.y + 10 }, { x: b.x + b.w / 2, y: b.y + 10 }, { state: s.state, vx: moving ? sway.vx : 0, vy: moving ? sway.vy : 0 });
-    return { d: c.d, mx: c.mid.x, my: c.mid.y };
+    const curve = stringCurve(stringAnchor(a, s.from_offset), stringAnchor(b, s.to_offset), {
+      state: s.state, vx: moving ? sway.vx : 0, vy: moving ? sway.vy : 0, sag: look.sagScale,
+    });
+    return { d: curve.d, curve, mx: curve.mid.x, my: curve.mid.y };
   }
   function settleStrings(v0) {
     cancelAnimationFrame(settle);
@@ -269,7 +380,17 @@ export async function mount(el, ctx, route, ui) {
     settle = requestAnimationFrame(step);
   }
 
+  // The label's box, in board units: its text is drawn at a steady size on screen
+  // (CSS divides by the zoom), so what counts as "covering a pin" shrinks as you zoom in.
+  function labelBox(label, look) {
+    const z = cam.z || 1;
+    const w = (Math.max(24, String(label).length * look.textPx * 0.56) + 12) / z;
+    const h = (look.textPx + 8) / z;
+    return { w, h };
+  }
+
   function renderStrings(temp = null) {
+    const look = lookNow();
     const all = [...parts.pins];
     const b = boundsOf(all.length ? all : [{ x: 0, y: 0, w: 1, h: 1 }]);
     const pad = 600;
@@ -279,24 +400,43 @@ export async function mount(el, ctx, route, ui) {
       layer.style.cssText = `left:${vb.x}px;top:${vb.y}px;width:${vb.w}px;height:${vb.h}px`;
     }
     const labels = [];
+    const handles = [];
     const { bridges } = curateNow();
     const out = [];
     const top = [];
     for (const s of parts.strings) {
-      const p = stringPath(s);
+      const p = stringPath(s, look);
       if (!p) continue;
-      const cls = `str ${s.state === "synthesised" ? "syn" : "red"}${bridges.includes(s.id) ? " bridge" : ""}${flash.has(s.id) ? " flash" : ""}${isClaude(s.author) ? " by-claude" : ""}`;
+      const chosen = selectedString === s.id;
+      const bridge = bridges.includes(s.id);
+      const cls = `str ${s.state === "synthesised" ? "syn" : "red"} sc-${look.colour} sr-${look.width}${bridge ? " bridge" : ""}${flash.has(s.id) ? " flash" : ""}${isClaude(s.author) ? " by-claude" : ""}${chosen ? " chosen" : ""}`;
       out.push(html`<g class="${cls}" data-string="${s.id}"><path class="str-hit" d="${p.d}"/></g>`);
       top.push(html`<g class="${cls}"><path class="str-shadow" d="${p.d}"/><path class="str-line" d="${p.d}"/></g>`);
-      if (s.label) labels.push(html`<g class="str"><text x="${p.mx}" y="${p.my}" text-anchor="middle">${s.label}</text></g>`);
+      if (s.label) {
+        // Never over a pin: the middle if it fits, else slide along; if the whole string is
+        // covered, say it only while the string is picked up (so it can't hide a pin).
+        const box = labelBox(s.label, look);
+        const spot = stringLabelSpot(p.curve, parts.pins, box) || (chosen ? p.curve.mid : null);
+        const show = look.text === "never" ? false : look.text === "always" ? true : chosen;
+        if (show && spot) labels.push(html`<g class="str-label sl-f-${look.font || "serif"}${chosen ? " chosen" : ""}" style="--str-px:${look.textPx}px">
+          <rect x="${spot.x - box.w / 2}" y="${spot.y - box.h / 2}" width="${box.w}" height="${box.h}" rx="${box.h / 2}"/>
+          <text x="${spot.x}" y="${spot.y}" text-anchor="middle" dominant-baseline="central">${s.label}</text></g>`);
+      }
+      if (chosen) {
+        const r = 8 / (cam.z || 1);
+        for (const [end, pt] of [["from", p.curve.p0], ["to", p.curve.p1]]) {
+          handles.push(html`<g class="str-end" data-str-end="${end}" data-sid="${s.id}"><circle class="str-end-hit" cx="${pt.x}" cy="${pt.y}" r="${r * 2.2}"/><circle class="str-end-dot" cx="${pt.x}" cy="${pt.y}" r="${r}"/></g>`);
+        }
+      }
     }
     if (temp) top.push(html`<path class="str-temp" d="M${temp.ax},${temp.ay} L${temp.bx},${temp.by}"/>`);
     svg.innerHTML = String(html`${out}`);
     svgTop.innerHTML = String(html`${top}`);
-    labelsEl.innerHTML = String(html`${labels}`);
+    labelsEl.innerHTML = String(html`${labels}${handles}`);
   }
 
   let curated = null;
+  let labelZ = 0; // the zoom the labels were last placed at
   function curateNow() { return (curated ||= curate(parts, { cards: cardsById, sources: sourcesById })); }
 
   function renderAll() {
@@ -323,6 +463,9 @@ export async function mount(el, ctx, route, ui) {
       if (lod !== node._lod) renderPin(p);
       else if (lod === 3) node.style.setProperty("--u", (1 / cam.z).toFixed(4));
     }
+    // Labels and string ends are drawn at a steady size on screen, so they're re-placed
+    // when the zoom changes (what counts as covering a pin changes with it).
+    if (Math.abs(cam.z - labelZ) > 0.002) { labelZ = cam.z; renderStrings(); }
     positionSelection();
   }
 
@@ -377,12 +520,27 @@ export async function mount(el, ctx, route, ui) {
     for (const [pid, node] of pinEls) node.classList.toggle("lift", lifted.has(pid));
   }
   function select(id) {
+    const hadString = !!selectedString;
     selected = id;
+    selectedString = null;
     for (const [pid, node] of pinEls) node.classList.toggle("sel", pid === id);
     applyLift(liftFor(id));
     renderSelection();
     renderStyle();
+    if (hadString) renderStrings();
     if (pinById(id)?.kind === "frame" && !connectFrom) showHint("Drag inside the frame to move it with everything in it — or drag its corner to resize.", { timeout: 3500 });
+  }
+  // A string is picked up the way a pin is: tap it once to take hold, again to open it.
+  function selectString(id) {
+    const hadString = !!selectedString;
+    selected = null;
+    selectedString = id;
+    for (const node of pinEls.values()) node.classList.remove("sel");
+    applyLift(new Set());
+    renderSelection();
+    renderStyle();
+    renderStrings();
+    if (id && !hadString) showHint("Drag either of its ends to move where it's tied, or tap it again to say how they connect. Esc lets go.", { timeout: 6000 });
   }
 
   // ---- saving
@@ -435,6 +593,16 @@ export async function mount(el, ctx, route, ui) {
     }
     const pinNode = e.target.closest(".pin");
     const strNode = e.target.closest("[data-string]");
+    // An end of the string you've picked up: drag it anywhere on its pin.
+    const endNode = e.target.closest("[data-str-end]");
+    if (endNode) {
+      const s = parts.strings.find((x) => x.id === endNode.dataset.sid);
+      const end = endNode.dataset.strEnd === "from" ? "from" : "to";
+      if (s) {
+        gesture = { type: "string-end", sid: s.id, end, pin: s[end], x0: e.clientX, y0: e.clientY };
+        return;
+      }
+    }
     if (e.target.closest("[data-grip]") && pinNode) {
       const p = pinById(pinNode.dataset.id);
       select(p.id);
@@ -521,6 +689,13 @@ export async function mount(el, ctx, route, ui) {
       const r = drawRect(gesture, e);
       Object.assign(drawEl.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
       drawEl.hidden = Math.abs(dx) + Math.abs(dy) < 6;
+    } else if (gesture.type === "string-end") {
+      const s = parts.strings.find((x) => x.id === gesture.sid);
+      const pin = pinById(gesture.pin);
+      if (!s || !pin) return;
+      const off = offsetFromPoint(pin, toWorld(e.clientX, e.clientY));
+      if (gesture.end === "from") s.from_offset = off; else s.to_offset = off;
+      renderStrings();
     } else if (gesture.type === "string") {
       const a = pinById(gesture.from);
       const w = toWorld(e.clientX, e.clientY);
@@ -568,7 +743,23 @@ export async function mount(el, ctx, route, ui) {
       if (g.moved) { const p = pinById(g.id); await savePin(p, { w: p.w, h: p.h }); curated = null; renderStrings(); }
       return;
     }
-    if (g.type === "tap-string") { if (Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8) openString(g.id); return; }
+    if (g.type === "tap-string") {
+      if (Math.abs(e.clientX - g.x0) + Math.abs(e.clientY - g.y0) < 8) {
+        if (selectedString === g.id) openString(g.id);
+        else selectString(g.id);
+      }
+      return;
+    }
+    if (g.type === "string-end") {
+      const s = parts.strings.find((x) => x.id === g.sid);
+      if (s) {
+        const field = g.end === "from" ? "from_offset" : "to_offset";
+        const fresh = cleanStringOffset(s[field]);
+        await ctx.store.put({ ...ctx.store.get(s.id), [field]: fresh, updated: now() });
+      }
+      renderStrings();
+      return;
+    }
     if (g.type === "string") {
       for (const n of pinEls.values()) n.classList.remove("target");
       const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(".pin:not(.pin-frame)");
@@ -593,7 +784,7 @@ export async function mount(el, ctx, route, ui) {
       if (connectFrom && connectFrom !== g.id) { const from = connectFrom; connectFrom = null; hideHint(); await connect(from, g.id); select(g.id); return; }
       const t = performance.now();
       // Double-tap: a card or note flies open; a frame's title badge opens its name and address to edit.
-      if (lastTap.id === g.id && t - lastTap.t < 320) { lastTap = { id: null, t: 0 }; if (pinById(g.id)?.kind === "frame") editPin(g.id); else openPin(g.id); return; }
+      if (lastTap.id === g.id && t - lastTap.t < 320) { lastTap = { id: null, t: 0 }; if (pinById(g.id)?.kind === "frame") editPin(g.id); else if (inlineNotesEnabled() && pinById(g.id)?.kind === "note") startInlineEdit(g.id); else openPin(g.id); return; }
       lastTap = { id: g.id, t };
       select(g.id);
     }
@@ -602,6 +793,7 @@ export async function mount(el, ctx, route, ui) {
   vp.addEventListener("pointercancel", (e) => { pointers.delete(e.pointerId); gesture = null; renderStrings(); });
 
   vp.addEventListener("wheel", (e) => {
+    if (e.target.closest("[data-inline-editor]")) return;
     if (e.target.closest(".pin[data-lod='3'] .pin-page") && !e.ctrlKey && !e.metaKey) return; // scroll a card's page
     e.preventDefault();
     const r = vp.getBoundingClientRect();
@@ -621,8 +813,8 @@ export async function mount(el, ctx, route, ui) {
     else if (e.key === "ArrowRight") { cam.x -= step; applyCam(); }
     else if (e.key === "ArrowUp") { cam.y += step; applyCam(); }
     else if (e.key === "ArrowDown") { cam.y -= step; applyCam(); }
-    else if (e.key === "Escape") { select(null); connectFrom = null; if (mode) setMode(null); else hideHint(); }
-    else if ((e.key === "Delete" || e.key === "Backspace") && selected) removePin(selected);
+    else if (e.key === "Escape") { setAddOpen(false); select(null); connectFrom = null; if (mode) setMode(null); else hideHint(); }
+    else if (e.key === "Delete" || e.key === "Backspace") { if (selectedString) removeString(selectedString); else if (selected) removePin(selected); }
     else return;
     e.preventDefault();
   });
@@ -641,6 +833,9 @@ export async function mount(el, ctx, route, ui) {
     mode = m && mode !== m ? m : null;
     connectFrom = null;
     for (const b of el.querySelectorAll('[data-tool="string"], [data-tool="frame"]')) { b.classList.toggle("on", b.dataset.tool === mode); b.setAttribute("aria-pressed", String(b.dataset.tool === mode)); }
+    // The menu closes, so the Add button carries the mode: you can see String or Frame is on.
+    addBtn.classList.toggle("mode-on", !!mode);
+    addBtn.title = mode === "string" ? "String mode is on — tap a pin, then another (tap Add to finish)" : mode === "frame" ? "Frame mode is on — drag on the board (tap Add to finish)" : "Add a note, source, card, picture, frame or string";
     el.querySelector("#cork").dataset.mode = mode || "";
     if (mode) showModeHint(); else hideHint();
     renderSelection();
@@ -671,22 +866,34 @@ export async function mount(el, ctx, route, ui) {
     const copies = [p, ...strings].map((r) => structuredClone({ ...r, _sync: undefined, _rev: undefined }));
     for (const s of strings) await ctx.store.remove(s.id, { reason: "pin removed" });
     await ctx.store.remove(id, { reason: "removed from board" });
+    if (selectedString && strings.some((s) => s.id === selectedString)) selectedString = null;
     select(null);
     toast(p.kind === "card" ? "Card taken off this board (its page is kept)" : "Removed", { action: "Undo", timeout: 8000, onAction: async () => { for (const c of copies) await ctx.store.put(c); } });
+  }
+
+  async function removeString(id) {
+    const s = parts.strings.find((x) => x.id === id);
+    if (!s) return;
+    const copy = structuredClone({ ...s, _sync: undefined, _rev: undefined });
+    selectedString = null;
+    await ctx.store.remove(id, { reason: "string cut" });
+    toast("String cut", { action: "Undo", timeout: 8000, onAction: async () => { await ctx.store.put(copy); } });
   }
 
   async function editPin(id) {
     const p = pinById(id);
     if (!p) return;
     if (p.kind === "frame") return editFrame(p);
+    if (p.kind === "note" && inlineNotesEnabled()) return startInlineEdit(id);
+    const isNote = p.kind === "note";
     const res = await sheet({
       title: p.kind === "quote" ? "Quote" : p.kind === "link" ? "Link" : "Note",
-      body: html`<label class="field"><span>${p.kind === "quote" ? "Who said it / where" : "Title"}</span><input class="input" data-t value="${p.title || ""}" autocomplete="off"></label>
+      body: isNote ? noteEditPreview(p.title, p.body) : html`<label class="field"><span>${p.kind === "quote" ? "Who said it / where" : "Title"}</span><input class="input" data-t value="${p.title || ""}" autocomplete="off"></label>
         ${p.kind === "link" ? html`<label class="field"><span>Link</span><input class="input" data-u value="${p.url || ""}" inputmode="url" autocomplete="off"></label>` : ""}
         <label class="field"><span>${p.kind === "quote" ? "The words" : "Text"}</span><textarea class="textarea" data-b rows="6">${p.body || ""}</textarea></label>
         ${isClaude(p.author) ? html`<p class="small faint">Pinned by Claude. Editing it makes it yours.</p>` : ""}`,
       foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button>`,
-      setup: (d, close) => { d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })); },
+      setup: (d, close) => { if (isNote) wireNoteEditPreview(d); d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value, body: d.querySelector("[data-b]").value, url: d.querySelector("[data-u]")?.value })); },
     });
     if (!res) return;
     await savePin(p, { title: res.title.trim() || undefined, body: res.body.replace(/\s+$/, ""), ...(p.kind === "link" ? { url: res.url.trim() || undefined } : {}), author: "self" });
@@ -754,6 +961,7 @@ export async function mount(el, ctx, route, ui) {
     if (!res) return;
     if (res.op === "delete") {
       const copy = structuredClone({ ...s, _sync: undefined, _rev: undefined });
+      selectedString = null;
       await ctx.store.remove(s.id, { reason: "string cut" });
       toast("String cut", { action: "Undo", onAction: () => ctx.store.put(copy) });
     } else if (res.op === "red") {
@@ -765,11 +973,22 @@ export async function mount(el, ctx, route, ui) {
   }
 
   async function addNote({ at = null } = {}) {
-    const res = await promptSheet({ title: "New note", label: "Note", multiline: true, placeholder: "A thought, a claim, a question…", confirm: "Pin it" });
+    if (inlineNotesEnabled()) {
+      const pin = await addPin({ kind: "note", title: "", body: "" }, at ? { at } : { near: selected });
+      startInlineEdit(pin.id, true);
+      return;
+    }
+    const res = await sheet({
+      title: "New note",
+      body: newNoteEditPreview(),
+      foot: html`<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Pin it</button>`,
+      setup: (d, close) => { wireNewNotePreview(d); d.querySelector("[data-ok]").addEventListener("click", () => close(d.querySelector("[data-new-body]").value)); },
+    });
     if (!res?.trim()) return;
-    const [first, ...rest] = res.trim().split("\n");
+    const [rawFirst, ...rest] = res.trim().split("\n");
+    const first = stripHeadingPrefix(rawFirst);
     const title = first.length <= 80 && rest.length ? first : undefined;
-    await addPin({ kind: "note", title, text: title ? rest.join("\n").trim() : res.trim() }, at ? { at } : { near: selected });
+    await addPin({ kind: "note", title, body: title ? rest.join("\n").trim() : res.trim() }, at ? { at } : { near: selected });
   }
 
   // A frame drawn on the board (or dropped where you tapped), called "Frame" until you double-tap its name.
@@ -1077,10 +1296,14 @@ export async function mount(el, ctx, route, ui) {
       body: html`<label class="field"><span>Name</span><input class="input" data-t value="${board.title}" autocomplete="off"></label>
         <label class="field"><span>What it's for</span><input class="input" data-a value="${board.about || ""}" autocomplete="off"></label>
         <label class="check"><input type="checkbox" data-autofit ${ctx.settings().corkAutoFit ? "checked" : ""}> <span>Auto-size pin text <span class="faint">— the words grow and shrink to fit each card (a pin set to Fixed in Aa keeps its size)</span></span></label>
+        <div class="section-title" style="margin-top:14px">Strings</div>
+        ${stringsBlock(ctx.settings())}
         <p class="small faint">Double-click the board to pin a note · right-drag to draw a frame · String to tie pins together.</p>
         <p class="small faint">${isClaude(board.author) ? "Started by Claude. " : ""}Created ${String(board.created || "").slice(0, 10)}.</p>`,
       foot: html`<button class="btn danger ghost" data-del>${raw(icon("trash"))}Delete board</button><span class="grow"></span><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button>`,
       setup: (d, close) => {
+        // String looks apply as you pick them (the board behind the sheet shows them straight away).
+        wireStringsBlock(d, ctx, () => renderStrings());
         d.querySelector("[data-ok]").addEventListener("click", () => close({ title: d.querySelector("[data-t]").value.trim(), about: d.querySelector("[data-a]").value.trim(), autofit: d.querySelector("[data-autofit]").checked }));
         d.querySelector("[data-del]").addEventListener("click", () => close({ del: true }));
       },
@@ -1108,9 +1331,23 @@ export async function mount(el, ctx, route, ui) {
   vp.addEventListener("dragover", (e) => { if ([...(e.dataTransfer?.items || [])].some((i) => i.type.startsWith("image/"))) e.preventDefault(); });
   vp.addEventListener("drop", (e) => { const imgs = imagesFrom(e.dataTransfer); if (imgs.length) { e.preventDefault(); addImagePins(imgs); } });
   ui.onAction((e, b) => { if (b.dataset.act === "curator") openCurator(); if (b.dataset.act === "board-menu") boardMenu(); });
+  // One "Add" button in the dock, with the six things you can add in a small menu.
+  const addBtn = el.querySelector('[data-tool="add"]');
+  const addMenu = el.querySelector("#cork-add-menu");
+  let addOpen = false;
+  function setAddOpen(open) {
+    addOpen = !!open;
+    addMenu.hidden = !addOpen;
+    addBtn.setAttribute("aria-expanded", String(addOpen));
+    addBtn.classList.toggle("on", addOpen);
+  }
+  const closeAdd = (e) => { if (addOpen && !e.target.closest?.("#cork-add-menu, [data-tool='add']")) setAddOpen(false); };
+  document.addEventListener("pointerdown", closeAdd, true);
+  ui.cleanup(() => document.removeEventListener("pointerdown", closeAdd, true));
   on(el, "click", "[data-tool]", (e, b) => {
     const t = b.dataset.tool;
-    const r = vp.getBoundingClientRect();
+    if (t === "add") { setAddOpen(!addOpen); return; }
+    setAddOpen(false);
     if (t === "note") addNote();
     if (t === "card") addCardPin();
     if (t === "source") addSourcePin();
@@ -1119,8 +1356,6 @@ export async function mount(el, ctx, route, ui) {
     if (t === "board") boardMenu();
     if (t === "style") toggleStyle();
     if (t === "fit") fit();
-    if (t === "zoom-in") zoomAt(r.width / 2, r.height / 2, 1.35);
-    if (t === "zoom-out") zoomAt(r.width / 2, r.height / 2, 1 / 1.35);
   });
   on(selEl, "click", "[data-sel]", (e, b) => {
     const a = b.dataset.sel;

@@ -1,11 +1,28 @@
-/* Living Journal — a quiet notebook, not a dashboard.
+/* Living Journal - a quiet notebook, not a dashboard.
    Three themes share one structure: Paper (light), Ink (dark), Lantern (warm dark).
    "auto" follows the system between Paper and Ink. Colour never carries meaning
    alone: ratings show numbers, badges show words. */
 
+/* The three writing faces travel with the app (fonts/, SIL OFL): phones rarely have
+   Iowan Old Style, Courier Prime, Patrick Hand or Segoe Print, so a pinned note would
+   otherwise change shape from device to device. font-display: swap keeps the page
+   readable while they load. */
+@font-face {
+  font-family: "Source Serif 4"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("../fonts/source-serif-4-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Courier Prime"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/courier-prime-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Patrick Hand"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/patrick-hand-latin.woff2") format("woff2");
+}
+
 :root {
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-write: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Noto Serif", serif;
+  --font-write: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Noto Serif", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius: 14px;
   --radius-sm: 9px;

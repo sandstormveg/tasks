@@ -15,6 +15,7 @@
 
 import { newId } from "./ids.js";
 import { tokenize } from "./search.js";
+import { PIN_FONTS } from "./textformat.js";
 
 export const PIN_KINDS = {
   note: "Note",
@@ -26,6 +27,24 @@ export const PIN_KINDS = {
 };
 
 export const STRING_STATES = { red: "Red string — not synthesised yet", synthesised: "Synthesised" };
+
+// How red string looks and when it says what it means. The board is a picture first:
+// a label that covered a pin would hide the thing the string is about, so the default
+// is to say nothing until you pick the string up.
+export const STRING_TEXT = { always: "Always", selected: "Selected", never: "Never" };
+export const STRING_COLOURS = [["red", "Red"], ["ink", "Ink"], ["blue", "Blue"], ["green", "Green"], ["purple", "Purple"]];
+export const STRING_WIDTHS = [["thin", "Thin"], ["normal", "Normal"], ["thick", "Thick"]];
+export const STRING_SAGS = [["straight", "Straight"], ["slight", "Slight sag"], ["droopy", "Droopy"]];
+export const STRING_TEXT_SIZES = [["small", "Small"], ["normal", "Normal"], ["large", "Large"]];
+// The label's fonts are the pin fonts, so a label reads as part of the board.
+export const STRING_FONTS = PIN_FONTS;
+export const STRING_DEFAULTS = { text: "selected", colour: "red", width: "normal", sag: "slight", size: "normal", font: "sans" };
+
+const STRING_WIDTH_PX = { thin: 1.6, normal: 2.6, thick: 4 };
+const STRING_SAG_SCALE = { straight: 0, slight: 0.55, droopy: 1.5 };
+const STRING_TEXT_PX = { small: 11, normal: 13, large: 16 };
+
+const hasKey = (table, key) => Object.prototype.hasOwnProperty.call(table, key);
 
 // The Atlas's connection ladder (atlas_infodex docs/connection-tiers.md): what kind of
 // connection this is, and how much weight it can bear. Any tiered connection must
@@ -261,6 +280,59 @@ export function boundsOf(pins) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+/**
+ * How strings should look on this device, from the saved settings: a label mode,
+ * a colour, a thickness, a curve, and the label's size and font. Unknown or
+ * missing values fall back to the defaults (so an old settings file is fine).
+ */
+export function stringLook(custom = {}) {
+  const c = custom || {};
+  const text = hasKey(STRING_TEXT, c.text) ? c.text : STRING_DEFAULTS.text;
+  const colour = STRING_COLOURS.some(([k]) => k === c.colour) ? c.colour : STRING_DEFAULTS.colour;
+  const width = hasKey(STRING_WIDTH_PX, c.width) ? c.width : STRING_DEFAULTS.width;
+  const sag = hasKey(STRING_SAG_SCALE, c.sag) ? c.sag : STRING_DEFAULTS.sag;
+  const size = hasKey(STRING_TEXT_PX, c.size) ? c.size : STRING_DEFAULTS.size;
+  const font = PIN_FONTS.some(([k]) => k === c.font) ? c.font : STRING_DEFAULTS.font;
+  return {
+    text, colour, width, sag, size, font,
+    widthPx: STRING_WIDTH_PX[width],
+    sagScale: STRING_SAG_SCALE[sag],
+    textPx: STRING_TEXT_PX[size],
+  };
+}
+
+const clamp01 = (n) => Math.max(0, Math.min(1, Number(n) || 0));
+const frac3 = (n) => Math.round(clamp01(n) * 1000) / 1000;
+
+// Where a string met its pin before string ends could move: centred on the pin's
+// top edge, ten pixels down, level with the pushpin's head.
+export const PUSHPIN_INSET = 10;
+
+/**
+ * Where one end of a string attaches to its pin. An offset is a fraction of the
+ * pin's width and height, so the end stays in the same place on the card when the
+ * card is resized (and on another screen). No offset — every string written
+ * before ends could move — keeps the old spot.
+ */
+export function stringAnchor(pin, offset) {
+  if (!offset || !Number.isFinite(Number(offset.x)) || !Number.isFinite(Number(offset.y))) {
+    return { x: pin.x + pin.w / 2, y: pin.y + PUSHPIN_INSET };
+  }
+  return { x: pin.x + clamp01(offset.x) * pin.w, y: pin.y + clamp01(offset.y) * pin.h };
+}
+
+/** A point on the board, as an offset in fractions of its pin's width and height. */
+export function offsetFromPoint(pin, point) {
+  return { x: frac3((point.x - pin.x) / Math.max(1, pin.w)), y: frac3((point.y - pin.y) / Math.max(1, pin.h)) };
+}
+
+/** A saved string-end offset: fractions only, or undefined if it isn't one. */
+export function cleanStringOffset(offset) {
+  if (!offset || typeof offset !== "object") return undefined;
+  if (!Number.isFinite(Number(offset.x)) || !Number.isFinite(Number(offset.y))) return undefined;
+  return { x: frac3(offset.x), y: frac3(offset.y) };
+}
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /**
@@ -269,14 +341,17 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
  * than distance (12–95 units); a string being dragged bellies away from the motion; a
  * synthesised string is drawn taut. The droop is 4t(1−t)·offset, which is exactly a
  * quadratic Bézier with its control point at twice the offset from the midpoint.
+ *
+ * `sag` scales the droop (0 is a straight line, 1 the physical sag, more is droopier).
  */
-export function stringCurve(p0, p1, { state = "red", vx = 0, vy = 0 } = {}) {
+export function stringCurve(p0, p1, { state = "red", vx = 0, vy = 0, sag: sagScale = 1 } = {}) {
   const dx = p1.x - p0.x;
   const dy = p1.y - p0.y;
   const dist = Math.hypot(dx, dy);
   const tension = clamp((dist - 80) / 520, 0, 1);
   let sag = clamp(dist * 0.13 + (1 - tension) * 18, 12, 95);
   if (state === "synthesised") sag = Math.min(16, sag * 0.22);
+  sag *= clamp(Number.isFinite(sagScale) ? sagScale : 1, 0, 4);
   const swayX = clamp(-vx * 0.18, -35, 35);
   const swayY = clamp(-vy * 0.12, -20, 30);
   const ox = swayX;
@@ -284,5 +359,48 @@ export function stringCurve(p0, p1, { state = "red", vx = 0, vy = 0 } = {}) {
   const mx = (p0.x + p1.x) / 2;
   const my = (p0.y + p1.y) / 2;
   const r = (n) => Math.round(n * 10) / 10;
-  return { d: `M${r(p0.x)},${r(p0.y)} Q${r(mx + 2 * ox)},${r(my + 2 * oy)} ${r(p1.x)},${r(p1.y)}`, mid: { x: mx + ox, y: my + oy }, sag, tension };
+  return {
+    d: `M${r(p0.x)},${r(p0.y)} Q${r(mx + 2 * ox)},${r(my + 2 * oy)} ${r(p1.x)},${r(p1.y)}`,
+    mid: { x: mx + ox, y: my + oy },
+    ctrl: { x: mx + 2 * ox, y: my + 2 * oy },
+    p0: { x: p0.x, y: p0.y },
+    p1: { x: p1.x, y: p1.y },
+    sag,
+    tension,
+  };
 }
+
+/** A point on a string's curve: t 0 at one pushpin, 1 at the other. */
+export function stringPointAt(curve, t) {
+  const u = 1 - t;
+  return {
+    x: u * u * curve.p0.x + 2 * u * t * curve.ctrl.x + t * t * curve.p1.x,
+    y: u * u * curve.p0.y + 2 * u * t * curve.ctrl.y + t * t * curve.p1.y,
+  };
+}
+
+/**
+ * A spot for a string's label: its midpoint if the word fits there, else the nearest
+ * point along the string whose box covers no pin. Null when the whole string is
+ * covered — the caller then only shows the label while the string is selected.
+ * Frames aren't pins here: their inside is the board, not a card sitting on it.
+ */
+export function stringLabelSpot(curve, pins, { w = 0, h = 0, pad = 6 } = {}) {
+  const half = { w: Math.max(0, w) / 2, h: Math.max(0, h) / 2 };
+  const boxes = (pins || []).filter((p) => p && p.kind !== "frame").map((p) => ({ x: p.x - pad, y: p.y - pad, w: p.w + pad * 2, h: p.h + pad * 2 }));
+  const covers = (box) => boxes.some((p) => box.x < p.x + p.w && box.x + box.w > p.x && box.y < p.y + p.h && box.y + box.h > p.y);
+  // Start at the midpoint and slide both ways, so the word stays as close to the
+  // middle of the string as the pins allow.
+  const ts = [0.5];
+  for (let i = 1; i <= 12; i++) {
+    const d = i / 13 * 0.44;
+    for (const t of [0.5 - d, 0.5 + d]) if (t > 0.06 && t < 0.94) ts.push(t);
+  }
+  for (const t of ts) {
+    const c = stringPointAt(curve, t);
+    const box = { x: c.x - half.w, y: c.y - half.h, w: half.w * 2, h: half.h * 2 };
+    if (!covers(box)) return { x: Math.round(c.x * 10) / 10, y: Math.round(c.y * 10) / 10 };
+  }
+  return null;
+}
+
