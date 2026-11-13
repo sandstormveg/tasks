@@ -7,9 +7,11 @@ import { icon } from "../../ui/icons.js";
 import { atlasConfig, loadAtlasIndex } from "../atlas.js";
 import { cleanFolder } from "../../data/folder-remote.js";
 import { companionSettingsBlock, wireCompanionSettings } from "../../ui/companion.js";
+import { stringsBlock, wireStringsBlock } from "../string-settings.js";
 
 // Same steps as the Journal's Settings → Appearance → Text size.
 const TEXT_SIZES = [[0.9, "Smaller"], [1, "Default"], [1.1, "Larger"], [1.22, "Largest"]];
+const inlineNotesOn = () => { try { return localStorage.getItem("research.board-inline-notes") === "true"; } catch { return false; } };
 
 export async function mount(el, ctx, route, ui) {
   ui.setTitle("Settings");
@@ -98,8 +100,10 @@ export async function mount(el, ctx, route, ui) {
 
       <div class="section-title">Corkboard</div>
       <div class="card flat">
+        <label class="check"><input type="checkbox" data-inline-notes ${inlineNotesOn() ? "checked" : ""}> <span>Edit notes on the board (no pop-up)</span></label>
         <label class="check"><input type="checkbox" data-cork-autofit ${s.corkAutoFit ? "checked" : ""}> <span>Auto-size pin text <span class="faint">— the words grow and shrink to fill each card, and follow it when you resize</span></span></label>
-        <p class="small faint" style="margin-bottom:0">Any pin can choose for itself under <b>Aa › Fit to card</b>: <b>Auto</b> or <b>Fixed</b>. Setting a size there makes it Fixed.</p></div>`);
+        <p class="small faint" style="margin-bottom:0">Any pin can choose for itself under <b>Aa › Fit to card</b>: <b>Auto</b> or <b>Fixed</b>. Setting a size there makes it Fixed.</p></div>
+      <div class="card flat" style="margin-top:10px">${stringsBlock(s)}</div>`);
     fillVoices?.();
   }
   let fillVoices = null;
@@ -118,6 +122,9 @@ export async function mount(el, ctx, route, ui) {
   });
   on(el, "click", "[data-theme]", async (e, b) => { await ctx.saveSettings({ theme: b.dataset.theme }); render(); });
   on(el, "change", "[data-cork-autofit]", async (e, f) => { await ctx.saveSettings({ corkAutoFit: f.checked }); toast(f.checked ? "Pin text fits its card" : "Pin text keeps its size"); });
+  // Strings: each chip saves as you pick it, and the board picks it up next time it draws.
+  wireStringsBlock(el, ctx);
+  on(el, "change", "[data-inline-notes]", (e, f) => { try { localStorage.setItem("research.board-inline-notes", String(f.checked)); } catch {} });
   on(el, "click", "[data-text-scale]", async (e, b) => { await ctx.saveSettings({ textScale: Number(b.dataset.textScale) }); render(); });
   on(el, "change", "[data-secret]", async (e, f) => { await ctx.saveSecrets({ githubToken: f.value.trim(), ignoreHostToken: false }); toast("Saved"); render(); ctx.sync.syncNow(); });
   on(el, "click", "[data-act=atlas-refresh]", () => checkAtlas(true));

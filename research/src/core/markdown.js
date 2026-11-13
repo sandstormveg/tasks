@@ -79,6 +79,9 @@ export function renderInline(src, opts = {}) {
   return String(src || "").split(/\r?\n/).map((l) => inline(escapeHtml(l), { tags: false, concepts: false, ...opts })).join("<br>");
 }
 
+/** Remove Markdown heading markers when a heading is being used as a short title. */
+export function stripHeadingPrefix(src) { return String(src || "").replace(/^#+\s*/, ""); }
+
 /** Markdown -> safe HTML string. */
 export function renderMarkdown(src, opts = {}) {
   const lines = escapeHtml(String(src || "").replace(/\r\n/g, "\n")).split("\n");
@@ -101,8 +104,22 @@ export function renderMarkdown(src, opts = {}) {
   };
   const flushAll = () => { flushPara(); flushList(); flushQuote(); };
 
-  for (const raw of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const raw = lines[lineIndex];
     const line = raw.replace(/\s+$/, "");
+    // Fenced blocks are literal text: lines were escaped once above and must
+    // never pass through inline Markdown, tag, link, or media processing.
+    const fence = /^ {0,3}(`{3,})(.*)$/.exec(line);
+    if (fence) {
+      flushAll();
+      const code = [];
+      const close = new RegExp(`^ {0,3}\`{${fence[1].length},}\\s*$`);
+      let i = lineIndex + 1;
+      while (i < lines.length && !close.test(lines[i])) code.push(lines[i++]);
+      out.push(`<pre><code>${code.join("\n")}</code></pre>`);
+      lineIndex = i < lines.length ? i : lines.length;
+      continue;
+    }
     if (/^&gt;\s?/.test(line)) { flushPara(); flushList(); quote.push(line.replace(/^&gt;\s?/, "")); continue; }
     if (quote.length) flushQuote();
     if (!line.trim()) { flushPara(); flushList(); continue; }

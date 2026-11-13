@@ -1,6 +1,7 @@
 // YouTube sources live in the same Research store as every other source.
 import { html, raw, on, toast, confirmSheet } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
+import { renderMarkdown } from "../../core/markdown.js";
 import { makeSource, findDuplicate, normalizeUrl } from "../../core/sources.js";
 import { extractYouTubeVideoId, getYouTubeThumbnail, searchTranscript } from "../../core/youtube.js";
 import { buildVideoContext } from "../../core/context.js";
@@ -43,8 +44,8 @@ export function transcriptMatchesMarkup(matches) {
 export function videoAnalysisMarkup(value) {
   const analyses = Array.isArray(value) ? value : value ? [value] : [];
   return analyses.slice().reverse().map((a) => html`<article class="video-analysis">
-    <div><span class="badge ai">Proposal</span> <span class="small muted">${a.author || "ai"} · ${String(a.created || "").slice(0, 10)}</span></div>
-    <h4>Summary</h4><p>${a.executiveSummary || ""}</p>
+    <div><span class="badge ai">AI-written</span> <span class="small muted">${a.author || "ai"} · ${String(a.created || "").slice(0, 10)}</span></div>
+    <h4>Summary</h4>${a.text && !a.executiveSummary ? html`<div class="prose">${raw(renderMarkdown(a.text, { tags: false, concepts: false }))}</div>` : html`<p>${a.executiveSummary || ""}</p>`}
     ${a.keyInsights?.length ? html`<h4>Key insights</h4><ul>${a.keyInsights.map((x) => html`<li><b>${x.point || ""}</b> ${x.detail || ""}${x.quote ? html`<blockquote>${x.quote}</blockquote>` : ""}</li>`)}</ul>` : ""}
     ${a.takeaways?.length ? html`<h4>Takeaways</h4><ul>${a.takeaways.map((x) => html`<li>${x}</li>`)}</ul>` : ""}
   </article>`);

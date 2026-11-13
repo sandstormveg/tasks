@@ -29,13 +29,13 @@ const FIELD_ORDER = {
   report: ["id", "type", "kind", "created", "summary"],
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: ["id", "type", "kind", "title", "url", "doi", "authors", "year", "site", "status", "favourite", "tags",
-    "videoId", "author", "thumbnail", "transcript", "videoAnalysis", "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "assist", "prompt", "prompted", "corkboard", "board", "agent_notes", "visibility", "captured"],
+    "videoId", "author", "thumbnail", "transcript", "transcriptSource", "transcriptHistory", "videoAnalysis", "added", "updated", "started", "finished", "why", "expect", "surprised", "quotes", "assist", "prompt", "prompted", "corkboard", "board", "agent_notes", "visibility", "captured"],
   // Corkboard (src/core/boards.js): a board, the things pinned to it, and the strings between them.
   // A pin's body is its note; a string's body is your synthesis — how the two connect.
   board: ["id", "type", "title", "about", "piece", "experiment", "tags", "author", "created", "updated", "visibility"],
   pin: ["id", "type", "board", "kind", "title", "x", "y", "w", "h", "color", "card", "source", "url", "address",
     "author", "created", "updated"],
-  string: ["id", "type", "board", "from", "to", "label", "state", "tier", "holds_in", "breaks_at", "author",
+  string: ["id", "type", "board", "from", "to", "from_offset", "to_offset", "label", "state", "tier", "holds_in", "breaks_at", "author",
     "created", "updated", "synthesised", "synthesised_by"],
   // An Infodex card (src/core/infodex.js): the thing's call number and snapshot; the body is your entries about it.
   // `source: atlas` cards are Atlas entries (src/core/atlas.js); the rest are made from Wikidata.
