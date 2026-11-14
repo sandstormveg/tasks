@@ -3,7 +3,7 @@
 // document, what its author wrote vs. your thoughts vs. what an AI read into
 // it. Nothing generated is ever shown as if you wrote it.
 
-import { html, raw, on, sheet, toast, errorToast, confirmSheet, promptSheet, pickFiles, autosize, timeOf, bytes } from "../ui/dom.js";
+import { html, raw, on, sheet, toast, errorToast, confirmSheet, promptSheet, pickFiles, pastedImages, autosize, timeOf, bytes } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
 import { renderMarkdown, extractConcepts, escapeHtml } from "../core/markdown.js";
 import { formatDayLong, formatDay } from "../core/dates.js";
@@ -180,6 +180,35 @@ export async function mount(el, ctx, route, ui) {
   ui.onStore((c) => { if (!editing && (c.ids?.includes(id) || c.op === "synced" || c.op === "unlock" || c.op === "lock")) render(); });
 
   on(el, "click", "[data-act]", (ev, btn) => handle(ev, btn));
+  // A picture pasted while editing is added to the entry's photos, as if picked with Add photos;
+  // what you've typed and not yet saved is kept. Words pasted with it still go in as text.
+  on(el, "paste", "[data-body]", (ev) => {
+    const files = pastedImages(ev);
+    if (!files.length) return;
+    if (!ev.clipboardData.getData("text/plain")) ev.preventDefault();
+    addPastedPhotos(files).catch(errorToast);
+  });
+  async function addPastedPhotos(files) {
+    const e = ctx.store.get(id);
+    if (!e) return;
+    if (e.privacy === "sealed" && ctx.store.isLocked()) throw new Error("Unlock sealed entries first.");
+    const media = await storePhotos(ctx, { entryId: e.id, day: e.day, sealed: e.privacy === "sealed" }, files);
+    const latest = ctx.store.get(id) || e;
+    await ctx.store.put({ ...latest, media: [...(latest.media || []), ...media.map(({ entry, ...m }) => m)] });
+    if (editing) {
+      // The editor doesn't redraw on its own while you type; redraw it with your unsaved words in place.
+      const q = (s) => el.querySelector(s);
+      const kept = { body: q("[data-body]")?.value, title: q("[data-title]")?.value, at: q("[data-body]")?.selectionStart,
+        caps: Object.fromEntries([...el.querySelectorAll("[data-cap]")].map((i) => [i.dataset.cap, i.value])) };
+      render();
+      if (kept.title != null) q("[data-title]").value = kept.title;
+      for (const [mid, v] of Object.entries(kept.caps)) { const i = el.querySelector(`[data-cap="${CSS.escape(mid)}"]`); if (i) i.value = v; }
+      for (const mid of removed) { const row = el.querySelector(`[data-cap="${CSS.escape(mid)}"]`)?.closest(".row"); if (row) row.style.opacity = 0.35; }
+      const ta = q("[data-body]");
+      if (ta && kept.body != null) { ta.value = kept.body; ta.setSelectionRange(kept.at ?? ta.value.length, kept.at ?? ta.value.length); }
+    }
+    toast(`Added ${media.length} photo${media.length === 1 ? "" : "s"}`);
+  }
   ui.onAction((ev, btn) => handle(ev, btn));
 
   async function handle(ev, btn) {

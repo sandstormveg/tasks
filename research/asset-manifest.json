@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
- "version": "3f30ba2a9245",
-=======
- "version": "fbf22dd204c5",
->>>>>>> origin/main
+ "version": "b821bcd86ac5",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",

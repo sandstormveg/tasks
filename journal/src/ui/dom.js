@@ -185,6 +185,20 @@ export function download(filename, blobOrText, type = "application/octet-stream"
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+/**
+ * The pictures in a paste (Ctrl+V, or Paste from a phone's long-press menu), as Files.
+ * Browsers list a pasted picture under clipboardData.items; some only under .files.
+ */
+export function pastedImages(e) {
+  const dt = e.clipboardData;
+  if (!dt) return [];
+  const isImage = (t) => /^image\//.test(t || "");
+  const out = [];
+  for (const it of dt.items || []) if (it.kind === "file" && isImage(it.type)) { const f = it.getAsFile(); if (f) out.push(f); }
+  if (!out.length) for (const f of dt.files || []) if (isImage(f.type)) out.push(f);
+  return out;
+}
+
 export function pickFiles({ accept = "", multiple = false, capture } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement("input");

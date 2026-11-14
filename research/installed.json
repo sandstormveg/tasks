@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
- "source": "sandstormveg/Journal_system@fbbcefee3dd7",
-=======
- "source": "sandstormveg/Journal_system@68a8169322af",
->>>>>>> origin/main
+ "source": "sandstormveg/Journal_system@2215b12d10a0",
  "files": [
   "data-template/.claude/skills/journal-steward/SKILL.md",
   "data-template/.gitattributes",
