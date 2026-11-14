@@ -10,7 +10,7 @@
 // On Today, Quicksilver (the companion, core/companions.js) offers a greeting and one
 // gentle question from templates, with no AI. Tapping the question puts it above the box.
 
-import { html, raw, on, debounce, autosize, toast, sheet, pickFiles, errorToast } from "../ui/dom.js";
+import { html, raw, on, debounce, autosize, toast, sheet, pickFiles, pastedImages, errorToast } from "../ui/dom.js";
 import { icon } from "../ui/icons.js";
 import { entryCard, eventCard, whyList, privacyBadge } from "../ui/components.js";
 import { dayPanelHtml, wireDayPanel } from "../ui/day-panel.js";
@@ -125,6 +125,22 @@ export async function mount(el, ctx, route, ui) {
   const persist = debounce(() => saveDraft(ctx, draft), 350);
   ta.addEventListener("input", () => { draft.body = ta.value; persist(); updateSave(); });
   ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save(); } });
+  // A picture pasted into the box joins the draft's photos, as if picked with Photos. Words pasted with it
+  // (some apps copy both) still go in as text, so nothing pasted is lost.
+  ta.addEventListener("paste", (e) => {
+    const files = pastedImages(e);
+    if (!files.length) return;
+    if (!e.clipboardData.getData("text/plain")) e.preventDefault();
+    addDraftPhotos(files).then((n) => n && toast(`Added ${n} photo${n === 1 ? "" : "s"}`)).catch(errorToast);
+  });
+  async function addDraftPhotos(files) {
+    if (draft.privacy === "sealed" && ctx.store.isLocked()) throw new Error("Unlock sealed entries first.");
+    const media = await storePhotos(ctx, { entryId: draft.id, day, sealed: draft.privacy === "sealed" }, files);
+    draft.media = [...(draft.media || []), ...media];
+    await saveDraft(ctx, draft);
+    renderMedia();
+    return media.length;
+  }
   ui.cleanup(() => persist.flush());
   window.addEventListener("pagehide", () => persist.flush(), { once: true });
 
@@ -400,13 +416,8 @@ export async function mount(el, ctx, route, ui) {
       if (act === "photos") {
         const files = await pickFiles({ accept: "image/*", multiple: true });
         if (!files.length) return;
-        if (draft.privacy === "sealed" && ctx.store.isLocked()) throw new Error("Unlock sealed entries first.");
         btn.setAttribute("disabled", "");
-        const media = await storePhotos(ctx, { entryId: draft.id, day, sealed: draft.privacy === "sealed" }, files);
-        btn.removeAttribute("disabled");
-        draft.media = [...(draft.media || []), ...media];
-        await saveDraft(ctx, draft);
-        renderMedia();
+        try { await addDraftPhotos(files); } finally { btn.removeAttribute("disabled"); }
         return;
       }
       if (act === "rm-media") {

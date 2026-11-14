@@ -190,8 +190,10 @@ function upgrade(f) {
     if (multi) insertText(ed, "\n");
   });
   ed.addEventListener("paste", (e) => {
-    e.preventDefault();
+    e.preventDefault(); // nothing pasted here comes in as markup — not even a picture
     let t = e.clipboardData?.getData("text/plain") || "";
+    // A picture with no words: leave it to whoever listens further up (the event still bubbles).
+    if (!t && [...(e.clipboardData?.items || [])].some((it) => it.kind === "file")) return;
     if (!multi) t = t.replace(/\s*\n\s*/g, " ");
     insertText(ed, t);
   });
