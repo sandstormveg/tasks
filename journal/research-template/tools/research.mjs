@@ -1,5 +1,9 @@
 #!/usr/bin/env node
+<<<<<<< HEAD
 // Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:ad60635db989e695
+=======
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:519415847d90d3aa
+>>>>>>> origin/main
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1182,6 +1186,8 @@ var FIELD_ORDER = {
     "board",
     "from",
     "to",
+    "from_offset",
+    "to_offset",
     "label",
     "state",
     "tier",
@@ -1638,6 +1644,18 @@ function validateRecord(rec) {
       if (rec.from && rec.from === rec.to) errors.push("string joins a pin to itself");
       if (!["red", "synthesised"].includes(rec.state)) errors.push(`unknown string state "${rec.state}"`);
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
+      for (const k2 of ["from_offset", "to_offset"]) {
+        const o = rec[k2];
+        if (o == null || o === "") continue;
+        if (typeof o !== "object") {
+          errors.push(`string ${k2} must be an offset of fractions`);
+          continue;
+        }
+        for (const axis of ["x", "y"]) {
+          const v2 = Number(o[axis]);
+          if (!Number.isFinite(v2) || v2 < 0 || v2 > 1 || o[axis] === null) errors.push(`string ${k2}.${axis} must be between 0 and 1`);
+        }
+      }
       break;
     case "card":
       if (rec.source === "atlas") {
@@ -1872,6 +1890,16 @@ function makeAgentNote(text2, { author, now }) {
   return { id: newId("an", now), author, date: now, text: String(text2 || "").trim() };
 }
 
+// src/core/textformat.js
+var SIZES = [["small", "S"], ["", "M"], ["large", "L"], ["xl", "XL"]];
+var COLOURS = [["red", "Red"], ["orange", "Orange"], ["yellow", "Yellow"], ["green", "Green"], ["purple", "Purple"], ["grey", "Grey"]];
+var SIZE_SET = new Set(SIZES.map(([k2]) => k2).filter(Boolean));
+var COLOUR_SET = new Set(COLOURS.map(([k2]) => k2));
+var PIN_FONTS = [["", "Serif"], ["sans", "Sans"], ["type", "Typewriter"], ["hand", "Hand"]];
+var PIN_ALIGNS = [["", "Left"], ["center", "Centre"], ["right", "Right"]];
+var FONT_SET = new Set(PIN_FONTS.map(([k2]) => k2).filter(Boolean));
+var ALIGN_SET = new Set(PIN_ALIGNS.map(([k2]) => k2).filter(Boolean));
+
 // src/core/boards.js
 var PIN_KINDS = {
   note: "Note",
@@ -1889,7 +1917,7 @@ var TIERS = {
   resonance: { name: "Resonance", hint: "it feels connected; no mapping offered", strength: 0.3 }
 };
 var PIN_COLORS = ["paper", "yellow", "pink", "blue", "green", "lilac"];
-var SIZES = {
+var SIZES2 = {
   note: [220, 150],
   card: [200, 280],
   source: [240, 130],
@@ -1898,7 +1926,7 @@ var SIZES = {
   frame: [640, 420]
 };
 function defaultSize(kind) {
-  const [w2, h2] = SIZES[kind] || SIZES.note;
+  const [w2, h2] = SIZES2[kind] || SIZES2.note;
   return { w: w2, h: h2 };
 }
 var round = (n) => Math.round(Number(n) || 0);

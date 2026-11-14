@@ -22,5 +22,9 @@
     }
   ],
   "app": "journal",
+<<<<<<< HEAD
   "source": "sandstormveg/Journal_system@fbbcefee3dd7"
+=======
+  "source": "sandstormveg/Journal_system@68a8169322af"
+>>>>>>> origin/main
 }

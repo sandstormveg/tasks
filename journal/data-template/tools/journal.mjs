@@ -1,5 +1,9 @@
 #!/usr/bin/env node
+<<<<<<< HEAD
 // Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:674d39400d10173e
+=======
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:cc9553a6d6da4833
+>>>>>>> origin/main
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1182,6 +1186,8 @@ var FIELD_ORDER = {
     "board",
     "from",
     "to",
+    "from_offset",
+    "to_offset",
     "label",
     "state",
     "tier",
@@ -1667,6 +1673,18 @@ function validateRecord(rec) {
       if (rec.from && rec.from === rec.to) errors.push("string joins a pin to itself");
       if (!["red", "synthesised"].includes(rec.state)) errors.push(`unknown string state "${rec.state}"`);
       if (rec.state === "synthesised" && !String(rec.body || "").trim()) errors.push("synthesised string has no synthesis");
+      for (const k2 of ["from_offset", "to_offset"]) {
+        const o = rec[k2];
+        if (o == null || o === "") continue;
+        if (typeof o !== "object") {
+          errors.push(`string ${k2} must be an offset of fractions`);
+          continue;
+        }
+        for (const axis of ["x", "y"]) {
+          const v2 = Number(o[axis]);
+          if (!Number.isFinite(v2) || v2 < 0 || v2 > 1 || o[axis] === null) errors.push(`string ${k2}.${axis} must be between 0 and 1`);
+        }
+      }
       break;
     case "card":
       if (rec.source === "atlas") {
