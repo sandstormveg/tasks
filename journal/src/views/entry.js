@@ -11,11 +11,17 @@ import { ENTRY_KINDS, PRIVACY_LEVELS, makeQuestion, aiReadable } from "../core/m
 import { privacyBadge, authorBadge, entryCard } from "../ui/components.js";
 import { updateEntry, deleteEntryWithUndo, setPrivacy, storePhotos } from "../app/actions.js";
 import { pathFor } from "../core/format.js";
+import { whyNotToResearch } from "../core/writing.js";
+import { appHref, copyToResearch } from "../app/to-research.js";
+import { mdHead, mdPreview, writingBox } from "../ui/writing.js";
 
 export async function mount(el, ctx, route, ui) {
+  // Research, on the same site: research.html beside the journal, or ../research/ in a host.
+  const researchHref = (pieceId) => `${appHref(ctx.host, "research")}#/piece/${encodeURIComponent(pieceId)}`;
   const id = route.params[0];
   let editing = route.query.edit === "1";
   const removed = new Set(); // photos marked for removal while editing
+  let box = null; // the writing box while editing (CodeMirror, focus mode)
   ui.setTitle("Entry", { back: "history" });
 
   function render() {
@@ -31,12 +37,22 @@ export async function mount(el, ctx, route, ui) {
       el.innerHTML = String(html`<div class="entry-view"><div class="card lock-card">${raw(icon("lock"))}<h3>Sealed entry</h3><p class="muted">Its text and photos are encrypted with your passphrase.</p><a class="btn primary" href="#/settings/privacy">Unlock</a></div></div>`);
       return;
     }
+    box?.dispose(); box = null;
     el.innerHTML = String(editing ? editHtml(e) : viewHtml(e));
     ctx.media.hydrate(el);
     hydrateInline(e);
     if (editing) {
       const ta = el.querySelector("[data-body]");
-      if (ta) { autosize(ta, 0.7); ta.focus(); }
+      if (ta) {
+        autosize(ta, 0.7);
+        ta.focus();
+        // Markdown styled as you write, Preview, and the ⤢ focus mode (Settings › Appearance can open it there).
+        box = writingBox(el.querySelector(".entry-write"), ctx, ui, {
+          start: "edit", stayInEdit: true, empty: "(no text)", render: (t) => renderMarkdown(t),
+          autoZen: () => ctx.settings().writeZen === true,
+          keys: [{ key: "Mod-Enter", run: () => { el.querySelector('[data-act="save-edit"]')?.click(); return true; } }],
+        });
+      }
     } else {
       renderAudio(e);
       renderRevisions(e);
@@ -102,6 +118,7 @@ export async function mount(el, ctx, route, ui) {
       <div data-audio style="margin:12px 0"></div>
       ${concepts.length ? html`<div class="row wrap small" style="margin:10px 0">${raw(icon("link"))}<span class="muted">Linked ideas:</span>${concepts.map((c) => html`<a class="concept" href="#/concept/${c}">@${c}</a>`)}</div>` : ""}
       ${(e.links?.tasks || []).length ? html`<div class="row wrap small" style="margin:10px 0">${raw(icon("check"))}<span class="muted">Sent to tasks:</span>${e.links.tasks.map((tk) => html`<span class="badge">${tk.title}</span>`)}</div>` : ""}
+      ${(e.links?.research || []).length ? html`<div class="row wrap small" style="margin:10px 0" data-research-links>${raw(icon("edit"))}<span class="muted">Copied to Research › Writing:</span>${e.links.research.map((r) => html`<a class="badge" href="${researchHref(r.piece)}">${r.title}</a>`)}</div>` : ""}
 
       <div class="btn-row" style="margin:18px 0 6px">
         <button class="btn small" data-act="listen">${raw(icon("speaker"))}Listen</button>
@@ -169,7 +186,7 @@ export async function mount(el, ctx, route, ui) {
     const photos = (e.media || []).filter((m) => m.type === "photo");
     return html`<div class="stack">
       <label class="field"><span>Title (optional)</span><input class="input" data-title value="${e.title || ""}" autocomplete="off"></label>
-      <label class="field"><span>${e.kind === "document" ? "Your thoughts" : "Entry"}</span><textarea class="textarea" data-body style="font-family:var(--font-write);font-size:1.08rem;min-height:200px">${e.body || ""}</textarea></label>
+      <div class="md-box entry-write">${mdHead(e.kind === "document" ? "Your thoughts" : "Entry", { fmt: false })}<textarea class="textarea" data-body data-md data-code aria-label="${e.kind === "document" ? "Your thoughts" : "Entry"}" style="font-family:var(--font-write);font-size:1.08rem;min-height:200px">${e.body || ""}</textarea>${mdPreview}</div>
       ${photos.length ? html`<div><span class="label">Photo captions</span>${photos.map((m) => html`<div class="row" style="margin-bottom:8px"><div style="width:64px;height:64px;border-radius:9px;overflow:hidden;flex:none;background:var(--surface-2)"><img alt="" data-media="${m.thumb || m.path}" style="width:100%;height:100%;object-fit:cover"></div><input class="input" data-cap="${m.id}" value="${m.caption || ""}" placeholder="Caption" autocomplete="off"><button class="btn icon small ghost" data-act="rm-photo" data-mid="${m.id}" aria-label="Remove photo">${raw(icon("trash"))}</button></div>`)}</div>` : ""}
       <p class="hint">Use #tags anywhere in the text. Link an idea from your knowledge system with @concept-id.</p>
       <div class="btn-row end"><button class="btn" data-act="cancel-edit">Cancel</button><button class="btn primary" data-act="save-edit">Save</button></div>
@@ -182,7 +199,7 @@ export async function mount(el, ctx, route, ui) {
   on(el, "click", "[data-act]", (ev, btn) => handle(ev, btn));
   // A picture pasted while editing is added to the entry's photos, as if picked with Add photos;
   // what you've typed and not yet saved is kept. Words pasted with it still go in as text.
-  on(el, "paste", "[data-body]", (ev) => {
+  on(el, "paste", ".entry-write", (ev) => { // (the box, not the textarea: the editor drawn over it gets the paste)
     const files = pastedImages(ev);
     if (!files.length) return;
     if (!ev.clipboardData.getData("text/plain")) ev.preventDefault();
@@ -319,6 +336,7 @@ export async function mount(el, ctx, route, ui) {
         <button class="day-field" data-m="privacy"><span class="k">Privacy</span><span class="v small" style="font-family:var(--font-ui)">${PRIVACY_LEVELS[e.privacy || "normal"].label} — change who (and what) can read this</span></button>
         <button class="day-field" data-m="day"><span class="k">Move</span><span class="v small" style="font-family:var(--font-ui)">File under a different day</span></button>
         <button class="day-field" data-m="task"><span class="k">To tasks</span><span class="v small" style="font-family:var(--font-ui)">Create a task from this (you choose the words)</span></button>
+        <button class="day-field" data-m="research"><span class="k">To Research</span><span class="v small" style="font-family:var(--font-ui)">Copy to Research › Writing — a new piece that starts as this entry's words</span></button>
         <button class="day-field" data-m="delete"><span class="k" style="color:var(--danger)">Delete</span><span class="v small" style="font-family:var(--font-ui)">You can undo for a few seconds; earlier versions stay in history</span></button>
       </div>`,
       setup: (d, close) => on(d, "click", "[data-m]", (ev, b) => close(b.dataset.m)),
@@ -344,6 +362,17 @@ export async function mount(el, ctx, route, ui) {
     if (choice === "day") {
       const v = await promptSheet({ title: "Move to another day", label: "Date", type: "date", value: e.day, confirm: "Move" });
       if (v && /^\d{4}-\d{2}-\d{2}$/.test(v) && v !== e.day) { await ctx.store.put({ ...e, day: v }); toast(`Moved to ${formatDay(v, { day: "numeric", month: "short", year: "numeric" })}`); }
+    }
+    if (choice === "research") {
+      const why = whyNotToResearch(e);
+      if (why) return toast(why, { error: true, timeout: 6000 });
+      const ok = await confirmSheet("Copy this entry to Research › Writing?", {
+        confirm: "Copy",
+        detail: "A new writing piece starts as these words, with a link back here. It's a copy, not a sync: changes to either stay in that one. Research syncs into its own data and is read by Claude's research tool. Photos stay in the journal.",
+      });
+      if (!ok) return;
+      const piece = await copyToResearch(ctx, e);
+      toast("Copied to Research › Writing", { action: "Open", timeout: 8000, onAction: () => { location.href = researchHref(piece.id); } });
     }
     if (choice === "task") {
       const { sendToTasks } = await import("../integrations/tasks.js");

@@ -20,7 +20,7 @@ const SECTIONS = [
   ["privacy", "lock", "Privacy & sealing", "Passphrase-encrypted entries, what's never tracked"],
   ["prompts", "question", "Prompts", "How often the journal asks, and about what"],
   ["companion", "sparkle", "Companion", "Quicksilver: a gentle question on Today, insights in Reflect"],
-  ["appearance", "moon", "Appearance", "Theme and text size"],
+  ["appearance", "moon", "Appearance", "Theme, text size, focus mode"],
   ["days", "calendar", "Days & ratings", "Rating scale, when a day ends"],
   ["integrations", "link", "Tasks & Atlas", "Send tasks; link ideas from your knowledge system"],
   ["data", "download", "Your data", "Export, import, storage, sample data"],
@@ -237,7 +237,8 @@ function appearance(ctx) {
   const themes = [["auto", "Automatic", "Paper by day, Ink by night"], ["paper", "Paper", "Warm and light"], ["ink", "Ink", "Calm and dark"], ["lantern", "Lantern", "Warm dark, like a Hội An evening"], ["terminal", "Terminal", "Neon on black, to match Tasks"]];
   return html`<div class="card flat">
     <span class="label">Theme</span><div class="stack-sm">${themes.map(([k, t, d]) => html`<label class="switch" style="padding:6px 0"><input type="radio" name="theme" data-set="theme" value="${k}" ${s.theme === k ? "checked" : ""}><span><span class="t">${t}</span><br><span class="d">${d}</span></span></label>`)}</div>
-    <label class="field" style="margin-top:12px"><span>Text size</span><select class="select" data-set="textScale" data-num>${[[0.9, "Smaller"], [1, "Default"], [1.1, "Larger"], [1.22, "Largest"]].map(([v, l]) => html`<option value="${v}" ${Number(s.textScale) === v ? "selected" : ""}>${l}</option>`)}</select></label></div>`;
+    <label class="field" style="margin-top:12px"><span>Text size</span><select class="select" data-set="textScale" data-num>${[[0.9, "Smaller"], [1, "Default"], [1.1, "Larger"], [1.22, "Largest"]].map(([v, l]) => html`<option value="${v}" ${Number(s.textScale) === v ? "selected" : ""}>${l}</option>`)}</select></label>
+    <div style="margin-top:12px">${sw('data-set="writeZen"', s.writeZen === true, "Open writing in focus mode", "When you start writing an entry, the box takes the whole screen. Any time: the ⤢ button by the box; Esc brings the page back.")}</div></div>`;
 }
 
 function days(ctx) {

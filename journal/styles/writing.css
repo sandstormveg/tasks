@@ -1,0 +1,80 @@
+/* Writing boxes, shared by the journal and Research: the Edit / Preview switch, the CodeMirror
+   editor (src/ui/codeeditor.js) in the app's colours, and focus mode (src/ui/zen.js), where the
+   box takes the whole screen. Markup and behaviour: src/ui/writing.js. */
+.status-seg { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.status-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.status-seg button { flex: 1 0 auto; min-height: 34px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.status-seg button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.notes-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.notes-head .label { font-weight: 600; color: var(--ink-2); }
+.notes-head .status-seg { margin: 0 0 0 auto; flex: 0 0 auto; }
+.notes-head .status-seg button { flex: 0 0 auto; min-height: 30px; padding: 0 12px; }
+.md-box[data-mode="preview"] textarea[data-md] { display: none; }
+.md-box[data-mode="edit"] .notes-preview, .md-box:not([data-mode]) .notes-preview { display: none; }
+.notes-preview { min-height: 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.md-box[data-mode="preview"] .notes-preview { cursor: text; }
+.md-box[data-mode="preview"] .notes-preview a { cursor: pointer; }
+.md-box[data-mode="preview"] .cm-editor.code-field { display: none !important; } /* CodeMirror sets display: flex !important */
+.cm-editor.code-field { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: 1.12rem; min-height: 220px; }
+.cm-editor.code-field.cm-focused { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+.cm-editor.code-field .cm-scroller { font-family: var(--font-write); line-height: 1.65; }
+.cm-editor.code-field .cm-content { padding: 12px 14px; caret-color: var(--accent); }
+.cm-editor.code-field .cm-line { padding: 0; }
+.cm-editor.code-field .cm-cursor, .cm-editor.code-field .cm-dropCursor { border-left: 2px solid var(--accent); }
+.cm-editor.code-field .cm-selectionBackground, .cm-editor.code-field.cm-focused .cm-selectionBackground, .cm-editor.code-field .cm-content ::selection { background: color-mix(in srgb, var(--accent) 24%, transparent) !important; }
+.cm-editor.code-field .cm-placeholder { color: var(--ink-3); }
+.cm-editor.code-field .cm-searchMatch { background: var(--warn-soft); outline: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); }
+.cm-editor.code-field .cm-searchMatch-selected { background: var(--accent-soft); }
+.cm-h { font-weight: 700; } .cm-h1 { font-size: 1.45em; } .cm-h2 { font-size: 1.25em; } .cm-h3 { font-size: 1.1em; }
+.cm-strong { font-weight: 700; } .cm-em { font-style: italic; } .cm-strike { text-decoration: line-through; }
+.cm-link { color: var(--accent); } .cm-quote { color: var(--ink-2); font-style: italic; }
+.cm-mono { font-family: var(--font-mono); font-size: 0.88em; } .cm-mark { color: var(--ink-3); font-weight: 400; font-style: normal; }
+/* Search (Ctrl+F) and the [[ suggestions, in the app's colours */
+.cm-editor.code-field .cm-panels { background: var(--surface-2); color: var(--ink); border-color: var(--line); border-radius: 12px 12px 0 0; font-family: var(--font-ui); }
+.cm-editor.code-field .cm-panel.cm-search { padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.9rem; }
+.cm-editor.code-field .cm-panel.cm-search br { display: none; }
+.cm-editor.code-field .cm-textfield { font-size: 16px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; margin: 0; }
+.cm-editor.code-field .cm-button { background: var(--surface); background-image: none; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; margin: 0; min-height: 32px; }
+.cm-editor.code-field .cm-panel.cm-search label { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); }
+.cm-editor.code-field .cm-panel.cm-search [name=close] { position: static; margin-left: auto; font-size: 1.3rem; color: var(--ink-2); padding: 0 6px; }
+.cm-editor.code-field .cm-tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.cm-editor.code-field .cm-tooltip-autocomplete > ul { font-family: var(--font-ui); max-height: 14em; }
+.cm-editor.code-field .cm-tooltip-autocomplete > ul > li { padding: 6px 10px; }
+.cm-editor.code-field .cm-tooltip-autocomplete > ul > li[aria-selected] { background: var(--accent-soft); color: var(--ink); }
+.cm-editor.code-field .cm-completionDetail { color: var(--ink-3); font-style: normal; margin-left: 8px; }
+.notes-head .zen-btn { margin-left: 2px; flex: none; }
+.notes-head .notes-extra { white-space: nowrap; }
+html.zen-on, html.zen-on body { overflow: hidden; }
+.md-box.zen { position: fixed; left: 0; right: 0; top: var(--zen-top, 0px); height: var(--zen-h, 100dvh); z-index: 1000; margin: 0; background: var(--bg);
+  display: flex; flex-direction: column; padding: max(10px, var(--safe-t)) 16px max(8px, var(--safe-b)); }
+.md-box.zen > .notes-head { width: 100%; max-width: 46rem; margin: 0 auto 4px; opacity: 0.6; transition: opacity 0.2s; }
+.md-box.zen > .notes-head:hover, .md-box.zen > .notes-head:focus-within { opacity: 1; }
+.md-box.zen > .code-field, .md-box.zen > .notes-preview { flex: 1 1 auto; min-height: 0 !important; width: 100%; max-width: 46rem; margin: 0 auto; }
+.md-box.zen > .notes-preview { overflow: auto; border-color: transparent; background: transparent; }
+.md-box.zen > .cm-editor.code-field, .md-box.zen > .cm-editor.code-field.cm-focused { border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 1.2rem; }
+.md-box.zen .code-field .cm-content { padding: 8px 2px 35vh; }
+.md-box.zen .fmt-panel { width: 100%; max-width: 46rem; margin: 0 auto 6px; }
+/* Markdown reads [words] as a link; when it's the Aa's [words]{.green}, its own colour wins. */
+.cm-content [class*="fmt-"] .cm-link { color: inherit; }
+.cm-editor.code-field .cm-scroller { flex: 1 1 auto; }
+.cm-editor.code-field .cm-panels-top { border-bottom: 1px solid var(--line); }
+.cm-editor.code-field .cm-panels-top:empty { display: none; }
+/* The app's focus ring would sit on the inner content and show only at its clipped corners;
+   the editor shows focus on its own border instead. */
+.cm-editor.code-field .cm-content:focus-visible { box-shadow: none; border-radius: 0; }
+.notes-head .notes-gap { margin-left: auto; }
+
+/* The journal: Today's composer is a writing box with no frame of its own (the composer card is
+   the frame), and focus mode takes the whole composer — Save, Speak and Photos come too. */
+.composer > .cm-editor.code-field, .composer > .cm-editor.code-field.cm-focused { border: 0; border-radius: 0; background: transparent; box-shadow: none; min-height: 120px; max-height: 55vh; }
+.composer > .cm-editor.code-field .cm-content { padding: 16px 16px 8px; }
+.composer .zen-btn { color: var(--ink-2); }
+.composer.md-box.zen { border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+.composer.md-box.zen > * { width: 100%; max-width: 46rem; margin-left: auto; margin-right: auto; }
+.composer.md-box.zen > .cm-editor.code-field { max-height: none; }
+.composer.md-box.zen > .composer-bar { border-top: 0; }
+/* Editing an entry: the editor gets most of the screen. */
+.entry-write .cm-editor.code-field, .entry-write .notes-preview { min-height: max(240px, 50vh); }
+.composer-bar .zen-btn { width: 36px; min-width: 36px; padding: 0; flex: none; }
+.composer-bar .btn.primary { flex: none; }
+@media (max-width: 420px) { .composer-bar .btn.ghost { padding: 0 7px; } }

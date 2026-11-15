@@ -26,6 +26,8 @@ export async function mount(el, ctx, route, ui) {
   ui.wide(true);
   ui.setActions(html`<button class="btn small primary" data-act="board">${raw(icon("map"))}Corkboard</button>`);
 
+  // A piece copied from a journal entry links back to it (the journal beside Research, or ../journal/ in a host).
+  const journalHref = (id) => `${(ctx.host?.apps || []).find((x) => x.key === "journal")?.href || "index.html"}#/entry/${encodeURIComponent(id)}`;
   const words = (body) => { const n = wordCount(body); return `${n} word${n === 1 ? "" : "s"}`; };
   const render = () => {
     const sum = p.board ? boardSummary(boardParts(ctx.records(), p.board)) : null;
@@ -38,6 +40,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="src-notes"><div class="md-box fmt-scope">${mdHead("Draft", { extra: words(p.body) })}<textarea class="textarea notes draft" data-f="body" data-md data-fmtable data-code aria-label="Draft" placeholder="Write here — Markdown works: # heading, **bold**, *italic*, - lists, > quotes. Type [[ to link a source. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
       <div class="src-side">
         ${p.task?.title ? html`<p class="small muted">From your task <b>${p.task.title}</b></p>` : ""}
+        ${p.from?.app === "journal" && p.from.entry ? html`<p class="small muted" data-from-journal>Copied from <a href="${journalHref(p.from.entry)}">a journal entry</a>${p.from.day ? ` of ${p.from.day}` : ""} — a copy: changes here stay here.</p>` : ""}
         <a class="board-link" href="#/board/${p.board || ""}" data-act-inline="board">
           ${raw(icon("map"))}<span><b>Its corkboard</b><br><span class="small muted">${sum ? `${sum.pins} pins · ${sum.red} red string${sum.red === 1 ? "" : "s"} · ${sum.synthesised} synthesised` : "Make one: pin ideas, sources and cards, and connect them before you write them up."}</span></span></a>
         <div class="section-title">Sources</div>
