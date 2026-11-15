@@ -1,13 +1,17 @@
 // One piece of writing: your draft (autosaved, only ever your words), its
 // status, the sources it draws on, and its corkboard — opened from here, and
 // made the first time you open it.
+//
+// The draft gets the room: right under the title, in a CodeMirror editor
+// (src/ui/codeeditor.js) that styles Markdown as you write, with a focus mode
+// that hands it the whole screen. On a phone the sources and the rest follow it.
 
 import { html, raw, on, debounce, autosize, sheet, toast, confirmSheet } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
 import { PIECE_STATUSES, wordCount } from "../../core/writing.js";
 import { makeBoard, boardParts, boardSummary } from "../../core/boards.js";
 import { searchSources } from "../../core/sources.js";
-import { mdHead, mdPreview, mdSwitch } from "../ui.js";
+import { mdHead, mdPreview, writingBox } from "../ui.js";
 import { wireFormat } from "../../ui/textformat.js";
 
 export async function mount(el, ctx, route, ui) {
@@ -22,27 +26,30 @@ export async function mount(el, ctx, route, ui) {
   ui.wide(true);
   ui.setActions(html`<button class="btn small primary" data-act="board">${raw(icon("map"))}Corkboard</button>`);
 
+  const words = (body) => { const n = wordCount(body); return `${n} word${n === 1 ? "" : "s"}`; };
   const render = () => {
     const sum = p.board ? boardSummary(boardParts(ctx.records(), p.board)) : null;
     const sources = (p.sources || []).map((sid) => ctx.store.get(sid)).filter(Boolean);
     el.innerHTML = String(html`<div class="src-page piece-page">
-      <div class="src-side">
+      <div class="piece-head">
         <textarea class="src-title-in" data-f="title" rows="1" aria-label="Title">${p.title}</textarea>
         <div class="status-seg" role="group" aria-label="Status">${Object.entries(PIECE_STATUSES).map(([k, label]) => html`<button type="button" data-status="${k}" class="${p.status === k ? "on" : ""}">${label}</button>`)}</div>
+      </div>
+      <div class="src-notes"><div class="md-box fmt-scope">${mdHead("Draft", { extra: words(p.body) })}<textarea class="textarea notes draft" data-f="body" data-md data-fmtable data-code aria-label="Draft" placeholder="Write here — Markdown works: # heading, **bold**, *italic*, - lists, > quotes. Type [[ to link a source. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
+      <div class="src-side">
         ${p.task?.title ? html`<p class="small muted">From your task <b>${p.task.title}</b></p>` : ""}
         <a class="board-link" href="#/board/${p.board || ""}" data-act-inline="board">
           ${raw(icon("map"))}<span><b>Its corkboard</b><br><span class="small muted">${sum ? `${sum.pins} pins · ${sum.red} red string${sum.red === 1 ? "" : "s"} · ${sum.synthesised} synthesised` : "Make one: pin ideas, sources and cards, and connect them before you write them up."}</span></span></a>
         <div class="section-title">Sources</div>
         ${sources.length ? html`${sources.map((s) => html`<div class="piece-source"><a href="#/source/${s.id}">${s.title || s.url}</a><button class="btn icon small ghost" data-rm="${s.id}" aria-label="Remove">${raw(icon("close"))}</button></div>`)}` : html`<p class="small faint">Nothing linked yet.</p>`}
         <button class="btn small" data-act-inline="add-source">${raw(icon("plus"))}Link a source</button>
-        <p class="small faint" style="margin-top:18px">${wordCount(p.body)} words · started ${String(p.created || "").slice(0, 10)}</p>
+        <p class="small faint" style="margin-top:18px">Started ${String(p.created || "").slice(0, 10)}</p>
         <button class="btn small danger ghost" data-act-inline="delete">${raw(icon("trash"))}Delete piece</button>
       </div>
-      <div class="src-notes"><div class="md-box fmt-scope">${mdHead("Draft")}<textarea class="textarea notes draft" data-f="body" data-md data-fmtable aria-label="Draft" placeholder="Write here — Markdown works. Only you write here; Claude's notes go on the corkboard.">${p.body || ""}</textarea>${mdPreview}</div></div>
     </div>`);
     for (const t of el.querySelectorAll("textarea")) autosize(t, 0.85);
     ui.cleanup(wireFormat(el));
-    mdSwitch(el.querySelector(".md-box"), ctx, { empty: "The draft is empty.", autosize: (t) => autosize(t, 0.85) });
+    writingBox(el.querySelector(".md-box"), ctx, ui, { empty: "The draft is empty.", autosize: (t) => autosize(t, 0.85), autoZen: () => ctx.settings().writeZen === true });
   };
   render();
 
@@ -50,7 +57,11 @@ export async function mount(el, ctx, route, ui) {
   let pending = {};
   const flush = debounce(async () => { const q = pending; pending = {}; if (Object.keys(q).length) await save(q); }, 600);
   ui.cleanup(() => flush.flush());
-  on(el, "input", "[data-f]", (e, f) => { pending[f.dataset.f] = f.value; flush(); });
+  on(el, "input", "[data-f]", (e, f) => {
+    pending[f.dataset.f] = f.value;
+    flush();
+    if (f.dataset.f === "body") { const w = el.querySelector(".notes-extra"); if (w) w.textContent = words(f.value); }
+  });
   on(el, "click", "[data-status]", async (e, b) => { await save({ status: b.dataset.status }); render(); ui.setTitle(PIECE_STATUSES[p.status], { back: "#/writing" }); });
 
   async function openBoard() {

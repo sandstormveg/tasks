@@ -12,7 +12,7 @@ import { STATUSES, KINDS, statusPatch, formatAuthors, normalizeUrl, siteOf, find
 import { renderMarkdown } from "../../core/markdown.js";
 import { companionSettings, COMPANIONS } from "../../core/companions.js";
 import { portrait } from "../../ui/companion.js";
-import { tagInput, deleteSource, mdHead, mdPreview, mdSwitch } from "../ui.js";
+import { tagInput, deleteSource, mdHead, mdPreview, writingBox } from "../ui.js";
 import { imageOf } from "../images.js";
 import { attachFiles } from "../donut.js";
 import { fmtButton, wireFormat } from "../../ui/textformat.js";
@@ -68,7 +68,7 @@ export async function mount(el, ctx, route, ui) {
     </div>
     <div class="src-notes">
       <div class="md-box fmt-scope">${mdHead("Notes")}
-      <textarea class="textarea notes" data-f="body" data-md data-fmtable aria-label="Notes" placeholder="Your notes — Markdown works: # heading, **bold**, *italic*, - lists, > quotes, [links](https://…)">${s.body || ""}</textarea>
+      <textarea class="textarea notes" data-f="body" data-md data-fmtable data-code aria-label="Notes" placeholder="Your notes — Markdown works: # heading, **bold**, *italic*, - lists, > quotes, [links](https://…)">${s.body || ""}</textarea>
       ${mdPreview}</div>
       <section class="src-assist" aria-label="Assist">
         <label class="assist-toggle"><input type="checkbox" data-assist ${s.assist === true ? "checked" : ""}><span><b>Assist</b> — let an agent work with this</span></label>
@@ -97,7 +97,7 @@ export async function mount(el, ctx, route, ui) {
   ui.cleanup(wireFormat(el));
 
   // Notes: Edit or Preview, remembered on this device.
-  const md = mdSwitch(el.querySelector(".md-box"), ctx, { empty: "No notes yet.", autosize });
+  const md = writingBox(el.querySelector(".md-box"), ctx, ui, { empty: "No notes yet.", autosize });
 
   // Kept files: open one, or attach more (a PDF that goes with this, say).
   function renderFiles() {
