@@ -11,6 +11,9 @@
 // Markup: wrap a label and its field in an element with class "fmt-scope", give the field
 // data-fmtable and put fmtButton() in the scope. Then wireFormat(container) once: fields drawn
 // later are upgraded too.
+//
+// A field that also has data-code is a long-form writing box drawn by CodeMirror instead
+// (codeeditor.js); the Aa button works on that editor's selection through its f._ext.
 
 import { html, raw, on } from "./dom.js";
 import { SIZES, COLOURS, SPAN_RE, isFormatClass, applyFormat } from "../core/textformat.js";
@@ -147,6 +150,7 @@ const hideField = (f) => { f.style.display = "none"; f.tabIndex = -1; f.setAttri
 /** Draw the live editor for one field and keep the two in step. */
 function upgrade(f) {
   if (f._rich) return f._rich;
+  if (f.dataset.code !== undefined) return null; // CodeMirror draws this one
   const multi = f.tagName === "TEXTAREA";
   const ed = document.createElement("div");
   ed.className = `rich-field ${f.className}`.trim();
@@ -250,7 +254,8 @@ export function wireFormat(root) {
     scope?.querySelector(".fmt-panel")?.remove();
     scope?.querySelector("[data-fmt]")?.setAttribute("aria-expanded", "false");
   };
-  const editorOf = (scope) => { const f = scope?.querySelector("[data-fmtable]"); return f ? upgrade(f) : null; };
+  const fieldOf = (scope) => scope?.querySelector("[data-fmtable]");
+  const editorOf = (scope) => { const f = fieldOf(scope); return f ? upgrade(f) || f._ext?.dom || null : null; };
   // Keep the editor's selection: buttons don't take focus on press.
   on(root, "pointerdown", ".fmt-panel button, [data-fmt]", (e) => e.preventDefault());
   on(root, "mousedown", ".fmt-panel button, [data-fmt]", (e) => e.preventDefault());
@@ -266,23 +271,29 @@ export function wireFormat(root) {
   on(root, "click", ".fmt-panel button", (e, b) => {
     e.preventDefault();
     const scope = b.closest(".fmt-scope");
-    const ed = editorOf(scope);
-    if (!ed) return;
-    const f = ed._field;
     const d = b.dataset;
     const fmt = d.fmtOp === "bold" ? { bold: true } : d.fmtOp === "italic" ? { italic: true } : d.fmtOp === "clear" ? { clear: true }
       : d.fmtSize !== undefined ? { size: d.fmtSize } : { colour: d.fmtColour };
+    const hint = scope.querySelector("[data-fmt-hint]");
+    const nudge = () => { if (hint) { hint.textContent = "Select some words first, then choose how they look."; hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); } };
+    const ext = fieldOf(scope)?._ext;
+    if (ext) { // CodeMirror: its own selection, put back as one undoable change (its listener tells the page)
+      const { text, from, to } = ext.selection();
+      const r = applyFormat(text, from, to, fmt);
+      if (r.empty || r.value === text) return nudge();
+      ext.replace(r.value, r.start, r.end);
+      return;
+    }
+    const ed = editorOf(scope);
+    if (!ed) return;
+    const f = ed._field;
     const sel = getSelection();
     const range = sel.rangeCount && ed.contains(sel.anchorNode) ? sel.getRangeAt(0) : lastRange.get(ed);
     const L = layout(ed);
     const a = range ? offsetOf(ed, L, range.startContainer, range.startOffset) : L.text.length;
     const z = range ? offsetOf(ed, L, range.endContainer, range.endOffset) : a;
     const r = applyFormat(L.text, Math.min(a, z), Math.max(a, z), fmt);
-    const hint = scope.querySelector("[data-fmt-hint]");
-    if (r.empty || r.value === L.text) {
-      if (hint) { hint.textContent = "Select some words first, then choose how they look."; hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); }
-      return;
-    }
+    if (r.empty || r.value === L.text) return nudge();
     paint(ed, r.value);
     ed.focus({ preventScroll: true });
     const L2 = layout(ed);

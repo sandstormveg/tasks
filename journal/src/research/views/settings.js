@@ -98,6 +98,11 @@ export async function mount(el, ctx, route, ui) {
         <div class="chips">${TEXT_SIZES.map(([v, label]) => html`<button class="chip ${Number(s.textScale || 1) === v ? "on" : ""}" data-text-scale="${v}">${label}</button>`)}</div>
         <p class="small faint" style="margin-bottom:0">For the size or colour of particular words, select them and use the <b>Aa</b> button by any of your notes.</p></div>
 
+      <div class="section-title">Writing</div>
+      <div class="card flat">
+        <label class="check"><input type="checkbox" data-write-zen ${s.writeZen ? "checked" : ""}> <span>Open writing in focus mode <span class="faint">— when you start writing a draft or notes, the box takes the whole screen</span></span></label>
+        <p class="small faint" style="margin-bottom:0">Any time: the <b>⤢</b> button by a draft or notes. <b>Esc</b> or the button again brings the page back. In the editor, <b>Ctrl+F</b> searches and <b>[[</b> links one of your sources.</p></div>
+
       <div class="section-title">Corkboard</div>
       <div class="card flat">
         <label class="check"><input type="checkbox" data-inline-notes ${inlineNotesOn() ? "checked" : ""}> <span>Edit notes on the board (no pop-up)</span></label>
@@ -121,6 +126,7 @@ export async function mount(el, ctx, route, ui) {
     b.disabled = false;
   });
   on(el, "click", "[data-theme]", async (e, b) => { await ctx.saveSettings({ theme: b.dataset.theme }); render(); });
+  on(el, "change", "[data-write-zen]", async (e, f) => { await ctx.saveSettings({ writeZen: f.checked }); toast(f.checked ? "Writing opens in focus mode" : "Writing opens in the page"); });
   on(el, "change", "[data-cork-autofit]", async (e, f) => { await ctx.saveSettings({ corkAutoFit: f.checked }); toast(f.checked ? "Pin text fits its card" : "Pin text keeps its size"); });
   // Strings: each chip saves as you pick it, and the board picks it up next time it draws.
   wireStringsBlock(el, ctx);

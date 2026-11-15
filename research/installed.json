@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Journal_system@2215b12d10a0",
+ "source": "sandstormveg/Journal_system@241e41c2eb05",
  "files": [
   "data-template/.claude/skills/journal-steward/SKILL.md",
   "data-template/.gitattributes",
@@ -101,6 +101,7 @@
   "src/research/views/source.js",
   "src/research/views/videos.js",
   "src/research/views/writing.js",
+  "src/ui/codeeditor.js",
   "src/ui/companion.js",
   "src/ui/components.js",
   "src/ui/day-panel.js",
@@ -111,6 +112,7 @@
   "src/ui/shell.js",
   "src/ui/swipe.js",
   "src/ui/textformat.js",
+  "src/ui/zen.js",
   "src/views/claim.js",
   "src/views/concept.js",
   "src/views/document-new.js",
@@ -132,6 +134,7 @@
   "styles/corkboard.css",
   "styles/research.css",
   "vendor/anthropic-sdk.js",
+  "vendor/codemirror.js",
   "vendor/js-yaml.js",
   "voices/index.json",
   "voices/marginalia/alba/0ddf5855.ogg",

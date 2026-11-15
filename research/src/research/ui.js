@@ -13,6 +13,8 @@ import { suggestHomes, homesFrom } from "../core/deposit.js";
 import { saveImages, imageOf, imagePinSize, imagesFrom } from "./images.js";
 import { renderMarkdown } from "../core/markdown.js";
 import { fmtButton, formatted } from "../ui/textformat.js";
+import { upgradeCode } from "../ui/codeeditor.js";
+import { wireZen } from "../ui/zen.js";
 
 // What a card offers, by status: the next step in reading, without opening it.
 const NEXT = {
@@ -282,9 +284,10 @@ export async function deleteSource(ctx, id) {
 // away it shows as formatted Markdown (the Journal's renderer, escaped first, so nothing typed can
 // run). Tap the preview to write again. The Edit / Preview switch in the head row still works by hand.
 
-/** The head row: a label, the Aa button and the switch. Put it, a `textarea[data-md][data-fmtable]` and `mdPreview` inside an element with classes "md-box fmt-scope". */
-export const mdHead = (label) => html`<div class="notes-head"><span class="label">${label}</span>${fmtButton(label)}
-  <div class="status-seg small" role="group" aria-label="${label}: edit or preview"><button type="button" data-md-mode="edit">Edit</button><button type="button" data-md-mode="preview">Preview</button></div></div>`;
+/** The head row: a label, the Aa button, the switch and the focus-mode button. Put it, a `textarea[data-md][data-fmtable]` and `mdPreview` inside an element with classes "md-box fmt-scope". */
+export const mdHead = (label, { extra = "" } = {}) => html`<div class="notes-head"><span class="label">${label}</span>${extra ? html`<span class="small faint notes-extra">${extra}</span>` : ""}${fmtButton(label)}
+  <div class="status-seg small" role="group" aria-label="${label}: edit or preview"><button type="button" data-md-mode="edit">Edit</button><button type="button" data-md-mode="preview">Preview</button></div>
+  <button type="button" class="btn icon small ghost zen-btn" data-zen></button></div>`;
 export const mdPreview = html`<div class="prose notes-preview" data-md-preview title="Tap to edit"></div>`;
 
 /** Wire one .md-box; returns { refresh } to redraw the preview when the text changes from elsewhere. */
@@ -306,10 +309,35 @@ export function mdSwitch(box, ctx, { empty = "Nothing written yet.", autosize: g
   on(box, "click", "[data-md-preview]", (e) => { if (!e.target.closest("a")) edit(); });
   // Leaving the box shows the preview again (not when focus only moved to its own Aa panel).
   box.addEventListener("focusout", () => setTimeout(() => {
-    if (box.contains(document.activeElement) || box.querySelector(".fmt-panel")) return;
+    if (box.contains(document.activeElement) || box.querySelector(".fmt-panel") || box.classList.contains("zen")) return;
     if (box.dataset.mode === "edit" && ta.value.trim()) set("preview");
   }, 0));
   return { refresh: () => { if (box.dataset.mode === "preview") set("preview"); } };
+}
+
+/**
+ * A long-form writing box: mdSwitch, plus the CodeMirror editor (for a textarea with data-code)
+ * and focus mode. `autoZen()` true: starting to write goes straight to focus mode (Settings ›
+ * Writing), until you leave it on this page. Returns { refresh, zen, ready } (ready: the editor).
+ */
+export function writingBox(box, ctx, ui, { empty, autosize: grow, autoZen } = {}) {
+  const md = mdSwitch(box, ctx, { empty, autosize: grow });
+  const ta = box.querySelector("textarea[data-md]");
+  let leftZen = false;
+  const zen = wireZen(box, { onChange: (on) => { if (!on) leftZen = true; } });
+  ui.cleanup(() => zen.destroy());
+  const ready = ta?.dataset.code !== undefined
+    ? upgradeCode(ta, { links: () => ctx.sources().filter((s) => s.title).map((s) => ({ label: s.title, href: `#/source/${s.id}`, detail: s.site || "" })) })
+    : Promise.resolve(null);
+  ready.then((view) => {
+    if (!view) return;
+    ui.cleanup(() => view.destroy()); // its listeners on the document go with the page
+    // Starting to write, with "Open writing in focus mode" on.
+    view.contentDOM.addEventListener("focus", () => { if (autoZen?.() && !leftZen && !zen.active) zen.enter(); });
+    // Shown again after Preview: let it measure itself.
+    new MutationObserver(() => { if (box.dataset.mode === "edit") view.requestMeasure(); }).observe(box, { attributes: true, attributeFilter: ["data-mode"] });
+  });
+  return { ...md, zen, ready };
 }
 
 /** A sheet to pick one source from the library (searchable); resolves to its id, or null. */
