@@ -43,7 +43,7 @@ const FIELD_ORDER = {
     "credence", "review", "path", "edges", "sprite", "atlas_version", "rarity", "sitelinks", "finish", "insight", "img",
     "lineage", "stats", "flavor", "questions", "bridges", "links", "by", "minted", "added", "updated"],
   // A piece of writing (src/core/writing.js); the body is your draft.
-  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  piece: ["id", "type", "title", "status", "board", "task", "from", "sources", "cards", "author", "created", "updated", "visibility"],
   // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
   // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
   experiment: ["id", "type", "title", "question", "why", "method", "cost", "sources", "status", "hypothesis", "expected",

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:cc9553a6d6da4833
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:0e00309bc75cf550
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1233,7 +1233,7 @@ var FIELD_ORDER = {
     "updated"
   ],
   // A piece of writing (src/core/writing.js); the body is your draft.
-  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  piece: ["id", "type", "title", "status", "board", "task", "from", "sources", "cards", "author", "created", "updated", "visibility"],
   // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
   // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
   experiment: [

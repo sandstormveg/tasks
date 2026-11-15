@@ -14,7 +14,10 @@
 // suggestions insert a link only when the user picks one.
 //
 // Markup: give the textarea data-code (keep data-fmtable for the Aa button), then
-// upgradeCode(textarea, { links }) once it's in the page. `links()` returns [{ label, href }].
+// upgradeCode(textarea, { links, keys }) once it's in the page. `links()` returns [{ label, href }];
+// `keys` are extra key bindings ({ key: "Mod-Enter", run }) that come before the usual ones.
+// The textarea's placeholder, selectionStart/End, setSelectionRange, focus and scrollIntoView keep
+// working and reach the editor, so a page written for a plain textarea needs no other change.
 
 let cmPromise = null;
 const loadCM = () => (cmPromise ||= import("../../vendor/codemirror.js").catch((e) => { cmPromise = null; throw e; })); // try again next time
@@ -32,8 +35,8 @@ export async function upgradeCode(f, opts = {}) {
   return f._cmLoading;
 }
 
-function make(CM, f, { links } = {}) {
-  const { EditorState, EditorView, keymap, placeholder, drawSelection, history, defaultKeymap, historyKeymap,
+function make(CM, f, { links, keys = [], repaint } = {}) {
+  const { Compartment, EditorState, EditorView, keymap, placeholder, drawSelection, history, defaultKeymap, historyKeymap,
     syntaxHighlighting, HighlightStyle, search, searchKeymap, autocompletion, completionKeymap,
     markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward, tags: t, Decoration, ViewPlugin } = CM;
 
@@ -95,6 +98,9 @@ function make(CM, f, { links } = {}) {
   };
 
   const label = f.getAttribute("aria-label") || "";
+  let fromCode = false; // a value set by the page, not typed
+  const hint = new Compartment(); // the placeholder can change (Today asks a different question each time)
+  const phDesc = Object.getOwnPropertyDescriptor(proto, "placeholder");
   const view = new EditorView({
     state: EditorState.create({
       doc: rawGet(),
@@ -108,8 +114,9 @@ function make(CM, f, { links } = {}) {
         fmtPlugin,
         search({ top: true }),
         links ? autocompletion({ override: [linkSource], icons: false, activateOnTyping: true }) : [],
-        placeholder(f.placeholder || ""),
+        hint.of(placeholder(f.placeholder || "")),
         keymap.of([
+          ...keys,
           { key: "Enter", run: insertNewlineContinueMarkup },
           { key: "Backspace", run: deleteMarkupBackward },
           ...completionKeymap, ...searchKeymap, ...historyKeymap, ...defaultKeymap,
@@ -119,7 +126,7 @@ function make(CM, f, { links } = {}) {
         EditorView.updateListener.of((u) => {
           if (!u.docChanged) return;
           rawSet(u.state.doc.toString());
-          f.dispatchEvent(new Event("input", { bubbles: true }));
+          if (!fromCode) f.dispatchEvent(new Event("input", { bubbles: true })); // the page set it: nothing to echo back
         }),
         EditorView.domEventHandlers({ blur: () => { f.dispatchEvent(new Event("change", { bubbles: true })); } }),
       ],
@@ -130,16 +137,34 @@ function make(CM, f, { links } = {}) {
   f.tabIndex = -1;
   f.setAttribute("aria-hidden", "true");
 
-  // Setting the value from code repaints the editor (not while you're typing in it).
+  // Setting the value from code repaints the editor: not while you're typing in it (a page's
+  // autosave can echo an older value back), unless the page only ever sets it on purpose
+  // (repaint: "always", e.g. Today clearing the box after Save).
   Object.defineProperty(f, "value", {
     configurable: true,
     get: rawGet,
     set(v) {
       rawSet(v);
-      if (!view.hasFocus && v !== view.state.doc.toString()) view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: String(v ?? "") } });
+      if ((repaint === "always" || !view.hasFocus) && String(v ?? "") !== view.state.doc.toString()) {
+        fromCode = true;
+        try { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: String(v ?? "") } }); } finally { fromCode = false; }
+      }
     },
   });
   f.focus = () => view.focus();
+  Object.defineProperty(f, "placeholder", {
+    configurable: true,
+    get: () => phDesc.get.call(f),
+    set(v) { phDesc.set.call(f, v); view.dispatch({ effects: hint.reconfigure(placeholder(String(v ?? ""))) }); },
+  });
+  Object.defineProperty(f, "selectionStart", { configurable: true, get: () => view.state.selection.main.from, set: (v) => f.setSelectionRange(v, Math.max(v, view.state.selection.main.to)) });
+  Object.defineProperty(f, "selectionEnd", { configurable: true, get: () => view.state.selection.main.to, set: (v) => f.setSelectionRange(Math.min(v, view.state.selection.main.from), v) });
+  f.setSelectionRange = (a, z = a) => {
+    const n = view.state.doc.length;
+    view.dispatch({ selection: { anchor: Math.max(0, Math.min(a, n)), head: Math.max(0, Math.min(z, n)) }, scrollIntoView: true });
+  };
+  f.scrollIntoView = (o) => view.dom.scrollIntoView(o);
+  f.blur = () => view.contentDOM.blur();
 
   // For the Aa button: what's selected, and a way to put formatted text back as one undoable change.
   f._ext = {

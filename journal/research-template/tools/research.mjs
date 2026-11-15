@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:519415847d90d3aa
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:e0a038150357b296
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1233,7 +1233,7 @@ var FIELD_ORDER = {
     "updated"
   ],
   // A piece of writing (src/core/writing.js); the body is your draft.
-  piece: ["id", "type", "title", "status", "board", "task", "sources", "cards", "author", "created", "updated", "visibility"],
+  piece: ["id", "type", "title", "status", "board", "task", "from", "sources", "cards", "author", "created", "updated", "visibility"],
   // An experiment (src/core/experiments.js): a proposition, then active, then done. No body: every
   // field is short, and hypothesis / expected / result / surprised / verdict are only ever the owner's.
   experiment: [
@@ -2425,6 +2425,7 @@ function makePiece(fields = {}, { now, author = "self" } = {}) {
     status: PIECE_STATUSES[fields.status] ? fields.status : "idea",
     board: fields.board || void 0,
     task: fields.task || void 0,
+    from: fields.from || void 0,
     sources: fields.sources?.length ? [...new Set(fields.sources)] : void 0,
     cards: fields.cards?.length ? [...new Set(fields.cards)] : void 0,
     author,
