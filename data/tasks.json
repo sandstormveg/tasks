@@ -280,7 +280,16 @@
       "category": "Life Admin",
       "created": "2026-11-16",
       "notes": "",
-      "assist": false
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mwiqq0ga2n48",
+          "text": "Living room",
+          "done": false,
+          "created": "2026-11-16T04:05:19.689Z",
+          "updated": "2026-11-16T04:05:19.689Z"
+        }
+      ]
     }
   ]
 }
