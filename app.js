@@ -63,6 +63,21 @@ const questNominateOn = () => localStorage.getItem(questNominateKey) !== "off";
 
 // Marks a task for the ⚔ Guild: on its next sync the Guild files it as a request for the
 // guild master, linked to this task. Withdrawing only clears the mark here.
+// "Nudge me / priority": a flag asking agents (the director's suggestions, the guild master)
+// to keep finding gentle ways in to a task that's hard to start. Also sorts it first under
+// Sort by › Priority.
+async function toggleNudge(task) {
+  const on = !task.nudge;
+  try {
+    await saveOrQueue(makeOp("fields", task._repo, { taskId: task.id, fields: { nudge: on ? true : null }, label: `${on ? "Nudge me" : "Stop nudging"}: ${task.title}` }));
+    if (on) task.nudge = true; else delete task.nudge;
+    showToast({ message: on ? `🔔 Agents will keep looking for small, kind ways in to "${task.title}".` : `Stopped nudging for "${task.title}".`, duration: 5000 });
+    renderActiveTasksColumn();
+  } catch (err) {
+    showToast({ message: `Couldn't save: ${err.message}`, duration: 5000 });
+  }
+}
+
 async function nominateAsQuest(task) {
   if (!requireToken()) return;
   const on = !task.questNominated;
@@ -1400,7 +1415,7 @@ function enterCategoryRenameMode(name, row) {
 
 // How "All tasks" is ordered (remembered per device): your own drag order, newest first,
 // quest-linked tasks first, or grouped under category headers.
-const SORTS = { manual: "Your order", recent: "Most recent", quests: "Quests first", category: "Category" };
+const SORTS = { manual: "Your order", priority: "Priority (nudges first)", recent: "Most recent", quests: "Quests first", category: "Category" };
 
 // A task is a quest's if the Guild made it, a quest is flagged on it, or on one of its subtasks.
 const questLinked = (t) => !!(t.questId || state.questFlare?.[t.id]);
@@ -1412,6 +1427,7 @@ function sortedTasks(tasks) {
     // Newest created first; on the same day, the one added later (lower in the file) first.
     return [...tasks].sort((a, b) => (b.created || "").localeCompare(a.created || "") || at.get(b) - at.get(a));
   }
+  if (state.sortMode === "priority") return [...tasks].sort((a, b) => Number(!!b.nudge) - Number(!!a.nudge) || at.get(a) - at.get(b));
   if (state.sortMode === "quests") return [...tasks].sort((a, b) => Number(isQuestTask(b)) - Number(isQuestTask(a)) || at.get(a) - at.get(b));
   return tasks;
 }
@@ -1912,6 +1928,7 @@ function openTaskOptionsMenu(task, x, y) {
     <div class="combo-option" data-action="assist">✦ ${task.assist ? "Stop AI assistance" : "Start AI assistance"}</div>
     <div class="combo-option" data-action="vis">${task._repo === "private" ? "Make public" : "Make private"}</div>
     ${questNominateOn() && !state.questFlare?.[task.id] && !task.questId ? `<div class="combo-option" data-action="nominate">⚔ ${task.questNominated ? "Withdraw quest nomination" : "Nominate as a quest"}</div>` : ""}
+    <div class="combo-option" data-action="nudge">🔔 ${task.nudge ? "Stop nudging me" : "Nudge me / priority"}</div>
     <div class="combo-option option-danger" data-action="delete">🗑 Delete task</div>
   `;
   menu.querySelector('[data-action="nest"]').addEventListener("click", () => {
@@ -1933,6 +1950,10 @@ function openTaskOptionsMenu(task, x, y) {
   menu.querySelector('[data-action="nominate"]')?.addEventListener("click", () => {
     closeTaskOptionsMenu();
     nominateAsQuest(task);
+  });
+  menu.querySelector('[data-action="nudge"]').addEventListener("click", () => {
+    closeTaskOptionsMenu();
+    toggleNudge(task);
   });
 
   document.body.appendChild(menu);
@@ -2003,9 +2024,10 @@ function taskCard(task, depth = 0, subtaskCount = 0) {
         </div>
       </div>
     </div>
-    ${isAssisted(task) || task._repo === "private" || waiting ? `
+    ${isAssisted(task) || task._repo === "private" || waiting || task.nudge ? `
       <span class="task-card-badges">
         ${waiting ? `<span class="sync-badge" title="Saved on this device, waiting to sync">⟳</span>` : ""}
+        ${task.nudge ? `<span class="nudge-badge" title="Nudge me: agents keep finding ways in">🔔</span>` : ""}
         ${task.assist ? `<span class="assist-badge" title="AI assistance on">✦</span>` : assistInherited(task) ? `<span class="assist-badge inherited" title="AI assistance on, via its parent task">✦</span>` : ""}
         ${task._repo === "private" ? `<span class="private-dot" title="Private"></span>` : ""}
       </span>` : ""}
@@ -2634,6 +2656,8 @@ function renderVisibilityToggle() {
     ? "New task will be public — click to make it private"
     : "New task will be private — click to make it public";
 }
+// New tasks start private once the private repo is reachable (needs a token); otherwise public.
+state.newTaskVisibility = getToken() ? "private" : "public";
 renderVisibilityToggle();
 
 el("#add-assist").addEventListener("click", () => {
