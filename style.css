@@ -827,6 +827,7 @@ main.view.columns-view { max-width: none; padding: 20px 20px 0; }
   color: var(--accent-2);
   text-shadow: 0 0 4px var(--accent-2);
 }
+.task-card .nudge-badge { font-size: 11px; line-height: 1; }
 /* ⚔ quest flare: this task is an accepted Guild quest */
 .task-card.quest-flared { border-color: #ffb000; box-shadow: inset 3px 0 0 #ffb000, 0 0 10px rgba(255, 176, 0, 0.18); }
 .quest-flare { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px solid #ffb000; border-radius: 4px; color: #ffb000; font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; text-shadow: 0 0 4px rgba(255, 176, 0, 0.5); }
