@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:e0a038150357b296
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:713c66b78a01a178
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1127,6 +1127,7 @@ var FIELD_ORDER = {
     "authors",
     "year",
     "site",
+    "preview",
     "status",
     "favourite",
     "tags",
@@ -1172,6 +1173,7 @@ var FIELD_ORDER = {
     "source",
     "url",
     "address",
+    "preview",
     "author",
     "created",
     "updated"
@@ -1327,6 +1329,11 @@ var TEXT_PREFIXES = ["entries/", "days/", "events/", "meta/claims/", "meta/propo
 function isRecordPath(p) {
   if (!TEXT_PREFIXES.some((pre) => p.startsWith(pre))) return false;
   return p.startsWith("config/") ? p.endsWith(".yaml") : p.endsWith(".md");
+}
+function mediaPath(day, id, ext, { thumb = false, sealed = false } = {}) {
+  const [y2, m] = day.split("-");
+  const suffix = sealed ? thumb ? ".thumb.enc" : ".enc" : thumb ? ".thumb.jpg" : `.${ext}`;
+  return `media/${y2}/${m}/${id}${suffix}`;
 }
 var MIME_EXT = {
   "image/jpeg": "jpg",
@@ -2497,7 +2504,119 @@ function refreshAtlasCard(existing, e, { now, version } = {}) {
 }
 var readable = (s) => String(s || "").replace(/_/g, " ");
 
+// src/core/preview.js
+var PREVIEW_LIMITS = { title: 140, site: 60, description: 220, image: 25e4, icon: 24e3, html: 1e6 };
+function previewUrlOf(pin) {
+  if (!pin) return "";
+  if (pin.kind === "link" && isWebUrl(pin.url)) return pin.url;
+  if (pin.kind === "note" || pin.kind === "link") {
+    const m = String(pin.body || "").match(/https?:\/\/[^\s<>()[\]"'`]+/);
+    if (m) return m[0].replace(/[.,;:!?]+$/, "");
+  }
+  return "";
+}
+function isWebUrl(u) {
+  try {
+    const x = new URL(String(u));
+    return x.protocol === "https:" || x.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+function isPrivateHost(host) {
+  const h2 = String(host || "").toLowerCase().replace(/^\[|\]$/g, "");
+  if (!h2 || h2 === "localhost" || h2.endsWith(".localhost") || h2.endsWith(".local") || h2.endsWith(".internal")) return true;
+  if (/^(127\.|10\.|0\.|169\.254\.|192\.168\.)/.test(h2) || /^172\.(1[6-9]|2\d|3[01])\./.test(h2)) return true;
+  if (h2 === "::1" || /^f[cd][0-9a-f]{2}:/.test(h2) || /^fe80:/.test(h2)) return true;
+  return false;
+}
+var ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'", hellip: "\u2026", mdash: "\u2014", ndash: "\u2013", rsquo: "\u2019", lsquo: "\u2018", rdquo: "\u201D", ldquo: "\u201C" };
+function decode(s) {
+  return String(s || "").replace(/&(#x[0-9a-f]+|#\d+|[a-z]+\d*|#39);/gi, (m, e) => {
+    if (e[0] === "#") {
+      const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return Number.isFinite(n) && n > 0 && n < 1114112 ? String.fromCodePoint(n) : m;
+    }
+    return ENTITIES[e.toLowerCase()] ?? m;
+  });
+}
+var tidy = (s, n) => {
+  const t = decode(s).replace(/<[^>]*>/g, "").replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+  return t.length > n ? `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}\u2026` : t;
+};
+function attrs(tag) {
+  const out = {};
+  for (const m of tag.matchAll(/([a-zA-Z_:][-\w:.]*)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/g)) out[m[1].toLowerCase()] = m[3] ?? m[4] ?? m[5] ?? "";
+  return out;
+}
+var abs = (href, base) => {
+  if (!String(href || "").trim()) return "";
+  try {
+    const u = new URL(decode(href).trim(), base);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.href : "";
+  } catch {
+    return "";
+  }
+};
+function parsePreview(htmlText, pageUrl) {
+  const text2 = String(htmlText || "").slice(0, PREVIEW_LIMITS.html);
+  const head = (text2.match(/<head[\s>][\s\S]*?<\/head>/i) || [text2.slice(0, 2e5)])[0];
+  const meta = {};
+  for (const m of head.matchAll(/<meta\b[^>]*>/gi)) {
+    const a = attrs(m[0]);
+    const key = (a.property || a.name || a.itemprop || "").toLowerCase();
+    if (key && a.content != null && !(key in meta)) meta[key] = a.content;
+  }
+  const icons = [];
+  for (const m of head.matchAll(/<link\b[^>]*>/gi)) {
+    const a = attrs(m[0]);
+    const rel2 = (a.rel || "").toLowerCase().split(/\s+/);
+    if (a.href && (rel2.includes("icon") || rel2.includes("apple-touch-icon"))) icons.push({ href: a.href, touch: rel2.includes("apple-touch-icon"), svg: /svg/.test(a.type || "") || /\.svg(\?|$)/i.test(a.href) });
+  }
+  const host = (() => {
+    try {
+      return new URL(pageUrl).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  })();
+  const titleTag = (head.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "";
+  const icon = icons.find((i) => !i.touch && !i.svg) || icons.find((i) => !i.svg);
+  return {
+    title: tidy(meta["og:title"] || meta["twitter:title"] || titleTag, PREVIEW_LIMITS.title),
+    site: tidy(meta["og:site_name"] || meta["application-name"] || host, PREVIEW_LIMITS.site),
+    description: tidy(meta["og:description"] || meta["twitter:description"] || meta.description, PREVIEW_LIMITS.description),
+    image: abs(meta["og:image:secure_url"] || meta["og:image"] || meta["og:image:url"] || meta["twitter:image"] || meta["twitter:image:src"] || "", pageUrl),
+    icon: icon ? abs(icon.href, pageUrl) : abs("/favicon.ico", pageUrl)
+  };
+}
+function cleanPreview(p) {
+  if (!p || typeof p !== "object" || !isWebUrl(p.url)) return void 0;
+  const media = (x) => typeof x === "string" && /^media\/\d{4}\/\d{2}\/[\w.-]+$/.test(x) ? x : void 0;
+  const out = {
+    url: String(p.url),
+    title: tidy(p.title, PREVIEW_LIMITS.title) || void 0,
+    site: tidy(p.site, PREVIEW_LIMITS.site) || void 0,
+    description: tidy(p.description, PREVIEW_LIMITS.description) || void 0,
+    image: media(p.image),
+    icon: media(p.icon),
+    fetched: typeof p.fetched === "string" ? p.fetched : void 0
+  };
+  for (const k2 of Object.keys(out)) if (out[k2] === void 0) delete out[k2];
+  return out.title || out.description || out.image ? out : void 0;
+}
+function sniffImage(bytes) {
+  const b2 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+  if (b2[0] === 255 && b2[1] === 216 && b2[2] === 255) return { ext: "jpg", mime: "image/jpeg" };
+  if (b2[0] === 137 && b2[1] === 80 && b2[2] === 78 && b2[3] === 71) return { ext: "png", mime: "image/png" };
+  if (b2[0] === 71 && b2[1] === 73 && b2[2] === 70) return { ext: "gif", mime: "image/gif" };
+  if (b2[0] === 82 && b2[1] === 73 && b2[2] === 70 && b2[3] === 70 && b2[8] === 87 && b2[9] === 69 && b2[10] === 66 && b2[11] === 80) return { ext: "webp", mime: "image/webp" };
+  if (b2[0] === 0 && b2[1] === 0 && b2[2] === 1 && b2[3] === 0) return { ext: "ico", mime: "image/x-icon" };
+  return null;
+}
+
 // tools/research.mjs
+import { lookup } from "node:dns/promises";
 var AUTHOR = "claude";
 function args(argv) {
   const out = { _: [] };
@@ -2513,9 +2632,9 @@ function args(argv) {
 }
 function walk(root, dir = "") {
   const out = [];
-  const abs = path.join(root, dir);
-  if (!existsSync(abs)) return out;
-  for (const name2 of readdirSync(abs)) {
+  const abs2 = path.join(root, dir);
+  if (!existsSync(abs2)) return out;
+  for (const name2 of readdirSync(abs2)) {
     if (name2 === ".git" || name2 === "node_modules") continue;
     const rel2 = dir ? `${dir}/${name2}` : name2;
     if (statSync(path.join(root, rel2)).isDirectory()) out.push(...walk(root, rel2));
@@ -2595,13 +2714,89 @@ function describe(s) {
   if (s.agent_notes?.length) out.push("", "## Agent notes", ...s.agent_notes.map((n) => `- ${String(n.date).slice(0, 16).replace("T", " ")} \xB7 ${n.author}: ${n.text}`));
   return out.join("\n");
 }
+var PREVIEW_UA = "Mozilla/5.0 (compatible; ResearchPreview/1.0)";
+async function safeHost(url) {
+  const host = new URL(url).hostname;
+  if (isPrivateHost(host)) return false;
+  try {
+    const found = await lookup(host, { all: true });
+    if (found.some((x) => isPrivateHost(x.address))) return false;
+  } catch {
+  }
+  return true;
+}
+async function readCapped(res, max) {
+  const reader = res.body?.getReader();
+  if (!reader) return new Uint8Array();
+  const parts = [];
+  let size = 0;
+  for (; ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > max) {
+      await reader.cancel().catch(() => {
+      });
+      return null;
+    }
+    parts.push(value);
+  }
+  const out = new Uint8Array(size);
+  let at = 0;
+  for (const p of parts) {
+    out.set(p, at);
+    at += p.length;
+  }
+  return out;
+}
+async function getCapped(fetchFn, url, { max, accept, timeout = 8e3 }) {
+  let u = url;
+  for (let hop = 0; hop < 6; hop++) {
+    if (!isWebUrl(u) || !await safeHost(u)) return { error: "not a public web address" };
+    const res = await fetchFn(u, { redirect: "manual", credentials: "omit", headers: { "user-agent": PREVIEW_UA, accept }, signal: AbortSignal.timeout(timeout) });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      u = new URL(res.headers.get("location"), u).href;
+      continue;
+    }
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    const bytes = await readCapped(res, max);
+    if (!bytes) return { error: "too big" };
+    return { url: u, type: res.headers.get("content-type") || "", bytes };
+  }
+  return { error: "too many redirects" };
+}
+async function fetchPreview(root, url, { fetch: fetchFn, now, id, images = true }) {
+  const page = await getCapped(fetchFn, url, { max: PREVIEW_LIMITS.html, accept: "text/html,application/xhtml+xml" });
+  if (page.error) return { error: page.error };
+  if (!/html|xml/i.test(page.type)) return { error: `not a web page (${page.type.split(";")[0] || "unknown type"})` };
+  const meta = parsePreview(new TextDecoder().decode(page.bytes), page.url);
+  const day = String(now).slice(0, 10);
+  const keep = async (src, suffix, max) => {
+    if (!images || !src) return void 0;
+    try {
+      const got = await getCapped(fetchFn, src, { max, accept: "image/*" });
+      const kind = got.bytes && sniffImage(got.bytes);
+      if (!kind) return void 0;
+      const rel2 = mediaPath(day, `${id}-${suffix}`, kind.ext);
+      mkdirSync(path.dirname(path.join(root, rel2)), { recursive: true });
+      writeFileSync(path.join(root, rel2), got.bytes);
+      return rel2;
+    } catch {
+      return void 0;
+    }
+  };
+  const image = await keep(meta.image, "og", PREVIEW_LIMITS.image);
+  const icon = await keep(meta.icon, "icon", PREVIEW_LIMITS.icon);
+  const preview = cleanPreview({ url, title: meta.title, site: meta.site, description: meta.description, image, icon, fetched: now });
+  return preview ? { preview } : { error: "the page has no title or description" };
+}
 function save(root, rec) {
   const rel2 = pathFor(rec);
   mkdirSync(path.dirname(path.join(root, rel2)), { recursive: true });
   writeFileSync(path.join(root, rel2), serialize(rec));
   return rel2;
 }
-function run(argv, { cwd = process.cwd(), now = isoLocal(/* @__PURE__ */ new Date(), deviceTimeZone()), print = console.log } = {}) {
+function run(argv, { cwd = process.cwd(), now = isoLocal(/* @__PURE__ */ new Date(), deviceTimeZone()), print = console.log, fetch: fetchFn } = {}) {
   const a = args(argv);
   const root = path.resolve(cwd, typeof a.data === "string" ? a.data : ".");
   const [cmd, ...rest] = a._;
@@ -3012,7 +3207,60 @@ ${rel2}`);
       const rel2 = save(root, pin);
       print(`Pinned to ${b2.title}: [${kind}] ${pinName(pin)}  (${pin.id})
 ${rel2}`);
+      if (fetchFn && !a["no-preview"] && previewUrlOf(pin)) {
+        return fetchPreview(root, previewUrlOf(pin), { fetch: fetchFn, now, id: pin.id, images: !a["no-images"] }).then(({ preview, error }) => {
+          if (preview) {
+            pin.preview = preview;
+            save(root, pin);
+            print(`Preview: ${preview.title || preview.site}${preview.image ? " \xB7 picture" : ""}`);
+          } else print(`No preview (${error}); the board shows the link as text.`);
+          return pin;
+        }, (e) => {
+          print(`No preview (${e.message}); the board shows the link as text.`);
+          return pin;
+        });
+      }
       return pin;
+    }
+    case "previews": {
+      const boards = rest[0] ? [findBoard(rest[0])].filter(Boolean) : byType("board");
+      if (!boards.length) {
+        print(`No board ${rest[0] || ""}. Try \`boards\`.`);
+        return null;
+      }
+      if (!fetchFn) {
+        print("Previews need the network: run this from the command line.");
+        return null;
+      }
+      const jobs = [];
+      for (const b2 of boards) {
+        for (const p of boardParts(records, b2.id).pins) {
+          if (str(a.pin) && p.id !== a.pin) continue;
+          const rec = p.kind === "source" ? sourcesById[p.source] : p;
+          const url = p.kind === "source" ? isWebUrl(rec?.url) ? rec.url : "" : previewUrlOf(p);
+          if (!url || rec.preview?.url === url && !a.refresh || jobs.some((j2) => j2.rec === rec)) continue;
+          jobs.push({ rec, url, board: b2 });
+        }
+      }
+      if (!jobs.length) {
+        print("Nothing to preview: every link here has one (use --refresh to fetch again).");
+        return [];
+      }
+      return (async () => {
+        const done = [];
+        for (const { rec, url, board } of jobs) {
+          const { preview, error } = await fetchPreview(root, url, { fetch: fetchFn, now, id: rec.id, images: !a["no-images"] }).catch((e) => ({ error: e.message }));
+          if (preview) {
+            const next = { ...rec, preview };
+            delete next._path;
+            save(root, next);
+            done.push(next);
+          }
+          print(`${preview ? "\u2713" : "\u2717"} ${pinName(rec.type === "pin" ? rec : { title: rec.title })} \u2014 ${preview ? `${preview.title || preview.site}${preview.image ? " \xB7 picture" : ""}${preview.icon ? " \xB7 icon" : ""}` : error}  (${board.title})`);
+        }
+        print(`${done.length} of ${jobs.length} previewed.`);
+        return done;
+      })();
     }
     case "connect": {
       const b2 = findBoard(rest[0]);
@@ -3279,6 +3527,7 @@ Boards:    boards \xB7 board <id | words> \xB7 curate <board>
            pin <board> --title \u2026 [--text \u2026] [--kind note|link|quote|source|card] [--url \u2026] [--source s-\u2026] [--card Q\u2026] [--near p-\u2026]
            pin <board> --kind frame --title \u2026 [--domain \u2026] [--perspective \u2026] [--scale \u2026] [--time \u2026]   (then --near <frame> to pin inside it)
            connect <board> <pin> <pin> [--label \u2026]
+           previews [board] [--pin p-\u2026] [--refresh] [--no-images]   (website previews; only the URL is sent)
            card [Q\u2026] \xB7 card --atlas <entry-id>
 Atlas:     atlas <words> [--atlas-dir <clone of atlas_infodex>] \u2014 searches its small index, never the whole repo
            pin <board> --kind card --atlas <entry-id>
@@ -3294,12 +3543,13 @@ On experiments you may propose and log only: never select one, and never write i
   }
 }
 var isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMain) Promise.resolve(run(process.argv.slice(2))).catch((err) => {
+if (isMain) Promise.resolve(run(process.argv.slice(2), { fetch: globalThis.fetch })).catch((err) => {
   console.error(err.message);
   process.exitCode = 1;
 });
 export {
   describe,
+  fetchPreview,
   loadAll,
   loadAtlas,
   loadSources,

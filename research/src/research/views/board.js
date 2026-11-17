@@ -27,6 +27,7 @@ import { cardFace, cardPage, addEntry, wireCardArt } from "../cards.js";
 import { stringsBlock, wireStringsBlock } from "../string-settings.js";
 import { saveImages, pickImages, imageOf, imagePinSize, imagesFrom } from "../images.js";
 import { formatted } from "../../ui/textformat.js";
+import { previewUrlOf } from "../../core/preview.js";
 import { SIZES, COLOURS, PIN_FONTS, PIN_ALIGNS, PIN_BASE_PX, PIN_MIN_PX, PIN_MAX_PX, PIN_PRESET_PX, pinTextPx, cleanPinStyle, migratePinMarkup } from "../../core/textformat.js";
 
 const MIN_Z = 0.08;
@@ -259,15 +260,43 @@ export async function mount(el, ctx, route, ui) {
     }
     if (p.kind === "source") {
       const s = sourcesById[p.source];
-      return html`${by}<div class="pin-kicker">${s?.site || "Source"}${s?.status ? html` · ${s.status === "inbox" ? "deposit" : s.status}` : ""}</div>
+      const spv = previewOf(p);
+      return html`${by}<div class="pin-kicker${spv ? " pv-site" : ""}">${spv ? pvIcon(spv) : ""}<span>${s?.site || spv?.site || "Source"}${s?.status ? html` · ${s.status === "inbox" ? "deposit" : s.status}` : ""}</span></div>
+        ${spv && lod >= 1 ? pvThumb(spv) : ""}
         <div class="pin-title">${s?.title || p.title || p.url || "Source"}</div>
+        ${spv?.description && lod >= 2 && !(s?.why || p.body) ? html`<div class="pv-desc">${spv.description}</div>` : ""}
         ${s?.authors?.length ? html`<div class="pin-meta">${formatAuthors(s.authors)}${s.year ? `, ${s.year}` : ""}</div>` : ""}
         ${lod >= 1 && (s?.why || p.body) ? html`<div class="pin-text">${formatted(s?.why || p.body)}</div>` : ""}
         ${lod >= 2 ? html`<div class="pin-foot"><a href="#/source/${p.source}" class="pin-open">Open in Research</a>${s?.url ? html` · <a href="${s.url}" target="_blank" rel="noopener noreferrer">Link</a>` : ""}</div>` : ""}`;
     }
     if (p.kind === "quote") return html`${by}<blockquote class="pin-quote">${formatted(p.body)}</blockquote>${p.title ? html`<div class="pin-meta">— ${p.title}</div>` : ""}`;
-    if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? html`<a class="pin-meta" href="${p.url}" target="_blank" rel="noopener noreferrer">${p.url.replace(/^https?:\/\//, "").slice(0, 60)}</a>` : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${formatted(p.body)}</div>` : ""}`;
-    return html`${by}${p.title ? html`<div class="pin-title">${p.kind === "note" ? raw(renderInline(stripHeadingPrefix(p.title), { tags: false, concepts: false })) : p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : formatted(p.body)}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}`;
+    const urlLine = (u) => html`<a class="pin-meta pv-url" href="${u}" target="_blank" rel="noopener noreferrer">${u.replace(/^https?:\/\//, "").slice(0, 60)}</a>`;
+    const pv = previewOf(p);
+    if (p.kind === "link" && pv) {
+      return html`${by}${pvSite(pv)}${lod >= 1 ? pvThumb(pv) : ""}<div class="pin-title">${p.title || pv.title || p.url}</div>
+        ${lod >= 1 && p.body ? html`<div class="pin-text">${formatted(p.body)}</div>` : ""}
+        ${lod >= 1 && pv.description && (lod >= 2 || !p.body) ? html`<div class="pv-desc">${pv.description}</div>` : ""}
+        ${p.url ? urlLine(p.url) : ""}`;
+    }
+    if (p.kind === "link") return html`${by}<div class="pin-title">${p.title || p.url}</div>${p.url ? urlLine(p.url) : ""}${lod >= 1 && p.body ? html`<div class="pin-text">${formatted(p.body)}</div>` : ""}`;
+    return html`${by}${p.title ? html`<div class="pin-title">${p.kind === "note" ? raw(renderInline(stripHeadingPrefix(p.title), { tags: false, concepts: false })) : p.title}</div>` : ""}${p.body && lod >= 1 ? html`<div class="pin-text${p.kind === "note" ? " pin-md" : ""}">${p.kind === "note" ? raw(renderMarkdown(p.body, { tags: false, concepts: false, headingOffset: 3 })) : formatted(p.body)}</div>` : ""}${!p.title && !p.body ? html`<div class="pin-text faint">Empty note</div>` : ""}${p.kind === "note" && pv && lod >= 1 ? pvStrip(pv) : ""}`;
+  }
+
+  // A website preview the research tool saved (src/core/preview.js): on the pin, or on its
+  // source. Its pictures are files in the data folder, loaded lazily like any other picture; a
+  // pin without one draws as plain text, as it always did.
+  // One saved for a link that has since changed is stale, and isn't shown.
+  function previewOf(p) {
+    const s = p.kind === "source" ? sourcesById[p.source] : null;
+    const pv = s ? s.preview : p.preview;
+    if (!pv || typeof pv !== "object" || !(pv.title || pv.description || pv.image)) return null;
+    return pv.url === (s ? s.url : previewUrlOf(p)) ? pv : null;
+  }
+  function pvIcon(pv) { return pv.icon ? html`<img class="pv-icon" draggable="false" data-media="${pv.icon}" alt="">` : ""; }
+  function pvSite(pv) { return html`<div class="pin-kicker pv-site">${pvIcon(pv)}<span>${pv.site || "Link"}</span></div>`; }
+  function pvThumb(pv) { return pv.image ? html`<img class="pv-thumb" draggable="false" data-media="${pv.image}" alt="">` : ""; }
+  function pvStrip(pv) {
+    return html`<a class="pv-strip" href="${pv.url}" target="_blank" rel="noopener noreferrer">${pvThumb(pv)}<span class="pv-site">${pvIcon(pv)}<span>${pv.site || ""}</span></span><span class="pv-title">${pv.title || pv.url}</span></a>`;
   }
 
   function pageCtx(p) {
