@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Journal_system@8e58bfc7eaf7",
+ "source": "sandstormveg/Journal_system@80faaf8f5f79",
  "files": [
   "data-template/.claude/skills/journal-steward/SKILL.md",
   "data-template/.gitattributes",
@@ -58,6 +58,7 @@
   "src/core/model.js",
   "src/core/notion.js",
   "src/core/photo-days.js",
+  "src/core/preview.js",
   "src/core/prompts.js",
   "src/core/recall.js",
   "src/core/search.js",

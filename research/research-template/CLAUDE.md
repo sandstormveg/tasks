@@ -49,6 +49,13 @@ are one line per item; open a single board or piece only when it's relevant.
     entry; find ids with `atlas <words>`), or `card Q…` then `pin <board> --kind card --card Q…` (Wikidata).
   - `connect <board> <pin> <pin> --label "…"` ties a **red** string. Label it with the specific reason you
     think they connect, so it's checkable.
+  - **Website previews:** a link pin you make fetches its page's title, site, description, picture and
+    icon (`--no-preview` skips it). `previews [board] [--refresh]` fills in the rest of a board's links,
+    notes with a link, and pinned sources. Only the URL is sent (one plain GET, no board text), private
+    and local hosts are refused, and the pictures are small files under `media/` here. It writes only
+    the `preview` field, never a pin's title or text. Commit the `media/` files with the pins.
+    Behind an HTTPS proxy (a cloud session), run it with `NODE_USE_ENV_PROXY=1`. A site that refuses
+    is listed with its reason, and its pin keeps showing the plain link.
   - Your pins and strings are marked as Claude's (`author: claude`) and shown that way in the app.
   - **Never synthesise a string.** Synthesis is their act: their words for how two things connect. The tool
     has no command for it, on purpose. Suggest a synthesis in chat if useful.
