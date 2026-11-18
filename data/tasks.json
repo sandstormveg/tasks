@@ -277,51 +277,6 @@
       "nudge": true
     },
     {
-      "id": "photos-to-take-mwiqppib",
-      "title": "photos to take",
-      "category": "Life Admin",
-      "created": "2026-11-16",
-      "notes": "",
-      "assist": false,
-      "noteItems": [
-        {
-          "id": "n-mwiqq0ga2n48",
-          "text": "Living room",
-          "done": true,
-          "created": "2026-11-16T04:05:19.689Z",
-          "updated": "2026-11-16T04:11:23.474Z"
-        },
-        {
-          "id": "n-mwiqq5rym5ki",
-          "text": "kitchen",
-          "done": true,
-          "created": "2026-11-16T04:05:26.590Z",
-          "updated": "2026-11-16T04:11:24.174Z"
-        },
-        {
-          "id": "n-mwiqqafiu8pv",
-          "text": "Bathroom",
-          "done": true,
-          "created": "2026-11-16T04:05:32.622Z",
-          "updated": "2026-11-16T06:38:40.311Z"
-        },
-        {
-          "id": "n-mwiqqixwobmq",
-          "text": "Room, 1 or 2",
-          "done": true,
-          "created": "2026-11-16T04:05:43.652Z",
-          "updated": "2026-11-16T06:38:41.508Z"
-        },
-        {
-          "id": "n-mwiqqrdgcjru",
-          "text": "Verandah",
-          "done": true,
-          "created": "2026-11-16T04:05:54.580Z",
-          "updated": "2026-11-16T06:38:41.991Z"
-        }
-      ]
-    },
-    {
       "id": "sultanas-mwj0nrii",
       "title": "Sultanas",
       "category": "Groceries",
