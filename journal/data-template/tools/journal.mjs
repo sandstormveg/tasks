@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:115494d358b0dfd7
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:d71d6ddc37ca86bc
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -64,12 +64,12 @@ function Cn(e, n) {
   n.maxLength || (n.maxLength = 79), typeof n.indent != "number" && (n.indent = 1), typeof n.linesBefore != "number" && (n.linesBefore = 3), typeof n.linesAfter != "number" && (n.linesAfter = 2);
   for (var i = /\r?\n|\r|\0/g, l = [0], r = [], u, o = -1; u = i.exec(e.buffer); ) r.push(u.index), l.push(u.index + u[0].length), e.position <= u.index && o < 0 && (o = l.length - 2);
   o < 0 && (o = l.length - 1);
-  var f = "", c, a, t = Math.min(e.line + n.linesAfter, r.length).toString().length, p = n.maxLength - (n.indent + t + 3);
-  for (c = 1; c <= n.linesBefore && !(o - c < 0); c++) a = $(e.buffer, l[o - c], r[o - c], e.position - (l[o] - l[o - c]), p), f = y.repeat(" ", n.indent) + Q((e.line - c + 1).toString(), t) + " | " + a.str + `
+  var f = "", c, a, t2 = Math.min(e.line + n.linesAfter, r.length).toString().length, p = n.maxLength - (n.indent + t2 + 3);
+  for (c = 1; c <= n.linesBefore && !(o - c < 0); c++) a = $(e.buffer, l[o - c], r[o - c], e.position - (l[o] - l[o - c]), p), f = y.repeat(" ", n.indent) + Q((e.line - c + 1).toString(), t2) + " | " + a.str + `
 ` + f;
-  for (a = $(e.buffer, l[o], r[o], e.position, p), f += y.repeat(" ", n.indent) + Q((e.line + 1).toString(), t) + " | " + a.str + `
-`, f += y.repeat("-", n.indent + t + 3 + a.pos) + `^
-`, c = 1; c <= n.linesAfter && !(o + c >= r.length); c++) a = $(e.buffer, l[o + c], r[o + c], e.position - (l[o] - l[o + c]), p), f += y.repeat(" ", n.indent) + Q((e.line + c + 1).toString(), t) + " | " + a.str + `
+  for (a = $(e.buffer, l[o], r[o], e.position, p), f += y.repeat(" ", n.indent) + Q((e.line + 1).toString(), t2) + " | " + a.str + `
+`, f += y.repeat("-", n.indent + t2 + 3 + a.pos) + `^
+`, c = 1; c <= n.linesAfter && !(o + c >= r.length); c++) a = $(e.buffer, l[o + c], r[o + c], e.position - (l[o] - l[o + c]), p), f += y.repeat(" ", n.indent) + Q((e.line + c + 1).toString(), t2) + " | " + a.str + `
 `;
   return f.replace(/\n$/, "");
 }
@@ -297,14 +297,14 @@ function Wn(e) {
   return e === null ? false : De.exec(e) !== null || Me.exec(e) !== null;
 }
 function $n(e) {
-  var n, i, l, r, u, o, f, c = 0, a = null, t, p, d;
+  var n, i, l, r, u, o, f, c = 0, a = null, t2, p, d;
   if (n = De.exec(e), n === null && (n = Me.exec(e)), n === null) throw new Error("Date resolve error");
   if (i = +n[1], l = +n[2] - 1, r = +n[3], !n[4]) return new Date(Date.UTC(i, l, r));
   if (u = +n[4], o = +n[5], f = +n[6], n[7]) {
     for (c = n[7].slice(0, 3); c.length < 3; ) c += "0";
     c = +c;
   }
-  return n[9] && (t = +n[10], p = +(n[11] || 0), a = (t * 60 + p) * 6e4, n[9] === "-" && (a = -a)), d = new Date(Date.UTC(i, l, r, u, o, f, c)), a && d.setTime(d.getTime() - a), d;
+  return n[9] && (t2 = +n[10], p = +(n[11] || 0), a = (t2 * 60 + p) * 6e4, n[9] === "-" && (a = -a)), d = new Date(Date.UTC(i, l, r, u, o, f, c)), a && d.setTime(d.getTime() - a), d;
 }
 function Qn(e) {
   return e.toISOString();
@@ -475,9 +475,9 @@ function he(e, n, i, l) {
   for (y.isObject(i) || h(e, "cannot merge mappings; the provided source object is unacceptable"), r = Object.keys(i), o = 0, f = r.length; o < f; o += 1) u = r[o], O.call(n, u) || (n[u] = i[u], l[u] = true);
 }
 function R(e, n, i, l, r, u, o, f, c) {
-  var a, t;
-  if (Array.isArray(r)) for (r = Array.prototype.slice.call(r), a = 0, t = r.length; a < t; a += 1) Array.isArray(r[a]) && h(e, "nested arrays are not supported inside keys"), typeof r == "object" && ae(r[a]) === "[object Object]" && (r[a] = "[object Object]");
-  if (typeof r == "object" && ae(r) === "[object Object]" && (r = "[object Object]"), r = String(r), n === null && (n = {}), l === "tag:yaml.org,2002:merge") if (Array.isArray(u)) for (a = 0, t = u.length; a < t; a += 1) he(e, n, u[a], i);
+  var a, t2;
+  if (Array.isArray(r)) for (r = Array.prototype.slice.call(r), a = 0, t2 = r.length; a < t2; a += 1) Array.isArray(r[a]) && h(e, "nested arrays are not supported inside keys"), typeof r == "object" && ae(r[a]) === "[object Object]" && (r[a] = "[object Object]");
+  if (typeof r == "object" && ae(r) === "[object Object]" && (r = "[object Object]"), r = String(r), n === null && (n = {}), l === "tag:yaml.org,2002:merge") if (Array.isArray(u)) for (a = 0, t2 = u.length; a < t2; a += 1) he(e, n, u[a], i);
   else he(e, n, u, i);
   else !e.json && !O.call(i, r) && O.call(n, r) && (e.line = o || e.line, e.lineStart = f || e.lineStart, e.position = c || e.position, h(e, "duplicated mapping key")), r === "__proto__" ? Object.defineProperty(n, r, { configurable: true, enumerable: true, writable: true, value: u }) : n[r] = u, delete i[r];
   return n;
@@ -506,7 +506,7 @@ function le(e, n) {
 `, n - 1));
 }
 function vi(e, n, i) {
-  var l, r, u, o, f, c, a, t, p = e.kind, d = e.result, s;
+  var l, r, u, o, f, c, a, t2, p = e.kind, d = e.result, s;
   if (s = e.input.charCodeAt(e.position), E(s) || N(s) || s === 35 || s === 38 || s === 42 || s === 33 || s === 124 || s === 62 || s === 39 || s === 34 || s === 37 || s === 64 || s === 96 || (s === 63 || s === 45) && (r = e.input.charCodeAt(e.position + 1), E(r) || i && N(r))) return false;
   for (e.kind = "scalar", e.result = "", u = o = e.position, f = false; s !== 0; ) {
     if (s === 58) {
@@ -515,11 +515,11 @@ function vi(e, n, i) {
       if (l = e.input.charCodeAt(e.position - 1), E(l)) break;
     } else {
       if (e.position === e.lineStart && W(e) || i && N(s)) break;
-      if (F(s)) if (c = e.line, a = e.lineStart, t = e.lineIndent, v(e, false, -1), e.lineIndent >= n) {
+      if (F(s)) if (c = e.line, a = e.lineStart, t2 = e.lineIndent, v(e, false, -1), e.lineIndent >= n) {
         f = true, s = e.input.charCodeAt(e.position);
         continue;
       } else {
-        e.position = o, e.line = c, e.lineStart = a, e.lineIndent = t;
+        e.position = o, e.line = c, e.lineStart = a, e.lineIndent = t2;
         break;
       }
     }
@@ -553,23 +553,23 @@ function Ci(e, n) {
   h(e, "unexpected end of the stream within a double quoted scalar");
 }
 function _i(e, n) {
-  var i = true, l, r, u, o = e.tag, f, c = e.anchor, a, t, p, d, s, x = /* @__PURE__ */ Object.create(null), g, A, S, m;
-  if (m = e.input.charCodeAt(e.position), m === 91) t = 93, s = false, f = [];
-  else if (m === 123) t = 125, s = true, f = {};
+  var i = true, l, r, u, o = e.tag, f, c = e.anchor, a, t2, p, d, s, x = /* @__PURE__ */ Object.create(null), g, A, S, m;
+  if (m = e.input.charCodeAt(e.position), m === 91) t2 = 93, s = false, f = [];
+  else if (m === 123) t2 = 125, s = true, f = {};
   else return false;
   for (e.anchor !== null && (e.anchorMap[e.anchor] = f), m = e.input.charCodeAt(++e.position); m !== 0; ) {
-    if (v(e, true, n), m = e.input.charCodeAt(e.position), m === t) return e.position++, e.tag = o, e.anchor = c, e.kind = s ? "mapping" : "sequence", e.result = f, true;
+    if (v(e, true, n), m = e.input.charCodeAt(e.position), m === t2) return e.position++, e.tag = o, e.anchor = c, e.kind = s ? "mapping" : "sequence", e.result = f, true;
     i ? m === 44 && h(e, "expected the node content, but found ','") : h(e, "missed comma between flow collection entries"), A = g = S = null, p = d = false, m === 63 && (a = e.input.charCodeAt(e.position + 1), E(a) && (p = d = true, e.position++, v(e, true, n))), l = e.line, r = e.lineStart, u = e.position, D(e, n, j, false, true), A = e.tag, g = e.result, v(e, true, n), m = e.input.charCodeAt(e.position), (d || e.line === l) && m === 58 && (p = true, m = e.input.charCodeAt(++e.position), v(e, true, n), D(e, n, j, false, true), S = e.result), s ? R(e, f, x, A, g, S, l, r, u) : p ? f.push(R(e, null, x, A, g, S, l, r, u)) : f.push(g), v(e, true, n), m = e.input.charCodeAt(e.position), m === 44 ? (i = true, m = e.input.charCodeAt(++e.position)) : i = false;
   }
   h(e, "unexpected end of the stream within a flow collection");
 }
 function wi(e, n) {
-  var i, l, r = V, u = false, o = false, f = n, c = 0, a = false, t, p;
+  var i, l, r = V, u = false, o = false, f = n, c = 0, a = false, t2, p;
   if (p = e.input.charCodeAt(e.position), p === 124) l = false;
   else if (p === 62) l = true;
   else return false;
   for (e.kind = "scalar", e.result = ""; p !== 0; ) if (p = e.input.charCodeAt(++e.position), p === 43 || p === 45) V === r ? r = p === 43 ? ce : pi : h(e, "repeat of a chomping mode identifier");
-  else if ((t = mi(p)) >= 0) t === 0 ? h(e, "bad explicit indentation width of a block scalar; it cannot be less than one") : o ? h(e, "repeat of an indentation width identifier") : (f = n + t - 1, o = true);
+  else if ((t2 = mi(p)) >= 0) t2 === 0 ? h(e, "bad explicit indentation width of a block scalar; it cannot be less than one") : o ? h(e, "repeat of an indentation width identifier") : (f = n + t2 - 1, o = true);
   else break;
   if (L(p)) {
     do
@@ -614,7 +614,7 @@ function de(e, n) {
   return f ? (e.tag = l, e.anchor = r, e.kind = "sequence", e.result = u, true) : false;
 }
 function Ei(e, n, i) {
-  var l, r, u, o, f, c, a = e.tag, t = e.anchor, p = {}, d = /* @__PURE__ */ Object.create(null), s = null, x = null, g = null, A = false, S = false, m;
+  var l, r, u, o, f, c, a = e.tag, t2 = e.anchor, p = {}, d = /* @__PURE__ */ Object.create(null), s = null, x = null, g = null, A = false, S = false, m;
   if (e.firstTabInLine !== -1) return false;
   for (e.anchor !== null && (e.anchorMap[e.anchor] = p), m = e.input.charCodeAt(e.position); m !== 0; ) {
     if (!A && e.firstTabInLine !== -1 && (e.position = e.firstTabInLine, h(e, "tab characters must not be used in indentation")), l = e.input.charCodeAt(e.position + 1), u = e.line, (m === 63 || m === 58) && E(l)) m === 63 ? (A && (R(e, p, d, s, x, null, o, f, c), s = x = g = null), S = true, A = true, r = true) : A ? (A = false, r = true) : h(e, "incomplete explicit mapping pair; a key node is missed; or followed by a non-tabulated empty line"), e.position += 1, m = l;
@@ -624,14 +624,14 @@ function Ei(e, n, i) {
         for (m = e.input.charCodeAt(e.position); L(m); ) m = e.input.charCodeAt(++e.position);
         if (m === 58) m = e.input.charCodeAt(++e.position), E(m) || h(e, "a whitespace character is expected after the key-value separator within a block mapping"), A && (R(e, p, d, s, x, null, o, f, c), s = x = g = null), S = true, A = false, r = false, s = e.tag, x = e.result;
         else if (S) h(e, "can not read an implicit mapping pair; a colon is missed");
-        else return e.tag = a, e.anchor = t, true;
+        else return e.tag = a, e.anchor = t2, true;
       } else if (S) h(e, "can not read a block mapping entry; a multiline key may not be an implicit key");
-      else return e.tag = a, e.anchor = t, true;
+      else return e.tag = a, e.anchor = t2, true;
     }
     if ((e.line === u || e.lineIndent > n) && (A && (o = e.line, f = e.lineStart, c = e.position), D(e, n, U, true, r) && (A ? x = e.result : g = e.result), A || (R(e, p, d, s, x, g, o, f, c), s = x = g = null), v(e, true, -1), m = e.input.charCodeAt(e.position)), (e.line === u || e.lineIndent > n) && m !== 0) h(e, "bad indentation of a mapping entry");
     else if (e.lineIndent < n) break;
   }
-  return A && R(e, p, d, s, x, null, o, f, c), S && (e.tag = a, e.anchor = t, e.kind = "mapping", e.result = p), S;
+  return A && R(e, p, d, s, x, null, o, f, c), S && (e.tag = a, e.anchor = t2, e.kind = "mapping", e.result = p), S;
 }
 function Si(e) {
   var n, i = false, l = false, r, u, o;
@@ -666,9 +666,9 @@ function bi(e) {
   return e.position === n && h(e, "name of an alias node must contain at least one character"), i = e.input.slice(n, e.position), O.call(e.anchorMap, i) || h(e, 'unidentified alias "' + i + '"'), e.result = e.anchorMap[i], v(e, true, -1), true;
 }
 function D(e, n, i, l, r) {
-  var u, o, f, c = 1, a = false, t = false, p, d, s, x, g, A;
+  var u, o, f, c = 1, a = false, t2 = false, p, d, s, x, g, A;
   if (e.listener !== null && e.listener("open", e), e.tag = null, e.anchor = null, e.kind = null, e.result = null, u = o = f = U === i || qe === i, l && v(e, true, -1) && (a = true, e.lineIndent > n ? c = 1 : e.lineIndent === n ? c = 0 : e.lineIndent < n && (c = -1)), c === 1) for (; Si(e) || Fi(e); ) v(e, true, -1) ? (a = true, f = u, e.lineIndent > n ? c = 1 : e.lineIndent === n ? c = 0 : e.lineIndent < n && (c = -1)) : f = false;
-  if (f && (f = a || r), (c === 1 || U === i) && (j === i || Ke === i ? g = n : g = n + 1, A = e.position - e.lineStart, c === 1 ? f && (de(e, A) || Ei(e, A, g)) || _i(e, g) ? t = true : (o && wi(e, g) || yi(e, g) || Ci(e, g) ? t = true : bi(e) ? (t = true, (e.tag !== null || e.anchor !== null) && h(e, "alias node should not have any properties")) : vi(e, g, j === i) && (t = true, e.tag === null && (e.tag = "?")), e.anchor !== null && (e.anchorMap[e.anchor] = e.result)) : c === 0 && (t = f && de(e, A))), e.tag === null) e.anchor !== null && (e.anchorMap[e.anchor] = e.result);
+  if (f && (f = a || r), (c === 1 || U === i) && (j === i || Ke === i ? g = n : g = n + 1, A = e.position - e.lineStart, c === 1 ? f && (de(e, A) || Ei(e, A, g)) || _i(e, g) ? t2 = true : (o && wi(e, g) || yi(e, g) || Ci(e, g) ? t2 = true : bi(e) ? (t2 = true, (e.tag !== null || e.anchor !== null) && h(e, "alias node should not have any properties")) : vi(e, g, j === i) && (t2 = true, e.tag === null && (e.tag = "?")), e.anchor !== null && (e.anchorMap[e.anchor] = e.result)) : c === 0 && (t2 = f && de(e, A))), e.tag === null) e.anchor !== null && (e.anchorMap[e.anchor] = e.result);
   else if (e.tag === "?") {
     for (e.result !== null && e.kind !== "scalar" && h(e, 'unacceptable node kind for !<?> tag; it should be "scalar", not "' + e.kind + '"'), p = 0, d = e.implicitTypes.length; p < d; p += 1) if (x = e.implicitTypes[p], x.resolve(e.result)) {
       e.result = x.construct(e.result), e.tag = x.tag, e.anchor !== null && (e.anchorMap[e.anchor] = e.result);
@@ -682,7 +682,7 @@ function D(e, n, i, l, r) {
     }
     x || h(e, "unknown tag !<" + e.tag + ">"), e.result !== null && x.kind !== e.kind && h(e, "unacceptable node kind for !<" + e.tag + '> tag; it should be "' + x.kind + '", not "' + e.kind + '"'), x.resolve(e.result, e.tag) ? (e.result = x.construct(e.result, e.tag), e.anchor !== null && (e.anchorMap[e.anchor] = e.result)) : h(e, "cannot resolve a node with !<" + e.tag + "> explicit tag");
   }
-  return e.listener !== null && e.listener("close", e), e.tag !== null || e.anchor !== null || t;
+  return e.listener !== null && e.listener("close", e), e.tag !== null || e.anchor !== null || t2;
 }
 function Ti(e) {
   var n = e.position, i, l, r, u = false, o;
@@ -845,16 +845,16 @@ var cn = 3;
 var an = 4;
 var k = 5;
 function lr(e, n, i, l, r, u, o, f) {
-  var c, a = 0, t = null, p = false, d = false, s = l !== -1, x = -1, g = ir(M(e, 0)) && rr(M(e, e.length - 1));
+  var c, a = 0, t2 = null, p = false, d = false, s = l !== -1, x = -1, g = ir(M(e, 0)) && rr(M(e, e.length - 1));
   if (n || o) for (c = 0; c < e.length; a >= 65536 ? c += 2 : c++) {
     if (a = M(e, c), !H(a)) return k;
-    g = g && me(a, t, f), t = a;
+    g = g && me(a, t2, f), t2 = a;
   }
   else {
     for (c = 0; c < e.length; a >= 65536 ? c += 2 : c++) {
       if (a = M(e, c), a === B) p = true, s && (d = d || c - x - 1 > l && e[x + 1] !== " ", x = c);
       else if (!H(a)) return k;
-      g = g && me(a, t, f), t = a;
+      g = g && me(a, t2, f), t2 = a;
     }
     d = d || s && c - x - 1 > l && e[x + 1] !== " ";
   }
@@ -932,16 +932,16 @@ function ye(e, n, i, l) {
   e.tag = u, e.dump = r || "[]";
 }
 function ar(e, n, i) {
-  var l = "", r = e.tag, u = Object.keys(i), o, f, c, a, t;
-  for (o = 0, f = u.length; o < f; o += 1) t = "", l !== "" && (t += ", "), e.condenseFlow && (t += '"'), c = u[o], a = i[c], e.replacer && (a = e.replacer.call(i, c, a)), b(e, n, c, false, false) && (e.dump.length > 1024 && (t += "? "), t += e.dump + (e.condenseFlow ? '"' : "") + ":" + (e.condenseFlow ? "" : " "), b(e, n, a, false, false) && (t += e.dump, l += t));
+  var l = "", r = e.tag, u = Object.keys(i), o, f, c, a, t2;
+  for (o = 0, f = u.length; o < f; o += 1) t2 = "", l !== "" && (t2 += ", "), e.condenseFlow && (t2 += '"'), c = u[o], a = i[c], e.replacer && (a = e.replacer.call(i, c, a)), b(e, n, c, false, false) && (e.dump.length > 1024 && (t2 += "? "), t2 += e.dump + (e.condenseFlow ? '"' : "") + ":" + (e.condenseFlow ? "" : " "), b(e, n, a, false, false) && (t2 += e.dump, l += t2));
   e.tag = r, e.dump = "{" + l + "}";
 }
 function pr(e, n, i, l) {
-  var r = "", u = e.tag, o = Object.keys(i), f, c, a, t, p, d;
+  var r = "", u = e.tag, o = Object.keys(i), f, c, a, t2, p, d;
   if (e.sortKeys === true) o.sort();
   else if (typeof e.sortKeys == "function") o.sort(e.sortKeys);
   else if (e.sortKeys) throw new w("sortKeys must be a boolean or a function");
-  for (f = 0, c = o.length; f < c; f += 1) d = "", (!l || r !== "") && (d += z(e, n)), a = o[f], t = i[a], e.replacer && (t = e.replacer.call(i, a, t)), b(e, n + 1, a, true, true, true) && (p = e.tag !== null && e.tag !== "?" || e.dump && e.dump.length > 1024, p && (e.dump && B === e.dump.charCodeAt(0) ? d += "?" : d += "? "), d += e.dump, p && (d += z(e, n)), b(e, n + 1, t, true, p) && (e.dump && B === e.dump.charCodeAt(0) ? d += ":" : d += ": ", d += e.dump, r += d));
+  for (f = 0, c = o.length; f < c; f += 1) d = "", (!l || r !== "") && (d += z(e, n)), a = o[f], t2 = i[a], e.replacer && (t2 = e.replacer.call(i, a, t2)), b(e, n + 1, a, true, true, true) && (p = e.tag !== null && e.tag !== "?" || e.dump && e.dump.length > 1024, p && (e.dump && B === e.dump.charCodeAt(0) ? d += "?" : d += "? "), d += e.dump, p && (d += z(e, n)), b(e, n + 1, t2, true, p) && (e.dump && B === e.dump.charCodeAt(0) ? d += ":" : d += ": ", d += e.dump, r += d));
   e.tag = u, e.dump = r || "{}";
 }
 function Ce(e, n, i) {
@@ -961,10 +961,10 @@ function b(e, n, i, l, r, u, o) {
   e.tag = null, e.dump = i, Ce(e, i, false) || Ce(e, i, true);
   var f = ze.call(e.dump), c = l, a;
   l && (l = e.flowLevel < 0 || e.flowLevel > n);
-  var t = f === "[object Object]" || f === "[object Array]", p, d;
-  if (t && (p = e.duplicates.indexOf(i), d = p !== -1), (e.tag !== null && e.tag !== "?" || d || e.indent !== 2 && n > 0) && (r = false), d && e.usedDuplicates[p]) e.dump = "*ref_" + p;
+  var t2 = f === "[object Object]" || f === "[object Array]", p, d;
+  if (t2 && (p = e.duplicates.indexOf(i), d = p !== -1), (e.tag !== null && e.tag !== "?" || d || e.indent !== 2 && n > 0) && (r = false), d && e.usedDuplicates[p]) e.dump = "*ref_" + p;
   else {
-    if (t && d && !e.usedDuplicates[p] && (e.usedDuplicates[p] = true), f === "[object Object]") l && Object.keys(e.dump).length !== 0 ? (pr(e, n, e.dump, r), d && (e.dump = "&ref_" + p + e.dump)) : (ar(e, n, e.dump), d && (e.dump = "&ref_" + p + " " + e.dump));
+    if (t2 && d && !e.usedDuplicates[p] && (e.usedDuplicates[p] = true), f === "[object Object]") l && Object.keys(e.dump).length !== 0 ? (pr(e, n, e.dump, r), d && (e.dump = "&ref_" + p + e.dump)) : (ar(e, n, e.dump), d && (e.dump = "&ref_" + p + " " + e.dump));
     else if (f === "[object Array]") l && e.dump.length !== 0 ? (e.noArrayIndent && !o && n > 0 ? ye(e, n - 1, e.dump, r) : ye(e, n, e.dump, r), d && (e.dump = "&ref_" + p + e.dump)) : (cr(e, n, e.dump), d && (e.dump = "&ref_" + p + " " + e.dump));
     else if (f === "[object String]") e.tag !== "?" && or(e, e.dump, n, u, c);
     else {
@@ -1053,6 +1053,7 @@ var FIELD_ORDER = {
     "document",
     "source",
     "links",
+    "primer",
     "imported",
     "sealed",
     "deleted"
@@ -1114,7 +1115,7 @@ var FIELD_ORDER = {
     "feedback",
     "source"
   ],
-  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "source"],
+  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "themes", "source"],
   report: ["id", "type", "kind", "created", "summary"],
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: [
@@ -1396,13 +1397,13 @@ ${yamlDump(data)}${FM}
   return out;
 }
 function splitFrontmatter(text2) {
-  const t = String(text2).replace(/^﻿/, "").replace(/\r\n/g, "\n");
-  if (!t.startsWith(FM + "\n")) return { data: {}, body: t, hadFrontmatter: false };
-  const end = t.indexOf(`
+  const t2 = String(text2).replace(/^﻿/, "").replace(/\r\n/g, "\n");
+  if (!t2.startsWith(FM + "\n")) return { data: {}, body: t2, hadFrontmatter: false };
+  const end = t2.indexOf(`
 ${FM}`, FM.length);
-  if (end === -1) return { data: {}, body: t, hadFrontmatter: false };
-  const yamlText = t.slice(FM.length + 1, end + 1);
-  let rest = t.slice(end + FM.length + 1);
+  if (end === -1) return { data: {}, body: t2, hadFrontmatter: false };
+  const yamlText = t2.slice(FM.length + 1, end + 1);
+  let rest = t2.slice(end + FM.length + 1);
   if (rest.startsWith("\n")) rest = rest.slice(1);
   const data = yamlLoad(yamlText) || {};
   return { data, body: rest, hadFrontmatter: true };
@@ -1816,7 +1817,7 @@ ${text3}
   const questionLines = (opts.questions || []).filter((q2) => q2.status === "open").map((q2) => `<question id="${q2.id}" kind="${q2.kind}">${attr(q2.text)}</question>`);
   const prefs = opts.prefs || {};
   const boundaries = [];
-  if ((prefs.mutedTopics || []).length) boundaries.push(`Muted topics (do not raise): ${prefs.mutedTopics.map((t) => t.topic || t).join(", ")}`);
+  if ((prefs.mutedTopics || []).length) boundaries.push(`Muted topics (do not raise): ${prefs.mutedTopics.map((t2) => t2.topic || t2).join(", ")}`);
   if ((prefs.neverKinds || []).length) boundaries.push(`Never propose these kinds: ${prefs.neverKinds.join(", ")}`);
   const range = kept.length ? { from: kept.map((e) => e.day).sort()[0], to: kept.map((e) => e.day).sort().slice(-1)[0] } : { from, to };
   const cov = coverage(kept, { from: from || range.from, to: to || range.to });
@@ -1911,6 +1912,201 @@ function reviewQueue(proposals, nowIsoStr) {
   return proposals.filter((p) => p.status === "pending" || p.status === "deferred" && (!p.snooze_until || p.snooze_until <= nowIsoStr)).sort((a, b2) => String(b2.created).localeCompare(String(a.created)));
 }
 
+// src/core/primer.js
+var PRIMER_THEMES = [
+  // beginnings and endings
+  "starting things",
+  "finishing things",
+  "letting go",
+  "new beginnings",
+  "endings",
+  "returning",
+  "waiting",
+  // effort and work
+  "persistence",
+  "hard work",
+  "craft",
+  "practice",
+  "learning",
+  "mastery",
+  "making things",
+  "planning",
+  "getting unstuck",
+  "momentum",
+  "overwhelm",
+  "focus",
+  "distraction",
+  "procrastination",
+  "routine",
+  // others
+  "asking for help",
+  "offering help",
+  "friendship",
+  "belonging",
+  "loneliness",
+  "trust",
+  "conflict",
+  "repair",
+  "forgiveness",
+  "gratitude",
+  "generosity",
+  "being seen",
+  "solitude",
+  "family",
+  "community",
+  "teaching",
+  "being taught",
+  "rivalry",
+  "loyalty",
+  // inner weather
+  "courage",
+  "fear",
+  "doubt",
+  "hope",
+  "curiosity",
+  "wonder",
+  "joy",
+  "grief",
+  "anger",
+  "calm",
+  "restlessness",
+  "shame",
+  "pride",
+  "relief",
+  "longing",
+  "nostalgia",
+  "contentment",
+  "frustration",
+  "patience",
+  "vulnerability",
+  "resilience",
+  "self-kindness",
+  "self-doubt",
+  "acceptance",
+  // change and choice
+  "change",
+  "choosing",
+  "uncertainty",
+  "risk",
+  "freedom",
+  "responsibility",
+  "limits",
+  "boundaries",
+  "balance",
+  "rest",
+  "recovery",
+  "health",
+  "growth",
+  "transformation",
+  "identity",
+  "values",
+  "meaning",
+  "purpose",
+  "ambition",
+  "play",
+  "exploration",
+  "discovery",
+  "home",
+  "journeys",
+  "time passing",
+  "small victories",
+  "setbacks",
+  "surprise",
+  "simplicity",
+  "care",
+  "nature",
+  "seasons"
+];
+var VOCAB = new Set(PRIMER_THEMES);
+var MAX_THEMES = 3;
+function whyNotPrimer(entry) {
+  if (!entry || entry.type !== "entry") return "Only journal notes can be Primer notes.";
+  if (!aiReadable(entry)) return "No-AI, sealed and uncleared notes never go to an AI, so they can't be Primer notes.";
+  return "";
+}
+var isOn = (e) => !!(e?.primer && e.primer.on === true && e.primer.id);
+var t = (iso) => {
+  const n = Date.parse(iso || "");
+  return Number.isFinite(n) ? n : NaN;
+};
+function cleanThemes(list) {
+  const themes = [];
+  const refused = [];
+  for (const raw of Array.isArray(list) ? list : String(list || "").split(",")) {
+    const x = String(raw || "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!x) continue;
+    if (!VOCAB.has(x)) refused.push(x);
+    else if (!themes.includes(x)) themes.push(x);
+  }
+  return { themes: themes.slice(0, MAX_THEMES), refused };
+}
+function latestThemes(interpretations) {
+  const out = /* @__PURE__ */ new Map();
+  for (const i of interpretations || []) {
+    if (i.type !== "interpretation" || i.kind !== "primer" || i.deleted || i.status === "rejected") continue;
+    const id = Array.isArray(i.of) ? i.of[0] : i.of;
+    const prev = out.get(id);
+    if (!prev || t(i.created) >= t(prev.created)) out.set(id, i);
+  }
+  return out;
+}
+function currentThemes(entry, latest) {
+  const i = latest.get(entry.id);
+  if (!i || !(t(i.created) >= t(entry.primer.at))) return null;
+  const { themes } = cleanThemes(i.themes);
+  return themes.length ? themes : null;
+}
+function primerPending(entries, interpretations) {
+  const latest = latestThemes(interpretations);
+  return (entries || []).filter((e) => e.type === "entry" && isOn(e) && aiReadable(e) && !currentThemes(e, latest)).map((e) => ({ entry: e.id, text: entryText(e) }));
+}
+function primerInterpretation(entry, list, { now, author = "claude-code", id }) {
+  const why = whyNotPrimer(entry);
+  if (why) throw new Error(why);
+  if (!isOn(entry)) throw new Error("That note isn't a Primer note (its owner hasn't turned Primer on).");
+  const { themes, refused } = cleanThemes(list);
+  if (refused.length) throw new Error(`Not on the theme list: ${refused.join(", ")}. Choose from PRIMER_THEMES (journal primer pending lists them).`);
+  if (!themes.length) throw new Error("Choose 1\u20133 themes.");
+  return { id, type: "interpretation", kind: "primer", of: [entry.id], author, status: "kept", created: now, themes, body: "" };
+}
+function parseFeed(text2) {
+  const out = [];
+  for (const line of String(text2 || "").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const x = JSON.parse(line);
+      if (x && typeof x.id === "string") out.push(x);
+    } catch {
+    }
+  }
+  return out;
+}
+function buildFeed(entries, interpretations, existing = [], { now }) {
+  const latest = latestThemes(interpretations);
+  const old = new Map(existing.map((l) => [l.id, l]));
+  const lines = /* @__PURE__ */ new Map();
+  const off = (id, prev, at) => ({ id, toggledAt: prev?.toggledAt || at || now, themes: [], untoggledAt: prev?.untoggledAt || at || now });
+  for (const e of entries || []) {
+    const p = e.type === "entry" && e.primer && typeof e.primer === "object" ? e.primer : null;
+    if (!p?.id || !/^pm-[0-9a-f]{8,}$/.test(p.id)) continue;
+    const prev = old.get(p.id);
+    if (!isOn(e) || !aiReadable(e)) {
+      if (prev || p.on === false) lines.set(p.id, off(p.id, prev, p.on === false ? p.at : now));
+      continue;
+    }
+    if (prev?.untoggledAt && !(t(p.at) > t(prev.untoggledAt))) {
+      lines.set(p.id, off(p.id, prev));
+      continue;
+    }
+    const themes = currentThemes(e, latest);
+    if (themes) lines.set(p.id, { id: p.id, toggledAt: p.at, themes, untoggledAt: null });
+    else if (prev) lines.set(p.id, { id: p.id, toggledAt: prev.toggledAt, themes: [], untoggledAt: prev.untoggledAt ?? null });
+  }
+  for (const [id, prev] of old) if (!lines.has(id)) lines.set(id, off(id, prev));
+  const sorted = [...lines.values()].sort((a, b2) => a.id.localeCompare(b2.id)).map((l) => ({ id: l.id, toggledAt: l.toggledAt, themes: l.themes, untoggledAt: l.untoggledAt ?? null }));
+  return { lines: sorted, text: sorted.map((l) => JSON.stringify(l)).join("\n") + (sorted.length ? "\n" : ""), count: sorted.filter((l) => l.themes.length).length };
+}
+
 // tools/journal.mjs
 function args(argv) {
   const out = { _: [] };
@@ -1950,7 +2146,7 @@ function loadRepo(root) {
       problems.push({ path: rel, level: "error", message: `unreadable: ${err.message}` });
     }
   }
-  const byType = (t) => [...records.values()].filter((r) => r.type === t);
+  const byType = (t2) => [...records.values()].filter((r) => r.type === t2);
   const prefs = records.get("config:preferences") || {};
   return { records, problems, byType, prefs };
 }
@@ -2132,6 +2328,47 @@ function main() {
     if (!proposals.length) console.log("No proposals yet.");
     return;
   }
+  if (cmd === "primer") {
+    const sub = a._[1] || "status";
+    const interps = repo.byType("interpretation");
+    if (sub === "status" || sub === "pending") {
+      const pending = primerPending(entries, interps);
+      const on2 = entries.filter((e) => e.primer?.on === true).length;
+      console.log(`Primer: ${on2} note(s) turned on, ${pending.length} waiting for themes.`);
+      if (sub === "status" || !pending.length) return;
+      console.log(`
+Choose 1\u20133 abstract themes per note, only from this list (never the note's words, names, places, people or quotes):
+${PRIMER_THEMES.join(", ")}
+`);
+      for (const p of pending) console.log(`--- ${p.entry}
+${p.text}
+`);
+      console.log('Then: journal primer themes <entry> "<theme>, <theme>"');
+      return;
+    }
+    if (sub === "themes") {
+      const e = repo.records.get(a._[2]);
+      if (!e || e.type !== "entry") throw new Error(`no entry ${a._[2] || ""}`);
+      const rec = primerInterpretation(e, a._.slice(3).join(","), { now, author: a.author || "claude-code", id: newId("i", now) });
+      const rel = pathFor(rec);
+      mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+      writeFileSync(path.join(root, rel), serialize(rec));
+      console.log(`wrote ${rel}: ${rec.themes.join(", ")}`);
+      return;
+    }
+    if (sub === "export") {
+      const out = path.resolve(root, typeof a.out === "string" ? a.out : "../primer/themes.jsonl");
+      const existing = existsSync(out) ? parseFeed(readFileSync(out, "utf8")) : [];
+      const feed = buildFeed(entries, interps, existing, { now });
+      mkdirSync(path.dirname(out), { recursive: true });
+      const before = existsSync(out) ? readFileSync(out, "utf8") : null;
+      if (before !== feed.text) writeFileSync(out, feed.text);
+      console.log(`${before === feed.text ? "unchanged" : "wrote"} ${out}: ${feed.count} note(s) with themes, ${feed.lines.length - feed.count} off or waiting.`);
+      console.log(`Commit it as: primer: ${feed.count} notes`);
+      return;
+    }
+    throw new Error('usage: journal primer [status|pending|themes <entry> "<theme>, \u2026"|export [--out <file>]]');
+  }
   console.log(HELP);
 }
 var HELP = `journal \u2014 tools for a Living Journal data repository
@@ -2141,6 +2378,9 @@ var HELP = `journal \u2014 tools for a Living Journal data repository
   journal propose proposals.json     validate steward proposals and write them (--max 5)
   journal validate                   structure, references, quotes, privacy
   journal calibration                how well proposals predicted your decisions
+  journal primer pending             Primer notes waiting for themes: their gated text and the theme list
+  journal primer themes <entry> "a, b"   save 1\u20133 themes from the list (an interpretation, never an edit)
+  journal primer export [--out f]    themes-only feed (default ../primer/themes.jsonl); un-toggles stick
 
   --data <dir>   journal repository (default: current directory)
   --tz <zone>    timezone for "today" (default: this machine's)`;

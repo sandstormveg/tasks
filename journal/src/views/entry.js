@@ -12,6 +12,7 @@ import { privacyBadge, authorBadge, entryCard } from "../ui/components.js";
 import { updateEntry, deleteEntryWithUndo, setPrivacy, storePhotos } from "../app/actions.js";
 import { pathFor } from "../core/format.js";
 import { whyNotToResearch } from "../core/writing.js";
+import { togglePrimer, whyNotPrimer } from "../core/primer.js";
 import { appHref, copyToResearch } from "../app/to-research.js";
 import { mdHead, mdPreview, writingBox } from "../ui/writing.js";
 
@@ -334,6 +335,7 @@ export async function mount(el, ctx, route, ui) {
       title: "Entry",
       body: html`<div class="stack-sm">
         <button class="day-field" data-m="privacy"><span class="k">Privacy</span><span class="v small" style="font-family:var(--font-ui)">${PRIVACY_LEVELS[e.privacy || "normal"].label} — change who (and what) can read this</span></button>
+        <button class="day-field" data-m="primer"><span class="k">Primer${e.primer?.on ? " · on" : ""}</span><span class="v small" style="font-family:var(--font-ui)">${e.primer?.on ? "Another World may draw on this note's themes. Tap to turn off" : "Off — let Another World draw on this note's abstract themes, never its words"}</span></button>
         <button class="day-field" data-m="day"><span class="k">Move</span><span class="v small" style="font-family:var(--font-ui)">File under a different day</span></button>
         <button class="day-field" data-m="task"><span class="k">To tasks</span><span class="v small" style="font-family:var(--font-ui)">Create a task from this (you choose the words)</span></button>
         <button class="day-field" data-m="research"><span class="k">To Research</span><span class="v small" style="font-family:var(--font-ui)">Copy to Research › Writing — a new piece that starts as this entry's words</span></button>
@@ -358,6 +360,22 @@ export async function mount(el, ctx, route, ui) {
       if (v === "sealed" && !ctx.store.config("sealing", null)?.salt) return ctx.navigate("#/settings/privacy");
       await setPrivacy(ctx, e, v);
       toast(`Privacy: ${PRIVACY_LEVELS[v].label}`);
+    }
+    if (choice === "primer") {
+      // src/core/primer.js: themes only, from a fixed list, chosen by a steward through the gate.
+      if (e.primer?.on) {
+        await ctx.store.put({ ...e, primer: togglePrimer(e, false, ctx.now()) });
+        return toast("Primer off — its themes leave the game's feed at the next export");
+      }
+      const why = whyNotPrimer(e);
+      if (why) return toast(why, { error: true, timeout: 6000 });
+      const ok = await confirmSheet("Make this a Primer note?", {
+        confirm: "Turn on",
+        detail: "Claude reads it (like AI help) and picks 1–3 abstract themes for it from a fixed list, such as “starting things” or “asking for help”. Only those themes go to Another World, under an id that isn't this note's. Never your words, names, places, people or quotes. Turn it off any time, here or in Adventurer.",
+      });
+      if (!ok) return;
+      await ctx.store.put({ ...e, primer: togglePrimer(e, true, ctx.now()) });
+      return toast("Primer on");
     }
     if (choice === "day") {
       const v = await promptSheet({ title: "Move to another day", label: "Date", type: "date", value: e.day, confirm: "Move" });
