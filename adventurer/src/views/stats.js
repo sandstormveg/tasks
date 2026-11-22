@@ -11,6 +11,7 @@
 import { html, raw, sheet, toast } from "../ui/dom.js";
 import { METRICS, ATTRIBUTES, NORMS_VERSION } from "../core/norms.js";
 import { TIERS, LEVEL_NOTE } from "../core/stats.js";
+import { STEPS_PER_VIT } from "../core/steps.js";
 import { explainTier } from "../core/relay.js";
 import { skillsSection, editSkill, trophiesSection, openTrophy, editTrophy } from "./showcase.js";
 
@@ -23,6 +24,11 @@ export async function mount(el, ctx, route, ui) {
     const s = ctx.settings();
     const prof = ctx.store.profile();
     const xpPct = Math.round((d.level.into / d.level.need) * 100);
+    const days = ctx.store.steps?.days || {};
+    const stepsToday = days[ctx.today()];
+    const stepLine = Number.isFinite(Number(stepsToday))
+      ? `Steps: ${Number(stepsToday).toLocaleString("en-AU")} today · +${Math.floor(Number(stepsToday) / STEPS_PER_VIT)}`
+      : "";
     el.innerHTML = String(html`
       <section class="status-head">
         <div class="lv" title="${LEVEL_NOTE}"><span class="lv-label">LV</span><span class="lv-num">${d.level.level}</span></div>
@@ -34,7 +40,7 @@ export async function mount(el, ctx, route, ui) {
       </section>
       ${!prof.ageBand ? html`<p class="notice">Set your age band in <a href="#/settings">Settings</a> so strength is compared with people your age.</p>` : ""}
       <section class="radar-wrap">${raw(radar(d.attributes))}<div class="tip" hidden></div></section>
-      <section class="attrs">${d.attributes.map((a) => attrRow(a, open === a.id, s))}</section>
+      <section class="attrs">${d.attributes.map((a) => attrRow(a, open === a.id, s, a.id === "vit" ? stepLine : ""))}</section>
       ${skillsSection(d.skills)}
       ${trophiesSection(d.trophies, filter)}
       <details class="footnote"><summary>Sources & method</summary>
@@ -77,7 +83,7 @@ function tipFor(el, e) {
   tip.hidden = false;
 }
 
-function attrRow(a, isOpen, s) {
+function attrRow(a, isOpen, s, stepLine = "") {
   const p = a.percentile;
   return html`<div class="attr ${isOpen ? "open" : ""}" data-attr="${a.id}" role="button" tabindex="0" aria-expanded="${isOpen}">
     <div class="attr-main">
@@ -87,6 +93,7 @@ function attrRow(a, isOpen, s) {
       <span class="attr-label">${a.label}</span>
       <span class="attr-val">${fmt(a.value)} <small>${a.value == null ? "unranked" : a.unit}</small></span>
     </div>
+    ${stepLine ? html`<div class="attr-steps muted small">${stepLine}</div>` : ""}
     <div class="pbar" aria-hidden="true"><i style="width:${p ?? 0}%"></i>${TIERS.slice(1).map((t) => html`<b style="left:${t.min}%"></b>`)}</div>
     ${isOpen ? html`<div class="attr-detail">
       ${s.relay ? html`<p class="relay-line">${s.relayName}: ${explainTier(a)}</p>` : ""}

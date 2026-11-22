@@ -12,6 +12,7 @@
 
 import { METRICS, ATTRIBUTES } from "./norms.js";
 import { localDay } from "./quests.js";
+import { vitFromSteps } from "./steps.js";
 
 export const TIERS = [
   { id: "F", min: 0, label: "Unawakened" },
@@ -113,8 +114,10 @@ function questWeight(quests, attr) {
  * Every attribute's current value, percentile and tier.
  * `measurements`: [{metric, value, date}] typed in or verified (latest wins, except
  * pushups where the best verified set within a year counts).
+ * `stepsDays`: the watch's daily totals; each 1000 steps is one VIT point of XP,
+ * added on top of the quest XP, while the value/tier still comes from active minutes.
  */
-export function attributeStats({ quests = [], history = [], measurements = [], profile = {}, today }) {
+export function attributeStats({ quests = [], history = [], measurements = [], profile = {}, today, stepsDays = {} }) {
   const done = quests.filter((q) => q.status === "done");
   const latest = (metric) => measurements.filter((m) => m.metric === metric).sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
   const yearAgo = new Date(Date.parse(today) - 365 * 864e5).toISOString().slice(0, 10);
@@ -135,6 +138,7 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
     social: () => { const v = questWeight(quests, "cha"); return v ? { value: v, from: "quests" } : null; },
     tasksPerWeek: () => (history.length ? { value: Math.round(tasksPerWeek(history, today) * 10) / 10, from: "tasks" } : null),
   };
+  const stepPoints = vitFromSteps(stepsDays).total;
   return ATTRIBUTES.map((a) => {
     const m = METRICS[a.metric];
     const cdf = m.cdf(profile);
@@ -142,7 +146,7 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
     const p = got ? percentile(got.value, cdf) : null;
     const tier = tierOf(p);
     const nt = nextTier(tier);
-    const xp = Math.round(done.reduce((s, q) => s + (q.xp || 0) * (Number(q.attributes?.[a.id]) || 0), 0));
+    const xp = Math.round(done.reduce((s, q) => s + (q.xp || 0) * (Number(q.attributes?.[a.id]) || 0), 0)) + (a.id === "vit" ? stepPoints : 0);
     return {
       ...a, metric: a.metric, xp, level: attrLevel(xp), unit: m.unit, scale: m.scale, cdf,
       value: got?.value ?? null, from: got?.from ?? null, percentile: p == null ? null : Math.round(p * 10) / 10,

@@ -11,6 +11,8 @@
 import { normalize, serialize, validate, payout, STATUSES } from "../core/quests.js";
 import { applyTaskOps, questIndex, nominations } from "../core/tasklink.js";
 import { autoProgress, hasObjectives } from "../core/objectives.js";
+import { stepsDoc, mergeStepsDoc } from "../core/steps.js";
+import { setUntoggled } from "../core/primer.js";
 import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
@@ -43,6 +45,8 @@ export class Store {
     this.taskOps = load("taskOps", []);     // queued writes to tasks-data's task list (see core/tasklink.js)
     this.status = load("status", { lastSync: null, error: null });
     this.research = load("research", null); // research/ file list + source tags, for expedition objectives
+    this.steps = load("steps", { days: {} });
+    this.primer = load("primer", { text: "", sha: null }); // the journal's themes feed, read-only except switch-off // watch-counted daily totals, read-only from quests/steps.json
     this.listeners = new Set();
   }
 
@@ -51,6 +55,8 @@ export class Store {
   persist() {
     save("quests", this.quests); save("stats", this.stats); save("tasks", this.tasks); save("status", this.status);
     save("showcase", this.showcase); save("taskOps", this.taskOps); save("research", this.research);
+    save("steps", this.steps);
+    save("primer", this.primer);
   }
 
   all() { return Object.values(this.quests).map((x) => normalize(x.q)); }
@@ -91,6 +97,43 @@ export class Store {
   }
 }
 
+/**
+ * Write today's phone steps into quests/steps.json: keep every other day and key,
+ * set today to max(existing, new), and retry on a sha conflict (the watch writes
+ * this file too). Only daily totals go in, never per-record data.
+ */
+export async function writeSteps(remote, { date, steps, message }) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const file = await remote.read("steps.json");
+    const doc = mergeStepsDoc(stepsDoc(file?.text), date, steps);
+    try {
+      await remote.write("steps.json", JSON.stringify(doc, null, 2) + "\n", { sha: file?.sha, message });
+      return doc;
+    } catch (err) {
+      if (!(err instanceof GitHubError && err.status === 409) || attempt === 2) throw err;
+    }
+  }
+}
+
+/**
+ * Retire one Primer line: read the feed, set that line's untoggledAt, write it
+ * back with its sha, and retry on a conflict. Every other line stays as it was.
+ */
+export async function writePrimerSwitchOff(remote, id, { now, message = `primer: switch off ${id}` } = {}) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const file = await remote.readAny("primer/themes.jsonl");
+    if (!file) throw new Error("Nothing shared with the Primer yet.");
+    const text = setUntoggled(file.text, id, now || new Date().toISOString());
+    if (text === file.text) throw new Error("That line is no longer in the feed.");
+    try {
+      const sha = await remote.writePrimer(text, { sha: file.sha, message });
+      return { text, sha };
+    } catch (err) {
+      if (!(err instanceof GitHubError && err.status === 409) || attempt === 2) throw err;
+    }
+  }
+}
+
 /** One sync pass: tasks (read-only), the board, stats.json; seeds the folder's README/tool on first run. */
 export async function sync(store, { token, owner, repo, folder, publicRepo, templateBase = "quests-template/", device = "device" }) {
   const remote = new QuestRemote({ token, owner, repo, folder });
@@ -108,6 +151,14 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
       .map(({ id, title, category, parentId, created, repo, questId, questNominated }) => ({ id, title, category, parentId, created, repo, questId, questNominated })),
     history: [...parse(ph, "entries"), ...parse(qh?.text, "entries")].map(({ id, title, category, completedDate }) => ({ id, title, category, completedDate })),
   };
+
+  // Watch-counted steps: read-only, the watch app owns this file. A missing file means no steps.
+  const stepsFile = await remote.read("steps.json");
+  store.steps = stepsDoc(stepsFile?.text);
+
+  // The journal's Primer feed: abstract themes only, one JSON object per line. Missing means nothing shared.
+  const primerFile = await remote.readAny("primer/themes.jsonl");
+  store.primer = { text: primerFile?.text || "", sha: primerFile?.sha || null };
 
   // Seed the folder once: README, Claude rules and the guild master's tool.
   const top = await remote.list("");

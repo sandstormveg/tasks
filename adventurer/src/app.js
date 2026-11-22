@@ -4,7 +4,8 @@
 // Your guild rank is your grade (core/grades.js): earned by passing grade tests,
 // not by XP. XP still sets your level.
 
-import { Store, sync } from "./data/store.js";
+import { Store, sync, writeSteps, writePrimerSwitchOff } from "./data/store.js";
+import { QuestRemote } from "./data/github.js";
 import { attributeStats, totalXp, levelOf, streak } from "./core/stats.js";
 import { isExpired, OPEN, payout } from "./core/quests.js";
 import { skillStats } from "./core/skills.js";
@@ -94,7 +95,7 @@ export function createContext(host) {
       const quests = ctx.quests();
       const history = store.tasks.history;
       const xp = totalXp({ quests, history });
-      const attributes = attributeStats({ quests, history, measurements: store.measurements(), profile: store.profile(), today: ctx.today() });
+      const attributes = attributeStats({ quests, history, measurements: store.measurements(), profile: store.profile(), today: ctx.today(), stepsDays: store.steps?.days || {} });
       const skills = skillStats(store.skills(), quests);
       return {
         xp, level: levelOf(xp), rank: gradeOf(quests),
@@ -157,6 +158,30 @@ export function createContext(host) {
     taskTitle(id) {
       const t = [...store.tasks.active, ...store.tasks.history].find((x) => x.id === id);
       return t ? t.title : null;
+    },
+    /** Retire one line of the journal's Primer feed (Settings only; themes are never edited). */
+    async switchOffPrimer(id) {
+      const { token } = ctx.token();
+      if (!token) throw new Error("No GitHub token yet: add one in Settings > Access/Key.");
+      const s = ctx.settings();
+      const remote = new QuestRemote({ token, owner: s.owner, repo: s.repo, folder: s.folder });
+      const res = await writePrimerSwitchOff(remote, id);
+      store.primer = { text: res.text, sha: res.sha };
+      store.persist();
+      store.emit({ op: "primer" });
+      return res;
+    },
+    /** Today's phone steps to quests/steps.json (Train only, throttled there). */
+    async saveSteps(date, steps) {
+      const { token } = ctx.token();
+      if (!token) return null;
+      const s = ctx.settings();
+      const remote = new QuestRemote({ token, owner: s.owner, repo: s.repo, folder: s.folder });
+      const doc = await writeSteps(remote, { date, steps, message: `Steps: ${date} (phone)` });
+      store.steps = doc;
+      store.persist();
+      store.emit({ op: "stats" });
+      return doc;
     },
   };
   return ctx;

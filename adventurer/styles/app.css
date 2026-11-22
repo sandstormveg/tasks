@@ -41,6 +41,8 @@ a { color: var(--accent-2); }
 .muted { color: var(--muted); } .small { font-size: .82rem; } .grow { flex: 1; min-width: 0; } .pre { white-space: pre-wrap; }
 .row { display: flex; gap: 8px; align-items: center; } .wrap { flex-wrap: wrap; }
 .empty { text-align: center; color: var(--muted); padding: 32px 8px; }
+.health-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border: 1px solid var(--grid); background: var(--panel); padding: 8px 10px; border-radius: 6px; }
+.health-card p { margin: 0; }
 .notice { border: 1px dashed var(--amber); color: var(--amber); padding: 8px 10px; border-radius: 6px; font-size: .88rem; }
 
 .btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
@@ -50,6 +52,10 @@ a { color: var(--accent-2); }
 .btn.small { padding: 4px 9px; font-size: .82rem; } .btn.icon { padding: 4px 8px; }
 .chip { background: transparent; border: 1px solid var(--grid); border-radius: 999px; padding: 3px 10px; cursor: pointer; color: var(--muted); font-size: .85rem; }
 .chip.on { border-color: var(--accent-2); color: var(--text); }
+.primer-list { display: flex; flex-direction: column; gap: 10px; }
+.primer-line { border: 1px solid var(--grid); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.primer-themes { display: flex; flex-wrap: wrap; gap: 6px; }
+.primer-theme { border: 1px solid var(--grid); border-radius: 999px; padding: 3px 10px; font-size: .85rem; }
 :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 
 /* Joy, the receptionist */
@@ -253,6 +259,7 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 .attr { background: var(--panel); border: 1px solid var(--grid); border-radius: 6px; padding: 8px 10px; cursor: pointer; }
 .attr.open { border-color: var(--border); }
 .attr-main { display: flex; align-items: center; gap: 10px; }
+.attr-steps { margin-top: 4px; }
 .attr-name { font-weight: bold; width: 34px; }
 .attr-label { color: var(--muted); font-size: .85rem; flex: 1; min-width: 0; }
 .attr-val { font-variant-numeric: tabular-nums; }

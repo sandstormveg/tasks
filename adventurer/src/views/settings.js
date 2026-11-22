@@ -4,9 +4,25 @@
 
 import { html, toast, confirmSheet } from "../ui/dom.js";
 import { AGE_BANDS } from "../core/norms.js";
+import { primerEntries, sortPrimer } from "../core/primer.js";
 import { speak, voices, bestVoice, hasClips } from "../ui/voice.js";
 import { PACKS } from "../core/voicepack.js";
 import { coachVoice } from "../ui/coach.js";
+
+const when = (iso) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString();
+};
+
+function primerSection(store) {
+  const entries = sortPrimer(primerEntries(store.primer?.text));
+  if (!entries.length) return html`<p class="muted">Nothing shared with the Primer yet.</p>`;
+  return html`<div class="primer-list">${entries.map((e) => html`<div class="primer-line">
+    <div class="primer-themes">${e.themes.map((t) => html`<span class="primer-theme">${t}</span>`)}</div>
+    <div class="muted small">Shared ${when(e.toggledAt) || "date unknown"}${e.untoggledAt ? ` · ${when(e.untoggledAt) ? `Switched off ${when(e.untoggledAt)}` : "Retired"}` : ""}</div>
+    ${e.untoggledAt ? "" : html`<button type="button" class="btn small" data-primer-off="${e.id}">Switch off</button>`}
+  </div>`)}</div>`;
+}
 
 const coachOpts = (f) => ({ coachVoice: !!f.coachVoice, coachName: (f.coachName || "Sergeant Brass").trim().slice(0, 24) || "Sergeant Brass", coachVoiceName: f.coachVoiceName || "", coachVoicePack: f.coachVoicePack ?? "", coachVolume: Number(f.coachVolume), coachRate: Number(f.coachRate), coachPitch: Number(f.coachPitch), deviceFallback: !!f.deviceFallback });
 const voiceOpts = (f) => ({ voicePack: f.voicePack ?? "", deviceFallback: !!f.deviceFallback, voiceName: f.voiceName || "", voiceVolume: Number(f.voiceVolume), voiceRate: Number(f.voiceRate), voicePitch: Number(f.voicePitch) });
@@ -85,6 +101,10 @@ export async function mount(el, ctx, route, ui) {
           <label class="field"><span>Age band</span><select class="input" name="ageBand"><option value="">—</option>${AGE_BANDS.map((b) => html`<option ${prof.ageBand === b ? "selected" : ""}>${b}</option>`)}</select></label>
         </div>
       </fieldset>
+      <fieldset><legend>What the Primer sees</legend>
+        <p class="hint">Themes the journal exports for Another World when you toggle a note. Only themes, never text. Switching one off keeps the line in the feed, marked retired.</p>
+        ${primerSection(ctx.store)}
+      </fieldset>
       <fieldset><legend>Sync</legend>
         <label class="check"><input type="checkbox" name="autoSync" ${s.autoSync ? "checked" : ""}> Sync automatically</label>
         <p class="small muted">${st.error ? `Last problem: ${st.error}` : st.lastSync ? `Last synced ${new Date(st.lastSync).toLocaleString()}` : "Not synced yet."}</p>
@@ -97,9 +117,17 @@ export async function mount(el, ctx, route, ui) {
   };
   draw();
   if ("speechSynthesis" in window) { const refill = () => { fillVoices(el.querySelector("[data-voices]"), ctx.settings().voiceName); fillVoices(el.querySelector("[data-coach-voices]"), ctx.settings().coachVoiceName, "male"); }; speechSynthesis.addEventListener("voiceschanged", refill); ui.cleanup(() => speechSynthesis.removeEventListener("voiceschanged", refill)); }
-  ui.onStore((c) => { if (["sync", "sync-end", "sync-error"].includes(c.op)) draw(); });
+  ui.onStore((c) => { if (["sync", "sync-end", "sync-error", "primer"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
+    const off = e.target.closest("[data-primer-off]")?.dataset.primerOff;
+    if (off) {
+      const yes = await confirmSheet("Switch this line off? Another World will stop receiving these themes. The line stays in the feed, marked retired.", { title: "Switch off Primer line", confirm: "Switch off" });
+      if (!yes) return;
+      try { await ctx.switchOffPrimer(off); toast("Switched off."); }
+      catch (err) { toast(err?.message || "Couldn't switch it off.", { error: true }); }
+      return;
+    }
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (a === "sync") { await ctx.syncNow(); toast(ctx.store.status.error ? ctx.store.status.error : "Synced.", { error: !!ctx.store.status.error }); }
     const form = () => Object.fromEntries(new FormData(el.querySelector("form")));

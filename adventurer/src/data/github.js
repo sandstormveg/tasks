@@ -110,6 +110,15 @@ export class QuestRemote {
     return r.content.sha;
   }
 
+  /** The journal's Primer feed: the app may only retire a line, never touch themes or delete. */
+  async writePrimer(text, { sha, message }) {
+    const r = await this.req(`/repos/${this.owner}/${this.repo}/contents/primer/themes.jsonl`, {
+      method: "PUT",
+      body: JSON.stringify({ message, content: b64.enc(text), ...(sha ? { sha } : {}) }),
+    });
+    return r.content.sha;
+  }
+
   async writeBytes(rel, bytes, { message }) {
     let s = "";
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));

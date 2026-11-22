@@ -13,6 +13,9 @@
 import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
 import { trackJog } from "../ui/jog.js";
+import { healthToday, healthCard, openHealthSettings } from "../ui/health.js";
+import { health } from "../data/health.js";
+import { dueStepsWrite } from "../core/steps.js";
 import { announce } from "../ui/moments.js";
 import { coachSet, coachBubble, coachSay, coachName, coachVoice, coachCounter } from "../ui/coach.js";
 import { restLine, restStart, promoted, testShort, coachGreet } from "../core/coach.js";
@@ -24,6 +27,10 @@ import { GRADES, PUSHUP_PERCENTILE, PREREQ, RETAKE_DAYS, eligibility, trainingPl
 const dayOf = localDay;
 const NAME = { pushup: "Push-ups", squat: "Squats", situp: "Sit-ups", pullup: "Pull-ups" };
 const who = (p) => `${p.sex === "female" ? "women" : "men"} ${(p.ageBand || "20-29").replace("-", "–")}`;
+
+// Health Connect is read only while Train is open; today's total is written at most every ten minutes.
+let todayHealth;
+let lastStepsWrite = 0;
 
 export async function mount(el, ctx, route, ui) {
   postToday(ctx);
@@ -42,6 +49,7 @@ export async function mount(el, ctx, route, ui) {
     const line = coachGreet({ sets: todays.length, done: todays.filter((q) => q.status === "done" || q.status === "failed").length, rest: !!plan?.rest, ready: !!(el2.eligible && next), next: next?.id }, seedOf(today));
     el.innerHTML = String(html`
       ${coachCounter(coachName(s), line)}
+      ${healthCard(todayHealth)}
       <section class="grade-head">
         <div class="grade-badge">${grade.id}</div>
         <div class="grow">
@@ -60,7 +68,7 @@ export async function mount(el, ctx, route, ui) {
         <div class="free-sets">
           <span class="muted small">Free set, any day, counted by the camera:</span>
           ${FREE.map((ex) => html`<button class="btn" data-free="${ex}">◉ ${ex}s</button>`)}
-          <button class="btn" data-jog>➶ Jog 5000 steps</button>
+          ${JOGS.map((n) => html`<button class="btn" data-jog="${n}">➶ Jog ${n.toLocaleString()}</button>`)}
           <button class="btn ghost" data-rest>⏱ Rest 90s</button>
         </div>
       </section>
@@ -71,17 +79,20 @@ export async function mount(el, ctx, route, ui) {
         <p>The trainer starts with an assessment max set, then sets you about 70% of your best and adds a rep each time you hit it, re-tests your max weekly, and rests you after three days in a row. It's a fixed rule, not an AI.</p>
       </details>`);
   };
+  todayHealth = undefined;
   draw();
+  if (health()) refreshHealth(ctx, draw);
   ui.onStore((c) => { if (["quest", "sync", "sync-end", "stats"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
+    if (e.target.closest("[data-hc-open]")) return openHealthSettings();
     if (e.target.closest("[data-say-coach]")) { const s = ctx.settings(); return speak(el.querySelector(".coach-line").textContent.replace(/^>\s*/, ""), coachVoice(s)); }
     const m = e.target.closest("[data-mission]");
     if (m) return runMission(ctx, ctx.quests().find((q) => q.id === m.dataset.mission));
     if (e.target.closest("[data-sit]")) return sitTest(ctx);
     const f = e.target.closest("[data-free]");
     if (f) return runMission(ctx, freeSet(ctx, f.dataset.free));
-    if (e.target.closest("[data-jog]")) return runJog(ctx, 5000);
+    if (e.target.closest("[data-jog]")) return runJog(ctx, Number(e.target.closest("[data-jog]").dataset.jog));
     if (e.target.closest("[data-rest]")) return restSheet(ctx, { title: "Rest", seconds: 90, foot: html`<button class="btn primary" data-close>Done</button>` });
   });
 }
@@ -94,6 +105,21 @@ function postToday(ctx) {
     for (const m of fresh) ctx.store.put(m);
     if (fresh.length) ctx.syncNow();
   } catch (err) { errorToast(err, "The trainer couldn't post today's missions"); }
+}
+
+async function refreshHealth(ctx, draw) {
+  try {
+    const h = await healthToday();
+    todayHealth = h;
+    draw();
+    if (h?.granted && h.steps > 0 && dueStepsWrite(lastStepsWrite, Date.now())) {
+      lastStepsWrite = Date.now();
+      try { await ctx.saveSteps(ctx.today(), h.steps); } catch { lastStepsWrite = 0; }
+    }
+  } catch {
+    todayHealth = null;
+    draw();
+  }
 }
 
 function testPanel(e, profile) {
@@ -221,14 +247,18 @@ async function runMission(ctx, q) {
   } catch (err) { errorToast(err); }
 }
 
+/** Jog targets offered in Train; under 5000 steps is an easy quest. */
+const JOGS = [2000, 3000, 5000];
+
 // A jog you start yourself: a quest from your own life (not a trainer set), tracked by GPS
 // while the page is open, or steps from your own counter (paid as your word).
 async function runJog(ctx, steps) {
   const now = ctx.now();
   const q = { id: `jog-${now.replace(/[^0-9]/g, "").slice(0, 14)}`, title: `Jog ${steps.toLocaleString()} steps`, status: "accepted", origin: "self", giver: "self", author: "self",
-    taskIds: [], difficulty: "normal", attributes: { vit: 1, agi: 0.5 }, skills: { running: 1 }, proof: { type: "jog", steps }, posted: now, accepted: now };
+    taskIds: [], difficulty: steps < 5000 ? "easy" : "normal", attributes: { vit: 1, agi: 0.5 }, skills: { running: 1 }, proof: { type: "jog", steps }, posted: now, accepted: now };
   try {
-    const res = await trackJog(ctx.settings(), { steps });
+    const plugin = health();
+    const res = await trackJog(ctx.settings(), { steps, health: plugin ? { plugin, start: now } : null });
     if (!res) return;
     if (res.steps < steps) return toast(`${res.steps.toLocaleString()} steps. Short of ${steps.toLocaleString()}, so nothing was logged this time.`, { timeout: 6000 });
     const before = ctx.derived();
