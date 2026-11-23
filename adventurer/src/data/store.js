@@ -13,6 +13,7 @@ import { applyTaskOps, questIndex, nominations } from "../core/tasklink.js";
 import { autoProgress, hasObjectives } from "../core/objectives.js";
 import { stepsDoc, mergeStepsDoc } from "../core/steps.js";
 import { setUntoggled } from "../core/primer.js";
+import { noticesDoc } from "../core/notices.js";
 import { QuestRemote, readPublic, GitHubError } from "./github.js";
 
 const KEY = "adventurer:";
@@ -45,8 +46,14 @@ export class Store {
     this.taskOps = load("taskOps", []);     // queued writes to tasks-data's task list (see core/tasklink.js)
     this.status = load("status", { lastSync: null, error: null });
     this.research = load("research", null); // research/ file list + source tags, for expedition objectives
-    this.steps = load("steps", { days: {} });
-    this.primer = load("primer", { text: "", sha: null }); // the journal's themes feed, read-only except switch-off // watch-counted daily totals, read-only from quests/steps.json
+    this.steps = load("steps", { days: {} }); // watch-counted daily totals, read-only from quests/steps.json
+    this.primer = load("primer", { text: "", sha: null }); // the journal's themes feed, read-only except switch-off
+    this.importedWorkouts = load("importedWorkouts", []); // watch session ids already turned into jogs
+    this.workoutsImportedAt = load("workoutsImportedAt", null);
+    this.notices = load("notices", { doc: null, sha: null }); // Another World notices, read-only
+    this.noticesSeen = load("noticesSeen", null); // notice ids at the last sync; null means never synced
+    this.noticesAsked = load("noticesAsked", false); // asked for notification permission once
+    this.reminders = load("reminders", {}); // {brassDay: "YYYY-MM-DD"}
     this.listeners = new Set();
   }
 
@@ -57,6 +64,9 @@ export class Store {
     save("showcase", this.showcase); save("taskOps", this.taskOps); save("research", this.research);
     save("steps", this.steps);
     save("primer", this.primer);
+    save("importedWorkouts", this.importedWorkouts); save("workoutsImportedAt", this.workoutsImportedAt);
+    save("notices", this.notices); save("noticesSeen", this.noticesSeen); save("noticesAsked", this.noticesAsked);
+    save("reminders", this.reminders);
   }
 
   all() { return Object.values(this.quests).map((x) => normalize(x.q)); }
@@ -89,6 +99,14 @@ export class Store {
     this.emit({ op: "showcase" });
   }
   queueTaskOp(op) { this.taskOps = [...this.taskOps, op]; this.persist(); }
+  markWorkoutsImported(ids, at) {
+    this.importedWorkouts = [...new Set([...(this.importedWorkouts || []), ...ids])];
+    if (at) this.workoutsImportedAt = at;
+    this.persist();
+  }
+  setNoticesSeen(ids) { this.noticesSeen = [...ids]; this.persist(); }
+  setNoticesAsked(v = true) { this.noticesAsked = !!v; this.persist(); }
+  setBrassDay(day) { this.reminders = { ...this.reminders, brassDay: day }; this.persist(); }
 
   setSettings(patch) { this.settings = { ...this.settings, ...patch }; save("settings", this.settings); this.emit({ op: "settings" }); }
   setSecrets(patch) { this.secrets = { ...this.secrets, ...patch }; save("secrets", this.secrets); this.emit({ op: "settings" }); }
@@ -159,6 +177,10 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
   // The journal's Primer feed: abstract themes only, one JSON object per line. Missing means nothing shared.
   const primerFile = await remote.readAny("primer/themes.jsonl");
   store.primer = { text: primerFile?.text || "", sha: primerFile?.sha || null };
+
+  // Another World's notices: read-only, and a missing file means nothing posted yet.
+  const noticesFile = await remote.readAny("anotherworld/notices.json");
+  store.notices = { doc: noticesFile ? noticesDoc(noticesFile.text) : null, sha: noticesFile?.sha || null };
 
   // Seed the folder once: README, Claude rules and the guild master's tool.
   const top = await remote.list("");

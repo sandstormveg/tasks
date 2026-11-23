@@ -82,6 +82,7 @@ export async function mount(el, ctx, route, ui) {
   todayHealth = undefined;
   draw();
   if (health()) refreshHealth(ctx, draw);
+  ctx.importWorkouts();
   ui.onStore((c) => { if (["quest", "sync", "sync-end", "stats"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {

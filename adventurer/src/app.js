@@ -6,12 +6,17 @@
 
 import { Store, sync, writeSteps, writePrimerSwitchOff } from "./data/store.js";
 import { QuestRemote } from "./data/github.js";
+import { health, readDelta } from "./data/health.js";
+import { setNoticesAuth, clearNoticesAuth as clearNoticesAuthPlugin, requestNotify, notify } from "./data/notices.js";
 import { attributeStats, totalXp, levelOf, streak } from "./core/stats.js";
-import { isExpired, OPEN, payout } from "./core/quests.js";
+import { isExpired, OPEN, payout, localDay } from "./core/quests.js";
+import { workoutCandidates, workoutQuest, workoutMinutes, workoutId } from "./core/workouts.js";
+import { newNoticeIds, brassDue } from "./core/notices.js";
+import { toast } from "./ui/dom.js";
 import { skillStats } from "./core/skills.js";
 import { cabinet } from "./core/achievements.js";
 import { taskIdFor, GUILD_CATEGORY } from "./core/tasklink.js";
-import { gradeOf } from "./core/grades.js";
+import { gradeOf, trainingPlan } from "./core/grades.js";
 
 export const DEFAULTS = {
   owner: "sandstormveg",
@@ -36,6 +41,7 @@ export const DEFAULTS = {
   coachRate: 1,
   coachPitch: 1,
   autoSync: true,
+  trainingReminders: true,
 };
 
 export async function loadHost() {
@@ -69,14 +75,20 @@ export function createContext(host) {
       return { token: "", from: null };
     },
     syncing: false,
+    importing: false,
     async syncNow() {
       const { token } = ctx.token();
       if (!token || ctx.syncing || !navigator.onLine) return;
       ctx.syncing = true;
       store.emit({ op: "sync-start" });
+      let synced = false;
       try {
         const s = ctx.settings();
         await sync(store, { token, owner: s.owner, repo: s.repo, publicRepo: s.publicRepo, folder: s.folder, device: deviceName() });
+        await setNoticesAuth(token, s.owner, s.repo);
+        ctx.notifyNewNotices();
+        ctx.checkBrassReminder();
+        synced = true;
       } catch (err) {
         store.status = { ...store.status, error: err.message || String(err) };
         store.persist();
@@ -85,6 +97,7 @@ export function createContext(host) {
         ctx.syncing = false;
         store.emit({ op: "sync-end" });
       }
+      if (synced) ctx.importWorkouts().catch(() => {});
     },
     /** Quests with expiry applied (an open quest past its date reads as expired, and is saved so). */
     quests() {
@@ -183,6 +196,85 @@ export function createContext(host) {
       store.emit({ op: "stats" });
       return doc;
     },
+    /** Turn recent watch workouts into completed jogs (native only). Returns how many were logged. */
+    async importWorkouts() {
+      const plugin = health();
+      if (!plugin || ctx.importing) return 0;
+      ctx.importing = true;
+      try {
+        const st = await plugin.status().catch(() => null);
+        if (!st?.available || !st?.exercise) return 0;
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 864e5).toISOString();
+        const lastAt = store.workoutsImportedAt && Date.parse(store.workoutsImportedAt) > Date.parse(weekAgo) ? store.workoutsImportedAt : weekAgo;
+        const r = await plugin.readExercise({ start: lastAt, end: now.toISOString() });
+        const todo = workoutCandidates(r?.sessions, { since: lastAt, imported: new Set(store.importedWorkouts) });
+        const imported = [];
+        let logged = 0;
+        for (const session of todo) {
+          const id = workoutId(session);
+          if (store.get(id)) { imported.push(session.id); continue; }
+          const delta = await readDelta(plugin, session.start, session.end).catch(() => null);
+          if (!delta || delta.steps <= 0) continue;
+          store.put(workoutQuest(session, { steps: delta.steps, meters: delta.meters, minutes: workoutMinutes(session) }, { now: ctx.now() }));
+          imported.push(session.id);
+          logged += 1;
+        }
+        if (!imported.length) return 0;
+        store.markWorkoutsImported(imported, new Date().toISOString());
+        if (!logged) return 0;
+        toast(`Logged ${logged} workout${logged === 1 ? "" : "s"} from your watch`);
+        ctx.syncNow();
+        return logged;
+      } catch {
+        return 0;
+      } finally {
+        ctx.importing = false;
+      }
+    },
+    /** Local notification for each notice id that wasn't there at the last sync (first sync only records them). */
+    notifyNewNotices() {
+      const doc = store.notices?.doc;
+      if (!doc) {
+        if (store.noticesSeen == null) store.setNoticesSeen([]);
+        return;
+      }
+      const ids = doc.notices.map((n) => n.id);
+      if (store.noticesSeen == null) { store.setNoticesSeen(ids); return; }
+      const fresh = newNoticeIds(doc, store.noticesSeen);
+      store.setNoticesSeen(ids);
+      for (const id of fresh) {
+        const n = doc.notices.find((x) => x.id === id);
+        if (n) notify({ id, title: `Another World: ${n.giver || "notice"}`, body: n.title });
+      }
+    },
+    /** Brass's 18:00 nudge, once on a training day with nothing done (opt-out in Settings). */
+    checkBrassReminder() {
+      try {
+        const s = ctx.settings();
+        const today = ctx.today();
+        const quests = ctx.quests();
+        const todays = quests.filter((q) => q.origin === "training" && localDay(q.posted) === today);
+        const plan = trainingPlan(quests, { profile: store.profile(), today, now: ctx.now() });
+        const done = todays.some((q) => q.status === "done" || q.status === "failed");
+        const training = todays.length > 0 || plan.missions.length > 0;
+        if (!brassDue({ today, now: new Date(), rest: !!plan.rest, training, done, lastDay: store.reminders.brassDay, enabled: s.trainingReminders !== false })) return false;
+        store.setBrassDay(today);
+        notify({ id: `brass-${today}`, title: "Sergeant Brass", body: "Today's set is waiting." });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    /** Ask for notification permission once, the first native run after this update. */
+    async askNotifyOnce() {
+      if (store.noticesAsked) return false;
+      const res = await requestNotify();
+      if (!res) return false;
+      store.setNoticesAsked(true);
+      return true;
+    },
+    forgetNoticesAuth() { clearNoticesAuthPlugin(); },
   };
   return ctx;
 }

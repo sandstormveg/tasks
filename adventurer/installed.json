@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@ebe8481dff42",
+ "source": "sandstormveg/Adventurer@e9cc2d5367ef",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -16,6 +16,7 @@
   "src/core/geo.js",
   "src/core/grades.js",
   "src/core/norms.js",
+  "src/core/notices.js",
   "src/core/objectives.js",
   "src/core/primer.js",
   "src/core/quests.js",
@@ -27,9 +28,11 @@
   "src/core/steps.js",
   "src/core/tasklink.js",
   "src/core/voicepack.js",
+  "src/core/workouts.js",
   "src/data/github.js",
   "src/data/health.js",
   "src/data/media.js",
+  "src/data/notices.js",
   "src/data/store.js",
   "src/main.js",
   "src/ui/coach.js",

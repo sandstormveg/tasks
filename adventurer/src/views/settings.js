@@ -81,6 +81,7 @@ export async function mount(el, ctx, route, ui) {
       </fieldset>
       <fieldset><legend>Training coach</legend>
         <label class="check"><input type="checkbox" name="coachVoice" ${s.coachVoice ? "checked" : ""}> Coach's voice: he counts your reps, calls the tempo, cues your form and calls your rest out loud (tap his portrait to hush)</label>
+        <label class="check"><input type="checkbox" name="trainingReminders" ${s.trainingReminders !== false ? "checked" : ""}> Training reminders: Brass pings at 18:00 if today's set is still waiting</label>
         <div class="grid2">
           <label class="field"><span>Name</span><input class="input" name="coachName" value="${s.coachName}" maxlength="24"></label>
         </div>
@@ -140,7 +141,7 @@ export async function mount(el, ctx, route, ui) {
       if (!hasClips(pv, text)) toast("That voice isn't on this device yet; the device voice will say it.");
       speak(text, who === "brass" ? { ...coachVoice(coachOpts(form())), pack: pv } : { ...voiceOpts(form()), pack: pv });
     }
-    if (a === "forget" && await confirmSheet("Forget the token saved on this device?", { confirm: "Forget" })) { ctx.store.setSecrets({ githubToken: "" }); draw(); }
+    if (a === "forget" && await confirmSheet("Forget the token saved on this device?", { confirm: "Forget" })) { ctx.store.setSecrets({ githubToken: "" }); ctx.forgetNoticesAuth(); draw(); }
   });
   el.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -148,7 +149,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Joy").trim().slice(0, 24) || "Joy", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync });
+      relay: !!f.relay, relayName: (f.relayName || "Joy").trim().slice(0, 24) || "Joy", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync, trainingReminders: !!f.trainingReminders });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

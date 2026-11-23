@@ -381,3 +381,9 @@ legend { padding: 0 6px; text-transform: uppercase; letter-spacing: .1em; font-s
 body.stamp .content { animation: stamp .9s ease-out; }
 @keyframes stamp { 0% { filter: none; } 20% { filter: drop-shadow(0 0 14px var(--accent)); } 100% { filter: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .type { width: auto; white-space: normal; } .note { transform: none; } .trophy.won::after { display: none; } }
+
+.another-world { margin-top: 18px; }
+.notice-list { display: flex; flex-direction: column; gap: 10px; }
+.notice-card { border: 1px solid var(--grid); border-radius: 6px; padding: 10px 12px; }
+.notice-card h3 { margin: 2px 0 4px; font-size: 1rem; }
+.notice-card p { margin: 4px 0 0; }

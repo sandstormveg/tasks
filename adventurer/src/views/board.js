@@ -20,6 +20,7 @@ import { trackJog } from "../ui/jog.js";
 import { attributeGains } from "../core/stats.js";
 import { recommend, suggestionQuest, SUGGEST } from "../core/balance.js";
 import { uploadPhoto } from "../data/media.js";
+import { activeNotices } from "../core/notices.js";
 
 const ORIGIN_TAG = { task: "From your tasks", inferred: "Inferred", request: "Your request", guild: "Guild master", local: "Nearby", self: "Self-posted", training: "Trainer", test: "Grade test" };
 const FILTERS = { open: "Open", requested: "Requests", closed: "Closed" };
@@ -73,7 +74,8 @@ export async function mount(el, ctx, route, ui) {
         <section class="cork" aria-label="Quest board">
           <h2 class="cork-title">Quest Board</h2>
           ${posted.length ? html`<div class="notes">${posted.map(note)}</div>` : html`<p class="cork-empty">Nothing pinned. Scout nearby, file a request, or wait for the guild master's next pass.</p>`}
-        </section>`}`);
+        </section>`}
+      ${anotherWorld(ctx)}`);
     // Joy's nudge toward the attribute furthest behind on the radar (core/balance.js).
     function balanceTip(d) {
       const today = ctx.today(), all = ctx.quests();
@@ -393,4 +395,20 @@ async function objectiveAction(ctx, q, id) {
   ctx.store.put(next);
   if (ready(next) && !ready(q)) toast("All the required objectives are done. Turn it in when you're ready.", { timeout: 6000 });
   return next;
+}
+
+/** Another World's notice board: newest first, expired hidden, read-only. */
+function anotherWorld(ctx) {
+  const doc = ctx.store.notices?.doc;
+  if (!doc) return "";
+  const list = activeNotices(doc, new Date(ctx.now()));
+  return html`<section class="another-world" aria-label="Another World">
+    <h2 class="panel-title">Another World</h2>
+    ${list.length ? html`<div class="notice-list">${list.map((n) => html`<article class="notice-card">
+      ${n.giver ? html`<div class="muted small">${n.giver}</div>` : ""}
+      <h3>${n.title}</h3>
+      ${n.text ? html`<p class="small">${n.text}</p>` : ""}
+      ${n.xp != null ? html`<p class="small muted">Costs ${n.xp} XP in-game</p>` : ""}
+    </article>`)}</div>` : html`<p class="muted small panel-empty">Nothing new from Another World.</p>`}
+  </section>`;
 }

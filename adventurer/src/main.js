@@ -72,6 +72,9 @@ async function boot() {
   swipeTabs();
   await show();
 
+  ctx.askNotifyOnce();
+  ctx.checkBrassReminder();
+
   if (ctx.settings().autoSync) {
     ctx.syncNow();
     setInterval(() => ctx.store.pending() && ctx.syncNow(), 60_000);
