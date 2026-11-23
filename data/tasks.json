@@ -283,6 +283,23 @@
       "created": "2026-11-16",
       "notes": "",
       "assist": false
+    },
+    {
+      "id": "print-wavelength-board-game-mwrrvrxt",
+      "title": "print wavelength board game",
+      "category": "R&D",
+      "created": "2026-11-22",
+      "notes": "",
+      "assist": false,
+      "noteItems": [
+        {
+          "id": "n-mwrrw0pcjg5b",
+          "text": "Wavelength / Perfect Match - Complete Game - Free 3D Print Model - MakerWorld https://share.google/NLl3dTibnGbLR9P04",
+          "done": false,
+          "created": "2026-11-22T11:47:55.152Z",
+          "updated": "2026-11-22T11:47:55.152Z"
+        }
+      ]
     }
   ]
 }
