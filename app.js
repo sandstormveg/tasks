@@ -810,6 +810,14 @@ async function updateAppTabs() {
 
 for (const tab of APP_TABS()) {
   tab.addEventListener("click", (e) => {
+    // On Android, the Guild opens the Adventurer app (it reads watch steps); without the app,
+    // Chrome falls back to the web Guild.
+    if (tab.dataset.app === "adventurer" && /Android/i.test(navigator.userAgent) && !state.offline) {
+      e.preventDefault();
+      const web = new URL("adventurer/", location.href).href;
+      location.href = `intent://open#Intent;scheme=adventurer;package=dev.sandstorm.adventurer;S.browser_fallback_url=${encodeURIComponent(web)};end`;
+      return;
+    }
     if (!e.currentTarget.classList.contains("unavailable")) return;
     e.preventDefault();
     showToast({ message: `${tab.dataset.name} isn't saved on this device yet. Open it once with a connection and it'll work offline from then on.`, duration: 7000 });
