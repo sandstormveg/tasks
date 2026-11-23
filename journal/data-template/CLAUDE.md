@@ -36,6 +36,15 @@ promotes anything.
 7. **Respect boundaries** in `config/preferences.yaml`: `muted_topics` and `never_kinds`. Learn from
    rejected proposals (`meta/proposals/*` with `status: rejected` and `decision.reason`).
 8. Do not read, print or commit secrets. Do not push to any other repository.
+9. **Primer notes** are the one exception to rule 2. The person turns them on per note. Read them only
+   with `node tools/journal.mjs primer pending`, which applies the same gate as `context`. For each note,
+   choose 1–3 abstract themes **from the list it prints**, and save them with
+   `node tools/journal.mjs primer themes <entry> "<theme>, <theme>"`. That writes an interpretation, never
+   an edit to the entry, and the tool refuses any theme that isn't on the list. Then run
+   `node tools/journal.mjs primer export`. It writes the themes-only feed to `../primer/themes.jsonl`,
+   tasks-data's `primer/` folder. Commit that file and `interpretations/` as `primer: <n> notes`.
+   A theme is never the note's words, a name, a place, a person or a quote. When unsure, choose fewer.
+   Never write the feed by hand; the tool keeps un-toggles (from the journal or from Adventurer) in place.
 
 ## A steward run
 
@@ -79,7 +88,8 @@ promotes anything.
 
 The journal may live in a folder of a repo it shares (e.g. `journal/` in `tasks-data`). Then run every
 command from **this folder** (`cd journal`), treat every path above as relative to it, and never read,
-change or commit anything outside it. Your commit still touches only `meta/proposals/` here.
+change or commit anything outside it, except `primer/themes.jsonl` written by `primer export` (rule 9).
+A steward run's commit still touches only `meta/proposals/` here.
 
 ## If tools/journal.mjs is missing or outdated
 

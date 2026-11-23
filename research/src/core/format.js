@@ -16,7 +16,7 @@ const FM = "---";
 // by a steward session, or by a future version) are kept, after these.
 const FIELD_ORDER = {
   entry: ["id", "type", "kind", "day", "created", "updated", "tz", "title", "author", "privacy", "tags", "category",
-    "question", "prompt", "media", "transcript", "conversation", "document", "source", "links", "imported", "sealed", "deleted"],
+    "question", "prompt", "media", "transcript", "conversation", "document", "source", "links", "primer", "imported", "sealed", "deleted"],
   day: ["id", "type", "date", "rating", "rating_scale", "best", "hardest", "emotions", "updated", "source", "imported"],
   event: ["id", "type", "day", "title", "start", "end", "all_day", "location", "calendar", "source", "updated"],
   claim: ["id", "type", "section", "statement", "status", "origin", "confidence", "evidence", "alternatives",
@@ -25,7 +25,7 @@ const FIELD_ORDER = {
     "rationale", "evidence", "alternatives", "coverage", "decided", "decision", "snooze_until"],
   question: ["id", "type", "text", "kind", "origin", "topic", "sensitivity", "status", "rationale", "evidence",
     "created", "updated", "snooze_until", "last_shown", "shown_count", "answers", "feedback", "source"],
-  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "source"],
+  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "themes", "source"],
   report: ["id", "type", "kind", "created", "summary"],
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: ["id", "type", "kind", "title", "url", "doi", "authors", "year", "site", "preview", "status", "favourite", "tags",

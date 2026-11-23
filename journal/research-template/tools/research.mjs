@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:713c66b78a01a178
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:5be028c6eaf9e6cc
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1053,6 +1053,7 @@ var FIELD_ORDER = {
     "document",
     "source",
     "links",
+    "primer",
     "imported",
     "sealed",
     "deleted"
@@ -1114,7 +1115,7 @@ var FIELD_ORDER = {
     "feedback",
     "source"
   ],
-  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "source"],
+  interpretation: ["id", "type", "kind", "of", "author", "status", "created", "range", "themes", "source"],
   report: ["id", "type", "kind", "created", "summary"],
   // Research: one file per thing you saved to read (src/core/sources.js).
   source: [
