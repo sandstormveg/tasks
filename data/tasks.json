@@ -307,6 +307,14 @@
       "category": "Groceries",
       "created": "2026-11-22",
       "notes": ""
+    },
+    {
+      "id": "pay-utility-bills-mwn8cp8f",
+      "title": "pay utility bills",
+      "category": "Life Admin",
+      "created": "2026-11-19",
+      "notes": "",
+      "assist": false
     }
   ]
 }
