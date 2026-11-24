@@ -8,6 +8,7 @@ import { primerEntries, sortPrimer } from "../core/primer.js";
 import { speak, voices, bestVoice, hasClips } from "../ui/voice.js";
 import { PACKS } from "../core/voicepack.js";
 import { coachVoice } from "../ui/coach.js";
+import { canSignIn, startSignIn, awaitSignIn, cancelSignIn, checkUpdate, installUpdate } from "../data/shell.js";
 
 const when = (iso) => {
   const d = new Date(iso);
@@ -43,6 +44,41 @@ function fillVoices(sel, chosen, kind) {
 }
 
 export async function mount(el, ctx, route, ui) {
+  let pending = null; // the device code while sign-in waits
+  let update = null; // the shell's update check, fetched once
+  const signIn = async () => {
+    let code;
+    try { code = await startSignIn(); } catch (err) { return toast(err.message || "Couldn't reach GitHub.", { error: true }); }
+    pending = code;
+    draw();
+    navigator.clipboard?.writeText(code.userCode).catch(() => {});
+    const res = await awaitSignIn(code).catch(() => ({ error: "failed" }));
+    pending = null;
+    if (res?.token) {
+      ctx.store.setSecrets({ githubToken: res.token });
+      toast("Signed in with GitHub.");
+      draw();
+      ctx.syncNow();
+    } else {
+      if (res?.error !== "cancelled") toast(res?.error === "denied" ? "Sign-in was declined on GitHub." : "Sign-in timed out. Try again.", { error: true });
+      draw();
+    }
+  };
+  const signInBlock = () => !canSignIn() ? "" : pending
+    ? html`<div class="signin"><p>On GitHub, enter this code and approve <b>Adventurer</b>:</p>
+      <p class="signin-code"><b>${pending.userCode}</b> <button type="button" class="btn small" data-a="signin-copy" data-code="${pending.userCode}">Copy</button></p>
+      <p class="hint">GitHub opened in your browser; the code is copied. Come back here once you've approved it. <button type="button" class="btn small" data-a="signin-cancel">Cancel</button></p></div>`
+    : html`<div class="signin"><button type="button" class="btn" data-a="signin">Sign in with GitHub</button>
+      <p class="hint">No token to paste: you approve a short code on github.com instead.</p></div>`;
+  const versionBlock = () => !update ? "" : update.available
+    ? html`<p>App version ${update.currentName || update.current}. <b>Version ${update.latestName || update.latest} is ready.</b> ${update.notes || ""}</p><button type="button" class="btn" data-a="update" data-url="${update.url}">Update the app</button>`
+    : html`<p class="small muted">App version ${update.currentName || update.current}${update.error ? " (couldn't check for updates)" : ", up to date"}.</p>`;
+  const runUpdate = async (url) => {
+    try {
+      const r = await installUpdate(url);
+      if (r?.needsPermission) toast("Allow Adventurer to install updates, then tap Update again.", { timeout: 8000 });
+    } catch (err) { toast(err.message || "Couldn't download the update.", { error: true }); }
+  };
   const draw = () => {
     const s = ctx.settings();
     const tok = ctx.token();
@@ -54,12 +90,14 @@ export async function mount(el, ctx, route, ui) {
         <p class="small muted">${tok.from === "own" ? "Using your own token on this device." : tok.from ? `Using ${tok.from}'s token.` : "No token yet — the board stays on this device until you add one."}</p>
         <label class="field"><span>GitHub token (fine-grained, contents read/write on ${s.owner}/${s.repo})</span>
           <input class="input" type="password" name="token" autocomplete="off" placeholder="${tok.from && tok.from !== "own" ? `Leave empty to keep using ${tok.from}'s` : "github_pat_…"}"></label>
+        ${signInBlock()}
         ${tok.from === "own" ? html`<button type="button" class="btn small" data-a="forget">Forget my token</button>` : ""}
         <div class="grid2">
           <label class="field"><span>Private repo</span><input class="input" name="repo" value="${s.owner}/${s.repo}"></label>
           <label class="field"><span>Folder</span><input class="input" name="folder" value="${s.folder}"></label>
         </div>
         <p class="hint">Adventurer only writes inside this folder, and refuses a public repo.</p>
+        <div data-version>${versionBlock()}</div>
       </fieldset>
       <fieldset><legend>Receptionist</legend>
         <label class="check"><input type="checkbox" name="relay" ${s.relay ? "checked" : ""}> Show the receptionist at the counter</label>
@@ -117,6 +155,7 @@ export async function mount(el, ctx, route, ui) {
     fillVoices(el.querySelector("[data-coach-voices]"), s.coachVoiceName, "male");
   };
   draw();
+  checkUpdate().then((u) => { if (u && el.isConnected) { update = u; draw(); } });
   if ("speechSynthesis" in window) { const refill = () => { fillVoices(el.querySelector("[data-voices]"), ctx.settings().voiceName); fillVoices(el.querySelector("[data-coach-voices]"), ctx.settings().coachVoiceName, "male"); }; speechSynthesis.addEventListener("voiceschanged", refill); ui.cleanup(() => speechSynthesis.removeEventListener("voiceschanged", refill)); }
   ui.onStore((c) => { if (["sync", "sync-end", "sync-error", "primer"].includes(c.op)) draw(); });
 
@@ -141,6 +180,10 @@ export async function mount(el, ctx, route, ui) {
       if (!hasClips(pv, text)) toast("That voice isn't on this device yet; the device voice will say it.");
       speak(text, who === "brass" ? { ...coachVoice(coachOpts(form())), pack: pv } : { ...voiceOpts(form()), pack: pv });
     }
+    if (a === "signin") return signIn();
+    if (a === "signin-cancel") { cancelSignIn(); return; }
+    if (a === "signin-copy") { navigator.clipboard?.writeText(e.target.dataset.code).then(() => toast("Code copied."), () => {}); return; }
+    if (a === "update") return runUpdate(e.target.dataset.url);
     if (a === "forget" && await confirmSheet("Forget the token saved on this device?", { confirm: "Forget" })) { ctx.store.setSecrets({ githubToken: "" }); ctx.forgetNoticesAuth(); draw(); }
   });
   el.addEventListener("submit", (e) => {

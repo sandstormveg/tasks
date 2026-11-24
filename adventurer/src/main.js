@@ -5,6 +5,7 @@
 
 import { createContext, loadHost } from "./app.js";
 import { $, $$, html, toast } from "./ui/dom.js";
+import { checkUpdate, installUpdate } from "./data/shell.js";
 
 const VIEWS = {
   board: () => import("./views/board.js"),
@@ -73,6 +74,9 @@ async function boot() {
   await show();
 
   ctx.askNotifyOnce();
+  checkUpdate().then((u) => {
+    if (u?.available) toast(`An update to the Adventurer app is ready (version ${u.latestName || u.latest}).`, { action: "Update", timeout: 0, onAction: () => installUpdate(u.url).then((r) => { if (r?.needsPermission) toast("Allow Adventurer to install updates, then tap Update in Settings.", { timeout: 8000 }); }, () => toast("Couldn't download the update.", { error: true })) });
+  });
   ctx.checkBrassReminder();
 
   if (ctx.settings().autoSync) {

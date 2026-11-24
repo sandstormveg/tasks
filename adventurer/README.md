@@ -1,5 +1,5 @@
 # Adventurer (installed copy)
 
 The ⚔ Guild tab. **Don't edit these files** — they're generated from `sandstormveg/Adventurer` by
-`tools/install-into.mjs` and replaced on every update. Source: `sandstormveg/Adventurer@e9cc2d5367ef`.
+`tools/install-into.mjs` and replaced on every update. Source: `sandstormveg/Adventurer@a5f1c755a1a7`.
 Quest data never lives here: it's in `quests/` of the private tasks-data repo.

@@ -387,3 +387,7 @@ body.stamp .content { animation: stamp .9s ease-out; }
 .notice-card { border: 1px solid var(--grid); border-radius: 6px; padding: 10px 12px; }
 .notice-card h3 { margin: 2px 0 4px; font-size: 1rem; }
 .notice-card p { margin: 4px 0 0; }
+
+/* Sign in with GitHub (Android app) */
+.signin { margin: 0.5rem 0; }
+.signin-code b { font-family: var(--mono, monospace); font-size: 1.5rem; letter-spacing: 0.12em; }
