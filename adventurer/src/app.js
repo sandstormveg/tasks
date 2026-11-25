@@ -12,6 +12,7 @@ import { attributeStats, totalXp, levelOf, streak } from "./core/stats.js";
 import { isExpired, OPEN, payout, localDay } from "./core/quests.js";
 import { workoutCandidates, workoutQuest, workoutMinutes, workoutId } from "./core/workouts.js";
 import { newNoticeIds, brassDue } from "./core/notices.js";
+import { enduranceUpdates } from "./core/endurance.js";
 import { toast } from "./ui/dom.js";
 import { skillStats } from "./core/skills.js";
 import { cabinet } from "./core/achievements.js";
@@ -97,7 +98,7 @@ export function createContext(host) {
         ctx.syncing = false;
         store.emit({ op: "sync-end" });
       }
-      if (synced) ctx.importWorkouts().catch(() => {});
+      if (synced) { ctx.checkEndurance(); ctx.importWorkouts().catch(() => {}); }
     },
     /** Quests with expiry applied (an open quest past its date reads as expired, and is saved so). */
     quests() {
@@ -208,6 +209,8 @@ export function createContext(host) {
         const weekAgo = new Date(now.getTime() - 7 * 864e5).toISOString();
         const lastAt = store.workoutsImportedAt && Date.parse(store.workoutsImportedAt) > Date.parse(weekAgo) ? store.workoutsImportedAt : weekAgo;
         const r = await plugin.readExercise({ start: lastAt, end: now.toISOString() });
+        const newest = (r?.sessions || []).filter((x) => x?.start).sort((a, b) => String(b.start).localeCompare(String(a.start)))[0];
+        if (newest && newest.start !== store.lastWorkout?.start) store.setLastWorkout({ name: newest.name || newest.type || "workout", start: newest.start, at: now.toISOString() });
         const todo = workoutCandidates(r?.sessions, { since: lastAt, imported: new Set(store.importedWorkouts) });
         const imported = [];
         let logged = 0;
@@ -224,12 +227,26 @@ export function createContext(host) {
         store.markWorkoutsImported(imported, new Date().toISOString());
         if (!logged) return 0;
         toast(`Logged ${logged} workout${logged === 1 ? "" : "s"} from your watch`);
+        ctx.checkEndurance();
         ctx.syncNow();
         return logged;
       } catch {
         return 0;
       } finally {
         ctx.importing = false;
+      }
+    },
+    /** Post today's endurance mission and tick off any a jog has earned. Returns how many changed. */
+    checkEndurance() {
+      try {
+        const today = ctx.today();
+        const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1);
+        const updates = enduranceUpdates(store.all(), { today, yesterday: d.toISOString().slice(0, 10), now: ctx.now() });
+        for (const q of updates) store.put(q);
+        if (updates.some((q) => q.status === "done")) toast("Endurance done for the day");
+        return updates.length;
+      } catch {
+        return 0;
       }
     },
     /** Local notification for each notice id that wasn't there at the last sync (first sync only records them). */
@@ -256,7 +273,8 @@ export function createContext(host) {
         const quests = ctx.quests();
         const todays = quests.filter((q) => q.origin === "training" && localDay(q.posted) === today);
         const plan = trainingPlan(quests, { profile: store.profile(), today, now: ctx.now() });
-        const done = todays.some((q) => q.status === "done" || q.status === "failed");
+        const endured = quests.some((q) => q.origin === "endurance" && q.status === "done" && q.expires === today);
+        const done = endured || todays.some((q) => q.status === "done" || q.status === "failed");
         const training = todays.length > 0 || plan.missions.length > 0;
         if (!brassDue({ today, now: new Date(), rest: !!plan.rest, training, done, lastDay: store.reminders.brassDay, enabled: s.trainingReminders !== false })) return false;
         store.setBrassDay(today);

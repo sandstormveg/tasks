@@ -1,5 +1,5 @@
 {
- "version": "bcc635aa1a6b",
+ "version": "f90f566181b6",
  "files": [
   "./",
   "icons/icon.svg",
@@ -13,6 +13,7 @@
   "src/core/achievements.js",
   "src/core/balance.js",
   "src/core/coach.js",
+  "src/core/endurance.js",
   "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",

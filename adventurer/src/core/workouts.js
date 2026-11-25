@@ -41,7 +41,7 @@ export function workoutQuest(session, { steps, meters = null, minutes }, { now }
     taskIds: [], difficulty: n < 5000 ? "easy" : "normal", attributes: { vit: 1, agi: 0.5 },
     skills: { running: 1 }, proof: { type: "jog", steps: n }, posted: now, accepted: now,
   };
-  const evidence = { meters: meters == null ? null : Number.isFinite(Number(meters)) ? Number(meters) : null, steps: n, minutes: Math.max(1, Math.round(Number(minutes) || 0)), tracked: true, source: "health-connect" };
+  const evidence = { meters: meters == null ? null : Number.isFinite(Number(meters)) ? Number(meters) : null, steps: n, minutes: Math.max(1, Math.round(Number(minutes) || 0)), tracked: true, source: "health-connect", started: session?.start || null };
   return complete(q, { proofType: "jog", evidence, at: now });
 }
 

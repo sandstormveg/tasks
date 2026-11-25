@@ -80,7 +80,7 @@ export function testTargets(grade, profile = {}) {
   return out;
 }
 
-const isTrainer = (q) => q.origin === "training" || q.origin === "test";
+const isTrainer = (q) => q.origin === "training" || q.origin === "test" || q.origin === "endurance";
 const verifiedReps = (q) => (q.evidence?.type === "reps" && q.evidence.verified ? Number(q.evidence.reps) || 0 : null);
 // A training day is a day you did a camera-counted set — hitting the target or
 // not. Failing at the edge of what you can do is training too.

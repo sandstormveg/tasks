@@ -120,6 +120,7 @@ export async function mount(el, ctx, route, ui) {
       <fieldset><legend>Training coach</legend>
         <label class="check"><input type="checkbox" name="coachVoice" ${s.coachVoice ? "checked" : ""}> Coach's voice: he counts your reps, calls the tempo, cues your form and calls your rest out loud (tap his portrait to hush)</label>
         <label class="check"><input type="checkbox" name="trainingReminders" ${s.trainingReminders !== false ? "checked" : ""}> Training reminders: Brass pings at 18:00 if today's set is still waiting</label>
+        ${ctx.store.lastWorkout ? html`<p class="small muted">Last watch workout seen: ${ctx.store.lastWorkout.name}, ${new Date(ctx.store.lastWorkout.start).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>` : html`<p class="small muted">No watch workout seen yet. Once your watch's workouts reach Health Connect, the newest shows here.</p>`}
         <div class="grid2">
           <label class="field"><span>Name</span><input class="input" name="coachName" value="${s.coachName}" maxlength="24"></label>
         </div>

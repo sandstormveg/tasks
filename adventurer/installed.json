@@ -1,5 +1,5 @@
 {
- "source": "sandstormveg/Adventurer@a5f1c755a1a7",
+ "source": "sandstormveg/Adventurer@7f30047fea73",
  "files": [
   "icons/icon.svg",
   "index.html",
@@ -12,6 +12,7 @@
   "src/core/achievements.js",
   "src/core/balance.js",
   "src/core/coach.js",
+  "src/core/endurance.js",
   "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",

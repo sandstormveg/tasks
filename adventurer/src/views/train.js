@@ -43,6 +43,7 @@ export async function mount(el, ctx, route, ui) {
     const el2 = eligibility(quests, { profile, today });
     const { grade, next } = el2;
     const todays = quests.filter((q) => q.origin === "training" && dayOf(q.posted) === today);
+    const endure = quests.find((q) => q.origin === "endurance" && q.expires === today);
     const plan = todays.length ? null : trainingPlan(quests, { profile, today, now: ctx.now() });
     const record = attempts(quests).slice(0, 6);
     const s = ctx.settings();
@@ -61,6 +62,7 @@ export async function mount(el, ctx, route, ui) {
       ${next ? testPanel(el2, profile) : html`<p class="empty">You've passed every grade. The trainer keeps setting max sets so you can see where you stand.</p>`}
       <section class="train-day">
         <h3>Today from the trainer</h3>
+        ${endure ? enduranceRow(endure) : ""}
         ${todays.length ? html`<div class="missions">${todays.map((q) => mission(q, today))}</div>`
           : plan?.rest ? html`<p class="muted">Rest day — three training days in a row earn one. Quests from the rest of your life still count toward the test.</p>`
           : el2.eligible ? html`<p class="muted">Nothing set: you've hit every target. Sit the test when you're ready.</p>`
@@ -99,6 +101,7 @@ export async function mount(el, ctx, route, ui) {
 }
 
 function postToday(ctx) {
+  ctx.checkEndurance();
   try {
     const { missions } = trainingPlan(ctx.quests(), { profile: ctx.store.profile(), today: ctx.today(), now: ctx.now() });
     const have = ctx.store.ids();
@@ -147,6 +150,15 @@ function testPanel(e, profile) {
     ${e.eligible ? html`<button class="btn primary" data-sit>Sit the ${e.next.id}-grade test</button>`
       : html`<p class="muted">To sit it: ${e.missing.join("; ")}.</p>`}
   </section>`;
+}
+
+function enduranceRow(q) {
+  return html`<div class="mission ${q.status}">
+    <div class="grow">
+      <div class="mission-title">${q.title}</div>
+      ${q.status === "done" ? html`<div class="small ok">✓ ${Number(q.evidence?.steps || 0).toLocaleString()} steps · +${q.xp} XP</div>` : html`<div class="muted small">${q.brief}</div>`}
+    </div>
+  </div>`;
 }
 
 function mission(q, today) {
