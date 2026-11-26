@@ -391,3 +391,4 @@ body.stamp .content { animation: stamp .9s ease-out; }
 /* Sign in with GitHub (Android app) */
 .signin { margin: 0.5rem 0; }
 .signin-code b { font-family: var(--mono, monospace); font-size: 1.5rem; letter-spacing: 0.12em; }
+.attr-raise { margin: 2px 0 4px; }

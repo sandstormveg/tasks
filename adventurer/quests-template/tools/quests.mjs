@@ -83,7 +83,7 @@ function parseObjective(spec, n = 1) {
 // src/core/quests.js
 var STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 var OPEN = /* @__PURE__ */ new Set(["posted", "accepted"]);
-var ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
+var ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test", "endurance", "journal"];
 var GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
 var PROOFS = ["gps", "reps", "jog", "photo", "journal", "honor"];
 var EXERCISES2 = ["pushup", "squat", "situp", "dip", "pullup"];
@@ -296,6 +296,9 @@ var METRICS = {
   }
 };
 
+// src/core/steps.js
+var STEPS_WRITE_EVERY_MS = 10 * 60 * 1e3;
+
 // src/core/stats.js
 function valueAt(p, cdf) {
   if (p <= cdf[0][1]) return cdf[0][0];
@@ -331,6 +334,7 @@ var PREREQ = {
   A: { sessions: 16, life: 8 },
   S: { sessions: 20, life: 10 }
 };
+var ACCESSORY = { situp: LADDER.situp, pullup: { D: 3, C: 5, B: 8, A: 12, S: 16 } };
 var RETAKE_DAYS = 3;
 var DAY = 864e5;
 var dayOf = localDay;
@@ -344,7 +348,7 @@ function testTargets(grade2, profile = {}) {
   }
   return out;
 }
-var isTrainer = (q) => q.origin === "training" || q.origin === "test";
+var isTrainer = (q) => q.origin === "training" || q.origin === "test" || q.origin === "endurance";
 var verifiedReps = (q) => q.evidence?.type === "reps" && q.evidence.verified ? Number(q.evidence.reps) || 0 : null;
 var trained = (q) => q.origin === "training" && ["done", "failed"].includes(q.status) && (verifiedReps(q) ?? 0) > 0;
 function attempts(quests2) {

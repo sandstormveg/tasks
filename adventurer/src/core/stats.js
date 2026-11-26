@@ -135,11 +135,24 @@ export function attributeStats({ quests = [], history = [], measurements = [], p
       return n ? { value: n, from: "quests" } : null;
     },
     reflections: () => { const v = questWeight(quests, "wis"); return v ? { value: v, from: "quests" } : null; },
+    // Minutes of watch workouts and tracked jogs in the last 7 days (the endurance mission itself isn't counted twice).
+    activeMinutes: () => {
+      const weekAgo = new Date(Date.parse(today) - 7 * 864e5).toISOString().slice(0, 10);
+      const mins = done.filter((q) => q.evidence?.type === "jog" && q.origin !== "endurance" && localDay(q.evidence.started || q.completed) > weekAgo)
+        .reduce((s, q) => s + (Number(q.evidence.minutes) || 0), 0);
+      return mins ? { value: Math.round(mins), from: "workouts" } : null;
+    },
+    learning: () => {
+      const v = questWeight(quests, "int") + (Number(latest("books")?.value) || 0);
+      return v ? { value: Math.round(v * 10) / 10, from: "quests" } : null;
+    },
     social: () => { const v = questWeight(quests, "cha"); return v ? { value: v, from: "quests" } : null; },
     tasksPerWeek: () => (history.length ? { value: Math.round(tasksPerWeek(history, today) * 10) / 10, from: "tasks" } : null),
   };
   const stepPoints = vitFromSteps(stepsDays).total;
-  return ATTRIBUTES.map((a) => {
+  return ATTRIBUTES.map((a0) => {
+    // INT uses books read once you've entered some; until then, the guild's learning ladder.
+    const a = a0.id === "int" && !latest("books") ? { ...a0, metric: "learning" } : a0;
     const m = METRICS[a.metric];
     const cdf = m.cdf(profile);
     const got = derived[a.metric]?.() || (latest(a.metric) ? { value: latest(a.metric).value, from: "typed", date: latest(a.metric).date } : null);
@@ -180,4 +193,15 @@ export function streak({ quests = [], history = [], today }) {
   let n = 0;
   while (days.has(d.toISOString().slice(0, 10))) { n++; d = new Date(d - 864e5); }
   return n;
+}
+
+/**
+ * Where an attribute sits on the radar (0–100). Ranked: its percentile, or its level's
+ * share if that's higher, so a high level never draws as a dent. Unranked but with XP:
+ * plotted by level alone (marked hollow). No XP and no rank: the centre.
+ */
+export function radarPoint(a) {
+  const byLevel = a?.xp > 0 ? Math.min(100, (a.level?.level || 1) * 10) : 0;
+  if (a?.percentile != null) return { value: Math.max(a.percentile, byLevel), ranked: true };
+  return { value: byLevel, ranked: false };
 }

@@ -12,7 +12,7 @@ import { validateObjectives, hasObjectives, objectiveXp, objectiveCount } from "
 // or a quest you handed in as failed (0 XP, an optional lesson learned in evidence.note).
 export const STATUSES = ["requested", "posted", "accepted", "done", "failed", "declined", "expired"];
 export const OPEN = new Set(["posted", "accepted"]);
-export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test"];
+export const ORIGINS = ["task", "inferred", "request", "guild", "local", "self", "training", "test", "endurance", "journal"];
 export const GIVERS = ["guildmaster", "relay", "board", "self", "trainer"];
 export const PROOFS = ["gps", "reps", "jog", "photo", "journal", "honor"];
 export const EXERCISES = ["pushup", "squat", "situp", "dip", "pullup"];

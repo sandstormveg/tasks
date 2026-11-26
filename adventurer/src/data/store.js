@@ -47,6 +47,7 @@ export class Store {
     this.status = load("status", { lastSync: null, error: null });
     this.research = load("research", null); // research/ file list + source tags, for expedition objectives
     this.steps = load("steps", { days: {} }); // watch-counted daily totals, read-only from quests/steps.json
+    this.journalActivity = load("journalActivity", ""); // journal/activity.json: entry counts per day, nothing else
     this.primer = load("primer", { text: "", sha: null }); // the journal's themes feed, read-only except switch-off
     this.importedWorkouts = load("importedWorkouts", []); // watch session ids already turned into jogs
     this.workoutsImportedAt = load("workoutsImportedAt", null);
@@ -64,7 +65,7 @@ export class Store {
     save("quests", this.quests); save("stats", this.stats); save("tasks", this.tasks); save("status", this.status);
     save("showcase", this.showcase); save("taskOps", this.taskOps); save("research", this.research);
     save("steps", this.steps);
-    save("primer", this.primer);
+    save("primer", this.primer); save("journalActivity", this.journalActivity);
     save("importedWorkouts", this.importedWorkouts); save("workoutsImportedAt", this.workoutsImportedAt); save("lastWorkout", this.lastWorkout);
     save("notices", this.notices); save("noticesSeen", this.noticesSeen); save("noticesAsked", this.noticesAsked);
     save("reminders", this.reminders);
@@ -179,6 +180,10 @@ export async function sync(store, { token, owner, repo, folder, publicRepo, temp
   // The journal's Primer feed: abstract themes only, one JSON object per line. Missing means nothing shared.
   const primerFile = await remote.readAny("primer/themes.jsonl");
   store.primer = { text: primerFile?.text || "", sha: primerFile?.sha || null };
+
+  // The journal's counts-only activity file (entries per day). Entries are never read.
+  const activityFile = await remote.readAny("journal/activity.json");
+  store.journalActivity = activityFile?.text || "";
 
   // Another World's notices: read-only, and a missing file means nothing posted yet.
   const noticesFile = await remote.readAny("anotherworld/notices.json");

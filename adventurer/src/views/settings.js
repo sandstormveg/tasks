@@ -99,6 +99,10 @@ export async function mount(el, ctx, route, ui) {
         <p class="hint">Adventurer only writes inside this folder, and refuses a public repo.</p>
         <div data-version>${versionBlock()}</div>
       </fieldset>
+      <fieldset><legend>Theme</legend>
+        <label class="field"><span>Look</span><select class="input" name="theme"><option value="" ${s.theme !== "hall" ? "selected" : ""}>Terminal (default)</option><option value="hall" ${s.theme === "hall" ? "selected" : ""}>Guild Hall</option></select></label>
+        <p class="hint">Guild Hall: parchment notices pinned to a walnut board, wax seals and lantern light, to match MindPrimer.</p>
+      </fieldset>
       <fieldset><legend>Receptionist</legend>
         <label class="check"><input type="checkbox" name="relay" ${s.relay ? "checked" : ""}> Show the receptionist at the counter</label>
         <label class="check"><input type="checkbox" name="voice" ${s.voice ? "checked" : ""}> Receptionist voice: she cheers you on out loud when you accept or turn in a quest (tap her portrait to hush)</label>
@@ -120,6 +124,7 @@ export async function mount(el, ctx, route, ui) {
       <fieldset><legend>Training coach</legend>
         <label class="check"><input type="checkbox" name="coachVoice" ${s.coachVoice ? "checked" : ""}> Coach's voice: he counts your reps, calls the tempo, cues your form and calls your rest out loud (tap his portrait to hush)</label>
         <label class="check"><input type="checkbox" name="trainingReminders" ${s.trainingReminders !== false ? "checked" : ""}> Training reminders: Brass pings at 18:00 if today's set is still waiting</label>
+        <label class="check"><input type="checkbox" name="journalNudge" ${s.journalNudge !== false ? "checked" : ""}> Journal nudge: Quicksilver pings between 21:00 and 23:00 if you haven't written today (Android app; it only sees whether an entry exists)</label>
         ${ctx.store.lastWorkout ? html`<p class="small muted">Last watch workout seen: ${ctx.store.lastWorkout.name}, ${new Date(ctx.store.lastWorkout.start).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>` : html`<p class="small muted">No watch workout seen yet. Once your watch's workouts reach Health Connect, the newest shows here.</p>`}
         <div class="grid2">
           <label class="field"><span>Name</span><input class="input" name="coachName" value="${s.coachName}" maxlength="24"></label>
@@ -193,7 +198,7 @@ export async function mount(el, ctx, route, ui) {
     const [owner, repo] = String(f.repo || "").split("/").map((x) => x.trim());
     if (!owner || !repo) return toast("Repo should look like owner/name.", { error: true });
     ctx.store.setSettings({ owner, repo, folder: (f.folder || "quests").trim().replace(/^\/+|\/+$/g, "") || "quests",
-      relay: !!f.relay, relayName: (f.relayName || "Joy").trim().slice(0, 24) || "Joy", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync, trainingReminders: !!f.trainingReminders });
+      relay: !!f.relay, relayName: (f.relayName || "Joy").trim().slice(0, 24) || "Joy", chattiness: f.chattiness, voice: !!f.voice, ...voiceOpts(f), ...coachOpts(f), autoSync: !!f.autoSync, trainingReminders: !!f.trainingReminders, theme: f.theme === "hall" ? "hall" : "", journalNudge: !!f.journalNudge });
     if (f.token?.trim()) ctx.store.setSecrets({ githubToken: f.token.trim() });
     const prof = ctx.store.profile();
     if (prof.sex !== f.sex || (prof.ageBand || "") !== f.ageBand) ctx.store.setStats({ profile: { sex: f.sex, ageBand: f.ageBand || undefined } });

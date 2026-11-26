@@ -9,8 +9,8 @@ function notices(scope = globalThis) {
   return cap.Plugins?.Notices || null;
 }
 
-export async function setNoticesAuth(token, owner, repo) {
-  try { await notices()?.setAuth({ token, owner, repo }); } catch {}
+export async function setNoticesAuth(token, owner, repo, { journalNudge = true } = {}) {
+  try { await notices()?.setAuth({ token, owner, repo, journalNudge }); } catch {}
 }
 
 export async function clearNoticesAuth() {

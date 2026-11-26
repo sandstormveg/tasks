@@ -65,6 +65,13 @@ export const METRICS = {
     cdf: () => [[0, 0], [1, 10], [3, 30], [6, 50], [12, 70], [24, 85], [40, 95], [70, 99]],
     source: "Guild ladder: no population data. Counts finished quests weighted to WIS. The journal itself is never read for this.",
   },
+  learning: {
+    label: "Learning quests done (reading, writing, study)",
+    unit: "quests",
+    scale: "game",
+    cdf: () => [[0, 0], [1, 10], [3, 30], [6, 50], [12, 70], [24, 85], [40, 95], [70, 99]],
+    source: "Guild ladder: no population data. Counts finished quests weighted to INT, plus books you've entered. Used until you enter books read this year.",
+  },
   social: {
     label: "Social quests done",
     unit: "quests",
@@ -91,5 +98,16 @@ export const ATTRIBUTES = [
   { id: "cha", name: "CHA", label: "Charisma", metric: "social" },
   { id: "wil", name: "WIL", label: "Will", metric: "tasksPerWeek" },
 ];
+
+/** One line per attribute: how to raise it. */
+export const HOW_TO_RAISE = {
+  str: "Train sets on the Train tab → STR",
+  vit: "Watch workouts and the daily Endurance mission → VIT",
+  agi: "Check in at new places → AGI",
+  int: "Reading, writing and study quests → INT",
+  wis: "Write in your journal (the daily Journal quest) → WIS",
+  cha: "Quests with other people → CHA",
+  wil: "Finish tasks in Tasks → WIL",
+};
 
 export const AGE_BANDS = ["20-29", "30-39", "40-49", "50-59", "60-69"];

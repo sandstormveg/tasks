@@ -9,8 +9,8 @@
 // and the attribute list itself is the table view of the radar.
 
 import { html, raw, sheet, toast } from "../ui/dom.js";
-import { METRICS, ATTRIBUTES, NORMS_VERSION } from "../core/norms.js";
-import { TIERS, LEVEL_NOTE } from "../core/stats.js";
+import { METRICS, ATTRIBUTES, NORMS_VERSION, HOW_TO_RAISE } from "../core/norms.js";
+import { TIERS, LEVEL_NOTE, radarPoint } from "../core/stats.js";
 import { STEPS_PER_VIT } from "../core/steps.js";
 import { explainTier } from "../core/relay.js";
 import { skillsSection, editSkill, trophiesSection, openTrophy, editTrophy } from "./showcase.js";
@@ -89,11 +89,12 @@ function attrRow(a, isOpen, s, stepLine = "") {
     <div class="attr-main">
       <span class="attr-name">${a.name}</span>
       <span class="attr-lv" title="${a.xp} XP here. ${a.level.into}/${a.level.need} to Lv ${a.level.level + 1}. ${LEVEL_NOTE}">Lv ${a.level.level}</span>
-      <span class="tier t-${a.tier?.id || "none"}">${a.tier?.id || "?"}</span>
+      ${a.tier && a.percentile != null ? html`<span class="tier t-${a.tier.id}">${a.tier.id}</span>` : ""}
       <span class="attr-label">${a.label}</span>
       <span class="attr-val">${fmt(a.value)} <small>${a.value == null ? "unranked" : a.unit}</small></span>
     </div>
     ${stepLine ? html`<div class="attr-steps muted small">${stepLine}</div>` : ""}
+    <div class="attr-raise muted small">${HOW_TO_RAISE[a.id] || ""}</div>
     <div class="pbar" aria-hidden="true"><i style="width:${p ?? 0}%"></i>${TIERS.slice(1).map((t) => html`<b style="left:${t.min}%"></b>`)}</div>
     ${isOpen ? html`<div class="attr-detail">
       ${s.relay ? html`<p class="relay-line">${s.relayName}: ${explainTier(a)}</p>` : ""}
@@ -116,12 +117,13 @@ function radar(attrs) {
   const ring = (f) => attrs.map((_, i) => pt(i, R * f).map((v) => v.toFixed(1)).join(",")).join(" ");
   const rings = [0.25, 0.5, 0.75, 1].map((f) => `<polygon points="${ring(f)}" class="grid"/>`).join("");
   const spokes = attrs.map((_, i) => { const [x, y] = pt(i, R); return `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="grid"/>`; }).join("");
-  const shape = attrs.map((a, i) => pt(i, (R * (a.percentile ?? 0)) / 100).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const shape = attrs.map((a, i) => pt(i, (R * radarPoint(a).value) / 100).map((v) => v.toFixed(1)).join(",")).join(" ");
   const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
   const dots = attrs.map((a, i) => {
-    const [x, y] = pt(i, (R * (a.percentile ?? 0)) / 100);
-    const tip = a.percentile == null ? `${a.name}: unranked` : `${a.name} ${a.tier.id} · ${Math.round(a.percentile)}th pct · ${fmt(a.value)} ${a.unit}`;
-    return `<g data-tip="${esc(tip)}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="14" class="hit"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" class="${a.percentile == null ? "dot empty" : "dot"}"/></g>`;
+    const rp = radarPoint(a);
+    const [x, y] = pt(i, (R * rp.value) / 100);
+    const tip = a.percentile == null ? `${a.name}: Lv ${a.level?.level ?? 1}, not ranked yet` : `${a.name} ${a.tier.id} · ${Math.round(a.percentile)}th pct · ${fmt(a.value)} ${a.unit}`;
+    return `<g data-tip="${esc(tip)}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="14" class="hit"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" class="${rp.ranked ? "dot" : "dot empty"}"/></g>`;
   }).join("");
   const labels = attrs.map((a, i) => {
     const [x, y] = pt(i, R + 22);

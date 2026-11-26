@@ -13,6 +13,7 @@ import { isExpired, OPEN, payout, localDay } from "./core/quests.js";
 import { workoutCandidates, workoutQuest, workoutMinutes, workoutId } from "./core/workouts.js";
 import { newNoticeIds, brassDue } from "./core/notices.js";
 import { enduranceUpdates } from "./core/endurance.js";
+import { journalUpdates } from "./core/journalquest.js";
 import { toast } from "./ui/dom.js";
 import { skillStats } from "./core/skills.js";
 import { cabinet } from "./core/achievements.js";
@@ -86,7 +87,7 @@ export function createContext(host) {
       try {
         const s = ctx.settings();
         await sync(store, { token, owner: s.owner, repo: s.repo, publicRepo: s.publicRepo, folder: s.folder, device: deviceName() });
-        await setNoticesAuth(token, s.owner, s.repo);
+        await setNoticesAuth(token, s.owner, s.repo, { journalNudge: s.journalNudge !== false });
         ctx.notifyNewNotices();
         ctx.checkBrassReminder();
         synced = true;
@@ -98,7 +99,7 @@ export function createContext(host) {
         ctx.syncing = false;
         store.emit({ op: "sync-end" });
       }
-      if (synced) { ctx.checkEndurance(); ctx.importWorkouts().catch(() => {}); }
+      if (synced) { ctx.checkEndurance(); ctx.checkJournal(); ctx.importWorkouts().catch(() => {}); }
     },
     /** Quests with expiry applied (an open quest past its date reads as expired, and is saved so). */
     quests() {
@@ -236,6 +237,19 @@ export function createContext(host) {
         ctx.importing = false;
       }
     },
+    /** Post today's Journal quest and tick off any day the journal shows an entry for. */
+    checkJournal() {
+      try {
+        const today = ctx.today();
+        const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1);
+        const updates = journalUpdates(store.all(), store.journalActivity, { today, yesterday: d.toISOString().slice(0, 10), now: ctx.now() });
+        for (const q of updates) store.put(q);
+        if (updates.some((q) => q.status === "done")) toast("Journal written: +WIS");
+        return updates.length;
+      } catch {
+        return 0;
+      }
+    },
     /** Post today's endurance mission and tick off any a jog has earned. Returns how many changed. */
     checkEndurance() {
       try {
@@ -294,6 +308,14 @@ export function createContext(host) {
     },
     forgetNoticesAuth() { clearNoticesAuthPlugin(); },
   };
+  // Theme: "hall" (Guild Hall: parchment notices on walnut) or the default terminal look. Its heading
+  // font (Cinzel, OFL) ships in fonts/ and only downloads when the theme is on.
+  const applyTheme = () => {
+    const hall = ctx.settings().theme === "hall";
+    document.documentElement.toggleAttribute("data-guild-hall", hall);
+  };
+  applyTheme();
+  store.on((c) => { if (c.op === "settings") applyTheme(); });
   return ctx;
 }
 

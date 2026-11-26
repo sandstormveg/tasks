@@ -1,7 +1,9 @@
 {
- "version": "f90f566181b6",
+ "version": "f5192bbcbb45",
  "files": [
   "./",
+  "fonts/cinzel-700.woff2",
+  "fonts/cinzel-OFL.txt",
   "icons/icon.svg",
   "index.html",
   "manifest.webmanifest",
@@ -17,6 +19,7 @@
   "src/core/forge.js",
   "src/core/geo.js",
   "src/core/grades.js",
+  "src/core/journalquest.js",
   "src/core/norms.js",
   "src/core/notices.js",
   "src/core/objectives.js",
@@ -55,6 +58,7 @@
   "src/views/train.js",
   "src/vision/reps-sheet.js",
   "styles/app.css",
+  "styles/hall.css",
   "styles/train.css",
   "host.json",
   "voices/index.json"

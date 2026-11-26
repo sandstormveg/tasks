@@ -7,7 +7,8 @@
 // and every write path is checked to stay inside the quests folder — except
 // writeData, which may write tasks-data's own task and history lists only.
 // Research is read for expedition objectives: the file list of research/ and the
-// front matter of new sources, never anything outside research/ (and never the journal).
+// front matter of new sources, never anything outside research/. Of the journal, only journal/activity.json
+// (entry counts per day) is read, for the daily Journal quest; entries themselves never are.
 
 const API = "https://api.github.com";
 
