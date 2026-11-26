@@ -68,6 +68,7 @@ export class SyncService {
     this._engine = new SyncEngine(this.ctx.store, remote, {
       deviceName: this.ctx.deviceName(),
       appName: this.label.charAt(0).toUpperCase() + this.label.slice(1),
+      activity: this.label === "journal", // publish activity.json (entry counts per day) for the Guild
       onProgress: (p) => this.set({ progress: p }),
     });
     this._key = key;

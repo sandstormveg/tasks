@@ -19,6 +19,7 @@ The app writes here; you can also read every file with nothing but a text editor
 | `interpretations/YYYY/<id>.md` | AI readings of documents, accepted connections — always labelled | AI, accepted by you |
 | `imports/<id>.md` | Verification reports from imports (e.g. Notion) | The app |
 | `config/*.yaml` | Preferences, chapters, sealing parameters (no secrets) | The app |
+| `activity.json` | Entries per day for the last 60 days: `{"version":1,"days":{"YYYY-MM-DD":n}}`. Dates and counts only. **The one journal file other apps may read** (the Guild's daily Journal quest) | The app, on sync |
 | `tools/journal.mjs` | Command-line tool for steward sessions | — |
 
 Each record is Markdown with YAML frontmatter. Fields beginning with `_` never appear here;

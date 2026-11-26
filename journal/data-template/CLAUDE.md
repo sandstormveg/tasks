@@ -91,6 +91,9 @@ command from **this folder** (`cd journal`), treat every path above as relative 
 change or commit anything outside it, except `primer/themes.jsonl` written by `primer export` (rule 9).
 A steward run's commit still touches only `meta/proposals/` here.
 
+`activity.json` (entry counts per day, nothing else) is the one file here that other apps, such as the
+Guild, may read. The app rewrites it on sync; a steward never edits it.
+
 ## If tools/journal.mjs is missing or outdated
 
 Copy `data-template/tools/journal.mjs` from the app repository (`sandstormveg/Journal_system`), or use the

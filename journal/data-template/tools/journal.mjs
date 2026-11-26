@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:d71d6ddc37ca86bc
+// Living Journal steward tool — bundled from sandstormveg/Journal_system (tools/journal.mjs). inputs:dc22b9e004277bfb
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/journal.mjs
@@ -1539,6 +1539,8 @@ function validateExperiment(rec) {
   else for (const k2 of Object.keys(rec.cost || {})) if (!COSTS.some(([c]) => c === k2)) errors.push(`unknown cost "${k2}"`);
   for (const k2 of ["sources", "produced"]) if (rec[k2] != null && !Array.isArray(rec[k2])) errors.push(`${k2} must be a list of source ids`);
   for (const s of rec.log || []) if (!s?.date || !s?.text || !s?.author) errors.push("a log step needs date, author and text");
+  if (rec.assist != null && typeof rec.assist !== "boolean") errors.push("assist must be true or false");
+  for (const n of rec.agent_notes || []) if (!n?.date || !n?.author || !n?.text) errors.push("an agent note needs date, author and text");
   if (rec.status === "proposed" && rec.verdict) errors.push("a proposition has no verdict yet");
   return errors;
 }

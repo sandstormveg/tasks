@@ -13,6 +13,8 @@
 
 import { serialize, parse, pathFor, isRecordPath, isMediaPath, gitBlobSha, stripLocal } from "../core/format.js";
 import { merge3 } from "../core/merge.js";
+import { activityOf, activityText, ACTIVITY_PATH } from "../core/activity.js";
+import { dayKey, addDays } from "../core/dates.js";
 import { ConflictError, SyncError } from "./github.js";
 
 const STATE_KEY = "sync-state";
@@ -20,7 +22,8 @@ const STATE_KEY = "sync-state";
 export function syncStateKey(remote) { return `${STATE_KEY}:${remote.label}`; }
 
 export class SyncEngine {
-  constructor(store, remote, { seedFiles = [], maxBlobUploads = 25, deviceName = "device", appName = "Journal", onProgress } = {}) {
+  constructor(store, remote, { seedFiles = [], maxBlobUploads = 25, deviceName = "device", appName = "Journal", onProgress, activity = false } = {}) {
+    this.activity = activity;
     this.store = store;
     this.remote = remote;
     this.seedFiles = seedFiles;
@@ -111,6 +114,8 @@ export class SyncEngine {
       if (isRecordPath(f.path)) {
         index[f.path] = f.sha;
         if (oldIndex[f.path] !== f.sha) changedText.push(f);
+      } else if (f.path === ACTIVITY_PATH) {
+        index[f.path] = f.sha;
       } else if (isMediaPath(f.path)) {
         index[f.path] = f.sha;
         if (oldIndex[f.path] !== f.sha) await this.store.noteRemoteBlob(f.path, f.sha);
@@ -256,6 +261,13 @@ export class SyncEngine {
         await this.store.setSyncMeta(rec.id, { path, sha, base: content, dirty: !stillSame });
       });
       if (index[path] !== sha) result.pushed++;
+    }
+
+    // The counts-only activity file, when it differs from what's in the repo.
+    if (this.activity && typeof this.store.entries === "function") {
+      const content = activityText(activityOf(this.store.entries(), { today: dayKey(), addDays }));
+      const sha = await gitBlobSha(content);
+      if (index[ACTIVITY_PATH] !== sha) { changes.push({ path: ACTIVITY_PATH, content }); newIndex[ACTIVITY_PATH] = sha; }
     }
 
     if (!changes.length) {

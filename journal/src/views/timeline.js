@@ -38,7 +38,9 @@ function firstLine(d) {
 
 export async function mount(el, ctx, route, ui) {
   ui.setTitle("Timeline");
-  let mode = route.query.mode === "calendar" ? "calendar" : "list";
+  // Calendar by default; the last choice is remembered on this device.
+  const saved = (() => { try { return localStorage.getItem("journal.timeline-mode"); } catch { return null; } })();
+  let mode = ["list", "calendar"].includes(route.query.mode) ? route.query.mode : saved === "list" ? "list" : "calendar";
   let chapterId = route.query.chapter || "";
   let months = PAGE_MONTHS;
   let calMonth = route.query.month || monthKey(ctx.today());
@@ -172,7 +174,7 @@ export async function mount(el, ctx, route, ui) {
   ui.onStore(() => render());
   on(el, "click", "[data-act]", (e, b) => {
     const act = b.dataset.act;
-    if (act === "mode") { mode = b.dataset.mode; history.replaceState(null, "", `#/timeline?mode=${mode}`); return render(); }
+    if (act === "mode") { mode = b.dataset.mode; try { localStorage.setItem("journal.timeline-mode", mode); } catch {} history.replaceState(null, "", `#/timeline?mode=${mode}`); return render(); }
     if (act === "chapter") { chapterId = b.dataset.id; months = PAGE_MONTHS; return render(); }
     if (act === "more") { months += PAGE_MONTHS; return render(); }
     if (act === "cal") { calMonth = b.dataset.m; return render(); }

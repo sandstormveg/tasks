@@ -180,6 +180,8 @@ export function quicksilverLines(st, { chattiness = "normal", seed = 0 } = {}) {
   }[part];
   if (st.today) lines.push({ text: pick([`${N(st.today, "entry", "entries")} already today. The mixture's taking shape.`, "You've written today. Anything still settling?", "Already some ink on today's page. More, or let it rest?"], seed) });
   else if (st.since >= 4) lines.push({ text: pick(["It's been a little while. No need to catch up — even a single word counts.", `${st.since} days of quiet. No entry needed; start wherever you are.`], seed) });
+  // Nothing written yet today and the day's winding down: a gentle invite, never a nag.
+  else if (st.hour >= 17) lines.push({ text: pick(["Nothing in the vials yet today. A few lines before the day closes?", "The page for today is still blank. Even one line will do.", "Evening, and today's still unwritten. Want to set down a moment from it?"], seed), invite: true });
   else lines.push({ text: pick(hello, seed) });
 
   const prompt = PROMPTS[seed % PROMPTS.length];

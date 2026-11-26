@@ -1,5 +1,5 @@
 {
- "version": "723eb701cbc7",
+ "version": "1fa24b02365c",
  "files": [
   "./",
   "data-template/.claude/skills/journal-steward/SKILL.md",
@@ -36,6 +36,7 @@
   "src/app/sample.js",
   "src/app/sync-service.js",
   "src/app/to-research.js",
+  "src/core/activity.js",
   "src/core/atlas.js",
   "src/core/boards.js",
   "src/core/companions.js",

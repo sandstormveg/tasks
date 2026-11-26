@@ -96,7 +96,7 @@ export async function mount(el, ctx, route, ui) {
       <div class="card flat"><div class="chips">${themes.map(([k, label]) => html`<button class="chip ${s.theme === k ? "on" : ""}" data-theme="${k}">${label}</button>`)}</div>
         <span class="label" style="display:block;margin-top:12px">Text size <span class="faint">— the whole app, for reading (the same choices as the Journal)</span></span>
         <div class="chips">${TEXT_SIZES.map(([v, label]) => html`<button class="chip ${Number(s.textScale || 1) === v ? "on" : ""}" data-text-scale="${v}">${label}</button>`)}</div>
-        <p class="small faint" style="margin-bottom:0">For the size or colour of particular words, select them and use the <b>Aa</b> button by any of your notes.</p></div>
+        <p class="small faint" style="margin-bottom:0"><b>Aa</b> is on boards, writing and journal entries: select words there for a size or colour. Wider styling is in Settings → Themes.</p></div>
 
       <div class="section-title">Writing</div>
       <div class="card flat">

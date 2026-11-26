@@ -404,3 +404,27 @@ export function stringLabelSpot(curve, pins, { w = 0, h = 0, pad = 6 } = {}) {
   return null;
 }
 
+
+/**
+ * A thumbnail of a board: its pins as boxes and its strings as lines, scaled into a
+ * 300×100 box (the board tile's shape). Positions only, never text. Empty board → null.
+ */
+export function boardPreview(parts, { w = 300, h = 100, pad = 6 } = {}) {
+  const pins = (parts?.pins || []).filter((p) => [p.x, p.y, p.w, p.h].every(Number.isFinite));
+  if (!pins.length) return null;
+  const x0 = Math.min(...pins.map((p) => p.x)), y0 = Math.min(...pins.map((p) => p.y));
+  const x1 = Math.max(...pins.map((p) => p.x + p.w)), y1 = Math.max(...pins.map((p) => p.y + p.h));
+  const k = Math.min((w - 2 * pad) / Math.max(1, x1 - x0), (h - 2 * pad) / Math.max(1, y1 - y0));
+  const ox = (w - (x1 - x0) * k) / 2, oy = (h - (y1 - y0) * k) / 2;
+  const r = (v) => Math.round(v * 10) / 10;
+  const box = (p) => ({ x: r(ox + (p.x - x0) * k), y: r(oy + (p.y - y0) * k), w: r(Math.max(2, p.w * k)), h: r(Math.max(2, p.h * k)) });
+  const byId = new Map(pins.map((p) => [p.id, p]));
+  const mid = (p) => { const b = box(p); return { x: r(b.x + b.w / 2), y: r(b.y + b.h / 2) }; };
+  return {
+    w, h,
+    frames: pins.filter((p) => p.kind === "frame").map(box),
+    notes: pins.filter((p) => p.kind !== "frame").map(box),
+    strings: (parts.strings || []).filter((s) => byId.has(s.from) && byId.has(s.to))
+      .map((s) => ({ a: mid(byId.get(s.from)), b: mid(byId.get(s.to)), red: s.state !== "synthesised" })),
+  };
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:5be028c6eaf9e6cc
+// Research tool — bundled from sandstormveg/Journal_system (tools/research.mjs). inputs:672918fad9413dd7
 // Do not edit here; rebuild with `npm run bundle-cli` in the app repository.
 
 // tools/research.mjs
@@ -1526,11 +1526,27 @@ function makeExperiment(fields = {}, { now, author = "self" } = {}) {
     cost: cleanCost(fields.cost),
     sources: ids(fields.sources),
     status: EXP_STATUSES[fields.status] ? fields.status : "proposed",
+    assist: fields.assist === true || void 0,
+    prompt: text(fields.prompt) || void 0,
+    prompted: fields.prompted || void 0,
+    agent_notes: Array.isArray(fields.agent_notes) && fields.agent_notes.length ? fields.agent_notes : void 0,
     author,
     created: now,
     updated: now,
     visibility: "private"
   };
+}
+function assistWaiting(x) {
+  if (!x || x.deleted || x.assist !== true) return false;
+  if (!text(x.prompt)) return false;
+  const asked = Date.parse(x.prompted || "") || 0;
+  return !(x.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
+}
+function assistQueue(experiments) {
+  return experiments.filter(assistWaiting).sort((a, b2) => String(a.prompted || a.created || "").localeCompare(String(b2.prompted || b2.created || "")));
+}
+function makeAgentNote(noteText, { author, now }) {
+  return { id: newId("an", now), author, date: now, text: text(noteText) };
 }
 function addLogStep(exp, stepText, { now, author = "self" } = {}) {
   const t = text(stepText);
@@ -1556,6 +1572,8 @@ function validateExperiment(rec) {
   else for (const k2 of Object.keys(rec.cost || {})) if (!COSTS.some(([c]) => c === k2)) errors.push(`unknown cost "${k2}"`);
   for (const k2 of ["sources", "produced"]) if (rec[k2] != null && !Array.isArray(rec[k2])) errors.push(`${k2} must be a list of source ids`);
   for (const s of rec.log || []) if (!s?.date || !s?.text || !s?.author) errors.push("a log step needs date, author and text");
+  if (rec.assist != null && typeof rec.assist !== "boolean") errors.push("assist must be true or false");
+  for (const n of rec.agent_notes || []) if (!n?.date || !n?.author || !n?.text) errors.push("an agent note needs date, author and text");
   if (rec.status === "proposed" && rec.verdict) errors.push("a proposition has no verdict yet");
   return errors;
 }
@@ -1880,17 +1898,17 @@ function tagCounts(sources) {
   for (const s of sources) if (!s.deleted) for (const t of s.tags || []) m.set(t, (m.get(t) || 0) + 1);
   return [...m.entries()].sort((a, b2) => b2[1] - a[1] || a[0].localeCompare(b2[0]));
 }
-function assistWaiting(s) {
+function assistWaiting2(s) {
   if (!s || s.deleted || s.assist !== true) return false;
   if (s.corkboard === true && !s.board) return true;
   if (!String(s.prompt || "").trim()) return false;
   const asked = Date.parse(s.prompted || "") || 0;
   return !(s.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
 }
-function assistQueue(sources) {
-  return sources.filter(assistWaiting).sort((a, b2) => String(a.prompted || a.added || "").localeCompare(String(b2.prompted || b2.added || "")));
+function assistQueue2(sources) {
+  return sources.filter(assistWaiting2).sort((a, b2) => String(a.prompted || a.added || "").localeCompare(String(b2.prompted || b2.added || "")));
 }
-function makeAgentNote(text2, { author, now }) {
+function makeAgentNote2(text2, { author, now }) {
   return { id: newId("an", now), author, date: now, text: String(text2 || "").trim() };
 }
 
@@ -2708,7 +2726,7 @@ function describe(s) {
   if (s.quotes?.length) out.push("", "## Quotes", ...s.quotes.map((q2) => `> ${q2.text}${q2.where ? ` (${q2.where})` : ""}`));
   if (String(s.body || "").trim()) out.push("", "## Notes", s.body.trim());
   if (s.assist === true || s.prompt) {
-    out.push("", `## Assist \u2014 ${s.assist === true ? "on" : "off"}${assistWaiting(s) ? " \xB7 waiting for an answer" : ""}`);
+    out.push("", `## Assist \u2014 ${s.assist === true ? "on" : "off"}${assistWaiting2(s) ? " \xB7 waiting for an answer" : ""}`);
     if (s.corkboard === true) out.push(s.board ? `Corkboard: built (${s.board})` : 'Corkboard: asked for, not built yet \u2014 new-board "<title>" --source ' + s.id);
     if (s.prompt) out.push(`Their prompt${s.prompted ? ` (${String(s.prompted).slice(0, 16).replace("T", " ")})` : ""}:`, s.prompt.trim());
   }
@@ -3007,24 +3025,39 @@ ${rel2}`);
       return next;
     }
     case "assists": {
-      const list = a.all ? sources.filter((x) => x.assist === true) : assistQueue(sources);
+      const exps = byType("experiment").filter((x) => !x.deleted);
+      const list = a.all ? [...sources.filter((x) => x.assist === true), ...exps.filter((x) => x.assist === true)] : [...assistQueue2(sources), ...assistQueue(exps)];
       if (a.json) return json(list);
-      print(list.length ? list.map((x) => `${line(x)}${assistWaiting(x) ? "" : "  (answered)"}${x.corkboard === true ? x.board ? `  [corkboard ${x.board}]` : "  [turn into a corkboard]" : ""}
+      print(list.length ? list.map((x) => x.type === "experiment" ? `${x.id}  [experiment] ${x.title || x.question || ""}${assistWaiting(x) ? "" : "  (answered)"}
+    \u2192 ${String(x.prompt || "(no prompt yet)").trim().split("\n")[0].slice(0, 160)}` : `${line(x)}${assistWaiting2(x) ? "" : "  (answered)"}${x.corkboard === true ? x.board ? `  [corkboard ${x.board}]` : "  [turn into a corkboard]" : ""}
     \u2192 ${String(x.prompt || "(no prompt yet)").trim().split("\n")[0].slice(0, 160)}`).join("\n") : a.all ? "No source has Assist on." : "No prompts waiting.");
       return list;
     }
     case "agent-note": {
-      const s = sources.find((x) => x.id === rest[0]);
       const text2 = str(a.text) || rest.slice(1).join(" ");
+      const ex = byType("experiment").find((x) => x.id === rest[0] && !x.deleted);
+      if (ex && text2.trim()) {
+        if (ex.assist !== true) {
+          print(`Assist is off for ${ex.id} \u2014 the owner hasn't asked for an agent here.`);
+          return null;
+        }
+        const note2 = makeAgentNote(text2, { author: str(a.author) || AUTHOR, now });
+        const next2 = { ...ex, agent_notes: [...ex.agent_notes || [], note2], updated: now };
+        delete next2._path;
+        save(root, next2);
+        print(`Agent note added to experiment ${ex.title || ex.id}.`);
+        return note2;
+      }
+      const s = sources.find((x) => x.id === rest[0]);
       if (!s || !text2.trim()) {
-        print('Usage: agent-note <source id> --text "\u2026"');
+        print('Usage: agent-note <source or experiment id> --text "\u2026"');
         return null;
       }
       if (s.assist !== true) {
         print(`Assist is off for ${s.id} \u2014 the owner hasn't asked for an agent here.`);
         return null;
       }
-      const note = makeAgentNote(text2, { author: str(a.author) || AUTHOR, now });
+      const note = makeAgentNote2(text2, { author: str(a.author) || AUTHOR, now });
       const next = { ...s, agent_notes: [...s.agent_notes || [], note], updated: now };
       delete next._path;
       save(root, next);

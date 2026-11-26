@@ -9,14 +9,15 @@
 
 import { html, raw, on, debounce, autosize, toast } from "../../ui/dom.js";
 import { icon } from "../../ui/icons.js";
-import { fmtButton, formatted, wireFormat } from "../../ui/textformat.js";
-import { EXP_STATUSES, VERDICTS, COSTS, addLogStep } from "../../core/experiments.js";
+import { formatted } from "../../ui/textformat.js";
+import { EXP_STATUSES, VERDICTS, COSTS, addLogStep, assistWaiting } from "../../core/experiments.js";
 import { makeBoard, boardParts, boardSummary } from "../../core/boards.js";
 import { pickSource } from "../ui.js";
 import { moveExperiment } from "./experiments.js";
 
 const who = (a) => (a === "claude" || a === "claude-code" ? "Claude" : !a || a === "self" ? "You" : a);
 const day = (iso) => String(iso || "").slice(0, 10);
+const when = (iso) => String(iso || "").slice(0, 16).replace("T", " ");
 
 export async function mount(el, ctx, route, ui) {
   const id = route.params[0];
@@ -30,8 +31,8 @@ export async function mount(el, ctx, route, ui) {
   const title = () => ui.setTitle(EXP_STATUSES[x.status] || "Experiment", { back: "#/experiments" });
   title();
 
-  const field = (k, label, ph, { rows = 2, hint = "" } = {}) => html`<div class="fmt-scope"><label class="field"><span>${label}${hint ? html` <span class="faint">${hint}</span>` : ""}</span>
-    <textarea class="textarea" data-f="${k}" data-fmtable rows="${rows}" placeholder="${ph}">${x[k] || ""}</textarea></label>${fmtButton(label)}</div>`;
+  const field = (k, label, ph, { rows = 2, hint = "" } = {}) => html`<label class="field"><span>${label}${hint ? html` <span class="faint">${hint}</span>` : ""}</span>
+    <textarea class="textarea" data-f="${k}" rows="${rows}" placeholder="${ph}">${x[k] || ""}</textarea></label>`;
   const links = (key, empty) => {
     const list = (x[key] || []).map((sid) => ctx.store.get(sid) || { id: sid, missing: true });
     return html`${list.length ? list.map((s) => html`<div class="piece-source">${s.missing ? html`<span class="faint">${s.id} (not on this device)</span>` : html`<a href="#/source/${s.id}">${s.title || s.url}</a>`}<button class="btn icon small ghost" data-rm="${key}:${s.id}" aria-label="Remove">${raw(icon("close"))}</button></div>`) : html`<p class="small faint">${empty}</p>`}
@@ -83,10 +84,20 @@ export async function mount(el, ctx, route, ui) {
           <div class="section-title">Sources it produced</div>
           ${links("produced", "None yet — link anything you wrote or saved from it.")}
         ` : ""}
+        <section class="src-assist exp-assist ${x.assist === true ? "on" : ""}" aria-label="Assist">
+          <label class="assist-toggle"><input type="checkbox" data-assist ${x.assist === true ? "checked" : ""}><span><b>Assist</b> — let an agent work with this</span></label>
+          <div class="assist-body">
+            <label class="field"><span>Your prompt <span class="faint">— what you'd like it to do</span></span><textarea class="textarea" data-f="prompt" rows="3" placeholder="e.g. Find the strongest objection to this method">${x.prompt || ""}</textarea></label>
+            <p class="small faint" data-assist-state>${x.assist !== true ? "" : !String(x.prompt || "").trim() ? "Write what you'd like and an agent picks it up on its next pass." : assistWaiting(x) ? "Waiting — an agent picks this up on its next pass." : "Answered. Change the prompt to ask again."}</p>
+            <p class="small faint">Agents may add notes and propose experiments here. They never select one, or write your hypothesis, expectation, result or verdict.</p>
+          </div>
+          <div data-agent-notes>${(x.agent_notes || []).length ? [...(x.agent_notes || [])].reverse().map((n) => html`<article class="agent-note">
+            <header><span class="badge ai" title="Written by">${who(n.author)}</span><span class="faint small">${when(n.date)}</span><span class="grow"></span><button type="button" class="btn icon small ghost" data-rm-agent-note="${n.id}" aria-label="Remove this agent note">${raw(icon("trash"))}</button></header>
+            <div class="prose">${formatted(n.text)}</div></article>`) : ""}</div>
+        </section>
       </div>
     </div>`);
     for (const t of el.querySelectorAll("textarea")) autosize(t, 0.6);
-    ui.cleanup(wireFormat(el));
   };
   render();
 
@@ -105,7 +116,11 @@ export async function mount(el, ctx, route, ui) {
     if (Object.keys(pending).length || (el.contains(document.activeElement) && document.activeElement.matches("textarea, input, [contenteditable]"))) return;
     render();
   });
-  on(el, "input", "[data-f]", (e, f) => { pending[f.dataset.f] = f.value.trim() ? f.value : ""; flush(); });
+  on(el, "input", "[data-f]", (e, f) => {
+    pending[f.dataset.f] = f.value.trim() ? f.value : "";
+    if (f.dataset.f === "prompt") pending.prompted = ctx.now();
+    flush();
+  });
   on(el, "input", "[data-cost]", (e, f) => {
     const cost = { ...(x.cost || {}), ...(pending.cost || {}) };
     if (f.value.trim()) cost[f.dataset.cost] = f.value; else delete cost[f.dataset.cost];
@@ -119,9 +134,24 @@ export async function mount(el, ctx, route, ui) {
     x = next;
     title();
     render();
-    if (b.dataset.move === "active" && !x.hypothesis) { toast("Before you start: your hypothesis and what you expect."); el.querySelector('.fmt-scope:has([data-f="hypothesis"]) .rich-field, [data-f="hypothesis"]')?.focus(); }
+    if (b.dataset.move === "active" && !x.hypothesis) { toast("Before you start: your hypothesis and what you expect."); el.querySelector('[data-f="hypothesis"]')?.focus(); }
   });
   on(el, "click", "[data-verdict]", async (e, b) => { await save({ verdict: x.verdict === b.dataset.verdict ? undefined : b.dataset.verdict }); render(); });
+  on(el, "change", "[data-assist]", async (e) => {
+    await flush.flush();
+    await save({ assist: e.target.checked ? true : undefined });
+    render();
+    if (e.target.checked) el.querySelector("[data-f=prompt]")?.focus();
+  });
+  on(el, "click", "[data-rm-agent-note]", async (e, b) => {
+    const ns = [...(x.agent_notes || [])];
+    const i = ns.findIndex((n) => n.id === b.dataset.rmAgentNote);
+    if (i < 0) return;
+    const [gone] = ns.splice(i, 1);
+    await save({ agent_notes: ns.length ? ns : undefined });
+    render();
+    toast("Agent note removed", { action: "Undo", onAction: async () => { await save({ agent_notes: [...(x.agent_notes || []), gone].sort((a, z) => String(a.date).localeCompare(String(z.date))) }); render(); } });
+  });
   const addStep = async () => {
     const input = el.querySelector("[data-step]");
     if (!input?.value.trim()) return;

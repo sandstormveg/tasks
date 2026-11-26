@@ -6,7 +6,8 @@
 // "expect"), keep a dated log of steps, and work on its own corkboard. When it's
 // Done you write the result, what surprised you and a verdict.
 //
-// Agents may propose and add to the log, always marked as theirs. They never
+// Agents may propose and add to the log, always marked as theirs; where the
+// owner turns Assist on, they may also leave their own dated notes. They never
 // select, and never write the hypothesis, expectation, result, surprise or verdict:
 // those are yours (OWNER_FIELDS). A proposition is set aside, never deleted, so
 // nothing is lost and a starter idea can't come back after you've put it away.
@@ -41,11 +42,38 @@ export function makeExperiment(fields = {}, { now, author = "self" } = {}) {
     cost: cleanCost(fields.cost),
     sources: ids(fields.sources),
     status: EXP_STATUSES[fields.status] ? fields.status : "proposed",
+    assist: fields.assist === true || undefined,
+    prompt: text(fields.prompt) || undefined,
+    prompted: fields.prompted || undefined,
+    agent_notes: Array.isArray(fields.agent_notes) && fields.agent_notes.length ? fields.agent_notes : undefined,
     author,
     created: now,
     updated: now,
     visibility: "private",
   };
+}
+
+/**
+ * Assist: the owner lets an agent work with one experiment. `prompt` is their
+ * instruction; `prompted` is when they last changed it. The agent answers in
+ * `agent_notes`, its own dated notes - never in the owner's fields, and never
+ * by selecting the experiment.
+ */
+export function assistWaiting(x) {
+  if (!x || x.deleted || x.assist !== true) return false;
+  if (!text(x.prompt)) return false;
+  const asked = Date.parse(x.prompted || "") || 0;
+  return !(x.agent_notes || []).some((n) => (Date.parse(n.date) || 0) >= asked);
+}
+
+/** Experiments with a prompt waiting, oldest ask first. */
+export function assistQueue(experiments) {
+  return experiments.filter(assistWaiting).sort((a, b) => String(a.prompted || a.created || "").localeCompare(String(b.prompted || b.created || "")));
+}
+
+/** A new agent note: { id, author, date, text }. */
+export function makeAgentNote(noteText, { author, now }) {
+  return { id: newId("an", now), author, date: now, text: text(noteText) };
 }
 
 /** A dated step for the log; returns the new log. */
@@ -86,6 +114,8 @@ export function validateExperiment(rec) {
   else for (const k of Object.keys(rec.cost || {})) if (!COSTS.some(([c]) => c === k)) errors.push(`unknown cost "${k}"`);
   for (const k of ["sources", "produced"]) if (rec[k] != null && !Array.isArray(rec[k])) errors.push(`${k} must be a list of source ids`);
   for (const s of rec.log || []) if (!s?.date || !s?.text || !s?.author) errors.push("a log step needs date, author and text");
+  if (rec.assist != null && typeof rec.assist !== "boolean") errors.push("assist must be true or false");
+  for (const n of rec.agent_notes || []) if (!n?.date || !n?.author || !n?.text) errors.push("an agent note needs date, author and text");
   if (rec.status === "proposed" && rec.verdict) errors.push("a proposition has no verdict yet");
   return errors;
 }

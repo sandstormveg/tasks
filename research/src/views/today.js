@@ -25,6 +25,7 @@ import { addPhotosForDays } from "../ui/photo-days.js";
 import { journalState, quicksilverLines, seedOf, companionSettings } from "../core/companions.js";
 import { mountCompanion } from "../ui/companion.js";
 import { writingBox } from "../ui/writing.js";
+import { fmtButton, wireFormat } from "../ui/textformat.js";
 
 const PROMPT_STATE = "prompt-state";
 
@@ -98,15 +99,16 @@ export async function mount(el, ctx, route, ui) {
       <div class="sub">${chapter ? html`${chapter.name} · day ${daysBetween(chapter.from, day) + 1} · ` : ""}${isToday ? "What would you like to capture or reflect on?" : html`${ago === 1 ? "Yesterday" : `${ago} days ago`} · What do you remember?`}</div>
     </div>
     ${isToday ? html`<div id="companion"></div>` : html`<div class="recall card flat" id="cues"></div>`}
-    <div class="composer md-box" id="composer">
+    <div class="composer md-box fmt-scope" id="composer">
       <div id="qchip"></div>
       <label class="sr-only" for="compose">Write</label>
-      <textarea id="compose" data-code aria-label="Write" placeholder="What's on your mind?" autocomplete="off" spellcheck="true"></textarea>
+      <textarea id="compose" data-code data-fmtable aria-label="Write" placeholder="What's on your mind?" autocomplete="off" spellcheck="true"></textarea>
       <div class="composer-media" id="cmedia"></div>
       <div class="composer-meta" id="cmeta"></div>
       <div class="composer-bar">
         <button class="btn ghost" data-act="speak" title="Record a voice note">${raw(icon("mic"))}<span>Speak</span></button>
         <button class="btn ghost" data-act="photos" title="Add photos">${raw(icon("camera"))}<span>Photos</span></button>
+        ${fmtButton("Write")}
         ${isToday ? html`<button class="btn ghost" data-act="talk" title="Talk it through">${raw(icon("chat"))}<span class="only-desktop">Talk</span></button>` : ""}
         <div class="grow"></div>
         <button type="button" class="btn icon ghost zen-btn" data-zen></button>
@@ -134,6 +136,7 @@ export async function mount(el, ctx, route, ui) {
     keys: [{ key: "Mod-Enter", run: () => { save(); return true; } }],
     repaint: "always", // Today sets the box only on purpose: clearing it after Save, a voice note, a prompt
   });
+  ui.cleanup(wireFormat(el.querySelector("#composer")));
   // A picture pasted into the box joins the draft's photos, as if picked with Photos. Words pasted with it
   // (some apps copy both) still go in as text, so nothing pasted is lost. (On the composer, not the
   // textarea: the editor drawn over it gets the paste.)
