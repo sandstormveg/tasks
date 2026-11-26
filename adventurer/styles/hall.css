@@ -1,7 +1,8 @@
 /* Guild Hall theme (Settings › Theme): parchment notices pinned to a walnut board, red wax seals,
    lantern amber, dusk plum and canal teal, from the MindPrimer moodboard. Token overrides first,
    then the few components that need a different shape (quest notices). CSS only, no images. */
-@font-face { font-family: "Cinzel"; font-weight: 700; font-display: swap; src: url("../fonts/cinzel-700.woff2") format("woff2"); }
+@font-face { font-family: "IM Fell English SC"; font-weight: 400; font-display: swap; src: url("../fonts/im-fell-english-sc.woff2") format("woff2"); }
+@font-face { font-family: "Caveat"; font-weight: 700; font-display: swap; src: url("../fonts/caveat-700.woff2") format("woff2"); }
 
 :root[data-guild-hall] {
   --bg: #2a1d14;
@@ -15,9 +16,10 @@
   --border: #7a5a3a;
   --grid: rgba(233, 220, 192, 0.18);
   --ink: #2b2118;
-  --parchment: #e9dcc0;
+  --parchment: #fff0cc;
   --wax: #9e2a22;
   --plum: #4a3355;
+  --brass: #d9b35a;
   --teal: #2f7d7a;
   font-family: Georgia, "Times New Roman", serif;
 }
@@ -29,7 +31,10 @@
 }
 :root[data-guild-hall] .hud { border-color: rgba(224, 160, 64, 0.35); box-shadow: inset 0 0 40px rgba(224, 160, 64, 0.08); }
 :root[data-guild-hall] h1, :root[data-guild-hall] h2, :root[data-guild-hall] .view-title,
-:root[data-guild-hall] legend, :root[data-guild-hall] .quest-title { font-family: "Cinzel", Georgia, serif; letter-spacing: 0.02em; }
+:root[data-guild-hall] legend, :root[data-guild-hall] .quest-title { font-family: "IM Fell English SC", Georgia, serif; letter-spacing: 0.02em; }
+:root[data-guild-hall] .view-title { color: var(--brass); text-shadow: 0 1px 0 #1a120c, 0 0 1px #1a120c; }
+/* The quest's origin/giver line, hand-written. */
+:root[data-guild-hall] .quest .tag { font-family: "Caveat", cursive; font-size: 1rem; text-transform: none; letter-spacing: 0; }
 :root[data-guild-hall] .btn.primary { background: var(--wax); border-color: var(--wax); color: #fbefe0; }
 :root[data-guild-hall] a { color: var(--amber); }
 
@@ -64,8 +69,8 @@
 /* The stat radar: ink on parchment. */
 :root[data-guild-hall] .radar-wrap { background: var(--parchment); border-radius: 4px; padding: 8px; box-shadow: inset 0 0 28px rgba(120, 90, 50, 0.25); }
 :root[data-guild-hall] .radar .grid { stroke: rgba(43, 33, 24, 0.25); }
-:root[data-guild-hall] .radar .shape { fill: rgba(158, 42, 34, 0.25); stroke: var(--wax); }
-:root[data-guild-hall] .radar .dot { fill: var(--wax); }
-:root[data-guild-hall] .radar .dot.empty { fill: var(--parchment); stroke: var(--wax); }
-:root[data-guild-hall] .radar .axis { fill: var(--ink); font-family: "Cinzel", Georgia, serif; }
+:root[data-guild-hall] .radar .shape { fill: rgba(47, 125, 122, 0.22); stroke: var(--teal); }
+:root[data-guild-hall] .radar .dot { fill: var(--teal); }
+:root[data-guild-hall] .radar .dot.empty { fill: var(--parchment); stroke: var(--teal); }
+:root[data-guild-hall] .radar .axis { fill: var(--ink); font-family: "IM Fell English SC", Georgia, serif; }
 :root[data-guild-hall] .radar .axis-tier { fill: var(--wax); }

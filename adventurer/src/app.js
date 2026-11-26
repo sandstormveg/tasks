@@ -308,8 +308,8 @@ export function createContext(host) {
     },
     forgetNoticesAuth() { clearNoticesAuthPlugin(); },
   };
-  // Theme: "hall" (Guild Hall: parchment notices on walnut) or the default terminal look. Its heading
-  // font (Cinzel, OFL) ships in fonts/ and only downloads when the theme is on.
+  // Theme: "hall" (Guild Hall: parchment notices on walnut) or the default terminal look. Its
+  // fonts (IM Fell English SC and Caveat, OFL) ship in fonts/ and only downloads when the theme is on.
   const applyTheme = () => {
     const hall = ctx.settings().theme === "hall";
     document.documentElement.toggleAttribute("data-guild-hall", hall);

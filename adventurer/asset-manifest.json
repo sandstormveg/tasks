@@ -1,9 +1,11 @@
 {
- "version": "f5192bbcbb45",
+ "version": "f989f2020535",
  "files": [
   "./",
-  "fonts/cinzel-700.woff2",
-  "fonts/cinzel-OFL.txt",
+  "fonts/caveat-700.woff2",
+  "fonts/caveat-OFL.txt",
+  "fonts/im-fell-OFL.txt",
+  "fonts/im-fell-english-sc.woff2",
   "icons/icon.svg",
   "index.html",
   "manifest.webmanifest",

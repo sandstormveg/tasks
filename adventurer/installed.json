@@ -1,8 +1,10 @@
 {
- "source": "sandstormveg/Adventurer@c481066aa8e7",
+ "source": "sandstormveg/Adventurer@463d16609112",
  "files": [
-  "fonts/cinzel-700.woff2",
-  "fonts/cinzel-OFL.txt",
+  "fonts/caveat-700.woff2",
+  "fonts/caveat-OFL.txt",
+  "fonts/im-fell-OFL.txt",
+  "fonts/im-fell-english-sc.woff2",
   "icons/icon.svg",
   "index.html",
   "manifest.webmanifest",
