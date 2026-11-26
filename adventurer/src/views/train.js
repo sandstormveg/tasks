@@ -13,7 +13,8 @@
 import { html, sheet, toast, errorToast, confirmSheet } from "../ui/dom.js";
 import { complete, localDay } from "../core/quests.js";
 import { trackJog } from "../ui/jog.js";
-import { healthToday, healthCard, openHealthSettings } from "../ui/health.js";
+import { healthToday, healthCard, openHealthSettings, workoutStatus } from "../ui/health.js";
+import { stepsClaim, claimFromSteps } from "../core/endurance.js";
 import { health } from "../data/health.js";
 import { dueStepsWrite } from "../core/steps.js";
 import { announce } from "../ui/moments.js";
@@ -44,6 +45,9 @@ export async function mount(el, ctx, route, ui) {
     const { grade, next } = el2;
     const todays = quests.filter((q) => q.origin === "training" && dayOf(q.posted) === today);
     const endure = quests.find((q) => q.origin === "endurance" && q.expires === today);
+    // Missions from the last two days still open: claimable from the day's steps if no workout counted.
+    const recent = ctx.store.all().filter((q) => q.origin === "endurance" && q.expires < today && q.expires >= dayBefore(today, 2) && (q.status === "posted" || q.status === "accepted"));
+    const stepDays = ctx.store.steps?.days || {};
     const plan = todays.length ? null : trainingPlan(quests, { profile, today, now: ctx.now() });
     const record = attempts(quests).slice(0, 6);
     const s = ctx.settings();
@@ -51,6 +55,7 @@ export async function mount(el, ctx, route, ui) {
     el.innerHTML = String(html`
       ${coachCounter(coachName(s), line)}
       ${healthCard(todayHealth)}
+      ${workoutStatus(ctx.store.lastImport)}
       <section class="grade-head">
         <div class="grade-badge">${grade.id}</div>
         <div class="grow">
@@ -62,7 +67,8 @@ export async function mount(el, ctx, route, ui) {
       ${next ? testPanel(el2, profile) : html`<p class="empty">You've passed every grade. The trainer keeps setting max sets so you can see where you stand.</p>`}
       <section class="train-day">
         <h3>Today from the trainer</h3>
-        ${endure ? enduranceRow(endure) : ""}
+        ${endure ? enduranceRow(endure, stepsClaim(stepDays, today)) : ""}
+        ${recent.map((q) => { const c = stepsClaim(stepDays, q.expires); return c.ok ? enduranceRow(q, c) : ""; })}
         ${todays.length ? html`<div class="missions">${todays.map((q) => mission(q, today))}</div>`
           : plan?.rest ? html`<p class="muted">Rest day — three training days in a row earn one. Quests from the rest of your life still count toward the test.</p>`
           : el2.eligible ? html`<p class="muted">Nothing set: you've hit every target. Sit the test when you're ready.</p>`
@@ -89,6 +95,16 @@ export async function mount(el, ctx, route, ui) {
 
   el.addEventListener("click", async (e) => {
     if (e.target.closest("[data-hc-open]")) return openHealthSettings();
+    if (e.target.closest("[data-allow-workouts]")) return ctx.allowWorkouts();
+    const c = e.target.closest("[data-claim-endure]");
+    if (c) {
+      const q = ctx.store.get(c.dataset.claimEndure);
+      const claim = q && stepsClaim(ctx.store.steps?.days || {}, q.expires);
+      if (!claim?.ok) return;
+      ctx.store.put(claimFromSteps(q, claim, { now: ctx.now() }));
+      toast("Endurance claimed from the day's steps");
+      return ctx.syncNow();
+    }
     if (e.target.closest("[data-say-coach]")) { const s = ctx.settings(); return speak(el.querySelector(".coach-line").textContent.replace(/^>\s*/, ""), coachVoice(s)); }
     const m = e.target.closest("[data-mission]");
     if (m) return runMission(ctx, ctx.quests().find((q) => q.id === m.dataset.mission));
@@ -152,13 +168,23 @@ function testPanel(e, profile) {
   </section>`;
 }
 
-function enduranceRow(q) {
+function enduranceRow(q, claim) {
+  const open = q.status === "posted" || q.status === "accepted";
+  const day = new Date(`${q.expires}T12:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
   return html`<div class="mission ${q.status}">
     <div class="grow">
       <div class="mission-title">${q.title}</div>
       ${q.status === "done" ? html`<div class="small ok">✓ ${Number(q.evidence?.steps || 0).toLocaleString()} steps · +${q.xp} XP</div>` : html`<div class="muted small">${q.brief}</div>`}
+      ${open && claim?.ok ? html`<div class="small">No watch workout counted, but ${day} shows ${claim.total.toLocaleString("en-AU")} steps (an ordinary day is about ${claim.baseline.toLocaleString("en-AU")}).</div>` : ""}
     </div>
+    ${open && claim?.ok ? html`<button class="btn small" data-claim-endure="${q.id}">Claim from ${day}'s steps</button>` : ""}
   </div>`;
+}
+
+/** The day `n` days before an ISO day. */
+function dayBefore(day, n) {
+  const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
 }
 
 function mission(q, today) {

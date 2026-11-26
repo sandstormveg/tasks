@@ -52,6 +52,7 @@ export class Store {
     this.importedWorkouts = load("importedWorkouts", []); // watch session ids already turned into jogs
     this.workoutsImportedAt = load("workoutsImportedAt", null);
     this.lastWorkout = load("lastWorkout", null); // {name, start, at}: the newest watch workout Health Connect showed
+    this.lastImport = load("lastImport", null); // {at, seen, types, logged, skipped, note}: what the last workout import did
     this.notices = load("notices", { doc: null, sha: null }); // Another World notices, read-only
     this.noticesSeen = load("noticesSeen", null); // notice ids at the last sync; null means never synced
     this.noticesAsked = load("noticesAsked", false); // asked for notification permission once
@@ -66,7 +67,7 @@ export class Store {
     save("showcase", this.showcase); save("taskOps", this.taskOps); save("research", this.research);
     save("steps", this.steps);
     save("primer", this.primer); save("journalActivity", this.journalActivity);
-    save("importedWorkouts", this.importedWorkouts); save("workoutsImportedAt", this.workoutsImportedAt); save("lastWorkout", this.lastWorkout);
+    save("importedWorkouts", this.importedWorkouts); save("workoutsImportedAt", this.workoutsImportedAt); save("lastWorkout", this.lastWorkout); save("lastImport", this.lastImport);
     save("notices", this.notices); save("noticesSeen", this.noticesSeen); save("noticesAsked", this.noticesAsked);
     save("reminders", this.reminders);
   }
@@ -107,6 +108,7 @@ export class Store {
     this.persist();
   }
   setLastWorkout(w) { this.lastWorkout = w; this.persist(); }
+  setLastImport(r) { this.lastImport = r; this.persist(); this.emit({ op: "stats" }); }
   setNoticesSeen(ids) { this.noticesSeen = [...ids]; this.persist(); }
   setNoticesAsked(v = true) { this.noticesAsked = !!v; this.persist(); }
   setBrassDay(day) { this.reminders = { ...this.reminders, brassDay: day }; this.persist(); }

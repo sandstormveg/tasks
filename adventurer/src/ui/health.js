@@ -18,7 +18,8 @@ export async function healthToday(now = new Date()) {
   } catch {
     return { available: false, granted: false, steps: 0, meters: null };
   }
-  if (!st?.granted && !asked) {
+  // Ask again when workouts aren't allowed either: without them a watch workout can't count.
+  if ((!st?.granted || (st?.available && !st?.exercise)) && !asked) {
     asked = true;
     try { await plugin.requestPermissions(); } catch {}
     try { st = await plugin.status(); } catch {}
@@ -50,4 +51,20 @@ export function healthCard(h) {
 
 export function openHealthSettings() {
   try { health()?.openSettings(); } catch {}
+}
+
+/**
+ * One line on what the last workout import did, for Train and Settings. When workouts
+ * aren't allowed in Health Connect it says so, with a button (data-allow-workouts).
+ */
+export function workoutStatus(r) {
+  if (!r || !health()) return "";
+  if (r.note === "no-exercise-permission") {
+    return html`<p class="notice small">Workouts can't count yet: allow workouts in Health Connect for Adventurer. <button type="button" class="btn small" data-allow-workouts>Allow workouts</button></p>`;
+  }
+  const when = new Date(r.at).toLocaleString("en-AU", { weekday: "short", hour: "numeric", minute: "2-digit" });
+  if (r.note) return html`<p class="small muted">Last workout check (${when}): ${r.note}</p>`;
+  const seen = r.seen ? `${r.seen} workout${r.seen === 1 ? "" : "s"} in the last 7 days (${(r.types || []).join(", ")})` : "no workouts in Health Connect for the last 7 days";
+  const skipped = (r.skipped || []).length ? ` Skipped: ${r.skipped.join("; ")}.` : "";
+  return html`<p class="small muted">Last workout check (${when}): ${seen}; ${r.logged} newly logged.${skipped}</p>`;
 }

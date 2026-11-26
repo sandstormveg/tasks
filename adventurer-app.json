@@ -1,6 +1,6 @@
 {
-  "versionCode": 3,
-  "versionName": "3",
-  "url": "https://github.com/sandstormveg/tasks/releases/download/adventurer-app-3/Adventurer.apk",
-  "notes": "Evening journal nudge from Quicksilver, if you haven't written today."
+  "versionCode": 4,
+  "versionName": "4",
+  "url": "https://github.com/sandstormveg/tasks/releases/download/adventurer-app-4/Adventurer.apk",
+  "notes": "Reps camera asks for permission; watch workouts of any type count; Allow workouts prompt; claim endurance from the day's steps."
 }

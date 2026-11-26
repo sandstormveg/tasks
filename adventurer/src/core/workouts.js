@@ -4,7 +4,8 @@
 
 import { complete } from "./quests.js";
 
-export const WORKOUT_TYPES = ["walking", "running", "treadmill"];
+// Any session type counts: watches label an indoor or fitness walk "other", and the
+// steps read for the session decide whether it was a jog (the endurance mission wants 3,000+).
 export const MIN_WORKOUT_MS = 10 * 60 * 1000;
 
 const nameOf = (s) => String(s?.name || s?.type || "").trim().toLowerCase();
@@ -13,11 +14,11 @@ const ms = (s) => {
   return Number.isFinite(a) && Number.isFinite(b) ? b - a : 0;
 };
 
-/** Sessions worth importing: a known type, at least ten minutes, inside the window, not already imported. */
+/** Sessions worth importing: any type, at least ten minutes, inside the window, not already imported. */
 export function workoutCandidates(sessions, { since, imported = new Set() } = {}) {
   const from = Date.parse(since || "");
   return (Array.isArray(sessions) ? sessions : [])
-    .filter((s) => s && typeof s.id === "string" && WORKOUT_TYPES.includes(nameOf(s)))
+    .filter((s) => s && typeof s.id === "string")
     .filter((s) => ms(s) >= MIN_WORKOUT_MS)
     .filter((s) => !Number.isFinite(from) || Date.parse(s.start) >= from)
     .filter((s) => !imported.has(s.id))

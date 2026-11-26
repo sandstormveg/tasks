@@ -198,44 +198,66 @@ export function createContext(host) {
       store.emit({ op: "stats" });
       return doc;
     },
-    /** Turn recent watch workouts into completed jogs (native only). Returns how many were logged. */
+    /**
+     * Turn the last week's watch workouts into completed jogs (native only). Returns how many
+     * were logged. Every run records what it saw and why anything was skipped (store.lastImport),
+     * so a workout that didn't count says why in Settings instead of vanishing.
+     */
     async importWorkouts() {
       const plugin = health();
       if (!plugin || ctx.importing) return 0;
       ctx.importing = true;
+      const now = new Date();
+      const report = { at: now.toISOString(), seen: 0, types: [], logged: 0, skipped: [], note: "" };
       try {
         const st = await plugin.status().catch(() => null);
-        if (!st?.available || !st?.exercise) return 0;
-        const now = new Date();
-        const weekAgo = new Date(now.getTime() - 7 * 864e5).toISOString();
-        const lastAt = store.workoutsImportedAt && Date.parse(store.workoutsImportedAt) > Date.parse(weekAgo) ? store.workoutsImportedAt : weekAgo;
-        const r = await plugin.readExercise({ start: lastAt, end: now.toISOString() });
-        const newest = (r?.sessions || []).filter((x) => x?.start).sort((a, b) => String(b.start).localeCompare(String(a.start)))[0];
+        if (!st?.available) { report.note = "Health Connect isn't available on this phone."; return 0; }
+        if (!st.exercise) { report.note = "no-exercise-permission"; return 0; }
+        // Always the last 7 days: ids already imported are skipped, so a session that reached
+        // Health Connect late (or was dropped by an older version) still counts.
+        const since = new Date(now.getTime() - 7 * 864e5).toISOString();
+        const r = await plugin.readExercise({ start: since, end: now.toISOString() });
+        const sessions = (r?.sessions || []).filter((x) => x?.start);
+        report.seen = sessions.length;
+        report.types = [...new Set(sessions.map((x) => x.name || String(x.type ?? "?")))];
+        const newest = [...sessions].sort((a, b) => String(b.start).localeCompare(String(a.start)))[0];
         if (newest && newest.start !== store.lastWorkout?.start) store.setLastWorkout({ name: newest.name || newest.type || "workout", start: newest.start, at: now.toISOString() });
-        const todo = workoutCandidates(r?.sessions, { since: lastAt, imported: new Set(store.importedWorkouts) });
+        const done = new Set(store.importedWorkouts);
+        const todo = workoutCandidates(sessions, { since, imported: done });
+        for (const x of sessions) if (!done.has(x.id) && !todo.includes(x)) report.skipped.push(`${x.name || "workout"} under 10 min`);
         const imported = [];
-        let logged = 0;
         for (const session of todo) {
           const id = workoutId(session);
           if (store.get(id)) { imported.push(session.id); continue; }
-          const delta = await readDelta(plugin, session.start, session.end).catch(() => null);
-          if (!delta || delta.steps <= 0) continue;
+          let delta = null;
+          try { delta = await readDelta(plugin, session.start, session.end); } catch (err) { report.skipped.push(`${session.name || "workout"}: couldn't read its steps (${err?.message || err})`); continue; }
+          if (!delta || delta.steps <= 0) { report.skipped.push(`${session.name || "workout"}: no steps recorded during it`); continue; }
           store.put(workoutQuest(session, { steps: delta.steps, meters: delta.meters, minutes: workoutMinutes(session) }, { now: ctx.now() }));
           imported.push(session.id);
-          logged += 1;
+          report.logged += 1;
         }
-        if (!imported.length) return 0;
-        store.markWorkoutsImported(imported, new Date().toISOString());
-        if (!logged) return 0;
-        toast(`Logged ${logged} workout${logged === 1 ? "" : "s"} from your watch`);
+        if (imported.length) store.markWorkoutsImported(imported, now.toISOString());
+        if (!report.logged) return 0;
+        toast(`Logged ${report.logged} workout${report.logged === 1 ? "" : "s"} from your watch`);
         ctx.checkEndurance();
         ctx.syncNow();
-        return logged;
-      } catch {
+        return report.logged;
+      } catch (err) {
+        report.note = `Import failed: ${err?.message || err}`;
         return 0;
       } finally {
+        store.setLastImport(report);
         ctx.importing = false;
       }
+    },
+    /** Ask Health Connect again (steps, distance and workouts). */
+    async allowWorkouts() {
+      const plugin = health();
+      if (!plugin) return false;
+      const r = await plugin.requestPermissions().catch(() => null);
+      if (r?.exercise) await ctx.importWorkouts();
+      else store.setLastImport({ ...(store.lastImport || {}), at: new Date().toISOString(), note: "no-exercise-permission" });
+      return !!r?.exercise;
     },
     /** Post today's Journal quest and tick off any day the journal shows an entry for. */
     checkJournal() {
@@ -254,8 +276,9 @@ export function createContext(host) {
     checkEndurance() {
       try {
         const today = ctx.today();
-        const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1);
-        const updates = enduranceUpdates(store.all(), { today, yesterday: d.toISOString().slice(0, 10), now: ctx.now() });
+        // The last three days: a workout that reaches Health Connect a day or two late still counts.
+        const days = [0, 1, 2].map((n) => { const x = new Date(`${today}T12:00:00Z`); x.setUTCDate(x.getUTCDate() - n); return x.toISOString().slice(0, 10); });
+        const updates = enduranceUpdates(store.all(), { today, days, now: ctx.now() });
         for (const q of updates) store.put(q);
         if (updates.some((q) => q.status === "done")) toast("Endurance done for the day");
         return updates.length;

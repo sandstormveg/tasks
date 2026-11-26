@@ -34,17 +34,18 @@ export function qualifyingJog(quests, day, steps = ENDURANCE_STEPS) {
 
 /**
  * What to store now: today's mission if it isn't posted yet, and any open endurance
- * mission from today or yesterday that a jog has earned (a workout imported the next
+ * mission from today or yesterday (or the given `days`) that a jog has earned (a workout imported the next
  * morning still counts for its own day). `quests` is the raw store, not the expiry view.
  */
-export function enduranceUpdates(quests, { today, yesterday, now }) {
+export function enduranceUpdates(quests, { today, yesterday, days, now }) {
+  const open = new Set(days || [today, yesterday]);
   const all = quests || [];
   const out = [];
   const mine = all.filter(isEndurance);
   if (!mine.some((q) => q.id === enduranceId(today))) out.push(enduranceMission(today, now));
   for (const q of [...mine, ...out]) {
     const day = q.expires?.slice(0, 10);
-    if (!OPEN.has(q.status) || (day !== today && day !== yesterday)) continue;
+    if (!OPEN.has(q.status) || !open.has(day)) continue;
     const jog = qualifyingJog(all, day, q.proof?.steps || ENDURANCE_STEPS);
     if (!jog) continue;
     const done = complete(q, { proofType: "jog", evidence: { steps: Number(jog.evidence.steps), from: jog.id, tracked: true }, at: now });
@@ -52,4 +53,26 @@ export function enduranceUpdates(quests, { today, yesterday, now }) {
     if (i >= 0) out[i] = done; else out.push(done);
   }
   return out;
+}
+
+/** With no step history yet, assume an ordinary day is this many steps (a quiet desk day). */
+export const DEFAULT_BASELINE = 2000;
+
+/**
+ * A fallback when no watch workout reached Health Connect: the day's watch-counted
+ * total, against an ordinary day (the median of up to 14 earlier days). Only a day
+ * at least ENDURANCE_STEPS above that is claimable, and only by a tap: never automatic.
+ */
+export function stepsClaim(stepDays, day, steps = ENDURANCE_STEPS) {
+  const all = stepDays || {};
+  const total = Math.max(0, Math.floor(Number(all[day]) || 0));
+  const prior = Object.keys(all).filter((d) => d < day).sort().slice(-14).map((d) => Number(all[d]) || 0).filter((n) => n > 0).sort((a, b) => a - b);
+  const mid = prior.length >> 1;
+  const baseline = prior.length >= 3 ? Math.round(prior.length % 2 ? prior[mid] : (prior[mid - 1] + prior[mid]) / 2) : DEFAULT_BASELINE;
+  return { day, total, baseline, need: baseline + steps, ok: total >= baseline + steps };
+}
+
+/** The mission completed on the trainer's word from the day's steps (paid as honor, not a tracked jog). */
+export function claimFromSteps(q, claim, { now }) {
+  return complete(q, { proofType: "honor", evidence: { steps: claim.total, baseline: claim.baseline, source: "daily-steps", claimed: true }, at: now });
 }

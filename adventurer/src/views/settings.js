@@ -3,6 +3,7 @@
 // your stats profile (only what the norms need: sex and age band), and sync.
 
 import { html, toast, confirmSheet } from "../ui/dom.js";
+import { workoutStatus } from "../ui/health.js";
 import { AGE_BANDS } from "../core/norms.js";
 import { primerEntries, sortPrimer } from "../core/primer.js";
 import { speak, voices, bestVoice, hasClips } from "../ui/voice.js";
@@ -126,6 +127,7 @@ export async function mount(el, ctx, route, ui) {
         <label class="check"><input type="checkbox" name="trainingReminders" ${s.trainingReminders !== false ? "checked" : ""}> Training reminders: Brass pings at 18:00 if today's set is still waiting</label>
         <label class="check"><input type="checkbox" name="journalNudge" ${s.journalNudge !== false ? "checked" : ""}> Journal nudge: Quicksilver pings between 21:00 and 23:00 if you haven't written today (Android app; it only sees whether an entry exists)</label>
         ${ctx.store.lastWorkout ? html`<p class="small muted">Last watch workout seen: ${ctx.store.lastWorkout.name}, ${new Date(ctx.store.lastWorkout.start).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>` : html`<p class="small muted">No watch workout seen yet. Once your watch's workouts reach Health Connect, the newest shows here.</p>`}
+        ${workoutStatus(ctx.store.lastImport)}
         <div class="grid2">
           <label class="field"><span>Name</span><input class="input" name="coachName" value="${s.coachName}" maxlength="24"></label>
         </div>
@@ -166,6 +168,7 @@ export async function mount(el, ctx, route, ui) {
   ui.onStore((c) => { if (["sync", "sync-end", "sync-error", "primer"].includes(c.op)) draw(); });
 
   el.addEventListener("click", async (e) => {
+    if (e.target.closest("[data-allow-workouts]")) { const ok = await ctx.allowWorkouts(); return toast(ok ? "Workouts allowed. Checking the last 7 days." : "Workouts still aren't allowed in Health Connect.", { error: !ok }); }
     const off = e.target.closest("[data-primer-off]")?.dataset.primerOff;
     if (off) {
       const yes = await confirmSheet("Switch this line off? Another World will stop receiving these themes. The line stays in the feed, marked retired.", { title: "Switch off Primer line", confirm: "Switch off" });
